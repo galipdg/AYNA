@@ -12,3 +12,5 @@ Every task is a GitHub issue with acceptance criteria as a checklist, a week mil
 
 ## Consequences
 The claude.ai AYNA Board becomes read-only history after the migration.
+
+Migration notes (2026-10-25): 107 board tasks became issues #2–#108 (PR #1 took number 1), so issue number = board key + 1; titles keep the key, e.g. `[AYNA-021] …` = #22. Owners are labels (`owner:galip|omer|hasan|team`) because teammates were not yet collaborators; assignees are set once they accept the invitation. Weeks are milestones `Week 1` … `Week 14` and `Semester 2`. The empty test task AYNA-108 was not migrated.
