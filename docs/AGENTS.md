@@ -1,6 +1,6 @@
 # docs/ — Course documents, API docs, guides
 
-Owner: hasan (SDD sections by component owner). Read `/AGENTS.md` first; this file adds only what is specific to `docs/`.
+Owner: hasan; `rs/` and `report/`: galip; `sdd/`: omer (each component owner writes their own SDD section). Read `/AGENTS.md` first; this file adds only what is specific to `docs/`.
 
 ## Layout
 - `rs/`, `sdd/`, `api/` (generated), `adr` lives in `memory-bank/decisions/`
