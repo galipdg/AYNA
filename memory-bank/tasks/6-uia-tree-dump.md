@@ -50,6 +50,24 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
     6. Four new files: `handbrake.json`, `keepass2.json`, `keepassxc.json`, `notepadpp.json`.
   - **Report back**: pass/fail per step; the whole console output of step 5 as an issue comment; the four JSON files, committed on `hasan/6-uia-dumps` (see the handover in hasan's inbox); Windows version (`winver`) and display scaling; for a failure, the traceback and a screenshot. If a target is skipped with "no visible window found", check its exe name in Task Manager and dump it as a one-off: `… uia_dump.py dump --id <id> --process <exe> --app "<app>" --technology <tech>`.
 
+- 2026-10-25 · hasan · **pre-session smoke check of the untested `dump` path** · pass
+  - Ran on the real Windows machine before the pilot apps were downloaded, because
+    the note said the pywinauto/COM path had never executed. Used the repo `.venv`
+    (Python 3.13.0, pywinauto 0.6.9 — the pinned version) instead of a throwaway
+    `%TEMP%yna-uia` venv; same pywinauto, one less step.
+  - `pytest eval/spikes/test_uia_dump.py` → **24 passed** on Windows as well
+    (galip had only run them on macOS).
+  - One-off dump against the already-open Notepad:
+    `uia_dump.py dump --id smoke-notepad --process notepad.exe --app Notepad --technology Win32`
+    → exit 0, `50 elements in 0.4 s`, `read_errors: 0`, `truncated: false`,
+    stats table printed. Interactive 16, AutomationId 81% (13/16), Name 100%,
+    AutomationId-or-Name 100%, generated ids 0%.
+  - **No fix was needed**: the COM reads, the walker, the writer and the stats
+    table all work as written. Machine: `Windows-11-10.0.26300-SP0`, DPI 120
+    (125% scaling) — recorded because the dumps store it per window.
+  - The smoke dump was written to a scratch folder, not to
+    `eval/spikes/uia-dumps/`, so it does not pollute the deliverable.
+
 ## Open issues
 - `ruff` is still not installed on this Mac and `eval/` has no `pyproject.toml`, so the spike is not linted (same as #7). Line length is kept at ~100.
 - Check the TitleBar rule against the real dumps: if a frame `MenuItem "System"` or the min/max/close buttons sit outside the TitleBar in some framework, the `--by-type` table will show them.
