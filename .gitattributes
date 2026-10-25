@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.exe binary
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Append-only memory files: keep both sides' new lines on merge
+memory-bank/people/*/journal.md merge=union
+memory-bank/people/*/inbox.md merge=union
+memory-bank/learnings.md merge=union

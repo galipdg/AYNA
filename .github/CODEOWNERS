@@ -1,0 +1,18 @@
+# Default: every change needs a review from at least one other member.
+*                                   @galipdg @omerfaruksaribal @HasanBerk18
+
+/ai/                                @galipdg
+/agent/ayna_agent/recognition/      @galipdg
+/agent/ayna_agent/heal/             @galipdg
+/agent/ayna_agent/playback/         @HasanBerk18
+/agent/ayna_cli/                    @HasanBerk18
+/server/                            @omerfaruksaribal
+/client/                            @omerfaruksaribal
+/docker/                            @omerfaruksaribal
+/.github/                           @omerfaruksaribal @galipdg
+/eval/                              @HasanBerk18
+/eval/nl/                           @galipdg
+/docs/                              @HasanBerk18
+/schemas/                           @galipdg @omerfaruksaribal @HasanBerk18
+/AGENTS.md                          @galipdg @omerfaruksaribal @HasanBerk18
+/memory-bank/project/               @galipdg @omerfaruksaribal @HasanBerk18

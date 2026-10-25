@@ -1,0 +1,44 @@
+# personal agent settings
+CLAUDE.local.md
+.claude/settings.local.json
+
+# secrets and local env
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / Electron
+node_modules/
+client/out/
+client/release/
+
+# Java
+target/
+.gradle/
+*.class
+
+# Neo4j / docker data
+docker/data/
+neo4j-data/
+
+# Models and large artefacts
+*.gguf
+*.safetensors
+models/
+
+# IDE / OS
+.idea/
+.DS_Store
+Thumbs.db
+*.log
