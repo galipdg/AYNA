@@ -1,2 +1,10 @@
-# Copy to CLAUDE.local.md (gitignored) on your machine and set your id: galip | omer | hasan
+<!--
+Personal file. Copy it to CLAUDE.local.md in the repo root (that name is gitignored, so it never reaches GitHub)
+and put your own id on the ayna-user line: galip, omer or hasan.
+Your agent reads this line to know whose tasks and memory folder it works with;
+the guard hook reads it to stop the agent from editing someone else's private memory.
+-->
 ayna-user: galip
+
+<!-- Optional: personal preferences only for your own agent, for example: -->
+<!-- - Explain things to me in Turkish; keep code and commits in English. -->

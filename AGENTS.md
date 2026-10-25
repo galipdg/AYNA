@@ -58,7 +58,7 @@ Update at checkpoints, not after every step:
 - a meaningful unit is committed → task note "Status / Next step";
 - you hit a non-obvious problem → `learnings.md`;
 - something concerns a teammate → their `inbox.md`;
-- session ends → `active.md` + one `journal.md` entry (§10).
+- session ends → `active.md` + one `journal.md` entry (§11).
 
 Commit memory changes **together with** the code they describe. Write short, dated (`YYYY-MM-DD`) bullets. Record *why*, not what the code already says. Link issues (`#21`), paths and commits. Delete what has gone stale. Never write secrets.
 
@@ -98,7 +98,23 @@ When in doubt, ask. If the user is unavailable, take the safest reasonable optio
 - Do not hand-edit generated files (e.g. `docs/api/openapi.yaml`).
 - Keep the diff inside the issue's scope. Prefer simple, readable code over clever code.
 
-## 10. Session end and handoff
+## 10. When a human has to try it
+
+Much of AYNA can only be judged by a person at the Windows machine: the Spy overlay and hotkeys, DPI scaling, real pilot apps, how a screen feels. When a step or an acceptance criterion cannot be verified by a test you ran yourself:
+
+1. Say so plainly and do not tick that criterion.
+2. Give the user a short manual check, in this shape:
+   - **Setup** — exact commands to start what is needed (app, agent, server) and the starting state.
+   - **Steps** — numbered, one action each.
+   - **Expected** — what they should see after each step.
+   - **Report back** — pass/fail per step; for a failure, a screenshot, the relevant log lines (say which file or console) and app version, Windows version and display scaling.
+3. Wait for the result before building on the unverified part; unrelated work may continue.
+4. Record it in the task note under "Manual checks": date, who ran it, result, where the evidence is. After a fix, ask for the same check again.
+5. If the same check keeps coming back, propose automating it (a `@pytest.mark.windows` test) or saving it as a checklist in `docs/manual-checks/`.
+
+Plan the manual check while designing anything the user will see, not after the code is written.
+
+## 11. Session end and handoff
 
 Hand off when: the issue is done; you switch to another issue; the session has grown long (many files read, a long conversation, context use above ~60% in `/context`) or your answers get less precise; or before a long break.
 

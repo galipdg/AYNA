@@ -15,6 +15,9 @@ How we are solving it and why (keep short; link code paths).
 - [ ] current step
 - Next step: <one exact, actionable line>
 
+## Manual checks
+- YYYY-MM-DD · <who> · <check> · pass/fail · evidence: <path or issue comment>
+
 ## Open issues
 Problems found in the plan, code or memory; out-of-scope items to raise as new issues.
 
