@@ -24,8 +24,9 @@ One workflow, `.github/workflows/ci.yml`, on every PR and on push to `main`, fou
 - [x] PR #118 opened (`Refs #3`), reviewers galip + hasan
 - [x] First run failed in `client`: ` #5` in an unquoted `run:` was a YAML comment (see learnings); fixed with `run: |`
 - [x] Run 40217516786: server (2 tests incl. HealthIntegrationTest), agent (windows-latest), ai green; client green but only the skip notice
-- [ ] Client job real after #5
-- Next step: close #4 with the server job link (needs omer's OK); after #5 lands, confirm the client job runs lint + build, then close #3.
+- [x] Client job real: PR #120 (#5) removes the guards; run 40218983862 ran npm ci / lint / typecheck / 10 tests / linux-unpacked build, green
+- [x] #4 closed 2026-10-25 with the server job link (run 40217766040)
+- Next step: none; PR #120 carries `Closes #3`, so #3 closes when it is merged.
 
 ## Manual checks
 —
