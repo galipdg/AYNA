@@ -18,7 +18,7 @@ Last reviewed: 2026-10-25. Tool versions and exact commands are pinned in each m
 
 ## Java (`server/`)
 
-- Java 21, Spring Boot, Spring Data Neo4j, Maven or Gradle (decided in #3).
+- Java 21, Spring Boot 4, Spring Data Neo4j, Maven wrapper (`server/mvnw`, decided in #4).
 - Packages by feature (`apps`, `repository`, `tests`, `runs`, `healing`), not by layer.
 - Unit tests with JUnit 5; integration tests against a real Neo4j via Testcontainers.
 
