@@ -21,7 +21,7 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - [x] Note skeleton: method, candidates, expectations written before the run, selection criteria, run instructions
 - [ ] Windows session: dumps of at least 3 apps (pending)
 - [ ] Fill Results, Findings and Recommendation in `eval/spikes/uia-dump.md` from `uia_dump.py stats`
-- Next step: push the branch, post the manual check below on #6 with label `needs-windows-test` (needs Galip's OK), then wait for the weekly Windows session.
+- Next step: weekly Windows session with hasan (request in his inbox) → dumps; then fill the note and mark the PR ready. Issue comment + `needs-windows-test` label not posted yet (Galip chose the inbox route).
 
 ## Manual checks
 - 2026-10-25 · pending Windows session · UIA dump of the four targets
