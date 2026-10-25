@@ -19,7 +19,7 @@
 - [x] Script, inputs, schema; run 2026-10-25 19:41 → qwen3 10/10, gemma4 9/10 schema-valid
 - [x] `ai/spikes/llm-smoke.md` and `ai/spikes/gpu-request-draft.md`
 - [x] Offline repeat: pass (same steps as online)
-- [ ] Galip sends the GPU request to the advisor
+- [ ] Galip sends the GPU request to the advisor (on hold 2026-10-25: waiting for replies from support programs)
 - [x] PR https://github.com/galipdg/AYNA/pull/115 opened 2026-10-25, marked "do not merge" until the GPU request is sent
 - Next step: send the GPU request, then get a review and merge #115.
 
@@ -48,3 +48,4 @@
 - Free disk after the downloads: about 9.6 GB.
 
 ## Outcome (fill when the issue closes)
+- 2026-10-25: delivered in PR https://github.com/galipdg/AYNA/pull/115 (merged by galipdg): `ai/spikes/llm_smoke.py`, inputs, spike schema, `llm-smoke.md` with online and offline runs, `gpu-request-draft.md`. Not done here: lint/tests for `ai/` (#37), bigger models (#71). GPU request not sent yet (2026-10-25): the team applied to some support programs and is waiting for replies before sending it.
