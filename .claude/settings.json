@@ -4,13 +4,13 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.py\"" }
+          { "type": "command", "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.sh\"" }
         ]
       },
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.py\"" }
+          { "type": "command", "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.sh\"" }
         ]
       }
     ]
