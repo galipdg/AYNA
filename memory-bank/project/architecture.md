@@ -58,4 +58,5 @@ Each test machine (Windows)                    Shared, on the closed network
 | `schemas/` | JSON Schemas (frozen contracts) | all |
 | `eval/` | sample apps, experiment versions, measurement scripts, datasets | hasan (`eval/nl/`: galip) |
 | `docs/` | RS, SDD, generated API docs, guides | hasan (SDD sections by component owner) |
-| `docker/` | compose files for server + Neo4j + AI service | omer |
+| `docker-compose.yml` | one `docker compose up` for the whole backend (server, Neo4j, later AI service, nginx) | omer |
+| `docker/` | extra container config (e.g. nginx) used by the root compose file | omer |

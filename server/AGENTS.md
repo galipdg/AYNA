@@ -7,7 +7,10 @@ Owner: omer. Read `/AGENTS.md` first; this file adds only what is specific to `s
 - `src/main/resources/neo4j/migrations/` — graph schema migrations
 
 ## Commands
-To be filled in when the module is scaffolded (build, test, lint, run). Until then, ask before inventing tooling.
+Java 21 and Docker are required. Run from `server/` unless noted; if `JAVA_HOME` is wrong, prefix with `JAVA_HOME=$(/usr/libexec/java_home -v 21)` (macOS).
+- Test (unit + Testcontainers integration, Docker must be running): `./mvnw test`
+- Build the jar: `./mvnw package`
+- Whole backend (from the repo root): `docker compose up --build`, then `curl localhost:8080/api/health`
 
 ## Rules
 - Graph schema changes only through a new migration + ADR (contract).
