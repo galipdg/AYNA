@@ -1,0 +1,19 @@
+# `npm run build` packs an unpacked app into release/<platform>-unpacked (no installer yet).
+appId: tr.edu.ankara.ayna
+productName: AYNA
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+asar: true
+npmRebuild: false
+publish: null
+mac:
+  target: dir
+  identity: null
+win:
+  target: dir
+linux:
+  target: dir

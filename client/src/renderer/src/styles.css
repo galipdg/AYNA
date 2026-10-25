@@ -1,0 +1,63 @@
+/* System fonts only: the client runs on a closed network (no web fonts, no CDN). */
+:root {
+  color-scheme: light dark;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.app h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  letter-spacing: 0.08em;
+}
+
+.tagline {
+  margin-top: 4px;
+  opacity: 0.75;
+}
+
+.card {
+  margin-top: 32px;
+  padding: 16px 24px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 8px;
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.card dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 24px;
+  margin: 0;
+}
+
+.card dt {
+  opacity: 0.75;
+}
+
+.card dd {
+  margin: 0;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.error {
+  color: #c62828;
+}
