@@ -13,3 +13,4 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-20 | [Calibrated decision layer moves to semester 2](2026-10-20-decision-layer-semester-2.md) | Accepted |
 | 2026-10-25 | [GitHub Issues + Project as the task source of truth](2026-10-25-github-issues-source-of-truth.md) | Accepted |
 | 2026-10-25 | [Shared memory bank structure and English as memory language](2026-10-25-memory-bank-structure.md) | Accepted |
+| 2026-10-25 | [Weekly Windows test session for macOS developers](2026-10-25-weekly-windows-test-session.md) | Accepted |
