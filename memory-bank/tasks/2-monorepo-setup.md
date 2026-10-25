@@ -16,16 +16,18 @@ Most of the repo already existed (folders with `AGENTS.md`, `.github/pull_reques
 
 ## Status
 - [x] READMEs in agent, client, server, ai, schemas, eval, docs
-- [ ] PR template: add "docs updated" DoD item (`.github/` change, needs user OK)
-- [ ] `main` protected: PR + 1 approval, no direct pushes (repo owner galip)
-- [ ] All three members merged one test PR (galip done; omer: this PR; hasan: pending)
-- Next step: get user OK for the PR template edit, then commit and open the PR.
+- [x] PR template: "docs updated" DoD item added (user OK 2026-10-25)
+- [ ] `main` protected: PR + 1 approval, no direct pushes (blocked, see Open issues)
+- [ ] All three members merged one test PR (galip done; omer: this PR; hasan: asked via his inbox 2026-10-25)
+- Next step: push `omer/2-monorepo-setup` and open the PR with `Refs #2` (user OK needed); keep #2 open until protection and hasan's PR are done.
 
 ## Manual checks
 - 2026-10-25 · omer's agent · `git push origin main` via Claude Code · blocked by `.claude/hooks/guard.sh` · pass (local hook only, not GitHub protection)
 
 ## Open issues
 - 2026-10-25 — Branch protection cannot be set yet: `galipdg/AYNA` is a private repo on a free personal account (rulesets API: "Upgrade to GitHub Pro or make this repository public"; protection API: 404), and omer has push but not admin. Options: galip enables GitHub Pro via the Student Developer Pack, moves the repo to a free organization with Team/education plan, or makes it public. Until then only the local guard hook stops direct pushes to `main`.
+- 2026-10-25 — Retried after galip added omer to the repo: API still reports `admin: false` and `PUT .../branches/main/protection` returns 404. On a personal-account repo collaborators cannot get admin, and protection depends on the **owner's** plan, so omer's GitHub Pro does not help. Real options: (a) galip claims GitHub Pro via the Student Developer Pack (free for students); (b) transfer the repo to omer's account (moves issues; the user-owned "AYNA" Project and repo URL would need relinking); (c) make the repo public.
+- 2026-10-25 — This PR uses `Refs #2`, not `Closes #2`, because merging it would auto-close #2 while two criteria are still open.
 
 ## Handoff
 —
