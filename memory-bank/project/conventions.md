@@ -39,3 +39,15 @@ Last reviewed: 2026-10-25. Tool versions and exact commands are pinned in each m
 - Scopes: `agent ai client server schemas eval docs memory ci build`.
 - PR body: what changed, how it was tested, which acceptance criteria are met, `Closes #<n>`.
 - Merge after one approving review from someone other than the author; the PR author's human merges.
+
+## Project board
+
+The "AYNA" GitHub Project (`galipdg`, project 1) has Status `Todo` → `In progress` → `Done`. Closing an issue moves it to Done automatically; moving it to In progress when work starts is manual (AGENTS.md §3):
+
+```
+item=$(gh project item-list 1 --owner galipdg --limit 300 --format json -q '.items[] | select(.content.number==<n>) | .id')
+gh project item-edit --project-id PVT_kwHOCI8tT84Boop9 --id "$item" \
+  --field-id PVTSSF_lAHOCI8tT84Boop9zhnH0ac --single-select-option-id 47fc9ee4
+```
+
+Option ids: Todo `f75ad846` · In progress `47fc9ee4` · Done `98236657`. If they stop working, re-read them with `gh project field-list 1 --owner galipdg --format json`. Needs the `project` scope (`gh auth refresh -s project`).
