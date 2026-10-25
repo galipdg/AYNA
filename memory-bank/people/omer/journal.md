@@ -23,3 +23,9 @@ Append-only. One entry per session, newest at the bottom:
 - Next: manual check, push, PR, close #3 after the green client job.
 - Later: PR #120 opened (also `Closes #3`), CI all green with the real client steps; #4 closed with run 40217766040; `needs-windows-test` + Windows check on #5; `client/AGENTS.md` commands filled.
 - Later: team agreed to TypeScript for the client; switched `client/` to `.ts`/`.tsx` (TS 6.0, typescript-eslint, split tsconfigs), ADR `2026-10-25-client-typescript.md` (supersedes the client language only) and updated AGENTS.md / conventions / architecture. omer's manual `npm run dev` check passed.
+
+## 2026-10-25 · #14
+- PR #120 merged → #3 and #5 closed and Done. hasan's eval-CI note: opened #122 (hasan: pyproject + ruff; omer: CI job), replied in his inbox.
+- Started #14 on `omer/14-graph-schema`, board → In progress. Added neo4j-migrations starter 4.2.0 (omer OK; built for Boot 4.1), `V0001__graph_schema_v0.cypher` (11 unique `id` constraints + 5 indexes), `GraphSchemaMigrationIntegrationTest`, `docs/graph-model.md`, ADR `2026-10-25-graph-schema-migrations.md`.
+- `./mvnw test` green (5); compose run: migration applied on start, skipped on restart, all 14 sample queries pass EXPLAIN.
+- Next: push + PR `Closes #14` after omer's OK.
