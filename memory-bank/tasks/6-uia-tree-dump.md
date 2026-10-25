@@ -13,7 +13,7 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - 2026-10-25 — Script and note live in `eval/spikes/` next to the dumps the issue asks for, like `ai/spikes/` in #7. `eval/` is Hasan's; FYI left in his inbox.
 - 2026-10-25 — "Interactive" = a fixed list of control types (`INTERACTIVE_TYPES` in the script), so the share is comparable across frameworks. Empty or whitespace-only AutomationId/Name counts as missing.
 - 2026-10-25 — Dumps are a flat element list with parent links (closer to the future snapshot of #12 than a nested tree), one element per line so they diff well. Strings are cut at 200 characters; Value-pattern contents are never read; only the exe file name is kept, not its path.
-- 2026-10-25 — Two PRs (Galip): #119 delivers the tooling with `Refs #6` and merges first, so the Windows-session request in hasan's inbox and the script reach `main`; a second PR from `galip/6-uia-dumps` adds the dumps and results and closes #6.
+- 2026-10-25 — Handover (Galip): everything galip has goes into PR #119 (`Refs #6`, so merging does not close the issue). hasan runs the Windows check from `main`; his agent fixes the script if it fails, commits the dumps, writes Results/Findings/Recommendation and closes #6 with its own PR from `hasan/6-uia-dumps`. Request in hasan's inbox. This replaces, for #6 only, the weekly-session rule of sending failures back to the owner's inbox.
 - 2026-10-25 — Elements inside a TitleBar are excluded from "interactive": hasan measured in #9 that the window frame's controls never have an AutomationId, so counting them would lower every app's share for a reason that is not the app's.
 - 2026-10-25 — Properties are read from the raw `IUIAutomationElement` (`element_info.element.Current*`), not pywinauto's wrappers, because the wrappers hide COM errors as `None`/`""` (checked in the 0.6.9 source). `read_errors` in each dump counts the failed reads.
 
@@ -24,7 +24,7 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - [x] PR https://github.com/galipdg/AYNA/pull/119 (tooling, `Refs #6`) opened 2026-10-25, merged `origin/main` in, marked ready; label `needs-windows-test` on #6
 - [ ] Windows session: dumps of at least 3 apps (pending)
 - [ ] Fill Results, Findings and Recommendation in `eval/spikes/uia-dump.md` from `uia_dump.py stats`
-- Next step: get a review on #119 and merge it; then the weekly Windows session with hasan (request in his inbox) → dumps on `galip/6-uia-dumps`, fill the note, second PR with `Closes #6`. No separate issue comment with the manual check was posted; it is in the PR body.
+- Next step (galip): get a review on #119 and merge it. After that the rest of #6 is hasan's (inbox handover): Windows check, dumps, results, recommendation, PR with `Closes #6`.
 
 ## Manual checks
 - 2026-10-25 · pending Windows session · UIA dump of the four targets
@@ -48,7 +48,7 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
     4. Notepad++ shows one empty tab and the Find dialog.
     5. One line per target such as `keepass2: 812 elements in 4.2 s -> …\keepass2.json`, none of them `(truncated)` or `skipped`. Then `Dumped 4 of 4 targets.` and a Markdown table with four rows. If one walk takes minutes, rerun it with `--only <id> --no-patterns` and say so.
     6. Four new files: `handbrake.json`, `keepass2.json`, `keepassxc.json`, `notepadpp.json`.
-  - **Report back**: pass/fail per step; the whole console output of step 5 as an issue comment; the four JSON files (commit them on a new branch `galip/6-uia-dumps` together with Galip, or send them to him); Windows version (`winver`) and display scaling; for a failure, the traceback and a screenshot. If a target is skipped with "no visible window found", check its exe name in Task Manager and dump it as a one-off: `… uia_dump.py dump --id <id> --process <exe> --app "<app>" --technology <tech>`.
+  - **Report back**: pass/fail per step; the whole console output of step 5 as an issue comment; the four JSON files, committed on `hasan/6-uia-dumps` (see the handover in hasan's inbox); Windows version (`winver`) and display scaling; for a failure, the traceback and a screenshot. If a target is skipped with "no visible window found", check its exe name in Task Manager and dump it as a one-off: `… uia_dump.py dump --id <id> --process <exe> --app "<app>" --technology <tech>`.
 
 ## Open issues
 - `ruff` is still not installed on this Mac and `eval/` has no `pyproject.toml`, so the spike is not linted (same as #7). Line length is kept at ~100.
@@ -58,7 +58,8 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - Milestone Week 1 is due 2026-10-26, but the dumps can only come from the weekly Windows session. #21 (D1 decision, week 2) depends on this.
 
 ## Handoff
-- After the session: copy the dumps to `eval/spikes/uia-dumps/`, run `python3 eval/spikes/uia_dump.py stats` and `... stats --by-type`, paste into `uia-dump.md`, check the four expectations, then write Findings and the Recommendation against the five criteria in the note.
+- To hasan (2026-10-25): he finishes and closes #6; his agent may edit `eval/spikes/` and this note's "Manual checks" and "Outcome".
+- After the session: commit the dumps in `eval/spikes/uia-dumps/`, run `python3 eval/spikes/uia_dump.py stats` and `... stats --by-type`, paste into `uia-dump.md`, check the four expectations, then write Findings and the Recommendation against the five criteria in the note.
 - The expectations section in the note is deliberately written before the run; do not rewrite it, mark each one confirmed or refuted.
 
 ## Outcome (fill when the issue closes)

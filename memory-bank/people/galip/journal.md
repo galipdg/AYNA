@@ -15,4 +15,5 @@ Append-only. One entry per session, newest at the bottom:
 - Checked the pywinauto 0.6.9 source: `Desktop.windows()` needs `visible_only=True`; wrapper properties hide COM errors, so the reader uses raw `Current*` properties. Pinned 0.6.9 (1.0.0b1 exists).
 - Removed omer's protect-`main` item from my inbox (Galip's call); wrote the Windows-session request into hasan's inbox. GPU request on hold until the support programs reply.
 - Merged origin/main (#3 CI, #9 trial app). Took hasan's #9 finding: TitleBar controls are left out of the interactive share. Split #6 into PR #119 (tooling, `Refs #6`, ready) and a later dumps PR that closes #6; label `needs-windows-test` added.
-- Next: review + merge #119, then dumps at the Windows session on `galip/6-uia-dumps`.
+- Galip handed the rest of #6 to hasan: he runs the check, his agent fixes the script if needed, writes the results and closes #6 with his own PR.
+- Next: review + merge #119.
