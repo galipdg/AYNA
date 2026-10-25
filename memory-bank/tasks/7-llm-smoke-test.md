@@ -20,7 +20,8 @@
 - [x] `ai/spikes/llm-smoke.md` and `ai/spikes/gpu-request-draft.md`
 - [x] Offline repeat: pass (same steps as online)
 - [ ] Galip sends the GPU request to the advisor
-- Next step: push the branch and open the PR (after the user's OK). The issue closes once the GPU request is sent.
+- [x] PR https://github.com/galipdg/AYNA/pull/115 opened 2026-10-25, marked "do not merge" until the GPU request is sent
+- Next step: send the GPU request, then get a review and merge #115.
 
 ## Manual checks
 - 2026-10-25 19:58 · galip · offline repeat of both models · **pass**: ping failed (no route), qwen3 10/10, gemma4 9/10 schema-valid · evidence: `ai/spikes/results/llm-smoke-20261025-1958.json`, terminal output pasted in the session
