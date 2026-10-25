@@ -1,0 +1,34 @@
+[
+  {
+    "id": "keepass2",
+    "app": "KeePass 2",
+    "technology": "WinForms",
+    "process": "KeePass.exe",
+    "state": "New empty database ayna-demo.kdbx open, Add Entry dialog open on top",
+    "source": "https://keepass.info/download.html (Portable ZIP, needs .NET Framework 4.x)"
+  },
+  {
+    "id": "handbrake",
+    "app": "HandBrake",
+    "technology": "WPF",
+    "process": "HandBrake.exe",
+    "state": "Main window after first start, no source loaded, Summary tab selected",
+    "source": "https://handbrake.fr/downloads.php (Portable ZIP, needs .NET 8 Desktop Runtime)"
+  },
+  {
+    "id": "keepassxc",
+    "app": "KeePassXC",
+    "technology": "Qt Widgets",
+    "process": "KeePassXC.exe",
+    "state": "New empty database ayna-demo.kdbx open, Add Entry form shown in the main window",
+    "source": "https://keepassxc.org/download/ (Portable ZIP)"
+  },
+  {
+    "id": "notepadpp",
+    "app": "Notepad++",
+    "technology": "Win32",
+    "process": "notepad++.exe",
+    "state": "One empty tab, Find dialog (Ctrl+F) open",
+    "source": "https://notepad-plus-plus.org/downloads/ (portable ZIP, x64)"
+  }
+]
