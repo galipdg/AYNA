@@ -22,10 +22,11 @@ Last reviewed: 2026-10-25. Tool versions and exact commands are pinned in each m
 - Packages by feature (`apps`, `repository`, `tests`, `runs`, `healing`), not by layer.
 - Unit tests with JUnit 5; integration tests against a real Neo4j via Testcontainers.
 
-## JavaScript (`client/`)
+## TypeScript (`client/`)
 
-- Electron + React + Vite. `contextIsolation: true`, `nodeIntegration: false`; the renderer talks to main only through a typed preload API.
-- Lint with ESLint, format with Prettier.
+- Electron + React + Vite (electron-vite), TypeScript in `strict` mode, `.ts` / `.tsx` only. Imports keep the `.ts` extension so `node --test` can run the files directly.
+- `contextIsolation: true`, `nodeIntegration: false`; the renderer talks to main only through the typed preload API (`client/src/shared/api.ts`).
+- Lint with ESLint + typescript-eslint, format with Prettier, type-check with `tsc -b` (separate configs for main/preload and renderer, so the renderer sees no Node types).
 
 ## Naming
 

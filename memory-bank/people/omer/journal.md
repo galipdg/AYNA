@@ -22,3 +22,4 @@ Append-only. One entry per session, newest at the bottom:
 - Lint, typecheck, 10 tests, build green locally; packaged app and dev probed over CDP (remote fetch/script/img blocked). CI client job now runs the real steps.
 - Next: manual check, push, PR, close #3 after the green client job.
 - Later: PR #120 opened (also `Closes #3`), CI all green with the real client steps; #4 closed with run 40217766040; `needs-windows-test` + Windows check on #5; `client/AGENTS.md` commands filled.
+- Later: team agreed to TypeScript for the client; switched `client/` to `.ts`/`.tsx` (TS 6.0, typescript-eslint, split tsconfigs), amended the tech-stack ADR and updated AGENTS.md / conventions / architecture. omer's manual `npm run dev` check passed.

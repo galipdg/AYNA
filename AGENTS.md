@@ -6,7 +6,7 @@ You are a coding agent working for **one** member of a three-person team. Three 
 
 AYNA (Akıllı, Yerli, Nesne Tabanlı Arayüz Testi) is a codeless, closed-network UI test automation platform for Windows desktop apps — a licence-free alternative to the core of TestComplete. Senior capstone (Ankara University COM 4061-4062), HAVELSAN SUIT application.
 
-- Stack: Python automation agent (pywinauto) · Electron + React client (JavaScript) · Java Spring Boot server · Neo4j (single database) · Python AI service (local LLM via Ollama / llama.cpp).
+- Stack: Python automation agent (pywinauto) · Electron + React client (TypeScript) · Java Spring Boot server · Neo4j (single database) · Python AI service (local LLM via Ollama / llama.cpp).
 - Product knowledge: `memory-bank/project/` (brief, architecture, conventions, glossary).
 - Decisions already made: `memory-bank/decisions/README.md`.
 - Tasks, status, acceptance criteria: **GitHub Issues** + the "AYNA" GitHub Project. Weeks are milestones.

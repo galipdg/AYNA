@@ -7,7 +7,7 @@ Last reviewed: 2026-10-25. Change via PR; architectural changes need an ADR.
 ```
 Each test machine (Windows)                    Shared, on the closed network
 ┌──────────────────────────────┐   REST/WS    ┌───────────────────────────────┐
-│ Electron client (JS, React)  │◀────────────▶│ Server (Java, Spring Boot)    │
+│ Electron client (TS, React)  │◀────────────▶│ Server (Java, Spring Boot)    │
 │ Spy, editor, NL chat,        │              │ projects, tests, repository,  │
 │ healing approval, reports    │              │ runs, rule book, users        │
 └──────────────┬───────────────┘              └──────┬─────────────┬──────────┘
