@@ -120,6 +120,10 @@ Much of AYNA can only be judged by a person at the Windows machine: the Spy over
 
 Plan the manual check while designing anything the user will see, not after the code is written.
 
+**Weekly Windows session.** Galip works on macOS; Windows-only tests (`@pytest.mark.windows`, UI Automation, pilot apps) run once a week on Hasan's Windows machine with both present.
+- *On a Mac*, when code is ready but needs Windows: post the manual check (shape above) and the exact test commands as a comment on the issue, add the label `needs-windows-test`, and record "pending Windows session" under the task note's "Manual checks". Keep working on what can be verified on macOS.
+- *At the session on Windows*: list the queue with `gh issue list --label needs-windows-test`, check out each issue's branch, run its commands and manual check with the user, and post the result as an issue comment. On pass, remove the label. On failure, keep the label and append the failure (issue, step, log lines, screenshot location) to the issue owner's `inbox.md`, committed on the owner's branch only if the owner agrees, otherwise on a `<you>/inbox-<issue>` branch.
+
 ## 11. Session end and handoff
 
 Hand off when: the issue is done; you switch to another issue; the session has grown long (many files read, a long conversation, context use above ~60% in `/context`) or your answers get less precise; or before a long break.

@@ -14,6 +14,7 @@ To be filled in when the module is scaffolded (build, test, lint, run). Until th
 
 ## Rules
 - Runs only on Windows for real UI tests; mark them `@pytest.mark.windows`.
+- Keep pywinauto behind a small interface (`ayna_agent/uia.py`) so recognition, healing and playback logic can be unit-tested on macOS with fakes; only the thin UIA layer needs Windows.
 - Never hard-code coordinates; always resolve elements through repository properties.
 - No fixed `sleep`; use the smart-wait helper.
 - The RPC server binds to 127.0.0.1 only and requires the session token.
