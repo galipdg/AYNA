@@ -21,9 +21,11 @@ One workflow, `.github/workflows/ci.yml`, on every PR and on push to `main`, fou
 ## Status
 - [x] Workflow + agent/ai scaffolds written
 - [x] Local run: agent and ai `ruff check` / `ruff format --check` / `pytest` green (1 test each, Python 3.11); server `./mvnw -B verify` green (2 tests incl. Testcontainers)
-- [ ] First CI run on the PR: all four jobs green (agent on Windows)
+- [x] PR #118 opened (`Refs #3`), reviewers galip + hasan
+- [x] First run failed in `client`: ` #5` in an unquoted `run:` was a YAML comment (see learnings); fixed with `run: |`
+- [x] Run 40217516786: server (2 tests incl. HealthIntegrationTest), agent (windows-latest), ai green; client green but only the skip notice
 - [ ] Client job real after #5
-- Next step: ask omer to push and open the PR; check the Actions run, then close #4 with the run link.
+- Next step: close #4 with the server job link (needs omer's OK); after #5 lands, confirm the client job runs lint + build, then close #3.
 
 ## Manual checks
 —
