@@ -3,8 +3,8 @@
 Only omer's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-10-25
-- Current issue: #3 (CI pipeline skeleton) — not started; #4 stays open until its integration test is green in CI (#3)
-- Branch: — (create `omer/3-ci-skeleton` from updated `main`)
-- Next step: start #3; first agree with omer how to get trivial agent/ai tests, since `agent/` and `ai/` belong to galip/hasan (ask them via inbox or keep the CI jobs minimal)
-- Open questions: AGENTS.md sync/board rule PR (`omer/agents-sync-and-board`) needs galip + hasan review
+- Current issue: #3 (CI pipeline skeleton) — workflow + agent/ai scaffolds committed, PR open (`Refs #3`)
+- Branch: `omer/3-ci-skeleton`
+- Next step: check the first Actions run on the PR (agent job on windows-latest especially); when `server` is green, close #4 with the run link; #3 stays open until #5 makes the client job real
+- Open questions: galip + hasan review of the `agent/` and `ai/` scaffolds (asked in their inboxes); `eval/` CI job as a follow-up issue?
 - Waiting on: hasan's test PR for #2 (omer merges it)
