@@ -1,0 +1,10 @@
+{"id": 1, "text": "Kullanıcı adı alanına admin yaz, şifre alanına 1234 yaz ve giriş butonuna tıkla.", "expected": ["Type", "Type", "Click"]}
+{"id": 2, "text": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.", "expected": ["Verify"]}
+{"id": 3, "text": "Yeni müşteri butonuna bas, ad alanına Ayşe, soyad alanına Yılmaz gir.", "expected": ["Click", "Type", "Type"]}
+{"id": 4, "text": "Şehir listesinden Ankara'yı seç ve kaydet düğmesine tıkla.", "expected": ["Select", "Click"]}
+{"id": 5, "text": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle.", "expected": ["Wait"]}
+{"id": 6, "text": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla, ardından tabloda Yılmaz'ın listelendiğini kontrol et.", "expected": ["Type", "Click", "Verify"]}
+{"id": 7, "text": "Müşteri tipini Kurumsal olarak seç.", "expected": ["Select"]}
+{"id": 8, "text": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula ve Tamam'a tıkla.", "expected": ["Click", "Verify", "Click"]}
+{"id": 9, "text": "Kullanıcı adına admin, şifreye yanlis123 yaz, girişe tıkla ve hata mesajının 'Hatalı şifre' olduğunu doğrula.", "expected": ["Type", "Type", "Click", "Verify"]}
+{"id": 10, "text": "İptal butonuna tıkla ve ana ekrandaki arama kutusunun boş olduğunu doğrula.", "expected": ["Click", "Verify"]}
