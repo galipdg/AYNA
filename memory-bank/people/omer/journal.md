@@ -14,3 +14,10 @@ Append-only. One entry per session, newest at the bottom:
 - omer chose to write minimal `agent/` + `ai/` packages with one smoke test each; galip + hasan asked to review via inbox. ruff pinned `~=0.17.2`; `ai/spikes/` excluded from ruff.
 - All steps green locally; PR opened as `Refs #3` (client criterion waits for #5).
 - Next: check the CI run, close #4 with the run link.
+
+## 2026-10-25 · #5
+- #3 PR #118 merged. Started #5 on `omer/5-electron-skeleton`, board card → In progress.
+- `client/`: electron-vite + React 19 + electron-builder `--dir`; CSP from `src/main/security.js` (meta tag via Vite plugin), request/navigation/window.open/webview blocking in main, frozen `window.ayna` bridge typed with JSDoc + `tsc` (checkJs).
+- vitest dropped (crashes npm install), `node --test` instead; Electron 45 needs `install-electron` before `electron-vite dev`.
+- Lint, typecheck, 10 tests, build green locally; packaged app and dev probed over CDP (remote fetch/script/img blocked). CI client job now runs the real steps.
+- Next: manual check, push, PR, close #3 after the green client job.

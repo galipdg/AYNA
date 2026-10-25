@@ -3,8 +3,8 @@
 Only omer's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-10-25
-- Current issue: #3 (CI pipeline skeleton) — workflow + agent/ai scaffolds committed, PR open (`Refs #3`)
-- Branch: `omer/3-ci-skeleton`
-- Next step: CI green on PR #118 (run 40217516786); close #4 with the server job link once omer agrees; then #5 (Electron skeleton) makes the client job real and closes #3
-- Open questions: galip + hasan review of the `agent/` and `ai/` scaffolds (asked in their inboxes); `eval/` CI job as a follow-up issue?
-- Waiting on: hasan's test PR for #2 (omer merges it)
+- Current issue: #5 (Electron + React skeleton) — skeleton + real CI client job committed on `omer/5-electron-skeleton`, not pushed yet
+- Branch: `omer/5-electron-skeleton`
+- Next step: omer's manual check (task note); push + PR `Closes #5`; when the CI client job runs lint/typecheck/test/build green, close #3 with the run link
+- Open questions: fill `client/AGENTS.md` "Commands" (needs omer's OK, §7); Windows `npm run build` check → weekly Windows session; #4 still to close with the #3 server job link
+- Waiting on: galip + hasan review of the `agent/` and `ai/` scaffolds (#3); hasan's test PR for #2
