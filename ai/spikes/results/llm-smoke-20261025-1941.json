@@ -1,0 +1,520 @@
+{
+  "started": "2026-10-25T19:41:30+03:00",
+  "note": "online, MacBook on power, no other heavy apps by the agent",
+  "machine": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "python": "3.15.1",
+    "ollama": "0.40.11",
+    "cpu": "Apple M2",
+    "ram_gb": 16
+  },
+  "models": [
+    {
+      "model": "qwen3:8b",
+      "summary": {
+        "n": 10,
+        "json_valid": 10,
+        "schema_valid": 10,
+        "keyword_match": 9,
+        "all_targets_grounded": 10,
+        "gen_tps_median": 15.4,
+        "prompt_tps_median": 1024.2,
+        "wall_s_median": 3.4,
+        "first_load_s": 7.61,
+        "ollama_loaded_size_mb": 4571,
+        "runner_rss_peak_mb": 3640
+      },
+      "responses": [
+        {
+          "id": 1,
+          "text": "Kullanıcı adı alanına admin yaz, şifre alanına 1234 yaz ve giriş butonuna tıkla.",
+          "expected": [
+            "Type",
+            "Type",
+            "Click"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\"}, {\"keyword\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"1234\"}, {\"keyword\": \"Click\", \"target\": \"login.loginButton\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Type",
+            "Type",
+            "Click"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 14.64,
+          "load_s": 7.61,
+          "prompt_tokens": 400,
+          "prompt_tps": 159.2,
+          "gen_tokens": 67,
+          "gen_tps": 14.9
+        },
+        {
+          "id": 2,
+          "text": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.",
+          "expected": [
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Verify\", \"target\": \"main.statusLabel\", \"value\": \"Hoş geldiniz\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 2.21,
+          "load_s": 0.0,
+          "prompt_tokens": 388,
+          "prompt_tps": 1688.1,
+          "gen_tokens": 28,
+          "gen_tps": 14.3
+        },
+        {
+          "id": 3,
+          "text": "Yeni müşteri butonuna bas, ad alanına Ayşe, soyad alanına Yılmaz gir.",
+          "expected": [
+            "Click",
+            "Type",
+            "Type"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Click\", \"target\": \"main.newCustomerButton\", \"value\": \"\"}, {\"keyword\": \"Type\", \"target\": \"customer.nameInput\", \"value\": \"Ayşe\"}, {\"keyword\": \"Type\", \"target\": \"customer.surnameInput\", \"value\": \"Yılmaz\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Click",
+            "Type",
+            "Type"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 4.82,
+          "load_s": 0.0,
+          "prompt_tokens": 393,
+          "prompt_tps": 1008.0,
+          "gen_tokens": 68,
+          "gen_tps": 15.4
+        },
+        {
+          "id": 4,
+          "text": "Şehir listesinden Ankara'yı seç ve kaydet düğmesine tıkla.",
+          "expected": [
+            "Select",
+            "Click"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Select\", \"target\": \"customer.cityCombo\", \"value\": \"Ankara\"}, {\"keyword\": \"Click\", \"target\": \"customer.saveButton\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Select",
+            "Click"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 3.35,
+          "load_s": 0.0,
+          "prompt_tokens": 391,
+          "prompt_tps": 1018.2,
+          "gen_tokens": 46,
+          "gen_tps": 15.6
+        },
+        {
+          "id": 5,
+          "text": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle.",
+          "expected": [
+            "Wait"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Wait\", \"target\": \"main.customerGrid\", \"value\": \"5\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Wait"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 1.91,
+          "load_s": 0.0,
+          "prompt_tokens": 391,
+          "prompt_tps": 1012.1,
+          "gen_tokens": 25,
+          "gen_tps": 16.6
+        },
+        {
+          "id": 6,
+          "text": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla, ardından tabloda Yılmaz'ın listelendiğini kontrol et.",
+          "expected": [
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Type\", \"target\": \"main.searchInput\", \"value\": \"Yılmaz\"}, {\"keyword\": \"Click\", \"target\": \"main.searchButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"main.customerGrid\", \"value\": \"Yılmaz\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 4.82,
+          "load_s": 0.0,
+          "prompt_tokens": 404,
+          "prompt_tps": 1029.3,
+          "gen_tokens": 68,
+          "gen_tps": 15.4
+        },
+        {
+          "id": 7,
+          "text": "Müşteri tipini Kurumsal olarak seç.",
+          "expected": [
+            "Select"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Select\", \"target\": \"customer.typeCombo\", \"value\": \"Kurumsal\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Select"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 1.95,
+          "load_s": 0.0,
+          "prompt_tokens": 382,
+          "prompt_tps": 1724.2,
+          "gen_tokens": 28,
+          "gen_tps": 16.2
+        },
+        {
+          "id": 8,
+          "text": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula ve Tamam'a tıkla.",
+          "expected": [
+            "Click",
+            "Verify",
+            "Click"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Verify\", \"target\": \"dialog.messageLabel\", \"value\": \"Kayıt başarılı\"}, {\"keyword\": \"Click\", \"target\": \"dialog.okButton\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Verify",
+            "Click"
+          ],
+          "keyword_match": false,
+          "ungrounded": [],
+          "wall_s": 3.38,
+          "load_s": 0.0,
+          "prompt_tokens": 400,
+          "prompt_tps": 1020.8,
+          "gen_tokens": 46,
+          "gen_tps": 15.4
+        },
+        {
+          "id": 9,
+          "text": "Kullanıcı adına admin, şifreye yanlis123 yaz, girişe tıkla ve hata mesajının 'Hatalı şifre' olduğunu doğrula.",
+          "expected": [
+            "Type",
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\"}, {\"keyword\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"yanlis123\"}, {\"keyword\": \"Click\", \"target\": \"login.loginButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"login.errorLabel\", \"value\": \"Hatalı şifre\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Type",
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 6.4,
+          "load_s": 0.0,
+          "prompt_tokens": 411,
+          "prompt_tps": 1030.2,
+          "gen_tokens": 93,
+          "gen_tps": 15.5
+        },
+        {
+          "id": 10,
+          "text": "İptal butonuna tıkla ve ana ekrandaki arama kutusunun boş olduğunu doğrula.",
+          "expected": [
+            "Click",
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Click\", \"target\": \"customer.cancelButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"main.searchInput\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Click",
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 3.13,
+          "load_s": 0.0,
+          "prompt_tokens": 397,
+          "prompt_tps": 1027.6,
+          "gen_tokens": 43,
+          "gen_tps": 15.7
+        }
+      ]
+    },
+    {
+      "model": "gemma4:e4b-it-qat",
+      "summary": {
+        "n": 10,
+        "json_valid": 9,
+        "schema_valid": 9,
+        "keyword_match": 9,
+        "all_targets_grounded": 9,
+        "gen_tps_median": 18.2,
+        "prompt_tps_median": 205.6,
+        "wall_s_median": 5.8,
+        "first_load_s": 10.19,
+        "ollama_loaded_size_mb": 2933,
+        "runner_rss_peak_mb": 3915
+      },
+      "responses": [
+        {
+          "id": 1,
+          "text": "Kullanıcı adı alanına admin yaz, şifre alanına 1234 yaz ve giriş butonuna tıkla.",
+          "expected": [
+            "Type",
+            "Type",
+            "Click"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\"}, {\"keyword\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"1234\"}, {\"keyword\": \"Click\", \"target\": \"login.loginButton\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Type",
+            "Type",
+            "Click"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 15.18,
+          "load_s": 10.19,
+          "prompt_tokens": 394,
+          "prompt_tps": 236.4,
+          "gen_tokens": 69,
+          "gen_tps": 21.0
+        },
+        {
+          "id": 2,
+          "text": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.",
+          "expected": [
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Verify\", \"target\": \"main.statusLabel\", \"value\": \"Hoş geldiniz\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 2.54,
+          "load_s": 0.0,
+          "prompt_tokens": 381,
+          "prompt_tps": 300.4,
+          "gen_tokens": 28,
+          "gen_tps": 22.1
+        },
+        {
+          "id": 3,
+          "text": "Yeni müşteri butonuna bas, ad alanına Ayşe, soyad alanına Yılmaz gir.",
+          "expected": [
+            "Click",
+            "Type",
+            "Type"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Click\", \"target\": \"main.newCustomerButton\", \"value\": \"\"}, {\"keyword\": \"Type\", \"target\": \"customer.nameInput\", \"value\": \"Ayşe\"}, {\"keyword\": \"Type\", \"target\": \"customer.surnameInput\", \"value\": \"Yılmaz\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Click",
+            "Type",
+            "Type"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 4.54,
+          "load_s": 0.0,
+          "prompt_tokens": 386,
+          "prompt_tps": 304.8,
+          "gen_tokens": 70,
+          "gen_tps": 21.4
+        },
+        {
+          "id": 4,
+          "text": "Şehir listesinden Ankara'yı seç ve kaydet düğmesine tıkla.",
+          "expected": [
+            "Select",
+            "Click"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Select\", \"target\": \"customer.cityCombo\", \"value\": \"Ankara\"}, {\"keyword\": \"Click\", \"target\": \"customer.saveButton\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Select",
+            "Click"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 3.4,
+          "load_s": 0.0,
+          "prompt_tokens": 384,
+          "prompt_tps": 301.8,
+          "gen_tokens": 46,
+          "gen_tps": 21.7
+        },
+        {
+          "id": 5,
+          "text": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle.",
+          "expected": [
+            "Wait"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Wait\", \"target\": \"main.customerGrid\", \"value\": \"} ]}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>}<tool_call|>",
+          "json_ok": false,
+          "schema_errors": [
+            "invalid JSON: Unterminated string starting at: line 1 column 72 (char 71)"
+          ],
+          "keywords": [],
+          "keyword_match": false,
+          "ungrounded": [],
+          "wall_s": 204.01,
+          "load_s": 0.0,
+          "prompt_tokens": 384,
+          "prompt_tps": 297.7,
+          "gen_tokens": 3712,
+          "gen_tps": 18.3
+        },
+        {
+          "id": 6,
+          "text": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla, ardından tabloda Yılmaz'ın listelendiğini kontrol et.",
+          "expected": [
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Type\", \"target\": \"main.searchInput\", \"value\": \"Yılmaz\"}, {\"keyword\": \"Click\", \"target\": \"main.searchButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"main.customerGrid\", \"value\": \"Yılmaz\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 6.86,
+          "load_s": 0.01,
+          "prompt_tokens": 396,
+          "prompt_tps": 150.8,
+          "gen_tokens": 68,
+          "gen_tps": 16.3
+        },
+        {
+          "id": 7,
+          "text": "Müşteri tipini Kurumsal olarak seç.",
+          "expected": [
+            "Select"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Select\", \"target\": \"customer.typeCombo\", \"value\": \"Kurumsal\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Select"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 3.92,
+          "load_s": 0.0,
+          "prompt_tokens": 376,
+          "prompt_tps": 156.0,
+          "gen_tokens": 27,
+          "gen_tps": 18.1
+        },
+        {
+          "id": 8,
+          "text": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula ve Tamam'a tıkla.",
+          "expected": [
+            "Click",
+            "Verify",
+            "Click"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Click\", \"target\": \"customer.saveButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"dialog.messageLabel\", \"value\": \"Kayıt başarılı\"}, {\"keyword\": \"Click\", \"target\": \"dialog.okButton\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Click",
+            "Verify",
+            "Click"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 6.74,
+          "load_s": 0.0,
+          "prompt_tokens": 396,
+          "prompt_tps": 164.5,
+          "gen_tokens": 68,
+          "gen_tps": 15.7
+        },
+        {
+          "id": 9,
+          "text": "Kullanıcı adına admin, şifreye yanlis123 yaz, girişe tıkla ve hata mesajının 'Hatalı şifre' olduğunu doğrula.",
+          "expected": [
+            "Type",
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\"}, {\"keyword\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"yanlis123\"}, {\"keyword\": \"Click\", \"target\": \"login.loginButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"login.errorLabel\", \"value\": \"Hatalı şifre\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Type",
+            "Type",
+            "Click",
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 7.92,
+          "load_s": 0.0,
+          "prompt_tokens": 404,
+          "prompt_tps": 164.2,
+          "gen_tokens": 97,
+          "gen_tps": 17.8
+        },
+        {
+          "id": 10,
+          "text": "İptal butonuna tıkla ve ana ekrandaki arama kutusunun boş olduğunu doğrula.",
+          "expected": [
+            "Click",
+            "Verify"
+          ],
+          "output": "{\"steps\": [{\"keyword\": \"Click\", \"target\": \"customer.cancelButton\", \"value\": \"\"}, {\"keyword\": \"Verify\", \"target\": \"main.searchInput\", \"value\": \"\"}]}",
+          "json_ok": true,
+          "schema_errors": [],
+          "keywords": [
+            "Click",
+            "Verify"
+          ],
+          "keyword_match": true,
+          "ungrounded": [],
+          "wall_s": 4.77,
+          "load_s": 0.0,
+          "prompt_tokens": 389,
+          "prompt_tps": 174.7,
+          "gen_tokens": 43,
+          "gen_tps": 17.0
+        }
+      ]
+    }
+  ]
+}
