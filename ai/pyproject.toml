@@ -1,0 +1,24 @@
+[project]
+name = "ayna-ai"
+version = "0.0.0"
+description = "AYNA AI service: Turkish natural language to test steps with a local LLM"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff~=0.17.2"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ayna_ai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+# Throwaway spike scripts are not held to the module lint rules.
+extend-exclude = ["spikes"]

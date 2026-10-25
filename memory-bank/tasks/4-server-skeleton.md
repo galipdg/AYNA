@@ -23,7 +23,8 @@
 - [x] `docker compose up -d --build` → `/api/health` 200 `{"status":"UP","db":"UP"}`; `dbms.usage_report.enabled=false` confirmed via `SHOW SETTINGS`
 - [x] `server/AGENTS.md` Commands filled (user OK)
 - [ ] Integration test green in CI — needs #3 (CI skeleton)
-- Next step: ask user to push `omer/4-server-skeleton`; then #3 adds the server job so the last criterion can be checked.
+- [x] PR #114 merged 2026-10-25 (`Refs #4`); board card In progress.
+- Next step: in #3, add the server CI job (`cd server && ./mvnw -B test` on ubuntu-latest, Docker available); when green, close #4 with a link to the run.
 
 ## Manual checks
 - 2026-10-25 · omer's agent · `docker compose up` + `curl localhost:8080/api/health` on omer's Mac · pass · output in session

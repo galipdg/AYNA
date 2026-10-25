@@ -1,0 +1,23 @@
+[project]
+name = "ayna-agent"
+version = "0.0.0"
+description = "AYNA automation agent (pywinauto) and headless CLI runner"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff~=0.17.2"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ayna_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["windows: needs a real Windows desktop with UI Automation"]
+
+[tool.ruff]
+target-version = "py311"
