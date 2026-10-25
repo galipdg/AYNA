@@ -15,9 +15,11 @@ AYNA (Akıllı, Yerli, Nesne Tabanlı Arayüz Testi) is a codeless, closed-netwo
 
 | id | Person | GitHub | Owns (primary) |
 |---|---|---|---|
-| `galip` | Galip Enes Doğan | @galipdg | `ai/`, `agent/ayna_agent/recognition/`, `agent/ayna_agent/heal/`, `eval/nl/` |
-| `omer` | Ömerfaruk Sarıbal | @omerfaruksaribal | `server/`, `client/`, `.github/`, `docker/` |
-| `hasan` | Hasan Berk Yanıkkaya | @HasanBerk18 | `agent/ayna_agent/playback/`, `agent/ayna_cli/`, `eval/` (except `eval/nl/`), `docs/` |
+| `galip` | Galip Enes Doğan | @galipdg | `ai/`, `agent/ayna_agent/heal/`, `agent/ayna_agent/rpc.py`, `eval/nl/`, `docs/rs/`, `docs/report/` |
+| `omer` | Ömerfaruk Sarıbal | @omerfaruksaribal | `server/`, `client/`, `.github/`, `docker/`, `docs/sdd/` (component sections by their owners) |
+| `hasan` | Hasan Berk Yanıkkaya | @HasanBerk18 | `agent/ayna_agent/recognition/`, `agent/ayna_agent/playback/`, `agent/ayna_cli/`, `eval/` (except `eval/nl/`), `docs/` (except `rs/`, `sdd/`, `report/`) |
+
+Work that needs a Windows machine (UI Automation, pilot apps, measurements on them) belongs to hasan; client screens stay with omer, who builds them on macOS and checks them at the weekly Windows session.
 
 Shared by all three: `schemas/` (frozen contracts — changing them needs an ADR and everyone's approval), `memory-bank/project/`, `memory-bank/decisions/`.
 
@@ -121,7 +123,7 @@ Much of AYNA can only be judged by a person at the Windows machine: the Spy over
 
 Plan the manual check while designing anything the user will see, not after the code is written.
 
-**Weekly Windows session.** Galip works on macOS; Windows-only tests (`@pytest.mark.windows`, UI Automation, pilot apps) run once a week on Hasan's Windows machine with both present.
+**Weekly Windows session.** Galip and Ömerfaruk work on macOS; Windows-only tests (`@pytest.mark.windows`, UI Automation, pilot apps) run once a week on Hasan's Windows machine with both present.
 - *On a Mac*, when code is ready but needs Windows: post the manual check (shape above) and the exact test commands as a comment on the issue, add the label `needs-windows-test`, and record "pending Windows session" under the task note's "Manual checks". Keep working on what can be verified on macOS.
 - *At the session on Windows*: list the queue with `gh issue list --label needs-windows-test`, check out each issue's branch, run its commands and manual check with the user, and post the result as an issue comment. On pass, remove the label. On failure, keep the label and append the failure (issue, step, log lines, screenshot location) to the issue owner's `inbox.md`, committed on the owner's branch only if the owner agrees, otherwise on a `<you>/inbox-<issue>` branch.
 
