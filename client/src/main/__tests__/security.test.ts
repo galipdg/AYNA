@@ -5,7 +5,7 @@ import {
   isAllowedNavigation,
   isAllowedRequest,
   secureWebPreferences,
-} from '../security.js'
+} from '../security.ts'
 
 const DEV = 'http://localhost:5173'
 

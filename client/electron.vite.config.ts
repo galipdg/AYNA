@@ -1,13 +1,10 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
-import { contentSecurityPolicy } from './src/main/security.js'
+import type { Plugin } from 'vite'
+import { contentSecurityPolicy } from './src/main/security.ts'
 
-/**
- * Injects the CSP meta tag so the policy has one source: src/main/security.js.
- *
- * @returns {import('vite').Plugin}
- */
-function cspMetaTag() {
+/** Injects the CSP meta tag so the policy has one source: src/main/security.ts. */
+function cspMetaTag(): Plugin {
   let dev = false
   return {
     name: 'ayna-csp-meta',

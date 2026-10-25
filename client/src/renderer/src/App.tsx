@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
-import { ayna } from './ayna.js'
-import { strings } from './strings.js'
-
-/** @typedef {import('../../shared/api.js').AppInfo} AppInfo */
+import type { AppInfo } from '../../shared/api.ts'
+import { strings } from './strings.ts'
 
 export default function App() {
-  const [info, setInfo] = useState(/** @type {AppInfo | null} */ (null))
+  const [info, setInfo] = useState<AppInfo | null>(null)
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    ayna.getAppInfo().then(setInfo, () => setError(true))
+    window.ayna.getAppInfo().then(setInfo, () => setError(true))
   }, [])
 
   return (

@@ -1,8 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC } from '../shared/api.js'
+import { IPC, type AynaApi } from '../shared/api.ts'
 
-/** @type {import('../shared/api.js').AynaApi} */
-const api = {
+const api: AynaApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
 }
 

@@ -1,8 +1,8 @@
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, ipcMain, session } from 'electron'
-import { IPC } from '../shared/api.js'
-import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.js'
+import { IPC, type AppInfo } from '../shared/api.ts'
+import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -26,7 +26,7 @@ app.on('web-contents-created', (_event, contents) => {
 })
 
 function registerIpc() {
-  ipcMain.handle(IPC.getAppInfo, () => ({
+  ipcMain.handle(IPC.getAppInfo, (): AppInfo => ({
     name: app.getName(),
     version: app.getVersion(),
     electron: process.versions.electron,
