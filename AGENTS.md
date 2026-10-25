@@ -27,11 +27,17 @@ Shared by all three: `schemas/` (frozen contracts — changing them needs an ADR
 
 ## 3. Session start (before any work)
 
-1. `git status` and `git fetch`. Never work on `main`; if you are on it, ask which issue to work on and create the branch (§6).
+The user may open a session with just "continue" / "devam" — you work out where things stand yourself.
+
+1. `git status` and `git fetch`.
 2. Read `memory-bank/people/<you>/active.md` and `memory-bank/people/<you>/inbox.md`.
-3. Read the issue: `gh issue view <n>`. Then read `memory-bank/tasks/<n>-*.md` if it exists; create it from `memory-bank/tasks/_template.md` if the task is new.
-4. Skim `memory-bank/decisions/README.md` (the index, not every ADR).
-5. Tell the user in 3–5 lines what you understood, what you will do first, and any open questions. Then start.
+3. Pick the issue:
+   - If the user named one, use it.
+   - Else, if `active.md` names a current issue that is still open (`gh issue view <n>`), **resume it**: check out its branch and continue from the task note's "Next step".
+   - Else, **propose the next one**: `gh issue list --assignee @me --state open --json number,title,milestone,body`. Take the earliest-due milestone first, skip issues whose "Depends on" issues are still open, prefer your own issues over `owner:team` ones.
+4. Read the issue and `memory-bank/tasks/<n>-*.md`; create the note from `memory-bank/tasks/_template.md` if the task is new. Never work on `main`: for a new issue create its branch (§6).
+5. Skim `memory-bank/decisions/README.md` (the index, not every ADR).
+6. Tell the user in 3–5 lines: which issue and why, where it stands, your first step, open questions (including anything waiting in your inbox). When **resuming**, start right away. When **starting a new issue**, wait for the user's OK first.
 
 Do **not** read the whole memory bank up front. Open other files only when the work needs them. Each top-level folder has its own `AGENTS.md` with build/test commands — read it when you work there.
 

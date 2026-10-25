@@ -21,7 +21,7 @@ Team: Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya
 
 1. Copy `CLAUDE.local.md.example` to `CLAUDE.local.md` and set your id (`galip`, `omer` or `hasan`).
 2. Start your agent in the repo root. Claude Code loads `CLAUDE.md`, which imports `AGENTS.md`; Codex, Cursor and others read `AGENTS.md` directly.
-3. Tell it which issue to work on, e.g. `Work on #21.` The agent follows the session-start steps in `AGENTS.md`.
+3. Just say `continue` (or `devam`). The agent reads your `active.md`, resumes the issue you were on, or proposes your next assigned issue. You can also name one: `Work on #22.`
 4. When the agent says it is a good moment for a new session, start one with the prompt it gives you.
 
 Tasks live in GitHub Issues and the **AYNA** project board; weeks are milestones.
