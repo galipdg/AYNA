@@ -34,7 +34,11 @@ reads everything.
 
 - **A week is a milestone.** Weeks start on **Tuesday**, which is also the advisor
   meeting day. Every issue belongs to exactly one week.
-- **Sprints:** TBD — see [Open points](#14-open-points).
+- **A sprint is two consecutive weekly milestones** (weeks 1–2, 3–4, and so on).
+  The weekly milestones stay exactly as they are; a sprint is just the pair,
+  closed with a short review of what shipped and what slipped. Gates do not line
+  up with sprint boundaries — they fall in weeks 3, 7, 9, 12 and 14 — so a gate
+  is reviewed on its own week regardless of where the sprint ends.
 - **Gates** are the checkpoints where we stop adding and verify what exists:
 
 | Gate | What it checks | Week | Issue |
@@ -51,11 +55,15 @@ reads everything.
 
 ## 3. Communication
 
-- **Channel:** TBD — see [Open points](#14-open-points).
-- **Tuesday meeting:** time TBD. Standing agenda: what each of us closed last
-  week, what is blocked and on whom, decisions needed this week, next week's
-  issues. Whoever runs the meeting writes decisions straight into an ADR or the
-  relevant issue — not into chat, where they get lost.
+- **Channel:** a **WhatsApp group** for day-to-day coordination — "I am blocked",
+  "PR ready for review", "can you look at this". Chat is easy to lose, so
+  anything that is a *decision* is written the same day into an ADR or the
+  relevant issue, and the group only points at it.
+- **Tuesday meeting:** the three of us meet **immediately after the advisor
+  meeting**, the same day. Standing agenda: what each of us closed last week,
+  what is blocked and on whom, decisions needed this week, next week's issues.
+  Whoever runs the meeting writes decisions straight into an ADR or the relevant
+  issue — not into chat, where they get lost.
 - **Asynchronous, in order of preference:** the issue itself → the PR → the
   owner's `memory-bank/people/<id>/inbox.md`. Anything that affects a teammate's
   work goes in writing, not only in the meeting.
@@ -64,6 +72,9 @@ reads everything.
 - **Response expectation:** a review request or an inbox item should get an
   answer by the next Tuesday meeting at the latest. If something blocks you, say
   so the same day rather than waiting.
+- **Advisor summary:** hasan writes it and sends it by **email** after the
+  Tuesday meeting. Everyone supplies their own part from that week's
+  `journal.md` entry, so nobody has to summarise somebody else's work.
 
 ## 4. How we use GitHub
 
@@ -218,21 +229,7 @@ hasan's Windows machine with both present**
 - **A gate or deadline is at risk:** raise it at least one week early; cutting
   scope is a team decision, and the earlier it is taken the cheaper it is.
 
-## 14. Open points
-
-These are deliberately unresolved rather than guessed; they are filled in at the
-kick-off meeting and this document is updated in the same PR:
-
-1. **Communication channel** — which tool we use for day-to-day coordination.
-2. **Tuesday meeting time**, and whether the team meeting is separate from the
-   advisor meeting.
-3. **Sprint length** — #8 asks for 2-week sprints while milestones are weekly, so
-   we need to say how the two map (e.g. a sprint = two consecutive weekly
-   milestones, reviewed at the gate in between).
-4. **Advisor summary** — how the weekly or per-sprint summary reaches the advisor
-   and who writes it.
-
-## 15. Changing this agreement
+## 14. Changing this agreement
 
 Open an issue or raise it on Tuesday, then change it in a PR that all three
 approve. If a change also affects how the agents behave, update

@@ -30,16 +30,24 @@ advisor summary is delivered. Asked the user.
 - 2026-10-25 — The agreement links to `AGENTS.md`, `conventions.md` and the PR
   template instead of copying them, except for the Definition of Done, which is
   quoted in full because the issue's acceptance criterion names it explicitly.
+- 2026-10-25 — The user's four answers: WhatsApp group for day-to-day chat; the
+  team meets straight after the Tuesday advisor meeting; **a sprint = two
+  consecutive weekly milestones** (milestones stay weekly, so the 15 existing
+  milestones are untouched and #8's "2-week sprints" is still satisfied); hasan
+  writes the advisor summary by email from everyone's journal entries.
+- 2026-10-25 — Gates (weeks 3, 7, 9, 12, 14) deliberately do **not** align with
+  sprint boundaries, and the document says so instead of pretending they do.
 
 ## Status
 - [x] Branch created from the updated `main`, board status set to In progress
 - [x] `docs/working-agreement.md` written (15 sections, all local links verified)
 - [x] Inbox tidied: omer's #2 request is satisfied by the merged PR #116, so it was
       removed; his #3 notes were answered in his inbox
-- [ ] TBDs filled in from the user's answers (§14 Open points)
+- [x] All four TBDs answered by the user and written into the document; the
+      "Open points" section is gone, so the agreement has no placeholders left
 - [ ] PR opened; all three members approve it
 - [ ] Advisor received the summary (user's action, cannot be done by the agent)
-- Next step: get the four §14 answers from the user, fill them in, then open the PR.
+- Next step: push and open the PR (needs the user's OK), then ask galip and omer to review.
 
 ## Manual checks
 Not applicable — a document, no runtime behaviour.
