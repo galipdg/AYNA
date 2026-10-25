@@ -48,3 +48,4 @@
 - Free disk after the downloads: about 9.6 GB.
 
 ## Outcome (fill when the issue closes)
+- 2026-10-25: delivered in PR https://github.com/galipdg/AYNA/pull/115 (merged by galipdg): `ai/spikes/llm_smoke.py`, inputs, spike schema, `llm-smoke.md` with online and offline runs, `gpu-request-draft.md`. Not done here: lint/tests for `ai/` (#37), bigger models (#71). Whether the GPU request was sent is not recorded.
