@@ -19,7 +19,8 @@ Most of the repo already existed (folders with `AGENTS.md`, `.github/pull_reques
 - [x] PR template: "docs updated" DoD item added (user OK 2026-10-25)
 - [ ] `main` protected: PR + 1 approval, no direct pushes (blocked, see Open issues)
 - [ ] All three members merged one test PR (galip done; omer: this PR; hasan: asked via his inbox 2026-10-25)
-- Next step: push `omer/2-monorepo-setup` and open the PR with `Refs #2` (user OK needed); keep #2 open until protection and hasan's PR are done.
+- [x] PR #113 opened (`Refs #2`), reviewers galip + hasan; they merge it.
+- Next step: wait for #113 merge, galip's `main` protection and hasan's test PR; then close #2.
 
 ## Manual checks
 - 2026-10-25 · omer's agent · `git push origin main` via Claude Code · blocked by `.claude/hooks/guard.sh` · pass (local hook only, not GitHub protection)
