@@ -18,12 +18,12 @@
 - [x] Branch, task note, Ollama, both models pulled
 - [x] Script, inputs, schema; run 2026-10-25 19:41 → qwen3 10/10, gemma4 9/10 schema-valid
 - [x] `ai/spikes/llm-smoke.md` and `ai/spikes/gpu-request-draft.md`
-- [ ] Offline repeat (manual check below)
+- [x] Offline repeat: pass (same steps as online)
 - [ ] Galip sends the GPU request to the advisor
-- Next step: once the offline run is reported, commit its results JSON, tick the criteria and open the PR.
+- Next step: push the branch and open the PR (after the user's OK). The issue closes once the GPU request is sent.
 
 ## Manual checks
-- 2026-10-25 · galip · offline repeat of both models · pending
+- 2026-10-25 19:58 · galip · offline repeat of both models · **pass**: ping failed (no route), qwen3 10/10, gemma4 9/10 schema-valid · evidence: `ai/spikes/results/llm-smoke-20261025-1958.json`, terminal output pasted in the session
   - **Setup**: Terminal in the repo, on branch `galip/7-llm-smoke-test`. If `curl -s 127.0.0.1:11434/api/version` prints nothing, start `OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0 OLLAMA_MAX_LOADED_MODELS=1 ollama serve` in a second tab.
   - **Steps**:
     1. Turn off Wi-Fi and unplug any cable.

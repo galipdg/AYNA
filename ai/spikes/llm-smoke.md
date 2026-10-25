@@ -2,7 +2,7 @@
 
 Spike, 2026-10-25, galip. Question: can a 7-8B open-weight model on a team laptop turn Turkish test instructions into schema-valid JSON steps, and how fast and how big is it?
 
-**Answer: yes.** Both models produced schema-valid JSON for at least 9 of 10 sentences (criterion: 8 of 10). They generated about 15–20 tokens/s and needed about 3–4.5 GB of memory on a 16 GB MacBook. One sentence took about 2–7 s once the model was loaded. The offline repeat is still pending (see *Offline run*).
+**Answer: yes.** Both models produced schema-valid JSON for at least 9 of 10 sentences (criterion: 8 of 10), and they did so again with Wi-Fi off. They generated about 15–20 tokens/s and needed about 3–5 GB of memory on a 16 GB MacBook. One sentence took about 2–7 s once the model was loaded.
 
 ## Setup
 
@@ -14,7 +14,7 @@ Spike, 2026-10-25, galip. Question: can a 7-8B open-weight model on a team lapto
 | Inputs | 10 Turkish sentences, 1–4 steps each, 25 steps in total: [`llm-smoke-inputs.jsonl`](llm-smoke-inputs.jsonl) |
 | Grounding | The system prompt lists 17 object names of a fake customer-records app with Turkish descriptions. The schema does **not** restrict `target` to them. |
 | Script | [`llm_smoke.py`](llm_smoke.py) (stdlib only, refuses non-loopback hosts) |
-| Raw results | [`results/llm-smoke-20261025-1941.json`](results/llm-smoke-20261025-1941.json) |
+| Raw results | [`results/llm-smoke-20261025-1941.json`](results/llm-smoke-20261025-1941.json) (online), [`results/llm-smoke-20261025-1958.json`](results/llm-smoke-20261025-1958.json) (Wi-Fi off) |
 
 | Model tag | Params | Quant | On disk | Licence |
 |---|---|---|---|---|
@@ -24,6 +24,8 @@ Spike, 2026-10-25, galip. Question: can a 7-8B open-weight model on a team lapto
 The two models are from different families and both are recent. `qwen3.5:9b` (6.6 GB) was left out because of free disk space (18 GB before the downloads).
 
 ## Results
+
+From the online run at 19:41. The Wi-Fi-off run is compared under *Offline run*.
 
 | | qwen3:8b | gemma4:e4b-it-qat |
 |---|---|---|
@@ -58,7 +60,18 @@ Both models meet the acceptance criterion (at least 8 of 10 valid under the sche
 
 ## Offline run
 
-Not done yet: this agent session needs the network. The manual check and its result go into `memory-bank/tasks/7-llm-smoke-test.md` under *Manual checks*. The script only talks to `127.0.0.1:11434` and Ollama runs `llama-server --offline`, so nothing at run time should need the internet.
+Galip repeated the run on 2026-10-25 at 19:58 with Wi-Fi off. `ping 1.1.1.1` failed with "No route to host". The Ollama server and the settings were the same as in the online run.
+
+| | qwen3:8b | gemma4:e4b-it-qat |
+|---|---|---|
+| Schema-valid | **10/10** | **9/10** |
+| Keyword sequence as expected | 9/10 | 9/10 |
+| Generation, tokens/s (median) | 16.2 | 18.8 |
+| Time per sentence (median) | 3.3 s | 5.3 s |
+| First load | 5.9 s | 7.6 s |
+| Memory, Ollama-reported / RSS peak | 4.9 / 5.0 GB | 2.9 / 4.0 GB |
+
+The steps were the same as in the online run: the same miss (qwen3 #8) and the same runaway (gemma4 #5, 3712 tokens again). With temperature 0 and a fixed seed the outputs are reproducible, which is useful for evaluation. Memory varied between the runs (qwen3: 4.5 vs 4.9 GB reported), so plan with about 5 GB per 8B model.
 
 ## Next
 
