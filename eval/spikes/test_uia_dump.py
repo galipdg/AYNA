@@ -210,6 +210,18 @@ class RichnessTest(unittest.TestCase):
         self.assertEqual(r["name"], 4)
         self.assertEqual(r["either"], 7)
 
+    def test_window_frame_controls_are_not_interactive(self):
+        r = uia_dump.richness(dump_doc([
+            element(0, None, "Window", "MainForm", "Main"),
+            element(1, 0, "TitleBar"),
+            element(2, 1, "MenuBar", "", "System Menu Bar"),
+            element(3, 2, "MenuItem", "", "System"),
+            element(4, 1, "Button", "", "Close"),
+            element(5, 0, "Button", "okButton", "OK"),
+        ]))
+        self.assertEqual((r["elements"], r["frame"], r["interactive"]), (6, 4, 1))
+        self.assertEqual(r["automation_id"], 1)
+
     def test_by_type_counts_every_element(self):
         by_type = uia_dump.richness(self.doc)["by_type"]
         self.assertEqual(by_type["Button"], {"count": 3, "automation_id": 2, "name": 2})

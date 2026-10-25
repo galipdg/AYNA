@@ -275,16 +275,27 @@ def has_text(value: Any) -> bool:
 
 
 def richness(doc: dict) -> dict:
-    """Counts over all elements of a dump and over its interactive ones."""
+    """Counts over all elements of a dump and over its interactive ones.
+
+    Elements inside a TitleBar (system menu, minimise/maximise/close) belong to the Windows
+    frame, not the app, and never have an AutomationId (#9), so they are not interactive here.
+    """
     elements = doc["elements"]
     root: dict[int, int] = {}
+    frame: set[int] = set()
     for e in elements:  # pre-order: a parent always comes before its children
-        root[e["id"]] = e["id"] if e["parent"] is None else root[e["parent"]]
+        parent = e["parent"]
+        root[e["id"]] = e["id"] if parent is None else root[parent]
+        if e.get("control_type") == "TitleBar" or parent in frame:
+            frame.add(e["id"])
     ids_per_window = Counter(
         (root[e["id"]], e["automation_id"].strip())
         for e in elements if has_text(e.get("automation_id"))
     )
-    interactive = [e for e in elements if e.get("control_type") in INTERACTIVE_TYPES]
+    interactive = [
+        e for e in elements
+        if e.get("control_type") in INTERACTIVE_TYPES and e["id"] not in frame
+    ]
     with_id = [e for e in interactive if has_text(e.get("automation_id"))]
     by_type: dict[str, Counter] = {}
     for e in elements:
@@ -294,6 +305,7 @@ def richness(doc: dict) -> dict:
         row["name"] += has_text(e.get("name"))
     return {
         "elements": len(elements),
+        "frame": len(frame),
         "interactive": len(interactive),
         "automation_id": len(with_id),
         "automation_id_generated": sum(
@@ -335,8 +347,8 @@ def stats_table(docs: list[dict]) -> str:
         )
     lines += [
         "",
-        "Interactive = control types " + ", ".join(sorted(INTERACTIVE_TYPES)) + ". "
-        "AutomationId and Name count when non-blank. *… generated* (numeric or GUID) and "
+        "Interactive = control types " + ", ".join(sorted(INTERACTIVE_TYPES)) + ", "
+        "outside the window frame (TitleBar). AutomationId and Name count when non-blank. *… generated* (numeric or GUID) and "
         "*… unique in window* are shares of the interactive elements that have an AutomationId.",
     ]
     return "\n".join(lines)
