@@ -25,11 +25,13 @@
 - [x] Packaged app and `npm run dev` probed over CDP: React renders app info through `window.ayna`, `require` / `process` undefined, `window.ayna` frozen, remote fetch / script / image blocked by CSP, `window.open` null, navigation to a remote URL blocked
 - [ ] Human look at the window (manual check below)
 - [ ] Windows: `npm run build` → `release/win-unpacked/AYNA.exe`
-- Next step: omer runs the manual check; then push, open PR (`Closes #5`), confirm the CI client job runs the real steps, and close #3.
+- [x] PR #120 opened (`Closes #5`, `Closes #3`); CI run 40218983862 all four jobs green, client job ran the real steps
+- [x] `client/AGENTS.md` Commands filled (omer OK)
+- Next step: omer's manual check on macOS; Windows check at the weekly session (`needs-windows-test`, check posted on #5); then review + merge by a human.
 
 ## Manual checks
 - Pending · omer (macOS): `cd client && npm ci && npm run dev` → an "AYNA" window opens with the Runtime card (App / Electron / Chromium / Node / Platform). Close it, `npm run build`, open `release/mac-arm64/AYNA.app` → same window.
-- Pending Windows session: `cd client && npm ci && npm run build`, start `release\win-unpacked\AYNA.exe` → same window, Platform `win32`.
+- Pending Windows session (label `needs-windows-test`, check posted as a comment on #5): `cd client && npm ci && npm run build`, start `release\win-unpacked\AYNA.exe` → same window, Platform `win32`.
 
 ## Open issues
 - The renderer will need to reach the central server; the current CSP (`connect-src 'self'`) and request allow-list block it. Decide in the server-connection issue whether calls go through main (preferred, keeps the CSP closed) or the server origin is added from config.

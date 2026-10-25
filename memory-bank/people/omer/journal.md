@@ -21,3 +21,4 @@ Append-only. One entry per session, newest at the bottom:
 - vitest dropped (crashes npm install), `node --test` instead; Electron 45 needs `install-electron` before `electron-vite dev`.
 - Lint, typecheck, 10 tests, build green locally; packaged app and dev probed over CDP (remote fetch/script/img blocked). CI client job now runs the real steps.
 - Next: manual check, push, PR, close #3 after the green client job.
+- Later: PR #120 opened (also `Closes #3`), CI all green with the real client steps; #4 closed with run 40217766040; `needs-windows-test` + Windows check on #5; `client/AGENTS.md` commands filled.

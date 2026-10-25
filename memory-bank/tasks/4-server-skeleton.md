@@ -22,7 +22,7 @@
 - [x] `./mvnw test` locally: 2/2 pass incl. Testcontainers integration test (2026-10-25)
 - [x] `docker compose up -d --build` → `/api/health` 200 `{"status":"UP","db":"UP"}`; `dbms.usage_report.enabled=false` confirmed via `SHOW SETTINGS`
 - [x] `server/AGENTS.md` Commands filled (user OK)
-- [ ] Integration test green in CI — needs #3 (CI skeleton)
+- [x] Integration test green in CI — server job on `main`, run 40217766040 (2026-10-25)
 - [x] PR #114 merged 2026-10-25 (`Refs #4`); board card In progress.
 - Next step: in #3, add the server CI job (`cd server && ./mvnw -B test` on ubuntu-latest, Docker available); when green, close #4 with a link to the run.
 
@@ -36,3 +36,4 @@
 ## Handoff
 
 ## Outcome (fill when the issue closes)
+- 2026-10-25 — closed. Delivered in PR #114 (skeleton, health endpoint, compose, Testcontainers test) + the server CI job from #3 (PR #118). All four criteria met; CI evidence: https://github.com/galipdg/AYNA/actions/runs/40217766040
