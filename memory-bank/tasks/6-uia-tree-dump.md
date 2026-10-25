@@ -19,6 +19,7 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - [x] Branch, task note
 - [x] Script, targets file, 23 unit tests passing on macOS (Python 3.11 and 3.15); pywinauto API names checked against the 0.6.9 source on GitHub
 - [x] Note skeleton: method, candidates, expectations written before the run, selection criteria, run instructions
+- [x] Draft PR https://github.com/galipdg/AYNA/pull/119 opened 2026-10-25 (`Closes #6`; mark ready after the dumps)
 - [ ] Windows session: dumps of at least 3 apps (pending)
 - [ ] Fill Results, Findings and Recommendation in `eval/spikes/uia-dump.md` from `uia_dump.py stats`
 - Next step: weekly Windows session with hasan (request in his inbox) → dumps; then fill the note and mark the PR ready. Issue comment + `needs-windows-test` label not posted yet (Galip chose the inbox route).
