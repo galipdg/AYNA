@@ -3,8 +3,9 @@ import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, ipcMain, session } from 'electron'
 import { IPC, type AppInfo } from '../shared/api.ts'
 import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.ts'
+import { createApplication, listApplications } from './apps.ts'
 import { checkServer } from './server.ts'
-import { loadSettings, saveSettings, SETTINGS_FILE } from './settings.ts'
+import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -46,9 +47,21 @@ function registerIpc() {
     const result = await checkServer(String(url))
     if (result.ok) {
       const settings = await loadSettings(settingsFile)
-      await saveSettings(settingsFile, { ...settings, serverUrl: result.url })
+      await saveSettings(settingsFile, withServer(settings, result.url))
     }
     return result
+  })
+  ipcMain.handle(IPC.listApplications, async () => {
+    const { serverUrl } = await loadSettings(settingsFile)
+    return listApplications(serverUrl)
+  })
+  ipcMain.handle(IPC.createApplication, async (_event, name: unknown, technology: unknown) => {
+    const { serverUrl } = await loadSettings(settingsFile)
+    return createApplication(serverUrl, String(name), String(technology))
+  })
+  ipcMain.handle(IPC.chooseApplication, async (_event, id: unknown) => {
+    const settings = await loadSettings(settingsFile)
+    await saveSettings(settingsFile, { ...settings, applicationId: String(id) })
   })
 }
 

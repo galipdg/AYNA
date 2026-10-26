@@ -1,17 +1,30 @@
 import { useEffect, useState } from 'react'
-import type { AppInfo, ConnectionError } from '../../shared/api.ts'
+import type { AppInfo, Application, ConnectionError } from '../../shared/api.ts'
+import AppPicker from './AppPicker.tsx'
 import ServerSettings from './ServerSettings.tsx'
 import { strings } from './strings.ts'
 
-type Connection =
+type View =
   | { phase: 'loading'; url?: string }
-  | { phase: 'settings'; url: string; failure?: ConnectionError; previous?: string }
-  | { phase: 'connected'; url: string }
+  | { phase: 'settings'; url: string; failure?: ConnectionError; previous?: View }
+  | { phase: 'picker'; url: string; selectedId?: string; missing?: boolean; previous?: View }
+  | { phase: 'ready'; url: string; app: Application }
+
+/** After connecting: the saved application if the server still has it, otherwise the picker. */
+async function viewForServer(url: string): Promise<View> {
+  const { applicationId } = await window.ayna.getSettings()
+  if (!applicationId) return { phase: 'picker', url }
+  const result = await window.ayna.listApplications()
+  // A failed list is shown (with a retry) by the picker itself.
+  if (!result.ok) return { phase: 'picker', url, selectedId: applicationId }
+  const app = result.apps.find((candidate) => candidate.id === applicationId)
+  return app ? { phase: 'ready', url, app } : { phase: 'picker', url, missing: true }
+}
 
 export default function App() {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [error, setError] = useState(false)
-  const [connection, setConnection] = useState<Connection>({ phase: 'loading' })
+  const [view, setView] = useState<View>({ phase: 'loading' })
 
   useEffect(() => {
     window.ayna.getAppInfo().then(setInfo, () => setError(true))
@@ -23,15 +36,13 @@ export default function App() {
     async function start() {
       const { serverUrl } = await window.ayna.getSettings()
       if (cancelled) return
-      if (!serverUrl) return setConnection({ phase: 'settings', url: '' })
-      setConnection({ phase: 'loading', url: serverUrl })
+      if (!serverUrl) return setView({ phase: 'settings', url: '' })
+      setView({ phase: 'loading', url: serverUrl })
       const result = await window.ayna.checkServer(serverUrl)
       if (cancelled) return
-      setConnection(
-        result.ok
-          ? { phase: 'connected', url: result.url }
-          : { phase: 'settings', url: serverUrl, failure: result },
-      )
+      if (!result.ok) return setView({ phase: 'settings', url: serverUrl, failure: result })
+      const next = await viewForServer(result.url)
+      if (!cancelled) setView(next)
     }
     start().catch(() => !cancelled && setError(true))
     return () => {
@@ -39,36 +50,56 @@ export default function App() {
     }
   }, [])
 
-  const previous = connection.phase === 'settings' ? connection.previous : undefined
+  function connected(url: string) {
+    setView({ phase: 'loading', url })
+    viewForServer(url).then(setView, () => setError(true))
+  }
 
   return (
     <main className="app">
       <h1>{strings.appName}</h1>
       <p className="tagline">{strings.tagline}</p>
 
-      {connection.phase === 'loading' && !error && (
-        <p>{connection.url ? strings.checkingSaved(connection.url) : strings.loading}</p>
+      {view.phase === 'loading' && !error && (
+        <p>{view.url ? strings.checkingSaved(view.url) : strings.loading}</p>
       )}
-      {connection.phase === 'settings' && (
+      {view.phase === 'settings' && (
         <ServerSettings
-          initialUrl={connection.url}
-          initialFailure={connection.failure}
-          onConnected={(url) => setConnection({ phase: 'connected', url })}
-          onCancel={
-            previous ? () => setConnection({ phase: 'connected', url: previous }) : undefined
-          }
+          initialUrl={view.url}
+          initialFailure={view.failure}
+          onConnected={connected}
+          onCancel={view.previous ? () => setView(view.previous!) : undefined}
         />
       )}
-      {connection.phase === 'connected' && (
+      {(view.phase === 'picker' || view.phase === 'ready') && (
         <section className="card connected">
-          <p className="ok">{strings.connectedTo(connection.url)}</p>
+          <p className="ok">{strings.connectedTo(view.url)}</p>
+          <button
+            type="button"
+            onClick={() => setView({ phase: 'settings', url: view.url, previous: view })}
+          >
+            {strings.changeServer}
+          </button>
+        </section>
+      )}
+      {view.phase === 'picker' && (
+        <AppPicker
+          selectedId={view.selectedId}
+          missing={view.missing}
+          onChosen={(app) => setView({ phase: 'ready', url: view.url, app })}
+          onCancel={view.previous ? () => setView(view.previous!) : undefined}
+        />
+      )}
+      {view.phase === 'ready' && (
+        <section className="card connected">
+          <p>{strings.testingApp(view.app.name, view.app.technology)}</p>
           <button
             type="button"
             onClick={() =>
-              setConnection({ phase: 'settings', url: connection.url, previous: connection.url })
+              setView({ phase: 'picker', url: view.url, selectedId: view.app.id, previous: view })
             }
           >
-            {strings.changeServer}
+            {strings.changeApplication}
           </button>
         </section>
       )}
