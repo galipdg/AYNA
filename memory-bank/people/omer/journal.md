@@ -29,3 +29,10 @@ Append-only. One entry per session, newest at the bottom:
 - Started #14 on `omer/14-graph-schema`, board → In progress. Added neo4j-migrations starter 4.2.0 (omer OK; built for Boot 4.1), `V0001__graph_schema_v0.cypher` (11 unique `id` constraints + 5 indexes), `GraphSchemaMigrationIntegrationTest`, `docs/graph-model.md`, ADR `2026-10-25-graph-schema-migrations.md`.
 - `./mvnw test` green (5); compose run: migration applied on start, skipped on restart, all 14 sample queries pass EXPLAIN.
 - Next: push + PR `Closes #14` after omer's OK.
+
+## 2026-10-26 · #18
+- PR #124 merged → #14 closed and Done. Inbox: #18 and #48 now mine (ADR windows-work-to-hasan).
+- Picked #18 (Week 2, no deps; #15/#17 blocked). Branch `omer/18-tool-matrix`, board → In progress.
+- Wrote `docs/tool-matrix.md`: 15 rows (user-approved) × 7 tools + AYNA (target); every cell sourced. Link check: all 200 except Ranorex Zendesk (403 to bots), verified via its public API.
+- Correction while checking: TestComplete persists a healed locator only if the user accepts it; takeaway reworded.
+- Next: PR `Closes #18`, then #32.
