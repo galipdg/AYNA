@@ -3,6 +3,8 @@ import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, ipcMain, session } from 'electron'
 import { IPC, type AppInfo } from '../shared/api.ts'
 import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.ts'
+import { checkServer } from './server.ts'
+import { loadSettings, saveSettings, SETTINGS_FILE } from './settings.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -26,6 +28,8 @@ app.on('web-contents-created', (_event, contents) => {
 })
 
 function registerIpc() {
+  const settingsFile = join(app.getPath('userData'), SETTINGS_FILE)
+
   ipcMain.handle(IPC.getAppInfo, (): AppInfo => ({
     name: app.getName(),
     version: app.getVersion(),
@@ -34,6 +38,18 @@ function registerIpc() {
     node: process.versions.node,
     platform: process.platform,
   }))
+  ipcMain.handle(IPC.getSettings, () => loadSettings(settingsFile))
+  // The check runs here, not in the renderer: the renderer's CSP allows no remote
+  // connections, and Node's fetch is not subject to the session's request filter.
+  ipcMain.handle(IPC.checkServer, (_event, url: unknown) => checkServer(String(url)))
+  ipcMain.handle(IPC.connectServer, async (_event, url: unknown) => {
+    const result = await checkServer(String(url))
+    if (result.ok) {
+      const settings = await loadSettings(settingsFile)
+      await saveSettings(settingsFile, { ...settings, serverUrl: result.url })
+    }
+    return result
+  })
 }
 
 function createMainWindow() {
