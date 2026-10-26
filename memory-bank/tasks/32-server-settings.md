@@ -26,13 +26,13 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - [x] URL setting + connection check, unit tests (`server.test.ts`, `settings.test.ts`), checked against the real backend (`docker compose up`): ok, not-ayna (Neo4j browser on :7474), unreachable (closed port, unknown host), invalid-url, db-down (Neo4j stopped)
 - [x] manual UI check on macOS (below)
 - [x] application picker + create, `applicationId` in `Settings`; lint, typecheck, 33 unit tests, build green; `apps.ts` checked against the real #128 server (`docker compose` from a worktree of `omer/128-apps-api`): empty list, create, duplicate, blank, sorted, not-ayna (:7474)
-- [ ] manual UI check of the picker on macOS (pending, omer)
-- Next step: omer runs the picker manual check (needs #128's server); on pass, mark PR #127 ready (`Closes #32`) once #129 is merged.
+- [x] manual UI check of the picker on macOS (below)
+- Next step: once #129 (#128) is merged, merge `origin/main` into this branch, rerun client checks, and mark PR #127 ready with `Closes #32`.
 
 ## Manual checks
 - 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session
 
-- pending · omer · application picker on macOS (empty server, create, duplicate, restart remembers, change application, change server clears choice)
+- 2026-10-26 · omer · application picker on macOS against #128's server (`npm run dev`, 8 steps: empty server, create + choose, change application, duplicate name, sorted list, restart remembers, reconnect same server keeps choice, deleted app shows notice) · pass · evidence: omer's report in session
 
 ## Open issues
 - While Neo4j is shutting down, `/api/health` can take > 5 s (`Driver.verifyConnectivity` has no bound), so the client shows "timeout" instead of "db-down". Once Neo4j is fully stopped it answers 503 in ~50 ms. Possible server fix: bound the health check (driver connection timeout). Not in #32's scope.
