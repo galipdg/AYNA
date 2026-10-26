@@ -27,7 +27,8 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - [x] manual UI check on macOS (below)
 - [x] application picker + create, `applicationId` in `Settings`; lint, typecheck, 33 unit tests, build green; `apps.ts` checked against the real #128 server (`docker compose` from a worktree of `omer/128-apps-api`): empty list, create, duplicate, blank, sorted, not-ayna (:7474)
 - [x] manual UI check of the picker on macOS (below)
-- Next step: once #129 (#128) is merged, merge `origin/main` into this branch, rerun client checks, and mark PR #127 ready with `Closes #32`.
+- [x] 2026-10-26: #129 merged; `origin/main` merged in, client lint, typecheck, 33 tests, format, build green again
+- Next step: push the merge, mark PR #127 ready, wait for review; Windows run at the weekly session.
 
 ## Manual checks
 - 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session
@@ -42,3 +43,4 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - The renderer has no component tests; all logic worth testing lives in `src/main/` (plain `node --test`).
 
 ## Outcome (fill when the issue closes)
+- 2026-10-26: both acceptance criteria met on macOS (manual checks above); PR #127 ready for review. Windows not run yet (no OS-specific code).
