@@ -18,8 +18,8 @@ One Markdown file, `docs/tool-matrix.md`: 15 feature rows × the 7 tools in the 
 - [x] Branch, task note, board In progress
 - [x] Feature rows agreed with the user
 - [x] Cells filled with sources; links checked (all remote links 200; support.ranorex.com blocks curl with 403, so those articles were checked through its public Zendesk API `/api/v2/help_center/en-us/articles/<id>.json`)
-- [ ] PR
-- Next step: ask the user to push and open the PR (`Closes #18`).
+- [x] PR #125 opened (`Closes #18`)
+- Next step: wait for review + merge of #125; then #18 → Done.
 
 ## Manual checks
 - none planned (documentation only)
@@ -32,3 +32,4 @@ One Markdown file, `docs/tool-matrix.md`: 15 feature rows × the 7 tools in the 
 - Commercial prices are not published by any of the three vendors; the matrix cites the vendors' quote pages instead of third-party price figures.
 
 ## Outcome (fill when the issue closes)
+- PR #125: `docs/tool-matrix.md`, 15 features × 7 tools + AYNA column, all cells sourced. Not done: no "tested by us" cells (needs Windows + licences).
