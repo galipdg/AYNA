@@ -2,10 +2,10 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-10-25
-- Current issue: #14 (Neo4j graph schema v0 + migrations): migration, test, `docs/graph-model.md`, ADR done and verified locally + in `docker compose`
-- Branch: `omer/14-graph-schema`
-- Next step: PR #124 open, CI green; waiting for review + merge. Then next issue (#32 likely)
-- Open questions: hasan's view on `docs/graph-model.md` living in `docs/` (FYI in his inbox)
+- Last update: 2026-10-26
+- Current issue: #18 (tool comparison matrix): `docs/tool-matrix.md` done, links checked
+- Branch: `omer/18-tool-matrix`
+- Next step: PR for #18 open; wait for review + merge, then #18 → Done and pick the next issue (#32 likely; #15 waits on hasan's #12, #17 on galip's #16)
+- Open questions: the project's own licence is undecided (noted in `tasks/18-tool-matrix.md`); worth raising with the team before the RS
 - Waiting on: hasan for the `eval/` part of #122 before omer adds the CI job
-- Next issues after #14: #15 (needs hasan's #12), #17 (needs galip's #16), #32 (server connection settings, deps done)
+- Network: SSH to github.com times out here; push/fetch over HTTPS with `gh auth git-credential` (see `learnings.md`)
