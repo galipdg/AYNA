@@ -20,12 +20,12 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 
 ## Status
 - [x] URL setting + connection check, unit tests (`server.test.ts`, `settings.test.ts`), checked against the real backend (`docker compose up`): ok, not-ayna (Neo4j browser on :7474), unreachable (closed port, unknown host), invalid-url, db-down (Neo4j stopped)
-- [ ] manual UI check on macOS (below)
+- [x] manual UI check on macOS (below)
 - [ ] application picker (blocked by #15), remembered between restarts
-- Next step: omer runs the manual UI check; then wait for #15's applications API and add the picker (store `applicationId` in `Settings`).
+- Next step: push + draft PR (`Refs #32`) when omer agrees; then wait for #15's applications API and add the picker (store `applicationId` in `Settings`).
 
 ## Manual checks
-- 2026-10-26 · omer · server settings screen (`npm run dev`) · pending
+- 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session
 
 ## Open issues
 - While Neo4j is shutting down, `/api/health` can take > 5 s (`Driver.verifyConnectivity` has no bound), so the client shows "timeout" instead of "db-down". Once Neo4j is fully stopped it answers 503 in ~50 ms. Possible server fix: bound the health check (driver connection timeout). Not in #32's scope.
