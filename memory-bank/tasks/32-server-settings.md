@@ -28,12 +28,15 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - [x] application picker + create, `applicationId` in `Settings`; lint, typecheck, 33 unit tests, build green; `apps.ts` checked against the real #128 server (`docker compose` from a worktree of `omer/128-apps-api`): empty list, create, duplicate, blank, sorted, not-ayna (:7474)
 - [x] manual UI check of the picker on macOS (below)
 - [x] 2026-10-26: #129 merged; `origin/main` merged in, client lint, typecheck, 33 tests, format, build green again
-- Next step: push the merge, mark PR #127 ready, wait for review; Windows run at the weekly session.
+- [x] 2026-10-26: merge pushed, PR #127 ready for review; Windows check posted on #32 (label `needs-windows-test`)
+- Next step: wait for review of #127 and the weekly Windows session.
 
 ## Manual checks
 - 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session
 
 - 2026-10-26 · omer · application picker on macOS against #128's server (`npm run dev`, 8 steps: empty server, create + choose, change application, duplicate name, sorted list, restart remembers, reconnect same server keeps choice, deleted app shows notice) · pass · evidence: omer's report in session
+
+- Windows (9 steps, issue comment https://github.com/galipdg/AYNA/issues/32#issuecomment-6426014115) · pending Windows session
 
 ## Open issues
 - While Neo4j is shutting down, `/api/health` can take > 5 s (`Driver.verifyConnectivity` has no bound), so the client shows "timeout" instead of "db-down". Once Neo4j is fully stopped it answers 503 in ~50 ms. Possible server fix: bound the health check (driver connection timeout). Not in #32's scope.
