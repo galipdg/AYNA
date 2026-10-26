@@ -16,8 +16,8 @@ Package `server/src/main/java/com/ayna/server/apps/`: `AppController` (REST, inp
 
 ## Status
 - [x] four endpoints + integration test (7 cases); `./mvnw -B verify` green on 2026-10-26
-- [ ] push + PR (ask the user first)
-- Next step: push `omer/128-apps-api` and open the PR (`Closes #128`); then build #32's application picker on `GET /api/apps` on `omer/32-server-settings`
+- [x] pushed; PR #129 open (`Closes #128`) on 2026-10-26
+- Next step: wait for #129 CI + review; meanwhile build #32's application picker on `GET /api/apps` on `omer/32-server-settings`
 
 ## Manual checks
 - None needed: everything is covered by `AppIntegrationTest`.
