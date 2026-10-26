@@ -1,9 +1,9 @@
 # agent/ — Python automation agent and CLI runner
 
-Owner: galip (recognition/, heal/) · hasan (playback/, ayna_cli/). Read `/AGENTS.md` first; this file adds only what is specific to `agent/`.
+Owner: hasan (recognition/, playback/, ayna_cli/) · galip (heal/, rpc.py). Read `/AGENTS.md` first; this file adds only what is specific to `agent/`.
 
 ## Layout
-- `ayna_agent/recognition/` — UIA reading, descriptors, snapshots, Spy backend (galip)
+- `ayna_agent/recognition/` — UIA reading, descriptors, snapshots, Spy backend (hasan)
 - `ayna_agent/heal/` — healing candidates and scorer (galip)
 - `ayna_agent/playback/` — keyword execution, smart waits, checkpoints, screenshots, triage (hasan)
 - `ayna_agent/rpc.py` — localhost JSON-RPC server (galip)

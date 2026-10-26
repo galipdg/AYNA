@@ -51,12 +51,12 @@ Each test machine (Windows)                    Shared, on the closed network
 
 | Path | What | Owner |
 |---|---|---|
-| `agent/` | Python automation agent + CLI runner | galip (recognition, heal), hasan (playback, cli) |
+| `agent/` | Python automation agent + CLI runner | hasan (recognition, playback, cli), galip (heal, rpc) |
 | `client/` | Electron + React client | omer |
 | `server/` | Spring Boot server, Neo4j migrations | omer |
 | `ai/` | Python AI service (NL → steps, retrieval) | galip |
 | `schemas/` | JSON Schemas (frozen contracts) | all |
 | `eval/` | sample apps, experiment versions, measurement scripts, datasets | hasan (`eval/nl/`: galip) |
-| `docs/` | RS, SDD, generated API docs, guides | hasan (SDD sections by component owner) |
+| `docs/` | RS, SDD, generated API docs, guides | hasan; `rs/` and `report/`: galip; `sdd/`: omer (sections by component owner) |
 | `docker-compose.yml` | one `docker compose up` for the whole backend (server, Neo4j, later AI service, nginx) | omer |
 | `docker/` | extra container config (e.g. nginx) used by the root compose file | omer |
