@@ -18,8 +18,9 @@ One file, `docs/literature.md`: an assignment table, one entry per source (citat
 - [x] Branch, task note, board In progress
 - [x] `docs/literature.md` skeleton + assignment table + gaps table
 - [x] omer's three entries ([3], [4], [23])
-- [ ] galip's three and hasan's five entries (on this branch or follow-up commits)
-- Next step: push branch + open PR (after user OK) so galip and hasan can add their entries on it; or merge the skeleton first and let them add theirs in their own PRs.
+- [x] Draft PR #126 (`Closes #10`); galip and hasan add their entries on this branch (user chose one PR over skeleton-first)
+- [ ] galip's three and hasan's five entries
+- Next step: when galip and hasan have pushed their entries, check the assignment table is all "done", tick the criteria in #126 and mark it ready for review.
 
 ## Manual checks
 - none (documentation only)

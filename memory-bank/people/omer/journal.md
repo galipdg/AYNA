@@ -36,3 +36,10 @@ Append-only. One entry per session, newest at the bottom:
 - Wrote `docs/tool-matrix.md`: 15 rows (user-approved) × 7 tools + AYNA (target); every cell sourced. Link check: all 200 except Ranorex Zendesk (403 to bots), verified via its public API.
 - Correction while checking: TestComplete persists a healed locator only if the user accepts it; takeaway reworded.
 - Next: PR `Closes #18`, then #32.
+
+## 2026-10-26 · #10
+- PR #125 merged → #18 closed and Done. Picked #10 (Week 1, team, nobody had started); board → In progress.
+- Wrote `docs/literature.md` skeleton: assignment table split by ownership, entry format, gaps table copied verbatim from the plan's "What has been done". Annotated Hammoudi [3], Leotta [4], Healenium [23], each with "Source checked".
+- Leotta PDF unreachable (sepl.dibris.unige.it refuses connections); only abstract figures used.
+- Draft PR #126 (`Closes #10`); inbox notes to galip and hasan with their sources.
+- Next: #32 while #126 waits for teammates.
