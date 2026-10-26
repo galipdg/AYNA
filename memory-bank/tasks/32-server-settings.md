@@ -22,7 +22,7 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - [x] URL setting + connection check, unit tests (`server.test.ts`, `settings.test.ts`), checked against the real backend (`docker compose up`): ok, not-ayna (Neo4j browser on :7474), unreachable (closed port, unknown host), invalid-url, db-down (Neo4j stopped)
 - [x] manual UI check on macOS (below)
 - [ ] application picker (blocked by #15), remembered between restarts
-- Next step: push + draft PR (`Refs #32`) when omer agrees; then wait for #15's applications API and add the picker (store `applicationId` in `Settings`).
+- Next step: draft PR #127 open (`Refs #32`, CI green); wait for #15's applications API and add the picker (store `applicationId` in `Settings`).
 
 ## Manual checks
 - 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session

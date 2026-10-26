@@ -36,3 +36,9 @@ Append-only. One entry per session, newest at the bottom:
 - Wrote `docs/tool-matrix.md`: 15 rows (user-approved) × 7 tools + AYNA (target); every cell sourced. Link check: all 200 except Ranorex Zendesk (403 to bots), verified via its public API.
 - Correction while checking: TestComplete persists a healed locator only if the user accepts it; takeaway reworded.
 - Next: PR `Closes #18`, then #32.
+
+## 2026-10-26 · #32
+- Started #32 on `omer/32-server-settings`, board → In progress; agreed with omer to keep #32 open until the picker (needs #15) instead of splitting it.
+- Client: `src/main/server.ts` (URL normalisation + `/api/health` check, 5 failure types), `src/main/settings.ts` (`userData/settings.json`), IPC `settings:get` / `server:check` / `server:connect`, `ServerSettings.tsx` first-run screen. 22 tests green, build green; checked against the real compose backend (all 5 outcomes); omer's manual UI check passed (7 steps).
+- Draft PR #127 (`Refs #32`), CI green.
+- Next: picker after #15; propose splitting #15's applications list off snapshot import.
