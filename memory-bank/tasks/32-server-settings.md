@@ -5,7 +5,7 @@
 - Started: 2026-10-26 · Last update: 2026-10-26
 
 ## Approach
-Two halves: (1) server URL + connection check (done first), (2) application picker, which needs `GET /api/applications` from #15 (not built yet).
+Two halves: (1) server URL + connection check (done first), (2) application picker, which needs `GET /api/apps` from #128 (split out of #15 on 2026-10-26; not built yet).
 
 - `client/src/main/server.ts` — `normalizeServerUrl` + `checkServer` against `GET /api/health`; never throws, maps every failure to a `ConnectionFailure` (`invalid-url`, `unreachable`, `timeout`, `not-ayna`, `db-down`).
 - `client/src/main/settings.ts` — `settings.json` in Electron `userData` (per machine), atomic write.
@@ -16,13 +16,13 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - 2026-10-26 — check runs in main with Node's `fetch`, not in the renderer — the renderer CSP (`connect-src 'self'`) and the session request filter must stay closed; Node's fetch is outside both.
 - 2026-10-26 — save the URL only after a successful check — a wrong URL never overwrites a working one.
 - 2026-10-26 — missing scheme means `http://`; path prefix kept, query/fragment/credentials rejected.
-- 2026-10-26 — #32 stays open until the picker is done after #15 (agreed with omer), instead of splitting the issue.
+- 2026-10-26 — #32 stays open until the picker is done (agreed with omer), instead of splitting #32; the applications list/create API was split out of #15 into #128 instead, so the picker no longer waits for #12.
 
 ## Status
 - [x] URL setting + connection check, unit tests (`server.test.ts`, `settings.test.ts`), checked against the real backend (`docker compose up`): ok, not-ayna (Neo4j browser on :7474), unreachable (closed port, unknown host), invalid-url, db-down (Neo4j stopped)
 - [x] manual UI check on macOS (below)
-- [ ] application picker (blocked by #15), remembered between restarts
-- Next step: draft PR #127 open (`Refs #32`, CI green); wait for #15's applications API and add the picker (store `applicationId` in `Settings`).
+- [ ] application picker (needs #128), remembered between restarts
+- Next step: draft PR #127 open (`Refs #32`, CI green); do #128 (applications API) and add the picker (store `applicationId` in `Settings`).
 
 ## Manual checks
 - 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session
