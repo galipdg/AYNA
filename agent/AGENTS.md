@@ -10,7 +10,13 @@ Owner: hasan (recognition/, playback/, ayna_cli/) · galip (heal/, rpc.py). Read
 - `ayna_cli/` — headless runner, JUnit XML (hasan)
 
 ## Commands
-To be filled in when the module is scaffolded (build, test, lint, run). Until then, ask before inventing tooling.
+Python >= 3.11. Run from `agent/` inside the module's virtual environment (`.venv/` is git-ignored):
+- `python -m venv .venv`, activate it (Windows: `.venv\Scripts\activate`; macOS: `source .venv/bin/activate`), then `pip install -e ".[dev]"` — install with ruff and pytest
+- `ruff check .` — lint
+- `ruff format --check .` — formatting check; `ruff format .` fixes it
+- `pytest` — all tests; on macOS run `pytest -m "not windows"` to skip the ones that need a real Windows desktop
+
+Before committing: `ruff check . && ruff format --check . && pytest` (the CI `agent` job runs the same on a Windows runner).
 
 ## Rules
 - Runs only on Windows for real UI tests; mark them `@pytest.mark.windows`.
