@@ -12,7 +12,9 @@ Owner: galip. Build, test and AI rules: [AGENTS.md](AGENTS.md).
 from ayna_ai.generate import StepGenerator
 
 generator = StepGenerator()  # Ollama on 127.0.0.1:11434, qwen3:8b
-result = generator.generate("Giriş butonuna tıkla.", {"login.loginButton": "Giriş butonu"})
+result = generator.generate(
+    "Giriş butonuna tıkla.", {"login.loginButton": "Giriş butonu"}
+)
 result.ok, result.document, result.latency_s
 ```
 

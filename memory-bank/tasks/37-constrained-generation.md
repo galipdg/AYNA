@@ -42,7 +42,7 @@ Machine shared with other agents (load average ~6 during the runs), so latencies
 
 ## Open issues
 - Step schema v0 cannot express "the table lists Yılmaz" (spike #6): both models produce `Verify main.customerGrid name contains "Yılmaz"`, which is schema-valid but checks the grid's UIA Name, not its rows. Raise on #134 / a v0.2 issue; noted in hasan's inbox for #36 pairs and playback.
-- Local env: files under this repo on galip's Mac get the macOS `hidden` flag, and Python 3.11.13+/3.15 skip hidden `.pth` files, so `pip install -e` stops working (see `learnings.md`). CI is unaffected.
+- Local env: files under this repo on galip's Mac get the macOS `hidden` flag, and Python 3.11.13+/3.15 skip hidden `.pth` files, so `pip install -e` stops working; run tests with `PYTHONPATH=.` (see `learnings.md`). CI is unaffected.
 - Prompt quality (property choice, dropped steps) is measured properly in RQ3 (#77, held-out split of #57), not on these 10 sentences.
 - 2026-10-27 — `ai/spikes/llm-smoke.md` cited board keys as issue numbers (#35/#56, #57, #71 for AYNA-035/056/057/071); corrected to issues #36/#57, #58, #72 on this branch.
 
