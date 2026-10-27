@@ -34,7 +34,7 @@ Consistency was checked with a one-off script in the session scratch area (not c
 - [x] Every outline section filled; outline notes removed
 - [x] scenarios.md restructured into Appendix C
 - [x] Consistency check: 0 errors
-- [x] PR opened, reviews requested (omerfaruksaribal, HasanBerk18)
+- [x] PR https://github.com/galipdg/AYNA/pull/143 opened (`Closes #35`, stacked on #137, #140, #138), reviews requested from omerfaruksaribal (required) and HasanBerk18 (FYI)
 - [ ] Reviewed by Galip and Ömerfaruk with comments resolved (human step)
 - Next step: answer review comments on the #35 PR. After the advisor meeting, apply #19 §7's answers (Q1–Q8) to §1.3.3, §3.1, Appendix B and E.2, and rerun the check.
 
