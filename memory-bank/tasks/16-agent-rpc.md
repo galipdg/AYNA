@@ -19,9 +19,10 @@
 - [x] Branch, task note, board In progress
 - [x] `rpc.py` + `tests/test_rpc.py` (50 tests pass on Python 3.11.13 and 3.15.1, ruff clean); manual run of `python -m ayna_agent.rpc` matched the doc's examples
 - [x] `docs/agent-rpc.md`, ADR (Proposed), requests in hasan's and omer's inboxes
-- [ ] PR (`Refs #16`), reviews by omer and hasan
+- [x] PR https://github.com/galipdg/AYNA/pull/135 (`Refs #16`) opened 2026-10-27, reviewers omer and hasan
+- [ ] Reviews by omer and hasan; when both approve, set the ADR to Accepted (and its README line) in the same PR
 - [ ] Real backend from hasan (#12) wired into `rpc.main()`; then a success example for `snapshot` in the doc and a Windows manual check
-- Next step: open the PR after galip's OK; then wait for #12
+- Next step: address review comments on #135; after #12 lands, wire the backend in and close #16
 
 ## Acceptance criteria (state on this branch)
 - Binds only 127.0.0.1, token-less requests refused: met (`test_binds_to_loopback_only`, `test_handshake_without_the_token_is_refused`, query-string token test).
