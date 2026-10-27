@@ -2,9 +2,10 @@
 
 Only galip's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-10-25
-- Current issue: none — #6 now belongs to hasan (ADR `2026-10-25-windows-work-to-hasan`); PR #119 (uia_dump tooling) is merged
-- Branch: —
-- Next step: pick the next open issue assigned to galip (earliest milestone first; Week 2 candidates: #13 step schema with hasan, #16 agent JSON-RPC server, #19 requirements workshop, #20 literature review part 2)
-- Open questions: inbox has two items (omer #3: fill Commands in `ai/AGENTS.md` and `agent/AGENTS.md`; hasan #9: Qt/UIA findings). GPU request (`ai/spikes/gpu-request-draft.md`) not sent yet: waiting for replies from the support programs the team applied to (2026-10-25).
-- Waiting on: hasan closes #6 after the weekly Windows session; #11 and #21 depend on #6.
+- Last update: 2026-10-27
+- Current issue: #16 agent JSON-RPC server — branch `galip/16-agent-rpc`, code + tests + `docs/agent-rpc.md` + ADR (Proposed) committed; PR not opened yet
+- Branch: `galip/16-agent-rpc`
+- Next step: open the #16 PR (`Refs #16`, reviewers omer and hasan); #16 closes only when hasan's recognition backend (#12) answers `snapshot`
+- Open PRs waiting for review: #134 (#13 step schema, needs all three), #133 (inbox round), #132 (#10 Similo/WATER/Vista)
+- Open questions: inbox has two items (omer #3, hasan #9) that PR #133 handles; remove them once it merges. GPU request (#131) on hold until the support programs reply.
+- Waiting on: #12 (hasan) for `snapshot`; #10 (all three) before #20 (literature review part 2) can start; #19 needs the advisor meeting.

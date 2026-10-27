@@ -17,3 +17,9 @@ Append-only. One entry per session, newest at the bottom:
 - Merged origin/main (#3 CI, #9 trial app). Took hasan's #9 finding: TitleBar controls are left out of the interactive share. Split #6 into PR #119 (tooling, `Refs #6`, ready) and a later dumps PR that closes #6; label `needs-windows-test` added.
 - Galip handed the rest of #6 to hasan: he runs the check, his agent fixes the script if needed, writes the results and closes #6 with his own PR.
 - Next: review + merge #119.
+
+## 2026-10-27 · #16
+- Pulled main (nothing new). #13 is in review (PR #134); Week 2 left #16 as the only code issue. Galip chose to start it although it depends on #12, because only `snapshot` needs #12.
+- Added `agent/ayna_agent/rpc.py`: JSON-RPC 2.0 over WebSocket on 127.0.0.1 (`websockets~=17.3`, approved), `Authorization: Bearer` token checked in the handshake, token from `AYNA_AGENT_TOKEN`, `--port 0` + stdout ready line, `Desktop` protocol for the UIA backend (all calls on one worker thread).
+- 50 tests with a fake desktop over a real WebSocket, Python 3.11 and 3.15; manual CLI run matched `docs/agent-rpc.md`. ADR `2026-10-27-agent-rpc-v0` (Proposed). Requests in hasan's (backend) and omer's (client) inboxes.
+- Next: open the PR; wire hasan's backend in when #12 lands.
