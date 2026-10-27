@@ -26,3 +26,9 @@ Append-only. One entry per session, newest at the bottom:
 - #10: wrote the Similo, WATER and Vista entries on `galip/10-literature-galip` (from omer's branch). WATER's full text was not reachable (ACM 403); used the authors' slides plus Vista and Similo.
 - Found that `merge=union` brings deleted inbox lines back when another branch appends; kept handled items until #126 and #130 merge.
 - Next: #13 step schema v0 after the user's OK.
+
+## 2026-10-27 · #13
+- Started #13 on `galip/13-step-schema`; board In progress. Galip chose: version at the document root, `timeoutMs` (camelCase), `jsonschema~=4.26` in `ai/`, Wait = until the target is ready.
+- Added `schemas/step.schema.json` (2020-12, `if`/`then` per keyword), `schemas/examples/step/` (14-step test, 7 valid + 29 invalid named cases) and `ai/tests/test_step_schema.py` (44 pass; dropping three rules made 7 fail).
+- Wrote the Proposed ADR `2026-10-27-step-schema-v0`, the schemas README section and review notes in omer's and hasan's inboxes (graph needs `timeoutMs`; `checkpoint` cannot be a Neo4j map).
+- Opened PR #134 (reviewers omer, hasan). Next: collect both approvals.
