@@ -4,8 +4,10 @@ For every request the generator derives a JSON schema from
 `schemas/step.schema.json`, narrows it to the repository objects the caller
 passes in and gives it to a local Ollama server as the `format` of /api/chat,
 so the decoder can only emit text that fits it. The answer is then validated
-against the original step schema and the object list. Anything else comes back
-as a typed failure (`Status`), never as steps.
+against the original step schema and the object list, step by step: a step
+that fails is dropped with its reason (`GenerationResult.dropped`) and the
+others are kept. An answer that is not a step document at all, or that keeps
+no step, comes back as a typed failure (`Status`).
 
 Batch run, from `ai/` (results JSON, one JSON log line per scenario):
 
@@ -35,7 +37,13 @@ from typing import Protocol
 from jsonschema import Draft202012Validator
 
 from ayna_ai.ollama import DEFAULT_HOST, ModelServerError, ModelTimeout, OllamaClient
-from ayna_ai.validate import StepValidator, load_step_schema
+from ayna_ai.validate import (
+    NO_MATCH,
+    DropCode,
+    DroppedStep,
+    StepValidator,
+    load_step_schema,
+)
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +95,8 @@ def generation_schema(
     - each keyword becomes one `anyOf` branch holding only the fields its
       `if`/`then` rule allows (grammar converters ignore `if`/`then`); the
       checkpoint is split the same way by `property`;
-    - `target` is an `enum` of `objects`;
+    - `target` is an `enum` of `objects` plus the reserved `NO_MATCH`, so the
+      model can say that no object fits (the validator drops such a step);
     - free strings get `maxLength <= max_text` and the list 1..`max_steps`
       steps, so a runaway output ends early (#7 finding 1);
     - server-assigned fields (`id`) are left out.
@@ -95,17 +104,21 @@ def generation_schema(
 
     With `reason_max_length`, every step also requires a `reason` string of
     1..`reason_max_length` characters. It is the one field outside the step
-    schema; `split_reasons` removes it before validation.
+    schema; `take_reason` removes it before validation.
     """
     names = list(dict.fromkeys(objects))
     if not names:
         raise ValueError("generation needs at least one repository object")
+    if NO_MATCH in names:
+        raise ValueError(f"{NO_MATCH!r} is reserved and cannot be an object name")
     root = _inline(step_schema, step_schema)
     _check_keys(root, OBJECT_KEYWORDS - {"allOf"}, "root")
     steps = root["properties"]["steps"]
     _check_keys(steps, ARRAY_KEYWORDS, "steps")
     step = steps["items"]
     _check_target_names(step["properties"]["target"], names)
+    if not Draft202012Validator(step["properties"]["target"]).is_valid(NO_MATCH):
+        raise SchemaDerivationError(f"step: {NO_MATCH!r} is not a valid target")
 
     variants = []
     for variant in _variants(step, "keyword", "step"):
@@ -114,7 +127,7 @@ def generation_schema(
             if name in variant["required"]:
                 raise SchemaDerivationError(f"step: server field {name!r} is required")
             props.pop(name, None)
-        props["target"] = {"type": "string", "enum": names}
+        props["target"] = {"type": "string", "enum": [*names, NO_MATCH]}
         if "checkpoint" in props:
             props["checkpoint"] = _any_of(
                 _variants(props["checkpoint"], "property", "checkpoint")
@@ -344,7 +357,8 @@ Keywords:
 - Wait: wait until the target is ready.
 Add timeoutMs (milliseconds) only when the instruction gives a time limit.
 
-target must be one of these objects (Turkish description after the dash):
+target must be one of these objects (Turkish description after the dash), \
+or {no_match} if none of them fits:
 {objects}
 
 Keep the order of the actions in the instruction. Add no steps it does not ask for."""
@@ -354,8 +368,9 @@ Give every step a reason: a short Turkish note (at most 10 words) quoting the
 words of the instruction that the step comes from."""
 
 # Bump on every change to SYSTEM_PROMPT or REASON_PROMPT (v1 and v2: #37 task
-# note). Results and the service report it, so outputs stay comparable.
-PROMPT_VERSION = "2"
+# note; v3 offers none.noMatch in the target line, #71 task note). Results and
+# the service report it, so outputs stay comparable.
+PROMPT_VERSION = "3"
 
 
 def build_messages(
@@ -366,30 +381,25 @@ def build_messages(
         f"- {name} — {description}" if description else f"- {name}"
         for name, description in objects.items()
     )
-    system = SYSTEM_PROMPT.format(version=version, objects=listing)
+    system = SYSTEM_PROMPT.format(version=version, objects=listing, no_match=NO_MATCH)
     if reasons:
         system += "\n" + REASON_PROMPT
     return [{"role": "system", "content": system}, {"role": "user", "content": text}]
 
 
-def split_reasons(document: object, max_length: int) -> tuple[list[str], list[str]]:
-    """Remove `reason` from every step of `document` in place.
+def take_reason(step: object, max_length: int) -> tuple[str, str | None]:
+    """Remove `reason` from one generated step in place.
 
-    Returns (reasons, errors). A missing, empty or too long reason is an error;
-    a document that is not `{steps: [...]}` is left to the schema check.
+    Returns (the stripped reason, a problem or None). A missing, empty or too
+    long reason is a problem: the step is dropped like a schema-invalid one.
     """
-    if not isinstance(document, dict) or not isinstance(document.get("steps"), list):
-        return [], []
-    reasons, errors = [], []
-    for i, step in enumerate(document["steps"]):
-        reason = step.pop(REASON, None) if isinstance(step, dict) else None
-        reason = reason.strip() if isinstance(reason, str) else ""
-        if not reason:
-            errors.append(f"$.steps[{i}].{REASON}: missing or empty")
-        elif len(reason) > max_length:
-            errors.append(f"$.steps[{i}].{REASON}: longer than {max_length} characters")
-        reasons.append(reason)
-    return reasons, errors
+    reason = step.pop(REASON, None) if isinstance(step, dict) else None
+    reason = reason.strip() if isinstance(reason, str) else ""
+    if not reason:
+        return reason, f"{REASON}: missing or empty"
+    if len(reason) > max_length:
+        return reason, f"{REASON}: longer than {max_length} characters"
+    return reason, None
 
 
 # --- Generation ---------------------------------------------------------------
@@ -399,8 +409,8 @@ class Status(StrEnum):
     OK = "ok"
     INVALID_JSON = "invalid_json"
     TRUNCATED = "truncated"  # num_predict reached before the JSON was closed
-    INVALID_SCHEMA = "invalid_schema"
-    UNKNOWN_TARGET = "unknown_target"
+    INVALID_SCHEMA = "invalid_schema"  # not a step document: version, steps list
+    NO_VALID_STEPS = "no_valid_steps"  # every step was dropped (or there were none)
     TIMEOUT = "timeout"
     SERVER_ERROR = "server_error"
 
@@ -421,8 +431,9 @@ class GenerationSettings:
 @dataclass
 class GenerationResult:
     status: Status
-    document: dict | None = None  # the validated step document; None unless ok
-    reasons: list[str] | None = None  # one per step, when asked for; None unless ok
+    document: dict | None = None  # the kept steps as a step document; None unless ok
+    reasons: list[str] | None = None  # one per kept step, if asked for; None unless ok
+    dropped: list[DroppedStep] = field(default_factory=list)  # in the model's order
     output: str | None = None  # raw model text
     errors: list[str] = field(default_factory=list)
     latency_s: float = 0.0  # wall clock of the request, model load included
@@ -436,11 +447,16 @@ class GenerationResult:
         return self.status is Status.OK
 
     def to_dict(self) -> dict:
-        return {**asdict(self), "status": str(self.status), "ok": self.ok}
+        return {
+            **asdict(self),
+            "status": str(self.status),
+            "ok": self.ok,
+            "dropped": [d.to_dict() for d in self.dropped],
+        }
 
 
 class ChatClient(Protocol):
-    def chat(self, body: dict) -> dict: ...
+    def chat(self, body: dict, timeout_s: float | None = None) -> dict: ...
 
 
 class StepGenerator:
@@ -492,18 +508,24 @@ class StepGenerator:
         self.client.chat({"model": self.settings.model, "messages": []})
 
     def generate(
-        self, text: str, objects: Mapping[str, str], scenario: str | int | None = None
+        self,
+        text: str,
+        objects: Mapping[str, str],
+        scenario: str | int | None = None,
+        *,
+        timeout_s: float | None = None,
     ) -> GenerationResult:
         """Steps for one Turkish instruction; `objects` maps logical name -> description.
 
         Model and server failures come back as a result with `ok == False`. An
-        empty `objects` or a name the step schema does not allow is a caller
-        error and raises ValueError.
+        empty `objects`, a name the step schema does not allow or the reserved
+        `NO_MATCH` is a caller error and raises ValueError. `timeout_s` bounds
+        the model call (default: the client's own timeout).
         """
         body = self.request_body(text, objects)
         started = time.perf_counter()
         try:
-            reply = self.client.chat(body)
+            reply = self.client.chat(body, timeout_s=timeout_s)
         except ModelTimeout as exc:
             result = GenerationResult(Status.TIMEOUT, errors=[str(exc)])
         except ModelServerError as exc:
@@ -530,20 +552,38 @@ class StepGenerator:
             result.status = Status.TRUNCATED if truncated else Status.INVALID_JSON
             result.errors = [f"invalid JSON: {exc}"]
             return result
-        reasons, reason_errors = [], []
-        if self.settings.reasons:
-            reasons, reason_errors = split_reasons(
-                document, self.settings.reason_max_length
-            )
-        result.errors = reason_errors + self.validator.schema_errors(document)
+        result.errors = self.validator.envelope_errors(document)
         if result.errors:
             result.status = Status.INVALID_SCHEMA
             return result
-        result.errors = self.validator.unknown_targets(document, objects)
-        if result.errors:
-            result.status = Status.UNKNOWN_TARGET
+
+        steps, reasons = [], []
+        for index, raw in enumerate(document["steps"]):
+            step, reason, problem = copy.deepcopy(raw), None, None
+            if self.settings.reasons:
+                reason, problem = take_reason(step, self.settings.reason_max_length)
+            problems = self.validator.step_problems(step, objects)
+            if problem:
+                problems.append((DropCode.INVALID_STEP, problem))
+            if problems:
+                result.dropped.append(DroppedStep.of(index, raw, problems))
+            else:
+                steps.append(step)
+                reasons.append(reason)
+        if not steps:
+            result.status = Status.NO_VALID_STEPS
+            result.errors = [
+                f"$.steps[{d.index}]: {d.reason}" for d in result.dropped
+            ] or ["the answer has no steps"]
             return result
-        result.document = document
+
+        kept = {**document, "steps": steps}
+        # A valid envelope with valid steps is a valid document; check anyway.
+        result.errors = self.validator.schema_errors(kept)
+        if result.errors:
+            result.status = Status.INVALID_SCHEMA
+            return result
+        result.document = kept
         if self.settings.reasons:
             result.reasons = reasons
         return result
@@ -568,6 +608,7 @@ def _log_result(
         "prompt_tokens": result.prompt_tokens,
         "output_tokens": result.output_tokens,
         "steps": len(result.document["steps"]) if result.document else None,
+        "dropped": len(result.dropped),
     }
     log.info(json.dumps(record, ensure_ascii=False))
 
@@ -620,6 +661,7 @@ def summarize(rows: Sequence[dict]) -> dict:
         "latency_p95_s": _round(percentile(latencies, 95)),
         "latency_max_s": _round(max(latencies, default=None)),
         "output_tokens_median": statistics.median(tokens) if tokens else None,
+        "steps_dropped": sum(len(row["dropped"]) for row in rows),
     }
     if any("expected" in row for row in rows):
         summary["keyword_match"] = sum(row.get("keyword_match", False) for row in rows)

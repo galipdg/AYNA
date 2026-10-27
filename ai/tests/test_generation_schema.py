@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
-from ayna_ai.generate import SchemaDerivationError, generation_schema, split_reasons
-from ayna_ai.validate import load_step_schema
+from ayna_ai.generate import SchemaDerivationError, generation_schema, take_reason
+from ayna_ai.validate import NO_MATCH, load_step_schema
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "schemas" / "examples" / "step"
 STEP_SCHEMA = load_step_schema()
@@ -66,10 +66,28 @@ def test_one_branch_per_schema_keyword():
     assert list(branches(derive())) == KEYWORDS
 
 
-def test_target_is_an_enum_of_the_objects_in_every_branch():
+def test_target_is_an_enum_of_the_objects_and_no_match_in_every_branch():
     schema = derive(OBJECTS + [OBJECTS[0]])  # duplicates are dropped, order kept
     for branch in branches(schema).values():
-        assert branch["properties"]["target"] == {"type": "string", "enum": OBJECTS}
+        assert branch["properties"]["target"] == {
+            "type": "string",
+            "enum": [*OBJECTS, NO_MATCH],
+        }
+
+
+def test_no_match_is_a_valid_logical_name_but_never_an_object():
+    assert is_name(NO_MATCH)
+    with pytest.raises(ValueError, match="reserved"):
+        derive([OBJECTS[0], NO_MATCH])
+
+
+def test_a_step_schema_that_rejects_no_match_fails_loudly():
+    schema = copy.deepcopy(STEP_SCHEMA)
+    schema["$defs"]["logicalName"]["pattern"] = (
+        "^[a-m][A-Za-z0-9]*\\.[a-z][A-Za-z0-9]*$"
+    )
+    with pytest.raises(SchemaDerivationError, match=NO_MATCH):
+        generation_schema(schema, ["login.loginButton"])
 
 
 def test_fields_follow_the_per_keyword_rules():
@@ -279,8 +297,9 @@ def test_without_its_reasons_every_derived_document_is_a_valid_step_document():
     for document in documents:
         assert validator.is_valid(document), document
         document = json.loads(json.dumps(document))  # as parsed from model output
-        reasons, errors = split_reasons(document, 40)
-        assert errors == [] and len(reasons) == len(document["steps"])
+        for step in document["steps"]:
+            reason, problem = take_reason(step, 40)
+            assert problem is None and reason
         assert ORIGINAL.is_valid(document), list(ORIGINAL.iter_errors(document))
 
 
@@ -292,44 +311,30 @@ def test_a_reason_field_in_the_step_schema_fails_loudly():
 
 
 @pytest.mark.parametrize(
-    ("steps", "reasons", "errors"),
+    ("step", "reason", "problem"),
     [
+        ({"keyword": "Click", "reason": "  'tıkla'  "}, "'tıkla'", None),
+        ({"keyword": "Click"}, "", "reason: missing or empty"),
+        ({"keyword": "Click", "reason": " "}, "", "reason: missing or empty"),
+        ({"keyword": "Click", "reason": 7}, "", "reason: missing or empty"),
+        ({"keyword": "Click", "reason": "x" * 10}, "x" * 10, None),
         (
-            [{"keyword": "Click", "target": "a.b", "reason": "  'tıkla'  "}],
-            ["'tıkla'"],
-            [],
+            {"keyword": "Click", "reason": "x" * 11},
+            "x" * 11,
+            "reason: longer than 10 characters",
         ),
-        ([{"keyword": "Click", "target": "a.b"}], [""], ["$.steps[0].reason"]),
-        (
-            [{"keyword": "Click", "target": "a.b", "reason": " "}],
-            [""],
-            ["$.steps[0].reason"],
-        ),
-        (
-            [{"keyword": "Click", "target": "a.b", "reason": 7}],
-            [""],
-            ["$.steps[0].reason"],
-        ),
-        (
-            [
-                {"keyword": "Click", "target": "a.b", "reason": "ok"},
-                {"keyword": "Click", "target": "a.b", "reason": "x" * 11},
-            ],
-            ["ok", "x" * 11],
-            ["$.steps[1].reason"],
-        ),
-        (["not a step"], [""], ["$.steps[0].reason"]),
+        ("not a step", "", "reason: missing or empty"),
     ],
-    ids=["stripped", "missing", "blank", "not a string", "too long", "not an object"],
+    ids=[
+        "stripped",
+        "missing",
+        "blank",
+        "not a string",
+        "at the limit",
+        "too long",
+        "not an object",
+    ],
 )
-def test_split_reasons(steps, reasons, errors):
-    document = {"version": "0.1", "steps": steps}
-    got_reasons, got_errors = split_reasons(document, 10)
-    assert got_reasons == reasons
-    assert [e.split(":")[0] for e in got_errors] == errors
-    assert all("reason" not in s for s in document["steps"] if isinstance(s, dict))
-
-
-@pytest.mark.parametrize("document", [None, [], {"steps": "x"}, {"version": "0.1"}])
-def test_split_reasons_leaves_other_shapes_to_the_schema_check(document):
-    assert split_reasons(document, 10) == ([], [])
+def test_take_reason(step, reason, problem):
+    assert take_reason(step, 10) == (reason, problem)
+    assert not isinstance(step, dict) or step == {"keyword": "Click"}

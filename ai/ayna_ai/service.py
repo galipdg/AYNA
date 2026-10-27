@@ -6,9 +6,10 @@
 The caller is the AYNA server (#78 chat panel); the contract is `ai/API.md`.
 The service listens on loopback unless started with --allow-remote, and talks
 only to a loopback model server (`ayna_ai.ollama`), so it works on a closed
-network. Every response that names a step target names an object the retriever
+network. Every step in a response's `steps` targets an object the retriever
 returned for that request: the generator constrains and checks it, and the
-service checks it once more before answering.
+service checks it once more before answering. A generated step that fails
+either check is not suggested; it is listed in `dropped` with the reason.
 
 From `ai/`, with `ollama serve` running:
 
@@ -34,7 +35,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from jsonschema import Draft202012Validator
 
 from ayna_ai import __version__
-from ayna_ai.generate import GenerationSettings, Status, StepGenerator
+from ayna_ai.generate import (
+    GenerationResult,
+    GenerationSettings,
+    Status,
+    StepGenerator,
+)
 from ayna_ai.ollama import DEFAULT_HOST, ModelServerError, OllamaClient
 from ayna_ai.retrieve import (
     PassThroughRetriever,
@@ -42,7 +48,7 @@ from ayna_ai.retrieve import (
     RetrievalQuery,
     Retriever,
 )
-from ayna_ai.validate import StepValidator
+from ayna_ai.validate import NO_MATCH, DroppedStep, StepValidator
 
 log = logging.getLogger(__name__)
 
@@ -58,12 +64,12 @@ MAX_DETAILS = 20
 FAILURES: dict[Status, tuple[int, str]] = {
     Status.INVALID_JSON: (422, "the model's answer is not valid JSON"),
     Status.TRUNCATED: (422, "the model's answer was cut off at the output limit"),
-    Status.INVALID_SCHEMA: (422, "the model's answer does not fit the step schema"),
-    Status.UNKNOWN_TARGET: (
+    Status.INVALID_SCHEMA: (422, "the model's answer is not a step document"),
+    Status.NO_VALID_STEPS: (
         422,
-        "the model's answer targets an object outside the repository",
+        "the description could not be turned into valid steps",
     ),
-    Status.TIMEOUT: (504, "the model server did not answer in time"),
+    Status.TIMEOUT: (504, "no answer within the service timeout"),
     Status.SERVER_ERROR: (503, "the model server is unavailable"),
 }
 
@@ -108,7 +114,11 @@ def request_schema(step_schema: dict) -> dict:
 class ServiceConfig:
     models: tuple[str, ...] = (GenerationSettings.model,)  # the first is the default
     model_host: str = DEFAULT_HOST
-    timeout_s: float = 60.0  # one generation, a cold model load included
+    # One request end to end: retrieval and the model call, a cold model load
+    # included. Well below the batch CLI's 120 s, so the panel gets a 504
+    # instead of hanging: ~3x the idle p95 of #37, above the 25 s p95 measured
+    # under heavy load (#71 task note).
+    timeout_s: float = 30.0
     health_timeout_s: float = 2.0
     max_body_bytes: int = 64 * 1024
     num_predict: int = 768  # reasons add ~15-25 output tokens per step
@@ -190,6 +200,7 @@ class StepService:
         return code, body
 
     def _generate(self, payload: object) -> tuple[int, dict]:
+        deadline = time.monotonic() + self.config.timeout_s
         query, model = self._parse(payload)
         try:
             objects = self.retriever.retrieve(query)
@@ -200,30 +211,72 @@ class StepService:
                 422, "no_objects", "no repository objects found for this request"
             )
 
-        result = self.generators[model].generate(query.text, objects)
+        left = deadline - time.monotonic()
+        if left > 0:
+            result = self.generators[model].generate(
+                query.text, objects, timeout_s=left
+            )
+        else:
+            result = GenerationResult(Status.TIMEOUT)
+        if result.status is Status.TIMEOUT:
+            result.errors = [f"no answer within {self.config.timeout_s:g} s"]
         if result.ok:
-            # The generator constrains and checks targets already; this is the
-            # last line before the caller, so check against `objects` again.
-            leaks = self.validator.unknown_targets(result.document, objects)
-            if leaks:
-                log.error(_record("target_guard", model=model, errors=leaks))
-                result.status, result.errors = Status.UNKNOWN_TARGET, leaks
+            self._guard(result, objects, model)
 
         body = {"status": str(result.status), "model": model}
         if result.ok:
+            code = 200
             body["steps"] = [
                 {**step, "reason": reason}
                 for step, reason in zip(
                     result.document["steps"], result.reasons, strict=True
                 )
             ]
-            code = 200
         else:
             code, body["error"] = FAILURES[result.status]
             body["details"] = [_short(e) for e in result.errors[:MAX_DETAILS]]
+            if result.status is Status.NO_VALID_STEPS:
+                body["steps"] = []
+        if result.ok or result.status is Status.NO_VALID_STEPS:
+            body["dropped"] = [d.to_dict() for d in result.dropped]
         body["schemaVersion"] = self.schema_version
         body["promptVersion"] = self.prompt_version
         return code, body
+
+    def _guard(self, result: GenerationResult, objects, model: str) -> None:
+        """Re-check every kept step against `objects`; move any that fail to dropped.
+
+        The generator constrains and checks targets already; this is the last
+        line before the caller, so a bug there cannot leak a step.
+        """
+        dropped_at = {d.index for d in result.dropped}
+        total = len(result.document["steps"]) + len(dropped_at)
+        kept_at = [i for i in range(total) if i not in dropped_at]
+        steps, reasons, leaks = [], [], []
+        for index, step, reason in zip(
+            kept_at, result.document["steps"], result.reasons, strict=True
+        ):
+            problems = self.validator.step_problems(step, objects)
+            if problems:
+                leaks.append(
+                    DroppedStep.of(index, {**step, "reason": reason}, problems)
+                )
+            else:
+                steps.append(step)
+                reasons.append(reason)
+        if not leaks:
+            return
+        # Index and code only: a reason may quote a step value (test data).
+        caught = [f"{d.index}:{d.code}" for d in leaks]
+        log.error(_record("target_guard", model=model, dropped=caught))
+        result.dropped = sorted([*result.dropped, *leaks], key=lambda d: d.index)
+        if steps:
+            result.document = {**result.document, "steps": steps}
+            result.reasons = reasons
+            return
+        result.status = Status.NO_VALID_STEPS
+        result.document = result.reasons = None
+        result.errors = [f"$.steps[{d.index}]: {d.reason}" for d in result.dropped]
 
     def _parse(self, payload: object) -> tuple[RetrievalQuery, str]:
         errors = sorted(self._requests.iter_errors(payload), key=lambda e: e.json_path)
@@ -241,6 +294,13 @@ class StepService:
             if duplicates:
                 raise RequestError(
                     400, "bad_request", "duplicate object names", duplicates
+                )
+            if NO_MATCH in names:
+                raise RequestError(
+                    400,
+                    "bad_request",
+                    f"the object name {NO_MATCH!r} is reserved: it means "
+                    "'no repository object matches'",
                 )
             objects = {o["name"]: o.get("description", "") for o in payload["objects"]}
         model = payload.get("model", self.default_model)
@@ -511,6 +571,7 @@ class ServiceHandler(BaseHTTPRequestHandler):
                 status=body.get("status"),
                 model=body.get("model"),
                 steps=len(body["steps"]) if "steps" in body else None,
+                dropped=len(body["dropped"]) if "dropped" in body else None,
                 latency_ms=round((time.perf_counter() - self._started) * 1000),
             )
         )
@@ -578,7 +639,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--timeout",
         type=float,
         default=ServiceConfig.timeout_s,
-        help="seconds per generation",
+        help="seconds per request, retrieval and model call; 504 when exceeded",
     )
     parser.add_argument(
         "--max-body-bytes", type=int, default=ServiceConfig.max_body_bytes

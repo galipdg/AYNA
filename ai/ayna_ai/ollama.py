@@ -63,9 +63,13 @@ class OllamaClient:
             urllib.request.ProxyHandler({}), _NoRedirect()
         )
 
-    def chat(self, body: dict) -> dict:
-        """POST /api/chat. An empty `messages` list only loads the model."""
-        return self._request("/api/chat", body)
+    def chat(self, body: dict, timeout_s: float | None = None) -> dict:
+        """POST /api/chat. An empty `messages` list only loads the model.
+
+        `timeout_s` replaces the client's timeout for this call (the service
+        passes what is left of its per-request deadline).
+        """
+        return self._request("/api/chat", body, timeout_s)
 
     def version(self) -> str | None:
         return self._request("/api/version").get("version")
@@ -78,22 +82,25 @@ class OllamaClient:
             raise ModelServerError("/api/tags answered without a model list")
         return [m["name"] for m in listing if isinstance(m, dict) and "name" in m]
 
-    def _request(self, path: str, body: dict | None = None) -> dict:
+    def _request(
+        self, path: str, body: dict | None = None, timeout_s: float | None = None
+    ) -> dict:
+        timeout = self.timeout_s if timeout_s is None else timeout_s
         data = None if body is None else json.dumps(body).encode("utf-8")
         request = urllib.request.Request(
             self.host + path, data=data, headers={"Content-Type": "application/json"}
         )
         try:
-            with self._opener.open(request, timeout=self.timeout_s) as response:
+            with self._opener.open(request, timeout=timeout) as response:
                 return json.load(response)
         except urllib.error.HTTPError as exc:
             raise ModelServerError(f"HTTP {exc.code}: {_error_text(exc)}") from exc
         except urllib.error.URLError as exc:
             if isinstance(exc.reason, TimeoutError):
-                raise ModelTimeout(f"no answer within {self.timeout_s:g} s") from exc
+                raise ModelTimeout(f"no answer within {timeout:g} s") from exc
             raise ModelServerError(f"cannot reach {self.host}: {exc.reason}") from exc
         except TimeoutError as exc:
-            raise ModelTimeout(f"no answer within {self.timeout_s:g} s") from exc
+            raise ModelTimeout(f"no answer within {timeout:g} s") from exc
         except OSError as exc:
             raise ModelServerError(f"connection to {self.host} failed: {exc}") from exc
         except json.JSONDecodeError as exc:
