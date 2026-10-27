@@ -17,12 +17,13 @@ Write the AI sections of the SDD as `docs/sdd/SDD-ai.md` (headings `AI-1` … `A
 - [x] Branch, task note, board → In progress
 - [x] `docs/sdd/SDD-ai.md` drafted (AI-1 … AI-10)
 - [x] Inbox: omer (fold-in location, graph/compose/RPC questions), hasan (decision-log fields, healing trigger/transport)
-- [ ] PR opened; reviews from omerfaruksaribal and HasanBerk18
+- [x] PR https://github.com/galipdg/AYNA/pull/144 opened 2026-10-27 (`Closes #50`, merge after #134, #141, #142); reviewers omerfaruksaribal, HasanBerk18
+- [x] Mermaid diagrams render with Mermaid 11.4.1 (local scratch page); GitHub rendering not checked
 - [ ] Acceptance "reviewed" — human step, not ticked by the agent
 - Next step: address review comments; after #134, #141, #142 merge, check the cited paths and numbers still match the merged code.
 
 ## Manual checks
-- None (document). Mermaid diagrams render on GitHub (check in the PR's rich diff).
+- None (document). Check that the Mermaid diagrams render in the PR's rich diff on GitHub.
 
 ## Open issues
 - The SDD's open-issues table (AI-9) lists the design gaps found while writing; the ones that need new GitHub issues: step schema v0.2 for table rows (from #37), proposal transport agent → server (not in the RPC contract v0.1, #73/#74/#52), AI service access to Neo4j for retrieval (#58 vs the architecture diagram), loopback-only model client vs a separate Ollama container (#82).
