@@ -17,8 +17,9 @@ Section 2 of `docs/literature.md`, in the entry format of section 1 (citation ·
 - [x] Branch, task note, board In progress
 - [x] All 11 sources read (see "Source checked" per entry)
 - [x] Section 2 written, gaps table LLM row updated
-- [ ] PR into `omer/10-literature-review`, review by omer
-- Next step: after omer merges the PR into his branch, ask him to add `Closes #20` to PR #126; then update the plan's references and gaps table (galip, Claude Docs) once the numbering question is answered.
+- [x] PR https://github.com/galipdg/AYNA/pull/139 into `omer/10-literature-review` (2026-10-27), review requested from omer (hasan FYI)
+- [ ] Review by omer; `Closes #20` added to PR #126
+- Next step: after omer merges #139 into his branch, check that PR #126's body says `Closes #20`; then update the plan's references and gaps table (galip, Claude Docs) once the numbering question is answered.
 
 ## Manual checks
 - none (documentation only)
