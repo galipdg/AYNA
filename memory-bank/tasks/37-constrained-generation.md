@@ -34,6 +34,7 @@ Machine shared with other agents (load average ~6 during the runs), so latencies
 - [x] Branch, task note, board In progress
 - [x] `generate.py`, `ollama.py`, `validate.py`; tests in `ai/tests/` (fake Ollama server, no model needed): 134 pass with #134's schema tests, ruff clean
 - [x] Live run qwen3:8b + gemma4:e4b-it-qat on the 10 spike inputs: 10/10 valid each, latency logged per scenario
+- [x] PR https://github.com/galipdg/AYNA/pull/142 opened 2026-10-27 (`Refs #37`, stacked on #134, merge after it), reviewers omer and hasan
 - [ ] Acceptance criterion 1 on the **40 pairs** — waits on #36 (`eval/nl/pairs.jsonl`), which waits on hasan's sample app #33
 - Next step: when #36 lands, run `python -m ayna_ai.generate --input ../eval/nl/pairs.jsonl --objects <sample app objects>.json` for both models (convert the pairs' gold steps to `expected` keywords if the format differs) and tick criterion 1; merge after #134.
 
