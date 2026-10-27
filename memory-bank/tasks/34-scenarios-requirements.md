@@ -26,8 +26,9 @@ Counts were checked with a one-off parser in the session scratch area (not commi
 - [x] `docs/rs/scenarios.md`: 36 SC, 40 FR, 36 NFR, traceability, TBDs
 - [x] Coverage check run (one-off script): 0 errors
 - [x] Inbox notes to hasan (#33 assumptions, playback numbers, TBD-5/6) and omer (server numbers, CLI credential)
-- [ ] PR opened with `Closes #34`, reviews requested from omerfaruksaribal and HasanBerk18
-- Next step: open the PR; then answer review comments. Merge after PR #138 (#19) and PR #137 (#27). If the advisor changes a use case in #19 §7, update the UC tags and §7.1 here.
+- [x] PR #140 opened with `Closes #34`, reviews requested from omerfaruksaribal and HasanBerk18
+- [ ] Approved by the reviewers
+- Next step: answer review comments on PR #140. Merge after PR #138 (#19) and PR #137 (#27). If the advisor changes a use case in #19 §7, update the UC tags and §7.1 here.
 
 ## Manual checks
 - none (documentation only)
