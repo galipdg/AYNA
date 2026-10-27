@@ -4,9 +4,22 @@ Python AI service that turns Turkish natural-language test descriptions into str
 
 Owner: galip. Build, test and AI rules: [AGENTS.md](AGENTS.md).
 
+## HTTP service
+
+`ayna_ai.service` serves `POST /ai/generate-steps` (Turkish instruction + candidate objects → steps, each with a short Turkish `reason`) and `GET /ai/health` to the AYNA server. The contract — request and response, status codes, health, timeouts — is in **[API.md](API.md)**.
+
+From `ai/`, with `ollama serve` running:
+
+```
+python -m ayna_ai.service --port 8090 --model qwen3:8b
+python spikes/service_check.py   # the 10 spike sentences through HTTP, with p50/p95
+```
+
+It listens on loopback only unless started with `--allow-remote`. Candidate objects come from the request through a `Retriever` (`ayna_ai/retrieve.py`); repository retrieval (#58) will replace the pass-through one.
+
 ## Generating steps
 
-`ayna_ai.generate` turns a Turkish instruction into a step document (`schemas/step.schema.json`) with a local Ollama model. Each request derives a JSON schema from the step schema, with `target` limited to the repository objects you pass in, and Ollama decodes only text that fits it. The answer is validated again against the step schema and the object list. Failures (invalid JSON, truncated, schema-invalid, unknown target, timeout, server error) come back as a `Status`, never as steps.
+`ayna_ai.generate` turns a Turkish instruction into a step document (`schemas/step.schema.json`) with a local Ollama model. Each request derives a JSON schema from the step schema, with `target` limited to the repository objects you pass in, and Ollama decodes only text that fits it. The answer is validated again against the step schema and the object list. Failures (invalid JSON, truncated, schema-invalid, unknown target, timeout, server error) come back as a `Status`, never as steps. With `GenerationSettings(reasons=True)` (what the service uses) every step also gets a short Turkish reason in the same constrained call; it is removed before validation and returned in `result.reasons`.
 
 ```python
 from ayna_ai.generate import StepGenerator
