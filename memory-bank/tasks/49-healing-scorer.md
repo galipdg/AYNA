@@ -25,7 +25,8 @@ The Similo → UIA mapping table, the sources and every similarity rule are in t
 - [x] Branch, task note, board → In progress
 - [x] `heal/scorer.py` + 51 tests (ruff check, ruff format --check, pytest pass on macOS, Python 3.12)
 - [x] Inbox notes to hasan (descriptor alignment) and omer (HealingProposal shape)
-- [ ] PR review (HasanBerk18, omerfaruksaribal), CI on Windows
+- [x] PR https://github.com/galipdg/AYNA/pull/141 opened 2026-10-27; CI green (agent job on Windows included)
+- [ ] PR review (HasanBerk18, omerfaruksaribal)
 - Next step: address review comments on the PR; then #42 / #43 feed real snapshot data.
 
 ## Manual checks
