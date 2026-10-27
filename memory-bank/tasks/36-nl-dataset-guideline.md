@@ -21,7 +21,7 @@ Everything that does not need the sample app is done now; the 40 sample-app pair
 - [x] `guideline.md`, `pair.schema.json`, `objects.schema.json`, `check_pairs.py`, `objects/trial.json`, 12 trial pairs (login 6, checkpoint 3, wait 3; 5/3/3 styles)
 - [x] `ai/tests/test_nl_dataset.py`: 34 tests (repo dataset clean, 23 rule mutations each caught, held-out freeze/edit/overlap); ai suite 78 passed, ruff clean
 - [x] Live smoke run of the #37 generator on the trial pairs (below)
-- [ ] PR (`Refs #36`), reviews hasan + omer, inbox note to hasan
+- [x] PR https://github.com/galipdg/AYNA/pull/145 opened 2026-10-27 (`Refs #36`, stacked on #134, merge after it), reviewers hasan + omer; request in hasan's inbox
 - [ ] Criterion 2 (40 pairs) and 3 (≥ 3 variants per type on them) — wait on #33 ← #21
 - Next step: when #33 lands, get `eval/nl/objects/sample.json` from hasan, then write the 40 sample pairs by guideline §7 (5 per type, half each), run `check_pairs.py`, and tick criteria 2–3; merge after #134.
 
