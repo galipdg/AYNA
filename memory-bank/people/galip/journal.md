@@ -39,3 +39,13 @@ Append-only. One entry per session, newest at the bottom:
 - 50 tests with a fake desktop over a real WebSocket, Python 3.11 and 3.15; manual CLI run matched `docs/agent-rpc.md`. ADR `2026-10-27-agent-rpc-v0` (Proposed). Requests in hasan's (backend) and omer's (client) inboxes.
 - Next: open the PR; wire hasan's backend in when #12 lands.
 - 2026-10-27 merge: took main (#127, #130, #133) into the branch; resolved `active.md` by hand.
+
+## 2026-10-27 · orchestrator session (#19, #20, #27, #34, #35, #36, #37, #49, #50, #71)
+- Pulled main (#136). Inbox had nothing new to act on. Picked galip's Nov–Dec issues that do not wait on a teammate's unfinished work. Ran up to three subagents in parallel, each in its own worktree with its own PR.
+- PRs opened: #138 (#19 pre-read), #137 (#27 RS outline), #139 (#20 lit. §2, into omer's branch), #140 (#34: 36 SC, 40 FR, 36 NFR), #143 (#35 RS draft), #142 (#37 generator: 10/10 valid on both models), #141 (#49 scorer: Similo weights, exact fractions), #145 (#36 guideline + checker + 12 trial pairs), #144 (#50 `docs/sdd/SDD-ai.md`), #146 (#71 stdlib service, per-step drop list, `none.noMatch`, 30 s timeout).
+- Orchestrator fixes:
+  - #49: a missing property is skipped only when the target lacks it, and automationId compares the Qt leaf only.
+  - #71: aligned with RS FR-26/SC-27, so invalid steps are dropped one by one and an answer with no valid step gets 422 `no_valid_steps`.
+  - #139: retrieval refs changed from #57 to #58.
+- Blocked on teammates: #42, #43, #57, #58, #72, #76 and the 40 pairs of #36.
+- Next: the advisor's answers for #19, reviews, the #71 offline manual check.
