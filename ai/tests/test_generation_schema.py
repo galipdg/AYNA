@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
-from ayna_ai.generate import SchemaDerivationError, generation_schema
+from ayna_ai.generate import SchemaDerivationError, generation_schema, split_reasons
 from ayna_ai.validate import load_step_schema
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "schemas" / "examples" / "step"
@@ -250,3 +250,86 @@ def test_unknown_constructs_fail_loudly(mutate):
     mutate(schema)
     with pytest.raises(SchemaDerivationError):
         generation_schema(schema, OBJECTS)
+
+
+# --- reason per step (#71) ----------------------------------------------------
+
+
+def test_reason_is_required_and_bounded_in_every_branch():
+    for branch in branches(derive(reason_max_length=80)).values():
+        assert branch["properties"]["reason"] == {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+        }
+        assert "reason" in branch["required"]
+    assert all("reason" not in b["properties"] for b in branches(derive()).values())
+
+
+def test_reason_is_capped_by_max_text():
+    branch = branches(derive(reason_max_length=500, max_text=60))["Click"]
+    assert branch["properties"]["reason"]["maxLength"] == 60
+
+
+def test_without_its_reasons_every_derived_document_is_a_valid_step_document():
+    derived = derive(reason_max_length=40)
+    validator = Draft202012Validator(derived)
+    documents = list(samples(derived))
+    assert len(documents) > 40
+    for document in documents:
+        assert validator.is_valid(document), document
+        document = json.loads(json.dumps(document))  # as parsed from model output
+        reasons, errors = split_reasons(document, 40)
+        assert errors == [] and len(reasons) == len(document["steps"])
+        assert ORIGINAL.is_valid(document), list(ORIGINAL.iter_errors(document))
+
+
+def test_a_reason_field_in_the_step_schema_fails_loudly():
+    schema = copy.deepcopy(STEP_SCHEMA)
+    schema["$defs"]["step"]["properties"]["reason"] = {"type": "string"}
+    with pytest.raises(SchemaDerivationError, match="reason"):
+        generation_schema(schema, OBJECTS, reason_max_length=40)
+
+
+@pytest.mark.parametrize(
+    ("steps", "reasons", "errors"),
+    [
+        (
+            [{"keyword": "Click", "target": "a.b", "reason": "  'tıkla'  "}],
+            ["'tıkla'"],
+            [],
+        ),
+        ([{"keyword": "Click", "target": "a.b"}], [""], ["$.steps[0].reason"]),
+        (
+            [{"keyword": "Click", "target": "a.b", "reason": " "}],
+            [""],
+            ["$.steps[0].reason"],
+        ),
+        (
+            [{"keyword": "Click", "target": "a.b", "reason": 7}],
+            [""],
+            ["$.steps[0].reason"],
+        ),
+        (
+            [
+                {"keyword": "Click", "target": "a.b", "reason": "ok"},
+                {"keyword": "Click", "target": "a.b", "reason": "x" * 11},
+            ],
+            ["ok", "x" * 11],
+            ["$.steps[1].reason"],
+        ),
+        (["not a step"], [""], ["$.steps[0].reason"]),
+    ],
+    ids=["stripped", "missing", "blank", "not a string", "too long", "not an object"],
+)
+def test_split_reasons(steps, reasons, errors):
+    document = {"version": "0.1", "steps": steps}
+    got_reasons, got_errors = split_reasons(document, 10)
+    assert got_reasons == reasons
+    assert [e.split(":")[0] for e in got_errors] == errors
+    assert all("reason" not in s for s in document["steps"] if isinstance(s, dict))
+
+
+@pytest.mark.parametrize("document", [None, [], {"steps": "x"}, {"version": "0.1"}])
+def test_split_reasons_leaves_other_shapes_to_the_schema_check(document):
+    assert split_reasons(document, 10) == ([], [])

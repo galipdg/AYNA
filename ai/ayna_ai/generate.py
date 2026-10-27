@@ -66,6 +66,7 @@ NOT_FOR_GRAMMAR = frozenset(
     ]
 )
 SERVER_FIELDS = ("id",)  # assigned by the server on save, never generated
+REASON = "reason"  # generated beside each step, removed before validation (#71)
 
 
 class SchemaDerivationError(ValueError):
@@ -78,6 +79,7 @@ def generation_schema(
     *,
     max_steps: int = 12,
     max_text: int = 200,
+    reason_max_length: int | None = None,
 ) -> dict:
     """JSON schema for constrained decoding, derived from the step schema.
 
@@ -90,6 +92,10 @@ def generation_schema(
       steps, so a runaway output ends early (#7 finding 1);
     - server-assigned fields (`id`) are left out.
     Local `$ref`s are inlined and annotations dropped.
+
+    With `reason_max_length`, every step also requires a `reason` string of
+    1..`reason_max_length` characters. It is the one field outside the step
+    schema; `split_reasons` removes it before validation.
     """
     names = list(dict.fromkeys(objects))
     if not names:
@@ -113,6 +119,15 @@ def generation_schema(
             props["checkpoint"] = _any_of(
                 _variants(props["checkpoint"], "property", "checkpoint")
             )
+        if reason_max_length is not None:
+            if REASON in props:
+                raise SchemaDerivationError(f"step: {REASON!r} is already a step field")
+            props[REASON] = {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": reason_max_length,
+            }
+            variant["required"].append(REASON)
         variants.append(variant)
 
     derived = {
@@ -334,15 +349,47 @@ target must be one of these objects (Turkish description after the dash):
 
 Keep the order of the actions in the instruction. Add no steps it does not ask for."""
 
+REASON_PROMPT = """
+Give every step a reason: a short Turkish note (at most 10 words) quoting the
+words of the instruction that the step comes from."""
 
-def build_messages(text: str, objects: Mapping[str, str], version: str) -> list[dict]:
+# Bump on every change to SYSTEM_PROMPT or REASON_PROMPT (v1 and v2: #37 task
+# note). Results and the service report it, so outputs stay comparable.
+PROMPT_VERSION = "2"
+
+
+def build_messages(
+    text: str, objects: Mapping[str, str], version: str, *, reasons: bool = False
+) -> list[dict]:
     """Chat messages for one instruction; `objects` maps logical name -> description."""
     listing = "\n".join(
         f"- {name} — {description}" if description else f"- {name}"
         for name, description in objects.items()
     )
     system = SYSTEM_PROMPT.format(version=version, objects=listing)
+    if reasons:
+        system += "\n" + REASON_PROMPT
     return [{"role": "system", "content": system}, {"role": "user", "content": text}]
+
+
+def split_reasons(document: object, max_length: int) -> tuple[list[str], list[str]]:
+    """Remove `reason` from every step of `document` in place.
+
+    Returns (reasons, errors). A missing, empty or too long reason is an error;
+    a document that is not `{steps: [...]}` is left to the schema check.
+    """
+    if not isinstance(document, dict) or not isinstance(document.get("steps"), list):
+        return [], []
+    reasons, errors = [], []
+    for i, step in enumerate(document["steps"]):
+        reason = step.pop(REASON, None) if isinstance(step, dict) else None
+        reason = reason.strip() if isinstance(reason, str) else ""
+        if not reason:
+            errors.append(f"$.steps[{i}].{REASON}: missing or empty")
+        elif len(reason) > max_length:
+            errors.append(f"$.steps[{i}].{REASON}: longer than {max_length} characters")
+        reasons.append(reason)
+    return reasons, errors
 
 
 # --- Generation ---------------------------------------------------------------
@@ -367,12 +414,15 @@ class GenerationSettings:
     seed: int = 42
     max_steps: int = 12
     max_text: int = 200
+    reasons: bool = False  # ask for a short Turkish reason per step (#71, #78)
+    reason_max_length: int = 100
 
 
 @dataclass
 class GenerationResult:
     status: Status
     document: dict | None = None  # the validated step document; None unless ok
+    reasons: list[str] | None = None  # one per step, when asked for; None unless ok
     output: str | None = None  # raw model text
     errors: list[str] = field(default_factory=list)
     latency_s: float = 0.0  # wall clock of the request, model load included
@@ -407,6 +457,10 @@ class StepGenerator:
         self.validator = StepValidator(step_schema)
         self.version = self.validator.schema["properties"]["version"]["const"]
 
+    @property
+    def prompt_version(self) -> str:
+        return PROMPT_VERSION + ("+reason" if self.settings.reasons else "")
+
     def request_body(self, text: str, objects: Mapping[str, str]) -> dict:
         s = self.settings
         if s.format == "schema":
@@ -415,12 +469,13 @@ class StepGenerator:
                 list(objects),
                 max_steps=s.max_steps,
                 max_text=s.max_text,
+                reason_max_length=s.reason_max_length if s.reasons else None,
             )
         else:
             fmt = "json"
         return {
             "model": s.model,
-            "messages": build_messages(text, objects, self.version),
+            "messages": build_messages(text, objects, self.version, reasons=s.reasons),
             "format": fmt,
             "stream": False,
             "think": False,
@@ -475,7 +530,12 @@ class StepGenerator:
             result.status = Status.TRUNCATED if truncated else Status.INVALID_JSON
             result.errors = [f"invalid JSON: {exc}"]
             return result
-        result.errors = self.validator.schema_errors(document)
+        reasons, reason_errors = [], []
+        if self.settings.reasons:
+            reasons, reason_errors = split_reasons(
+                document, self.settings.reason_max_length
+            )
+        result.errors = reason_errors + self.validator.schema_errors(document)
         if result.errors:
             result.status = Status.INVALID_SCHEMA
             return result
@@ -484,6 +544,8 @@ class StepGenerator:
             result.status = Status.UNKNOWN_TARGET
             return result
         result.document = document
+        if self.settings.reasons:
+            result.reasons = reasons
         return result
 
 
@@ -665,6 +727,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "objects": str(args.objects),
         "host": client.host,
         "settings": asdict(settings),
+        "prompt_version": generator.prompt_version,
         "warmup_s": warmup_s,
         "environment": {
             "platform": platform.platform(),

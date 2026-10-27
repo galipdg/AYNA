@@ -7,6 +7,8 @@ import time
 import pytest
 
 from ayna_ai.generate import (
+    PROMPT_VERSION,
+    REASON_PROMPT,
     GenerationSettings,
     Status,
     StepGenerator,
@@ -197,6 +199,63 @@ def test_latency_is_logged_per_scenario(spike_objects, caplog):
         )
 
 
+REASONED = [
+    {**STEPS[0], "reason": "'kullanıcı adı alanına admin yaz'"},
+    {**STEPS[1], "reason": "'giriş butonuna tıkla'"},
+]
+
+
+def test_reasons_are_asked_for_and_returned_beside_the_steps(spike_objects):
+    client = FakeClient(reply(document(REASONED)))
+    generator = StepGenerator(client, GenerationSettings(reasons=True))
+    result = generator.generate(TEXT, spike_objects)
+    assert result.ok
+    assert result.document == {"version": "0.1", "steps": STEPS}
+    assert result.reasons == [
+        "'kullanıcı adı alanına admin yaz'",
+        "'giriş butonuna tıkla'",
+    ]
+    body = client.bodies[0]
+    assert body["format"] == generation_schema(
+        load_step_schema(), list(spike_objects), reason_max_length=100
+    )
+    assert body["messages"][0]["content"].endswith(REASON_PROMPT)
+    assert generator.prompt_version == PROMPT_VERSION + "+reason"
+
+
+def test_without_reasons_the_prompt_and_result_are_unchanged(spike_objects):
+    client = FakeClient(reply(document()))
+    generator = StepGenerator(client)
+    result = generator.generate(TEXT, spike_objects)
+    assert result.ok and result.reasons is None
+    assert REASON_PROMPT not in client.bodies[0]["messages"][0]["content"]
+    assert generator.prompt_version == PROMPT_VERSION
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [
+        [REASONED[0], STEPS[1]],
+        [REASONED[0], {**STEPS[1], "reason": "x" * 101}],
+    ],
+    ids=["missing reason", "reason too long"],
+)
+def test_a_bad_reason_is_a_schema_failure(spike_objects, steps):
+    result = StepGenerator(
+        FakeClient(reply(document(steps))), GenerationSettings(reasons=True)
+    ).generate(TEXT, spike_objects)
+    assert result.status is Status.INVALID_SCHEMA
+    assert result.document is None and result.reasons is None
+    assert result.errors[0].startswith("$.steps[1].reason")
+
+
+def test_a_reason_without_reasons_enabled_is_a_schema_failure(spike_objects):
+    result = StepGenerator(FakeClient(reply(document(REASONED)))).generate(
+        TEXT, spike_objects
+    )
+    assert result.status is Status.INVALID_SCHEMA
+
+
 def test_warm_up_only_loads_the_model():
     client = FakeClient({"done": True})
     StepGenerator(client, GenerationSettings(model="gemma4:e4b-it-qat")).warm_up()
@@ -265,6 +324,7 @@ def test_cli_batch_writes_results_and_a_latency_log(fake_ollama, batch_files, ca
     assert summary["latency_p50_s"] is not None and summary["latency_p95_s"] is not None
     assert results["environment"]["ollama"] == "0.0.test"
     assert results["settings"]["model"] == "qwen3:8b"
+    assert results["prompt_version"] == PROMPT_VERSION
     assert results["warmup_s"] is not None
     assert [s["keywords"] for s in results["scenarios"]] == [
         ["Type", "Click"],
