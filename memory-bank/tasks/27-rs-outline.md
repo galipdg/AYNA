@@ -24,8 +24,9 @@ Written in full now, because #34/#35 need them fixed before content starts: §1.
 ## Status
 - [x] Branch, task note, board In progress
 - [x] `docs/rs/RS.md` outline
-- [ ] PR opened, reviews requested from omerfaruksaribal and HasanBerk18
-- Next step: push, open the PR (`Closes #27`) and request both reviews.
+- [x] PR #137 opened (`Closes #27`), reviews requested from omerfaruksaribal and HasanBerk18
+- [ ] Approved by all three
+- Next step: answer review comments on #137; when Ömerfaruk and Hasan have approved, Galip approves and the PR merges.
 
 ## Manual checks
 - none (documentation only)
