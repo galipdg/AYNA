@@ -70,6 +70,14 @@ class OllamaClient:
     def version(self) -> str | None:
         return self._request("/api/version").get("version")
 
+    def models(self) -> list[str]:
+        """Names of the models pulled on the server (GET /api/tags)."""
+        answer = self._request("/api/tags")
+        listing = answer.get("models") if isinstance(answer, dict) else None
+        if not isinstance(listing, list):
+            raise ModelServerError("/api/tags answered without a model list")
+        return [m["name"] for m in listing if isinstance(m, dict) and "name" in m]
+
     def _request(self, path: str, body: dict | None = None) -> dict:
         data = None if body is None else json.dumps(body).encode("utf-8")
         request = urllib.request.Request(
