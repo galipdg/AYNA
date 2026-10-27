@@ -61,3 +61,79 @@ body {
 .error {
   color: #c62828;
 }
+
+.ok {
+  color: #2e7d32;
+}
+
+.server-form {
+  display: grid;
+  gap: 8px;
+}
+
+.server-form input {
+  font: inherit;
+  font-family: ui-monospace, Consolas, monospace;
+  padding: 6px 8px;
+}
+
+.server-form .actions,
+.connected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connected {
+  justify-content: space-between;
+}
+
+button {
+  font: inherit;
+  padding: 4px 16px;
+}
+
+.app-list {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.app-list button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.app-list button.selected {
+  outline: 2px solid #2e7d32;
+}
+
+.app-list .technology {
+  opacity: 0.75;
+}
+
+.card h3 {
+  font-size: 1rem;
+}
+
+.app-form {
+  display: grid;
+  gap: 8px;
+}
+
+.app-form input {
+  font: inherit;
+  padding: 6px 8px;
+}
+
+.card > .actions,
+.app-form .actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -18,8 +18,24 @@ Append-only. One entry per session, newest at the bottom:
 - Galip handed the rest of #6 to hasan: he runs the check, his agent fixes the script if needed, writes the results and closes #6 with his own PR.
 - Next: review + merge #119.
 
+## 2026-10-27 · inbox + #10 + reviews
+- Pulled main (52 commits: #3 CI, #4/#5/#14/#18/#128 by omer, #8/#9 by hasan, my #119). Read inbox and the open PRs #126, #127, #130.
+- Approved PR #127 (#32 client server settings) with two non-blocking notes: `AppPicker.choose()` has no catch; IPC handlers do not check the sender.
+- #7: ticked its first three criteria, commented, and moved the unsent GPU request to the new issue #131 (Week 2, on hold).
+- Filled the Commands sections of `ai/AGENTS.md` and `agent/AGENTS.md` (ruff + pytest run in fresh venvs on macOS, Python 3.15).
+- #10: wrote the Similo, WATER and Vista entries on `galip/10-literature-galip` (from omer's branch). WATER's full text was not reachable (ACM 403); used the authors' slides plus Vista and Similo.
+- Found that `merge=union` brings deleted inbox lines back when another branch appends; kept handled items until #126 and #130 merge.
+- Next: #13 step schema v0 after the user's OK.
+
+## 2026-10-27 · #13
+- Started #13 on `galip/13-step-schema`; board In progress. Galip chose: version at the document root, `timeoutMs` (camelCase), `jsonschema~=4.26` in `ai/`, Wait = until the target is ready.
+- Added `schemas/step.schema.json` (2020-12, `if`/`then` per keyword), `schemas/examples/step/` (14-step test, 7 valid + 29 invalid named cases) and `ai/tests/test_step_schema.py` (44 pass; dropping three rules made 7 fail).
+- Wrote the Proposed ADR `2026-10-27-step-schema-v0`, the schemas README section and review notes in omer's and hasan's inboxes (graph needs `timeoutMs`; `checkpoint` cannot be a Neo4j map).
+- Opened PR #134 (reviewers omer, hasan). Next: collect both approvals.
+
 ## 2026-10-27 · #16
 - Pulled main (nothing new). #13 is in review (PR #134); Week 2 left #16 as the only code issue. Galip chose to start it although it depends on #12, because only `snapshot` needs #12.
 - Added `agent/ayna_agent/rpc.py`: JSON-RPC 2.0 over WebSocket on 127.0.0.1 (`websockets~=17.3`, approved), `Authorization: Bearer` token checked in the handshake, token from `AYNA_AGENT_TOKEN`, `--port 0` + stdout ready line, `Desktop` protocol for the UIA backend (all calls on one worker thread).
 - 50 tests with a fake desktop over a real WebSocket, Python 3.11 and 3.15; manual CLI run matched `docs/agent-rpc.md`. ADR `2026-10-27-agent-rpc-v0` (Proposed). Requests in hasan's (backend) and omer's (client) inboxes.
 - Next: open the PR; wire hasan's backend in when #12 lands.
+- 2026-10-27 merge: took main (#127, #130, #133) into the branch; resolved `active.md` by hand.
