@@ -1,8 +1,8 @@
 # #6 UIA tree dump spike on 3 candidate pilot apps
 
 - Issue: https://github.com/galipdg/AYNA/issues/6
-- Owner: galip · Branch: `galip/6-uia-tree-dump`
-- Started: 2026-10-25 · Last update: 2026-10-25
+- Owner: hasan (handover from galip) · Branch: `hasan/6-uia-dumps`
+- Started: 2026-10-25 · Last update: 2026-10-27
 
 ## Approach
 One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows only) walks the raw UIA view of every visible top-level window of a target process with pywinauto's `uia` backend and writes `eval/spikes/uia-dumps/<id>.json`. `stats` (any OS) reads the dumps and prints the property-richness tables for the note `eval/spikes/uia-dump.md`. Targets are listed in `eval/spikes/uia-targets.json`. Tests use stdlib `unittest` with fake nodes, so everything except the thin UIA reader runs on macOS.
@@ -22,9 +22,14 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - [x] Script, targets file, 24 unit tests passing on macOS (Python 3.11 and 3.15); pywinauto API names checked against the 0.6.9 source on GitHub
 - [x] Note skeleton: method, candidates, expectations written before the run, selection criteria, run instructions
 - [x] PR https://github.com/galipdg/AYNA/pull/119 (tooling, `Refs #6`) opened 2026-10-25, merged `origin/main` in, marked ready; label `needs-windows-test` on #6
-- [ ] Windows session: dumps of at least 3 apps (pending)
+- [x] PR #119 merged, handover to hasan done
+- [x] 2026-10-27 the four portable apps downloaded to `C:\ayna-pilots\` and brought into their target state on hasan's Windows machine
+- [x] `find_windows` fixed (commit ddc33b7): windows are found by handle, not through the UIA tree, and `walk()` deduplicates by handle. 26 unit tests pass
+- [x] Dumps of `keepass2`, `handbrake`, `notepadpp` in their target state
+- [ ] `keepassxc` dump has to be retaken: the database locked itself before the final run, so the dump holds the unlock screen, not the entry form. Needs the workstation unlocked
 - [ ] Fill Results, Findings and Recommendation in `eval/spikes/uia-dump.md` from `uia_dump.py stats`
-- Next step (galip): get a review on #119 and merge it. After that the rest of #6 is hasan's (inbox handover): Windows check, dumps, results, recommendation, PR with `Closes #6`.
+- [ ] Commit the dumps, remove `needs-windows-test`, PR with `Closes #6`
+- Next step (hasan): once the machine is unlocked, unlock KeePassXC (`ayna-demo`), open New Entry, run `.venv\Scripts\python eval\spikes\uia_dump.py dump --only keepassxc`, then write the note.
 
 ## Manual checks
 - 2026-10-25 · pending Windows session · UIA dump of the four targets
@@ -67,6 +72,23 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
     (125% scaling) — recorded because the dumps store it per window.
   - The smoke dump was written to a scratch folder, not to
     `eval/spikes/uia-dumps/`, so it does not pollute the deliverable.
+
+- 2026-10-27 - hasan - **the real run of the four pilot apps** - pass for 3 of 4, keepassxc to redo
+  - Ran on hasan's Windows machine (`Windows-11-10.0.26300-SP0`, DPI 120 = 125% scaling)
+    from the repo `.venv` (Python 3.13.0, pywinauto 0.6.9), not a throwaway `%TEMP%` venv.
+  - The four portable builds were downloaded to `C:\ayna-pilots\` (KeePass 2.61.1,
+    KeePassXC 2.8.0, HandBrake 1.11.2, Notepad++ 8.9.8.1). The .NET 8 Desktop Runtime was
+    already installed (8.0.20), so HandBrake needed nothing extra.
+  - The app states were set by the agent through UIA and keystrokes instead of by hand; what
+    that cost is in `learnings.md` (password fields, foreground focus, shell dialogs).
+  - Deviation from the plan: KeePass 2's database is `Database.kdbx`, not `ayna-demo.kdbx` -
+    the file-name box of the "Create New Database" dialog could not be set through UIA and the
+    default name was kept. It changes a window title, nothing that is measured.
+  - Step 5 result: `Dumped 4 of 4 targets.`, no target truncated, `read_errors: 0` everywhere.
+    Walk times: keepass2 278.5 s, handbrake 2.0 s, keepassxc 0.5 s, notepadpp 1.0 s.
+  - The first run exposed the script bug fixed in ddc33b7 (KeePass's modal dialog was missing).
+  - `keepassxc.json` has to be retaken: KeePassXC locked itself between the state setup and the
+    final run, so it dumped the unlock screen (58 elements) instead of the entry form (84).
 
 ## Open issues
 - `ruff` is still not installed on this Mac and `eval/` has no `pyproject.toml`, so the spike is not linted (same as #7). Line length is kept at ~100.
