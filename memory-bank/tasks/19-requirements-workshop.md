@@ -20,7 +20,7 @@ The workshop itself is a human step: the advisor meeting on Tuesday 27 Oct 2026.
 ## Status
 - [x] Branch, task note, board set to In progress
 - [x] `docs/requirements-workshop.md` drafted: 5 roles, 16 use cases, 8 constraints, 12 out-of-scope items, 8 questions
-- [x] PR opened with omer and hasan as reviewers. Do not merge before §7 is filled in
+- [x] PR #138 opened with omer and hasan as reviewers. Do not merge before §7 is filled in
 - [ ] Advisor meeting held; §7 filled in; status line changed to "Agreed with the advisor on <date>"; second criterion ticked
 - Next step: galip goes through the doc with the advisor (manual check below), fills §7 and applies the agreed changes on this branch.
 
