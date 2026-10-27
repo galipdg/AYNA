@@ -28,15 +28,18 @@ Candidates passed to :func:`rank` also need ``id`` (the snapshot element id), us
 report the candidate and to break ties. These types must be aligned with the element
 descriptor (#11) and the snapshot (#12) when they land.
 
-Missing-property rule: a property is compared only when *both* sides have a value. A
-value is missing when the key is absent, the value is ``None``, a string is blank after
-normalisation, or the bounds are empty (width or height <= 0, which UI Automation
-reports for off-screen elements; then location, area and shape are all skipped). A
-skipped property is left out of both sums: its weight is not counted, so it neither
-lowers nor raises the score. If nothing can be compared, the score is 0 and there are
-no contributions. Known v0 limitation: a candidate is not marked down for lacking a value
-the target has, so an unnamed control can outrank a named one whose name differs
-(``test_missing_candidate_value_is_not_penalised``; to be measured in #76).
+Missing-property rule: a value is missing when the key is absent, the value is ``None``,
+a string is blank after normalisation, or the bounds are empty (width or height <= 0,
+which UI Automation reports for off-screen elements; this counts for location, area and
+shape together).
+
+- Target lacks the value: the property is skipped (nothing to compare against). Its
+  weight is left out of both sums.
+- Target has it, candidate lacks it: similarity 0 and the weight *is* counted, as in
+  Similo, where a missing attribute is simply no match. Otherwise an unnamed control
+  would outrank a named one whose name differs only a little.
+
+If the target has nothing to compare, the score is 0 and there are no contributions.
 
 Weights and similarities (Similo mapping)
 -----------------------------------------
@@ -49,7 +52,7 @@ its closest web analogue.
 =============  ========================  ======  =========================================
 AYNA property  Similo parameter          Weight  Similarity
 =============  ========================  ======  =========================================
-automationId   Id                        1.5     normalised Levenshtein (Similo: equals)
+automationId   Id                        1.5     normalised Levenshtein of the last segment
 name           Visible text              1.5     normalised Levenshtein
 controlType    Tag                       1.5     equals (case-insensitive)
 nearestLabel   Neighbor texts            1.5     shared-word ratio
@@ -72,9 +75,14 @@ Similarity details:
 - Text is normalised before comparing: NFC, ``casefold``, Turkish dotted/dotless i
   folded together (``İ``/``I``/``ı`` -> ``i``) so that upper/lower case Turkish matches,
   whitespace collapsed. Other diacritics stay significant (``ş`` != ``s``).
-- Normalised Levenshtein: ``1 - distance / max(len_a, len_b)``. ``automationId`` uses it
-  instead of Similo's exact match because Qt builds AutomationId as a dotted object path
-  that changes when any ancestor is renamed (``memory-bank/learnings.md``, 2026-10-25).
+- Normalised Levenshtein: ``1 - distance / max(len_a, len_b)``.
+- ``automationId`` compares only its leaf, the text after the last ``.`` (ids without a
+  dot compare whole), with normalised Levenshtein. Qt builds AutomationId as a dotted
+  path over the whole object chain, so a renamed ancestor changes every descendant's id
+  (``memory-bank/learnings.md``, 2026-10-25), and siblings share a long prefix that
+  would make unrelated ids look alike. The ancestor chain is already scored by
+  ``parentPath``. Similo uses exact match; the edit distance gives partial credit to a
+  renamed leaf (``usernameInput`` -> ``userNameField``).
 - Shared-word ratio: ``|common words| / max(|words_a|, |words_b|)`` over the sets of
   word tokens, as the paper describes it ("5 common words out of 10 gives 0.5"). The
   authors' code weights words by length and accepts prefix matches; v0 keeps the paper's
@@ -85,8 +93,8 @@ Similarity details:
   truncated to whole pixels, and area / shape use ``min / max``.
 
 Differences from Similo: Similo's score is an unnormalised weighted sum; this one is
-divided by the weights of the compared properties (issue #49), so it lies in [0, 1] and
-is comparable across targets. No minimum score is applied here: like Similo, ``rank``
+divided by the weights of the properties the target has (issue #49), so it lies in
+[0, 1] and is comparable across targets. No minimum score is applied here: like Similo, ``rank``
 always returns the best candidates it has, and the caller (#73) decides whether the best
 one is good enough to propose.
 
@@ -111,7 +119,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from fractions import Fraction
 from types import MappingProxyType
-from typing import Required, TypedDict
+from typing import Required, TypedDict, TypeVar
 
 
 class Element(TypedDict, total=False):
@@ -387,10 +395,27 @@ def _ratio(a: int | Fraction, b: int | Fraction) -> Fraction:
 Comparator = Callable[[Element, Element], Fraction | None]
 
 
+_T = TypeVar("_T")
+
+
+def _apply_missing_rule(
+    target_value: _T | None,
+    candidate_value: _T | None,
+    similarity: Callable[[_T, _T], Fraction],
+) -> Fraction | None:
+    """Skip when the target lacks the value; score 0 when only the candidate lacks it."""
+    if target_value is None:
+        return None
+    if candidate_value is None:
+        return Fraction(0)
+    return similarity(target_value, candidate_value)
+
+
 def _compare_text(prop: str, similarity: Callable[[str, str], Fraction]) -> Comparator:
     def compare(target: Element, candidate: Element) -> Fraction | None:
-        a, b = _text(target, prop), _text(candidate, prop)
-        return None if a is None or b is None else similarity(a, b)
+        return _apply_missing_rule(
+            _text(target, prop), _text(candidate, prop), similarity
+        )
 
     return compare
 
@@ -399,8 +424,7 @@ def _compare_bounds(
     similarity: Callable[[Rect, Rect], Fraction],
 ) -> Comparator:
     def compare(target: Element, candidate: Element) -> Fraction | None:
-        a, b = _bounds(target), _bounds(candidate)
-        return None if a is None or b is None else similarity(a, b)
+        return _apply_missing_rule(_bounds(target), _bounds(candidate), similarity)
 
     return compare
 
@@ -409,19 +433,35 @@ def _equal(a: str, b: str) -> Fraction:
     return Fraction(int(a == b))
 
 
+def automation_id_similarity(a: str, b: str) -> Fraction:
+    """Normalised Levenshtein of the ids' last dotted segments (normalised strings)."""
+    return text_similarity(_leaf(a), _leaf(b))
+
+
+def _leaf(automation_id: str) -> str:
+    # "qapplication.loginwindow.usernameinput" -> "usernameinput"; a trailing dot keeps
+    # the whole id so that the result is never empty.
+    return automation_id.rsplit(".", 1)[-1] or automation_id
+
+
+def _sibling_index(element: Element) -> int | None:
+    value = element.get("siblingIndex")
+    if value is not None and (isinstance(value, bool) or not isinstance(value, int)):
+        raise TypeError(f"'siblingIndex' must be an int, got {value!r}")
+    return value
+
+
 def _compare_sibling_index(target: Element, candidate: Element) -> Fraction | None:
-    a, b = target.get("siblingIndex"), candidate.get("siblingIndex")
-    if a is None or b is None:
-        return None
-    for value in (a, b):
-        if isinstance(value, bool) or not isinstance(value, int):
-            raise TypeError(f"'siblingIndex' must be an int, got {value!r}")
-    return Fraction(int(a == b))
+    return _apply_missing_rule(
+        _sibling_index(target),
+        _sibling_index(candidate),
+        lambda a, b: Fraction(int(a == b)),
+    )
 
 
 _COMPARATORS: Mapping[str, Comparator] = MappingProxyType(
     {
-        "automationId": _compare_text("automationId", text_similarity),
+        "automationId": _compare_text("automationId", automation_id_similarity),
         "name": _compare_text("name", text_similarity),
         "controlType": _compare_text("controlType", _equal),
         "nearestLabel": _compare_text("nearestLabel", word_similarity),

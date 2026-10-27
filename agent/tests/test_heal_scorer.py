@@ -9,6 +9,7 @@ from ayna_agent.heal.scorer import (
     PROPERTIES,
     SIMILO_WEIGHTS,
     area_similarity,
+    automation_id_similarity,
     levenshtein,
     location_similarity,
     normalize_text,
@@ -117,16 +118,28 @@ def test_renamed_automation_id_still_ranks_first():
     assert 0 < best.result.similarities["automationId"] < 1
 
 
-def test_qt_ancestor_rename_keeps_most_of_automation_id():
-    # Qt's dotted AutomationId changes when an ancestor is renamed (learnings 2026-10-25).
+def test_qt_ancestor_rename_with_same_leaf_keeps_full_automation_id():
+    # Qt's dotted AutomationId changes when an ancestor is renamed (learnings 2026-10-25);
+    # only the leaf is compared, the ancestor chain is parentPath's job.
     renamed = candidate(
         "e1", USERNAME, automationId="QApplication.signInWindow.usernameInput"
     )
 
-    sim = score(USERNAME, renamed).similarities["automationId"]
+    assert score(USERNAME, renamed).similarities["automationId"] == 1
 
-    # "login" -> "signin" is 3 edits; the longer id has 39 characters.
-    assert sim == Fraction(36, 39)
+
+def test_unrelated_qt_siblings_score_low_on_automation_id():
+    # Same "QApplication.loginWindow." prefix; the leaves "usernameinput" and
+    # "loginbutton" share almost nothing, so the prefix no longer inflates the score.
+    sim = score(USERNAME, LOGIN_BUTTON).similarities["automationId"]
+
+    assert sim == text_similarity("usernameinput", "loginbutton")
+    assert sim < Fraction(1, 4)
+
+
+def test_automation_id_without_dots_compares_whole():
+    assert automation_id_similarity("textbox1", "textbox2") == Fraction(7, 8)
+    assert automation_id_similarity("a.b.okbutton", "okbutton") == 1
 
 
 def test_moved_control_ranks_above_the_new_occupant_of_its_place():
@@ -191,27 +204,53 @@ def test_empty_candidate_list_gives_empty_ranking():
     assert rank(USERNAME, []) == []
 
 
-def test_missing_properties_are_skipped_not_scored_zero():
-    target = candidate("t", USERNAME, nearestLabel=None)
-    sparse = candidate("e1", USERNAME, name=None, className="   ")
+def test_property_missing_on_the_target_is_skipped():
+    target = candidate("t", USERNAME, nearestLabel=None, className="   ")
 
-    result = score(target, sparse)
+    result = score(target, candidate("e1", USERNAME))
 
-    assert set(result.contributions) == set(PROPERTIES) - {
-        "nearestLabel",
-        "name",
-        "className",
-    }
+    assert set(result.contributions) == set(PROPERTIES) - {"nearestLabel", "className"}
     assert result.score == 1
 
 
-def test_missing_candidate_value_is_not_penalised():
-    # Known v0 limitation of the rule above: a candidate without a name or label is not
-    # marked down for them, so it can outrank the same element with a different name.
-    nameless = candidate("e1", PASSWORD, name=None, nearestLabel=None)
-    named = candidate("e2", PASSWORD)
+def test_property_missing_on_the_candidate_scores_zero():
+    sparse = candidate("e1", USERNAME, name=None, className="   ")
 
-    assert ranked_ids(rank(USERNAME, [named, nameless])) == ["e1", "e2"]
+    result = score(USERNAME, sparse)
+
+    assert list(result.contributions) == list(PROPERTIES)
+    assert result.similarities["name"] == 0
+    assert result.similarities["className"] == 0
+    # All 9.5 of weight is counted; name (1.5) and className (0.5) add nothing.
+    assert result.score == Fraction(15, 19)
+
+
+def test_named_correct_candidate_beats_a_nameless_one():
+    # The true element moved down and its name and label got shorter; an unlabelled
+    # search box now sits where it was. The first version of the scorer skipped the
+    # box's missing name and label (and compared whole ids) and ranked it first,
+    # 238/247 against 379/494.
+    correct = candidate(
+        "e-correct",
+        USERNAME,
+        name="Kullanıcı",
+        nearestLabel="Kullanıcı:",
+        bounds=(120, 380, 320, 404),
+        siblingIndex=4,
+    )
+    nameless = candidate(
+        "e-nameless",
+        USERNAME,
+        automationId="QApplication.loginWindow.searchInput",
+        name=None,
+        nearestLabel=None,
+    )
+
+    ranking = rank(USERNAME, [nameless, correct])
+
+    assert ranked_ids(ranking) == ["e-correct", "e-nameless"]
+    assert ranking[1].result.similarities["name"] == 0
+    assert ranking[1].result.similarities["nearestLabel"] == 0
 
 
 def test_nothing_comparable_scores_zero():
@@ -222,13 +261,26 @@ def test_nothing_comparable_scores_zero():
     assert result.similarities == {}
 
 
-def test_empty_bounds_skip_location_area_and_shape():
+def test_empty_candidate_scores_zero_on_every_property():
+    result = score(USERNAME, {})
+
+    assert result.score == 0
+    assert list(result.contributions) == list(PROPERTIES)
+
+
+def test_empty_bounds_count_as_missing():
     offscreen = candidate("e1", USERNAME, bounds=(0, 0, 0, 0))
 
-    result = score(USERNAME, offscreen)
+    on_candidate = score(USERNAME, offscreen)
+    on_target = score(offscreen, candidate("e2", USERNAME))
 
-    assert {"location", "area", "shape"}.isdisjoint(result.contributions)
-    assert result.score == 1
+    assert [on_candidate.similarities[p] for p in ("location", "area", "shape")] == [
+        0,
+        0,
+        0,
+    ]
+    assert {"location", "area", "shape"}.isdisjoint(on_target.contributions)
+    assert on_target.score == 1
 
 
 def test_turkish_case_and_diacritics():
@@ -342,8 +394,8 @@ def test_rank_returns_top_k():
 def test_shuffled_candidates_give_the_same_ranking():
     expected = rank(USERNAME, POOL, k=len(POOL))
     ids = ranked_ids(expected)
-    # identical > renamed id (33/38 on automationId) > moved 300 px (18/19 overall)
-    assert ids[:3] == ["a", "d", "e"]
+    # identical (1) > moved 300 px (18/19) > renamed leaf, 8/13 on automationId (232/247)
+    assert ids[:3] == ["a", "e", "d"]
     # "b" and "h" are equal copies of PASSWORD: adjacent, in id order.
     assert ids.index("h") == ids.index("b") + 1
 
