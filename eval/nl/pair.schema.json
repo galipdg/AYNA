@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:eval:nl:pair",
+  "title": "AYNA NL dataset pair",
+  "description": "One line of eval/nl/pairs.jsonl or heldout.jsonl: a Turkish test description and its gold steps (#36). Rules for every field: eval/nl/guideline.md. Checked by eval/nl/check_pairs.py.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "Unique pair id: the app code, a dash and three digits. Never reused.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*-[0-9]{3}$"
+    },
+    "app": {
+      "description": "Application under test; eval/nl/objects/<app>.json holds its objects.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$"
+    },
+    "appVersion": {
+      "description": "Version of the app the pair was written for; must equal the objects file's appVersion.",
+      "type": "string",
+      "minLength": 1
+    },
+    "scenarioType": {
+      "description": "Scenario type (guideline section 3).",
+      "enum": ["login", "form", "listSearch", "settings", "dialog", "wizard", "checkpoint", "wait"]
+    },
+    "scenario": {
+      "description": "Test intent the pair phrases. Pairs with the same scenario are phrasing variants: same app, type and gold steps.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)+$"
+    },
+    "style": {
+      "description": "Phrasing style of the text (guideline section 5).",
+      "enum": ["imperative", "polite", "descriptive", "terse", "stepwise"]
+    },
+    "tags": {
+      "description": "Optional difficulty markers (guideline section 5).",
+      "type": "array",
+      "items": { "enum": ["implicitTarget", "informal", "reordered"] },
+      "uniqueItems": true
+    },
+    "origin": {
+      "description": "team: written by a team member; outsider: written by someone outside the team (#57).",
+      "enum": ["team", "outsider"]
+    },
+    "author": {
+      "description": "Team member id, or an anonymous code ext-NN for an outsider. Never a real name.",
+      "type": "string"
+    },
+    "text": {
+      "description": "The Turkish description exactly as written (line breaks allowed), without leading or trailing white space.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^\\S([\\s\\S]*\\S)?$"
+    },
+    "gold": {
+      "description": "The gold step document: a step schema document with at least one step and no step ids.",
+      "$ref": "urn:ayna:schema:step",
+      "properties": {
+        "steps": {
+          "minItems": 1,
+          "items": { "properties": { "id": false } }
+        }
+      }
+    },
+    "notes": {
+      "description": "Free text for reviewers: labelling choices, doubts.",
+      "type": "string"
+    }
+  },
+  "required": ["id", "app", "appVersion", "scenarioType", "scenario", "style", "origin", "author", "text", "gold"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "required": ["origin"], "properties": { "origin": { "const": "team" } } },
+      "then": { "properties": { "author": { "enum": ["galip", "hasan", "omer"] } } }
+    },
+    {
+      "if": { "required": ["origin"], "properties": { "origin": { "const": "outsider" } } },
+      "then": { "properties": { "author": { "pattern": "^ext-[0-9]{2}$" } } }
+    }
+  ]
+}
