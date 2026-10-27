@@ -83,12 +83,15 @@ def main():
         print(f"#{case['id']} {code} {payload['status']} {elapsed:.2f}s {keywords}")
         for step in payload.get("steps", []):
             print("    ", json.dumps(step, ensure_ascii=False))
+        for dropped in payload.get("dropped", []):
+            print("    dropped", json.dumps(dropped, ensure_ascii=False))
 
     latencies = [r["client_s"] for r in rows]
     summary = {
         "n": len(rows),
         "http_200": sum(r["code"] == 200 for r in rows),
         "keyword_match": sum(r["keyword_match"] for r in rows),
+        "steps_dropped": sum(len(r["response"].get("dropped", [])) for r in rows),
         "p50_s": round(percentile(latencies, 50), 2),
         "p95_s": round(percentile(latencies, 95), 2),
         "max_s": round(max(latencies), 2),

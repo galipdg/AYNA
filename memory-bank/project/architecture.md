@@ -34,6 +34,7 @@ Each test machine (Windows)                    Shared, on the closed network
 | Element / snapshot schema | `schemas/element.schema.json`, `schemas/snapshot.schema.json` | agent ↔ server |
 | REST API | `docs/api/openapi.yaml` (generated) | client ↔ server |
 | Agent JSON-RPC | `docs/agent-rpc.md` | client ↔ agent |
+| AI service HTTP API | `ai/API.md` | server ↔ AI service |
 | Graph schema | `server/src/main/resources/neo4j/migrations/` + `docs/graph-model.md` | server ↔ Neo4j |
 
 ## Graph data model (v0)

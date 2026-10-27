@@ -19,11 +19,11 @@ python -m ayna_ai.service --port 8090 --model qwen3:8b --model gemma4:e4b-it-qat
 | `--allow-remote` | off | Allow e.g. `0.0.0.0` (inside a container, #82). Logged as a warning at start. |
 | `--model` | `qwen3:8b` | Model the service offers; repeatable. The first is the default. |
 | `--model-host` | `http://127.0.0.1:11434` | Ollama URL; must be a loopback address. |
-| `--timeout` | `60` | Seconds per generation, a cold model load included. |
+| `--timeout` | `30` | Seconds per request — retrieval and the model call, a cold model load included. Past it the service answers 504 (see [Timeouts](#timeouts-and-latency)). |
 | `--max-body-bytes` | `65536` | Larger requests get 413. |
 | `--no-warmup` | warm-up on | By default the default model is loaded in the background at start. |
 
-The service logs one JSON line per request to stderr (`event: request`, code, status, model, steps, latency_ms) and one per generation (`event: generate`, tokens, latency). **The instruction text is never logged**: it is test data and may hold passwords.
+The service logs one JSON line per request to stderr (`event: request`, code, status, model, steps, dropped, latency_ms) and one per generation (`event: generate`, tokens, latency). **The instruction text is never logged**: it is test data and may hold passwords.
 
 ## POST /ai/generate-steps
 
@@ -37,7 +37,7 @@ Request: `Content-Type: application/json` (else 415), body at most 64 KiB, with 
 | `app` | string, 1–200 chars | yes | Application under test (name or id). |
 | `version` | string, ≤ 100 chars | no | Application version. |
 | `screen` | string, ≤ 200 chars | no | Screen the user is writing the test for. |
-| `objects` | array of 1–100 `{name, description?}` | yes, until #58 | Candidate repository objects. `name`: logical name as in the step schema (`screen.element`, e.g. `login.loginButton`), unique. `description`: short Turkish text, ≤ 200 chars (e.g. the control's label: "Giriş butonu"). |
+| `objects` | array of 1–100 `{name, description?}` | yes, until #58 | Candidate repository objects. `name`: logical name as in the step schema (`screen.element`, e.g. `login.loginButton`), unique, not `none.noMatch` (reserved, see below). `description`: short Turkish text, ≤ 200 chars (e.g. the control's label: "Giriş butonu"). |
 | `model` | string | no | One of the models the service offers (see health); default: the first. |
 
 Unknown fields are rejected (400), so a typo cannot be ignored silently. `app`, `version` and `screen` are not used yet; send them anyway — retrieval (#58) will use them, and the request will not change for you.
@@ -56,7 +56,7 @@ Unknown fields are rejected (400), so a typo cannot be ignored silently. `app`, 
 }
 ```
 
-Response **200**:
+Response **200** — at least one suggested step; here the model wrote three and one was dropped:
 
 ```json
 {
@@ -66,46 +66,79 @@ Response **200**:
     {"keyword": "Type", "target": "login.userNameInput", "value": "admin", "reason": "Kullanıcı adı alanına admin yaz"},
     {"keyword": "Click", "target": "login.loginButton", "reason": "Giriş butonuna tıkla"}
   ],
+  "dropped": [
+    {"index": 1, "code": "no_match", "reason": "no repository object matches",
+     "step": {"keyword": "Click", "target": "none.noMatch", "reason": "Beni hatırla kutusunu işaretle"}}
+  ],
   "schemaVersion": "0.1",
-  "promptVersion": "2+reason",
+  "promptVersion": "3+reason",
   "latencyMs": 6721
 }
 ```
 
-- Each step is a step of `schemas/step.schema.json` **plus** `reason` (1–100 chars, Turkish, for the panel). Remove `reason` before saving: `{"version": schemaVersion, "steps": [steps without reason]}` is a valid step document. Steps have no `id`; the server assigns it on save.
-- **Every `target` is one of the request's `objects`** (after #58: of the retrieved objects). The service checks this twice and answers 422 rather than return a step with another target; there are tests for it (`ai/tests/test_service.py`).
-- There are 1–12 steps. The model is asked to keep the order of the instruction and add nothing, but it can still miss or misread a step (qwen3 drops the first click of "Kaydet'e bastıktan sonra …"), which is why the user reviews every suggestion.
+- `steps`: the suggested steps, in the instruction's order. Each is a step of `schemas/step.schema.json` **plus** `reason` (1–100 chars, Turkish, for the panel). Remove `reason` before saving: `{"version": schemaVersion, "steps": [steps without reason]}` is a valid step document. Steps have no `id`; the server assigns it on save.
+- **Every `target` in `steps` is one of the request's `objects`** (after #58: of the retrieved objects). The generator and then the service check every step; a step that fails is never in `steps`, only in `dropped`. There are tests for it (`ai/tests/test_service.py`, including a property test over random model answers).
+- `dropped`: the steps the model wrote that cannot be suggested (FR-26), in the model's order; `[]` when none. Each entry:
+  - `index` — position in the model's answer (0-based). The model wrote `len(steps) + len(dropped)` steps; the suggested ones fill the other positions in order, so the panel can show a dropped step where it would have been.
+  - `code` — why, from the table below; show the Turkish text for it.
+  - `reason` — English details for the log or a tooltip (several problems are joined with `; `).
+  - `step` — the step exactly as the model wrote it, its own `reason` included when it gave one. It is **not** a valid step; never save it.
+
+  | `code` | Meaning | Suggested panel text |
+  |---|---|---|
+  | `unknown_keyword` | A keyword other than Click, Type, Select, Verify, Wait (e.g. `DoubleClick`) | "Bilinmeyen adım türü" |
+  | `unknown_target` | The target is not a repository object (of this request) | "Depoda olmayan nesne" |
+  | `no_match` | The model said no repository object fits (target `none.noMatch`) | "Depoda uygun nesne bulunamadı" |
+  | `invalid_step` | Any other step-schema error (e.g. Click with a `value`), or no reason | "Geçersiz adım" |
+
+  With the grammar the model can only produce `no_match`; the other codes appear when a model server ignores the grammar, and the tests cover them.
+- There are 1–12 model steps. The model is asked to keep the order of the instruction and add nothing, but it can still miss or misread a step (qwen3 drops the first click of "Kaydet'e bastıktan sonra …"), which is why the user reviews every suggestion.
 - `latencyMs`: time spent in the service, model included.
+
+**Reserved object name `none.noMatch`.** The model's target list always offers `none.noMatch`, so it can say "no object fits" instead of picking a wrong object (forced choice). A step with this target is always dropped (`no_match`). A request whose `objects` contain an object of that name is refused with 400; the repository should not allow the name.
 
 ### Errors
 
-Every error has the same shape; `details` (a list of strings, at most 20) and the generation fields appear when they apply:
+Every error has the same shape; `details` (a list of strings, at most 20) and the generation fields appear when they apply. When every model step was dropped, the body also has `steps: []` and `dropped` (SC-27: the user asked for a "forgot password" link the repository does not have, and a model answered with an unknown keyword and that link):
 
 ```json
 {
-  "status": "unknown_target",
-  "error": "the model's answer targets an object outside the repository",
-  "details": ["$.steps[1].target: 'settings.deleteAllButton' is not in the object repository"],
+  "status": "no_valid_steps",
   "model": "qwen3:8b",
+  "error": "the description could not be turned into valid steps",
+  "details": [
+    "$.steps[0]: unknown keyword 'DoubleClick'",
+    "$.steps[1]: 'login.forgotPasswordLink' is not in the object repository"
+  ],
+  "steps": [],
+  "dropped": [
+    {"index": 0, "code": "unknown_keyword", "reason": "unknown keyword 'DoubleClick'",
+     "step": {"keyword": "DoubleClick", "target": "login.loginButton", "reason": "çift tıkla"}},
+    {"index": 1, "code": "unknown_target", "reason": "'login.forgotPasswordLink' is not in the object repository",
+     "step": {"keyword": "Click", "target": "login.forgotPasswordLink", "reason": "Şifremi unuttum bağlantısına"}}
+  ],
   "schemaVersion": "0.1",
-  "promptVersion": "2+reason",
+  "promptVersion": "3+reason",
   "latencyMs": 7012
 }
 ```
 
 | HTTP | `status` | When | What the server should do |
 |---|---|---|---|
-| 400 | `bad_request` | Body is not a JSON object, a field is missing or invalid, duplicate object names, a model the service does not offer, no `objects` | Fix the request (a bug on our side); `details` names the field. |
+| 400 | `bad_request` | Body is not a JSON object, a field is missing or invalid, duplicate object names, an object named `none.noMatch`, a model the service does not offer, no `objects` | Fix the request (a bug on our side); `details` names the field. |
 | 404 | `not_found` | Unknown path | — |
 | 405 | `method_not_allowed` | Wrong method; `Allow` header says which | — |
 | 411 | `length_required` | Neither `Content-Length` nor chunked | — |
 | 413 | `too_large` | Body over the limit (64 KiB) | Send fewer objects. |
 | 415 | `unsupported_media_type` | `Content-Type` is not `application/json` | — |
-| 422 | `invalid_json`, `truncated`, `invalid_schema`, `unknown_target` | The model's answer failed validation; no steps are returned | Tell the user no suggestion could be made and ask them to rephrase. **Do not retry the same request**: generation is deterministic (temperature 0, fixed seed), so it gives the same answer. |
+| 422 | `no_valid_steps` | The model answered, but every step it wrote was dropped (or it wrote none). `steps: []`; `dropped` says why for each step | Tell the user the description could not be turned into valid steps, with the reason per dropped step (`code`, table above), and ask them to rephrase. |
+| 422 | `invalid_json`, `truncated`, `invalid_schema` | The model's answer as a whole is unusable: not JSON, cut off at the output limit, or not a step document (`version`, the `steps` list). No `steps`, no `dropped` | Tell the user no suggestion could be made and ask them to rephrase. |
 | 422 | `no_objects` | Retrieval found no candidate objects (after #58) | Tell the user the repository has no objects for this screen. |
 | 500 | `internal_error` | A bug in the service | Show a generic error; report it with the service log. |
 | 503 | `server_error` | The model server is down or does not have the model (`details` has its message) | Disable the panel as for health `ready: false`. |
-| 504 | `timeout` | No answer within the service timeout (60 s) | Offer a retry; the machine may be busy. |
+| 504 | `timeout` | No answer within the service timeout (30 s by default, `--timeout`); `details`: `no answer within 30 s` | Offer a retry; the machine may be busy. |
+
+For every 422 from the model's answer: **do not retry the same request on your own**. Generation uses temperature 0 and a fixed seed, so the same request nearly always gets the same answer. 200 always carries at least one step; a 422 never carries a suggested step.
 
 ## GET /ai/health
 
@@ -122,7 +155,7 @@ Says whether generation can work right now. It never runs the model and asks Oll
     {"name": "gemma4:e4b-it-qat", "available": true}
   ],
   "schemaVersion": "0.1",
-  "promptVersion": "2+reason",
+  "promptVersion": "3+reason",
   "serviceVersion": "0.0.0"
 }
 ```
@@ -134,8 +167,8 @@ Says whether generation can work right now. It never runs the model and asks Oll
 
 ## Timeouts and latency
 
-- The service gives a generation 60 s. Use a read timeout of at least 65 s on the server's HTTP client, and do not retry on your own timeout (the model would run twice).
-- Measured on a MacBook M2 16 GB under load from other work (load average ~4.5), qwen3:8b, the 10 spike sentences twice: p50 12.6 s, p95 25.3 s, all 20 answers valid (`memory-bank/tasks/71-nl-service.md`). Reasons add about 75% output tokens. Team-hardware and GPU numbers will be added there.
+- The service gives a whole request 30 s (`--timeout`): retrieval and the model call, a cold model load included. The model call gets what is left of it as its socket timeout and the service closes the connection to Ollama when it runs out, so a request answers within about 30 s, with 504 `timeout` at worst (live: 30.0 s). Use a read timeout of at least 35 s on the server's HTTP client, and do not retry on your own timeout (the model would run twice).
+- Measured on a MacBook M2 16 GB under load from other work (load average ~4.5), qwen3:8b, the 10 spike sentences twice: p50 12.6 s, p95 25.3 s, all 20 answers valid (`memory-bank/tasks/71-nl-service.md`). Reasons add about 75% output tokens. On that busy machine the longest sentence (4 steps) can pass 30 s and get a 504; on an idle M2 the p95 was 9 s (#37). Team-hardware and GPU numbers will be added to the task note; raise `--timeout` on slow hardware.
 - Ollama unloads an idle model after 5 minutes by default; the next request then pays a cold load (~6 s here). Start Ollama with `OLLAMA_KEEP_ALIVE=30m` (or longer) on the machine that serves it.
 - Requests are handled in parallel, but Ollama runs one generation at a time by default, so concurrent requests queue and each one waits longer.
 

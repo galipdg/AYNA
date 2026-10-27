@@ -6,7 +6,7 @@ Owner: galip. Build, test and AI rules: [AGENTS.md](AGENTS.md).
 
 ## HTTP service
 
-`ayna_ai.service` serves `POST /ai/generate-steps` (Turkish instruction + candidate objects → steps, each with a short Turkish `reason`) and `GET /ai/health` to the AYNA server. The contract — request and response, status codes, health, timeouts — is in **[API.md](API.md)**.
+`ayna_ai.service` serves `POST /ai/generate-steps` (Turkish instruction + candidate objects → suggested steps, each with a short Turkish `reason`, and the dropped steps with why) and `GET /ai/health` to the AYNA server. The contract — request and response, status codes, health, timeouts — is in **[API.md](API.md)**.
 
 From `ai/`, with `ollama serve` running:
 
@@ -19,7 +19,7 @@ It listens on loopback only unless started with `--allow-remote`. Candidate obje
 
 ## Generating steps
 
-`ayna_ai.generate` turns a Turkish instruction into a step document (`schemas/step.schema.json`) with a local Ollama model. Each request derives a JSON schema from the step schema, with `target` limited to the repository objects you pass in, and Ollama decodes only text that fits it. The answer is validated again against the step schema and the object list. Failures (invalid JSON, truncated, schema-invalid, unknown target, timeout, server error) come back as a `Status`, never as steps. With `GenerationSettings(reasons=True)` (what the service uses) every step also gets a short Turkish reason in the same constrained call; it is removed before validation and returned in `result.reasons`.
+`ayna_ai.generate` turns a Turkish instruction into a step document (`schemas/step.schema.json`) with a local Ollama model. Each request derives a JSON schema from the step schema, with `target` limited to the repository objects you pass in, and Ollama decodes only text that fits it. The answer is validated again against the step schema and the object list, one step at a time: a step with an unknown keyword, an unknown target, the reserved target `none.noMatch` (the model's "no object fits") or any other schema error is dropped with its reason (`result.dropped`), and the valid ones are kept (`result.document`). Failures of the whole answer (invalid JSON, truncated, not a step document, no valid step left, timeout, server error) come back as a `Status`. With `GenerationSettings(reasons=True)` (what the service uses) every step also gets a short Turkish reason in the same constrained call; it is removed before validation and returned in `result.reasons`.
 
 ```python
 from ayna_ai.generate import StepGenerator
