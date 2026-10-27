@@ -41,6 +41,7 @@ Service on 127.0.0.1:8090, `ai/spikes/service_check.py` sends the 10 spike sente
 - [x] `service.py`, `retrieve.py`, reasons in `generate.py`, `OllamaClient.models()`; tests with the fake Ollama (target guard table + 150 seeded random answers, every error code, bind refusal, log privacy)
 - [x] `ai/API.md` contract for omer; README section
 - [x] Live check on this Mac (above)
+- [x] PR https://github.com/galipdg/AYNA/pull/146 opened 2026-10-27 (`Refs #71`, stacked on #142 → #134, merge after them), reviewers omer (contract) and hasan (FYI); omer's inbox points to `ai/API.md`
 - [ ] Acceptance "works with the network disabled" — manual check below, **pending (galip)**
 - [x] Acceptance "never returns a step that targets an object missing from the repository (tests)" — for the pass-through retriever; holds for #58's retriever by construction (guard uses whatever the retriever returns), re-check when #58 lands
 - [ ] Acceptance "p95 latency on team hardware recorded" — recorded on galip's M2 under load (25.3 s); rerun on an idle machine / GPU machine (#131) for the report
