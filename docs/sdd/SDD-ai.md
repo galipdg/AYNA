@@ -6,7 +6,7 @@
 |---|---|
 | Issue | #50 · owner galip |
 | Status | Draft for review, 2026-10-27 |
-| Code it describes | Open PRs #134 (step schema), #141 (healing scorer), #142 (constrained generation). Merge this file after them. |
+| Code it describes | Open PRs #134 (step schema), #141 (healing scorer), #142 (constrained generation), #146 (NL service, stacked on #142). Merge this file after them. |
 | Requirement IDs | `FR-xx`, `NFR-xx`, `SC-xx`, `TBD-x` from `docs/rs/scenarios.md` (#34, PR #140), which the RS (#35) takes over unchanged |
 | Decisions it follows | ADRs 2026-10-20 *Language models only at authoring time*, *Self-healing proposes, never applies mid-run*, *Calibrated decision layer moves to semester 2*; 2026-10-27 *Step schema v0* (proposed, PR #134) |
 
@@ -26,7 +26,7 @@ AYNA has two AI contributions in semester 1 and collects the data for a third in
 |---|---|---|---|---|
 | Step generation: prompt, constrained decoding, validation | `ai/ayna_ai/generate.py`, `ollama.py`, `validate.py` | Local 7–8B LLM via Ollama | Authoring | **Built**, PR #142 (#37) |
 | Retrieval of repository objects | `ai/ayna_ai/retrieve.py` + vector index migration | Small multilingual embedding model | Authoring | Planned, #58 |
-| NL service endpoint `POST /ai/generate-steps` | `ai/` | (uses the above) | Authoring | Planned, #71 |
+| NL service endpoint `POST /ai/generate-steps`, `GET /ai/health` | `ai/ayna_ai/service.py`; contract `ai/API.md` | (uses the above) | Authoring | **Built**, PR #146 (#71); candidate objects come from the request until #58 |
 | NL chat panel | `client/` | none | Authoring | Planned, #78 (omer) |
 | Healing candidates and graph features | `agent/ayna_agent/heal/candidates.py`, `features.py` | none | Playback; offline for RQ4 | Planned, #42, #43 |
 | Healing scorer | `agent/ayna_agent/heal/scorer.py` | none | Playback; offline for RQ4 | **Built**, PR #141 (#49) |
@@ -79,9 +79,11 @@ The dotted edges are planned, and the AI-9 open issues settle them: how the AI s
 
 ### Contract
 
-- **In** (planned, #71): the Turkish description, the application version and the current window (screen). The server adds the user. The NL panel sends it through the server (#78).
-- **Out** (planned, #71): the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` with a short reason; every dropped step with the reason it was dropped; the status, the model and the latency. #71 fixes the JSON shape; the part the client sees goes into the REST contract (#31, frozen in #52).
-- **Built today** (#37): `StepGenerator.generate(text, objects)` takes the text and a map `logical name → Turkish description` and returns a `GenerationResult`: the status, the validated step document `{"version": "0.1", "steps": [...]}` when the status is `ok`, the raw output, the errors, the latency and the token counts.
+The JSON shape is fixed in `ai/API.md` (built, #71, PR #146); the part the client sees goes into the REST contract (#31, frozen in #52).
+
+- **In** (built, #71): `POST /ai/generate-steps` with the Turkish description (`text`), the application (`app`), its `version` and the current window (`screen`), and, until retrieval exists (#58), the candidate `objects` (≤ 100, logical name + Turkish description). The server adds the user. The NL panel sends it through the server (#78).
+- **Out** (built, #71): `steps`, the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` plus a short Turkish `reason`; `dropped`, every step the model wrote that cannot be suggested, as `{index, code, reason, step}`; the `status`, the `model`, `schemaVersion`, `promptVersion` and `latencyMs`. HTTP 200 always carries at least one step.
+- **In the library** (#37, #71): `StepGenerator.generate(text, objects, timeout_s=None)` takes the text and a map `logical name → Turkish description` and returns a `GenerationResult`: the status, the kept steps as a step document `{"version": "0.1", "steps": [...]}` when the status is `ok`, one reason per kept step, the dropped steps, the raw output, the errors, the latency and the token counts.
 
 ### Stages
 
@@ -93,44 +95,54 @@ flowchart TD
   P --> G["4 · Constrained decoding<br/>Ollama /api/chat, format = derived schema"]
   D --> G
   G -->|timeout / server error| F1["status timeout / server_error"]
-  G --> V["5 · Validate<br/>JSON → step schema → repository"]
-  V -->|fails| F2["status invalid_json / truncated /<br/>invalid_schema / unknown_target"]
-  V --> X["6 · Reasons, drop list<br/>planned #71"]
+  G --> V["5 · Validate<br/>JSON → envelope → each step:<br/>step schema + repository"]
+  V -->|answer unusable| F2["status invalid_json / truncated /<br/>invalid_schema · 422"]
+  V --> X["6 · Reasons, drop list<br/>built #71"]
+  X -->|no step left| F3["status no_valid_steps · 422<br/>with the drop list"]
   X --> U["7 · NL panel: review, edit, accept<br/>planned #78 · nothing saved before accept"]
 ```
 
 | # | Stage | Status | Design |
 |---|---|---|---|
 | 1 | Retrieve | Planned #58 | See AI-4. Produces the `{logical name: description}` map, at most N objects. |
-| 2 | Prompt | Built | One English system prompt (`SYSTEM_PROMPT`). It names the five keywords, says when a checkpoint uses `name` (text shown by a label, message, button or table) and when it uses `value` (text inside an input or combo box), and lists the objects with their Turkish descriptions. The user message is the Turkish text, unchanged. It describes no JSON field layout, because the grammar carries the structure. About 440–470 prompt tokens with 17 objects. |
+| 2 | Prompt | Built | One English system prompt (`SYSTEM_PROMPT`). It names the five keywords, says when a checkpoint uses `name` (text shown by a label, message, button or table) and when it uses `value` (text inside an input or combo box), and lists the objects with their Turkish descriptions; since prompt v3 (#71) the same line offers `none.noMatch` "if none of them fits" (AI-3, limit 3). The user message is the Turkish text, unchanged. It describes no JSON field layout, because the grammar carries the structure. About 440–470 prompt tokens with 17 objects. |
 | 3 | Generation schema | Built | See AI-3. |
-| 4 | Decode | Built | `stream: false`, `think: false`, temperature 0, seed 42, `num_ctx` 4096, `num_predict` 512. |
-| 5 | Validate | Built | `json.loads`, then the **original** step schema (`StepValidator.schema_errors`), then every `target` against the object list (`unknown_targets`). Checking twice catches a gap in the derivation and a runtime that ignores `format`. |
-| 6 | Reasons, drop list | Planned #71 | Proposed below. |
+| 4 | Decode | Built | `stream: false`, `think: false`, temperature 0, seed 42, `num_ctx` 4096, `num_predict` 512 (768 in the service, for the reasons). The service's request deadline (30 s) bounds the call. |
+| 5 | Validate | Built | `json.loads`, then the **original** step schema in two parts (`StepValidator`, #71): the envelope (`version`, the `steps` list) as a whole, then each step on its own against `#/$defs/step` and the object list (`step_problems`). Together they accept exactly what the whole schema accepts. Checking after decoding catches a gap in the derivation and a runtime that ignores `format`. |
+| 6 | Reasons, drop list | **Built** #71, PR #146 | See *Built in #71* below. |
 | 7 | Review | Planned #78 | Suggested steps shown as a diff, accepted all at once or one by one; accepted steps become ordinary steps (FR-27, SC-26). |
 
 ### Failure statuses (built)
 
-Every failure comes back as a typed `Status`, never as steps.
+A failure of the whole answer comes back as a typed `Status`, never as steps; a single bad step is dropped instead (below). HTTP codes are those of the service (`ai/API.md`).
 
-| Status | Cause | Observed so far |
+| Status | HTTP | Cause | Observed so far |
+|---|---|---|---|
+| `ok` | 200 | At least one step valid against the step schema with a known target; the others in `dropped` | 20/20 with the derived schema (#37); 29/30 spike answers through the service (#71; the other one a 504) |
+| `invalid_json` | 422 | Output does not parse | None |
+| `truncated` | 422 | `num_predict` reached before the JSON closed (`done_reason: length`) | None since the caps; the #7 runaway was this case |
+| `invalid_schema` | 422 | Parses but is not a step document: no or wrong `version`, `steps` not a list, extra fields at the root | All 10 answers of the no-schema baseline (invented fields such as `action`, `step`) |
+| `no_valid_steps` | 422 | Every step was dropped (or there were none); the body carries `steps: []` and `dropped` | The SC-27 sentence when the model chose `none.noMatch` |
+| `timeout` | 504 | No answer within the service's 30 s request deadline | One live: the longest spike answer (4 steps) on a busy laptop, 30.0 s |
+| `server_error` | 503 | Model server unreachable or HTTP error | None |
+
+**Drop codes** (`DropCode`, one per dropped step; the first that applies, the `reason` lists all):
+
+| Code | Cause | Possible with the grammar |
 |---|---|---|
-| `ok` | Valid JSON, valid against the step schema, all targets known | 20/20 with the derived schema |
-| `invalid_json` | Output does not parse | None |
-| `truncated` | `num_predict` reached before the JSON closed (`done_reason: length`) | None since the caps; the #7 runaway was this case |
-| `invalid_schema` | Parses but breaks the step schema | All 10 answers of the no-schema baseline (invented fields such as `action`, `step`) |
-| `unknown_target` | A `target` that is not among the given objects | None; the enum prevents it |
-| `timeout` | No answer within the request timeout | None |
-| `server_error` | Model server unreachable or HTTP error | None |
+| `unknown_keyword` | `keyword` outside Click, Type, Select, Verify, Wait (e.g. `DoubleClick`) | No |
+| `unknown_target` | `target` is not one of the retrieved objects (an invalid logical name included) | No |
+| `no_match` | `target` is the reserved `none.noMatch`: the model says no object fits | Yes, by design |
+| `invalid_step` | Any other step-schema error (e.g. Click with `value`), or a missing or too long reason | No |
 
 When the server cannot reach the AI service at all, the NL panel is disabled with a message that says so (FR-27, SC-28). That check lives in the server and client (#71, #78).
 
-### Planned for #71
+### Built in #71 (PR #146)
 
-- **Per-step validation and a drop list** (FR-26, SC-27). Today a single bad step rejects the whole document. #71 validates each step on its own against `#/$defs/step` and the object list, returns the valid ones, and lists every dropped step with its reason. SC-27's stub-model test (keyword `DoubleClick`, target `login.forgotPasswordLink`) expects no suggested step and two dropped steps.
-- **A reason per step** (FR-25). The step schema allows no extra fields (`additionalProperties: false`), so a reason cannot travel inside a stored step. *Proposed:* the #71 generation schema adds a `reason` string (at most 120 characters) to each step variant; the service splits it off before validation and returns it next to the step. Whether `reason` comes before `keyword` (explain, then act) or after it is measured on the dev split (#71, #72), because it adds output tokens to every step.
-- **A no-match target.** See AI-3, limit 3.
-- **Service timeout.** *Proposed:* well below the CLI's 120 s, for example 30 s (about three times the measured p95), so that the panel reports `timeout` instead of hanging.
+- **Per-step validation and a drop list** (FR-26, SC-27). Each step is validated on its own against `#/$defs/step` and the object list; the valid ones are suggested and every dropped step is listed as `{index, code, reason, step}`: its position in the model's answer, a drop code (table above), the reason, and the step as the model wrote it. When nothing is left the service answers **HTTP 422 with `status: "no_valid_steps"`**, `steps: []` and the drop list: 422 already meant "the model answered, but nothing is usable; ask the user to rephrase", which is what SC-27's panel shows, and 200 always carries a step to review. SC-27's stub-model test (keyword `DoubleClick`, target `login.forgotPasswordLink`) passes: no suggested step, two dropped steps (`unknown_keyword`, `unknown_target`), each with its reason. The service re-checks every kept step against the retrieved objects before answering, and a property test over 150 random grammar-ignoring answers checks `steps` and `dropped` together.
+- **A reason per step** (FR-25). The step schema allows no extra fields (`additionalProperties: false`), so a reason cannot travel inside a stored step. The generation schema adds a required `reason` string (1–100 characters) to each step variant, after the step's own fields, so it explains the step rather than steering it; the generator removes it before validation and the service returns it next to the step. A step with a missing or too long reason is dropped (`invalid_step`). Reasons cost about 75 % more output tokens (median 63 → ~110). Whether `reason` should come before `keyword` (explain, then act) is left to the model comparison on the dev split (#72).
+- **A no-match target.** Built; see AI-3, limit 3.
+- **Service timeout.** A 30 s deadline per request (`--timeout`), well below the CLI's 120 s: retrieval and the model call share it, the model call gets the time left, and the service answers 504 `timeout` instead of hanging. That is about three times the idle p95 (#37), but on a busy laptop the longest spike answer hit it (30.0 s); the deadline is measured again on team hardware (#71, #131).
 
 ### Limits
 
@@ -138,10 +150,11 @@ When the server cannot reach the AI service at all, the NL panel is disabled wit
 |---|---|---|
 | Steps per request | 1–12 | Bounds the output |
 | Free strings (`value`, `expected`) | ≤ 200 characters (the contract allows 1000) | Stops a runaway string early (#7 finding 1) |
-| Output tokens (`num_predict`) | 512 | About 25–40 tokens per step, so 12 steps fit |
+| Output tokens (`num_predict`) | 512; 768 in the service | About 25–40 tokens per step, so 12 steps fit; a reason adds about 15–25 per step |
 | Context (`num_ctx`) | 4096 tokens | Prompt plus object list plus answer |
-| Objects per request | N from retrieval (#58) | Prompt-processing time and the size of the grammar grow with N |
+| Objects per request | ≤ 100 in a request until #58; then N from retrieval | Prompt-processing time and the size of the grammar grow with N; 100 keeps the prompt inside `num_ctx` |
 | Turns | One instruction per request, no chat history | Semester 1 scope |
+| Time per request | 30 s (service, `--timeout`) | The panel reports `timeout` instead of hanging |
 
 Turkish characters and suffixes are handled: both models turned *Ankara'yı* into `Ankara` and kept `Kayıt başarılı` unchanged (#7 finding 4; NFR-16).
 
@@ -164,14 +177,15 @@ Measured on a MacBook M2 with 16 GB, Ollama 0.40.11, model already loaded, 10 Tu
 | #37, 2026-10-27 20:31 | qwen3:8b | derived schema | **10/10** | 9/10 | 5.61 / 9.07 s | 63 |
 | #37, 2026-10-27 20:32 | gemma4:e4b-it-qat | derived schema | **10/10** | **10/10** | 6.22 / 8.68 s | 70.5 |
 | #37, 2026-10-27 20:34 | gemma4:e4b-it-qat | any JSON (baseline) | 0/10 | — | 6.08 / 12.55 s | 66.5 |
+| #71 service over HTTP, 2 runs, 2026-10-27 21:36–21:43 | qwen3:8b | derived schema + reason | 20/20 | 18/20 | 12.57 / 25.29 s | ~110 |
 
-The #37 runs shared the machine with other jobs (load average about 6), so their latencies are pessimistic. They are also higher than the spike's because each answer is about 15 tokens longer (`version`, checkpoint objects). Raw results: `ai/spikes/results/generate-20261027-*.json`. A cold model load took 7.6–10.2 s (#7), so the service loads the model at start and keeps it loaded (`warm_up()`, `OLLAMA_MAX_LOADED_MODELS=1`).
+The #37 runs shared the machine with other jobs (load average about 6), and so did the #71 runs (about 4.5), so their latencies are pessimistic; the #71 row includes the reasons and the HTTP layer (0–3 ms). They are also higher than the spike's because each answer is about 15 tokens longer (`version`, checkpoint objects). Raw results: `ai/spikes/results/generate-20261027-*.json`. A cold model load took 7.6–10.2 s (#7), so the service loads the model at start and keeps it loaded (`warm_up()`, `OLLAMA_MAX_LOADED_MODELS=1`).
 
 **Models and memory.** `qwen3:8b` (the default in `GenerationSettings`) and `gemma4:e4b-it-qat`, both Apache-2.0, need about 5 GB each as Q4 quantisations. One model at a time fits a 16 GB machine together with the rest of AYNA (NFR-13). At least three models are compared on the dev split (#72), and D4 (#80) picks the default. Model names and licences ship with the image (NFR-23, #82).
 
 ### Logging and input safety
 
-Each generation logs one JSON line: `ts`, `event: generate`, `scenario`, `model`, `status`, `latency_ms`, `load_ms`, `prompt_tokens`, `output_tokens`, `steps`. The line holds no user text, so service logs carry no test content. The batch CLI (`python -m ayna_ai.generate`) writes the full results, with the environment (platform, Ollama version), for evaluation.
+Each generation logs one JSON line: `ts`, `event: generate`, `scenario`, `model`, `status`, `latency_ms`, `load_ms`, `prompt_tokens`, `output_tokens`, `steps`, `dropped`; the service adds one `event: request` line per HTTP request. The lines hold no user text, so service logs carry no test content (tested). The batch CLI (`python -m ayna_ai.generate`) writes the full results, with the environment (platform, Ollama version), for evaluation.
 
 The user's text is untrusted input to the model. The model has no tools, and its output can only be a step document over objects that already exist, which a person then reviews. A hostile description can therefore at worst produce wrong suggestions.
 
@@ -186,7 +200,7 @@ The user's text is untrusted input to the model. The model has no tools, and its
 1. Inline the local `$ref`s and drop annotations (`title`, `description`, …).
 2. **Split the step by keyword.** Each `if keyword = X then …` rule becomes one variant that holds only the fields that keyword allows: `false` removes a field, `required` lists are merged, constraints are intersected (Select's `value` gets `minLength: 1`). The step becomes an `anyOf` of 5 variants.
 3. **Split the checkpoint by property** the same way: `name`/`value` take a string `expected`; `enabled`/`visible`/`checked`/`selected` take `operator: "equals"` and a boolean `expected`. That gives 2 variants.
-4. **`target` becomes an `enum`** of the object names passed in, after each name is checked against the logical-name pattern.
+4. **`target` becomes an `enum`** of the object names passed in, after each name is checked against the logical-name pattern, plus the reserved `none.noMatch` (limit 3, #71).
 5. **Leave out server fields**: `id` is assigned by the server on save.
 6. **Cap free strings** at `maxLength` ≤ 200 and the list at 1–12 steps. `version` stays a `const`, so the raw output is a complete step document.
 7. **Check the result is grammar-friendly**: no `$ref`, `$defs`, `allOf`, `oneOf`, `not`, `if`/`then`/`else`, `dependentRequired` or boolean subschema is left. `anyOf` appears only as a union of whole object schemas, never mixed with `properties` at the same level, which llama.cpp does not support ([43]).
@@ -211,7 +225,7 @@ The Type branch for a three-object request, for example:
 
 1. **Structure, not meaning.** A schema-valid answer can still be wrong. qwen3 dropped the first Click of a three-action sentence (#7 finding 2). Prompt v1 used `value` for every label check, which playback would fail because UIA labels have no ValuePattern; prompt v2 fixed this with the `name`/`value` guide. The author's review (FR-27) and RQ3 (#77) catch and measure this kind of error.
 2. **Step schema v0 cannot check table rows.** *"Tabloda Yılmaz'ın listelendiğini kontrol et"* becomes `Verify main.customerGrid {name contains "Yılmaz"}`. That is valid, but it checks the grid's UIA Name, not its rows. A fix needs step schema v0.2 through an ADR. Until then reviewers reject such steps, and the NL dataset (#36) avoids or marks such sentences.
-3. **Forced choice.** Because `keyword` and `target` are enums, the model cannot answer "no such action" or "no such object". *"Şifremi unuttum bağlantısına çift tıkla"*, with no such link in the repository, becomes a Click on some existing object: valid and wrong ([42] notes the same weakness; SC-27). *Proposed for #71:* add a reserved target name (for example `none.noMatch`, which fits the logical-name pattern) to the enum. The validator drops any step that uses it, with the reason "no repository object matches", and the name is refused as a real object name. Keywords keep no escape value in v0: an action outside the five keywords is mapped to the closest one, the reviewer catches it, and RQ3 counts how often this happens.
+3. **Forced choice.** Because `keyword` and `target` are enums, the model cannot answer "no such action" or "no such object". *"Şifremi unuttum bağlantısına çift tıkla"*, with no such link in the repository, becomes a Click on some existing object: valid and wrong ([42] notes the same weakness; SC-27). **Built (#71, PR #146):** the enum always holds the reserved target `none.noMatch`, which fits the logical-name pattern, and prompt v3 offers it in the target line ("or none.noMatch if none of them fits"; as a separate line it made qwen3 add spurious Clicks). The validator drops any step that uses it (code `no_match`, reason "no repository object matches"). The derivation fails loudly if the step schema stops accepting the name, and the service answers 400 to a request object with that name; the repository should refuse it too (omer). Live, qwen3:8b sent the sentence above to `none.noMatch` in some runs and to `Click login.passwordInput` in others with the identical prompt, so how often, and how correctly, the model uses the escape is measured in #77. Keywords keep no escape value in v0: an action outside the five keywords is mapped to the closest one, the reviewer catches it, and RQ3 counts how often this happens.
 4. **Runtime coverage.** The derivation was run on Ollama 0.40.11 only. It avoids every construct that llama.cpp's converter lists as unsupported, but llama.cpp itself has not been tried. If D4 picks llama.cpp, test it there (#72, #80).
 5. **Determinism.** Temperature 0 with a fixed seed gave identical steps across runs on the same machine and runtime (#7: online and offline runs matched). This is not promised across runtime versions or hardware, so every results file records the Ollama version and the platform.
 
@@ -376,9 +390,9 @@ How the design supports each measurement. #48 (test design) describes how the ex
 
 | # | Issue | Who settles it | Where |
 |---|---|---|---|
-| 1 | A reason per step is not built yet; design proposed in AI-2 | galip | #71 |
-| 2 | Per-step drop list instead of whole-document rejection (FR-26, SC-27) | galip | #71 |
-| 3 | Forced choice: reserved no-match target (AI-3, limit 3) | galip | #71, measured in #77 |
+| 1 | **Closed 2026-10-27.** A reason per step: built (AI-2) | galip | #71, PR #146 |
+| 2 | **Closed 2026-10-27.** Per-step drop list instead of whole-document rejection (FR-26, SC-27): built (AI-2; 422 `no_valid_steps` when nothing is left) | galip | #71, PR #146 |
+| 3 | Forced choice: the reserved no-match target is built (AI-3, limit 3); how often the model uses it, and how often wrongly, is open | galip | measured in #77 |
 | 4 | Step schema v0 cannot check table rows or cells; needs v0.2 and an ADR | galip, hasan, omer | new issue (from #37) |
 | 5 | How retrieval reads the graph (AI service over read-only Bolt, or the server passes objects) and who writes embeddings | galip, omer | #58; component view #45 |
 | 6 | The loopback-only model client against a separate Ollama container in Compose: run the model server in the AI service's container or share its network namespace | galip, omer | #82 |

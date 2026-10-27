@@ -19,6 +19,7 @@ Write the AI sections of the SDD as `docs/sdd/SDD-ai.md` (headings `AI-1` … `A
 - [x] Inbox: omer (fold-in location, graph/compose/RPC questions), hasan (decision-log fields, healing trigger/transport)
 - [x] PR https://github.com/galipdg/AYNA/pull/144 opened 2026-10-27 (`Closes #50`, merge after #134, #141, #142); reviewers omerfaruksaribal, HasanBerk18
 - [x] Mermaid diagrams render with Mermaid 11.4.1 (local scratch page); GitHub rendering not checked
+- [x] 2026-10-27 — aligned with #71's revision (PR #146): AI-1 table, AI-2 contract/stages/statuses (HTTP codes, drop codes, 422 `no_valid_steps`), reason, drop list and 30 s timeout as Built, AI-3 `none.noMatch` built (prompt v3), AI-9 rows 1–2 closed, row 3 narrowed to the #77 measurement. The AI-2 Mermaid flowchart gained one node (`F3`); not re-rendered.
 - [ ] Acceptance "reviewed" — human step, not ticked by the agent
 - Next step: address review comments; after #134, #141, #142 merge, check the cited paths and numbers still match the merged code.
 
