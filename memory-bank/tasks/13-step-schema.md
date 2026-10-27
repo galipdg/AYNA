@@ -17,8 +17,9 @@
 ## Status
 - [x] Branch, task note, board In progress
 - [x] `schemas/step.schema.json` v0.1, examples (`login-and-customer.json`: 14 steps; `cases.json`: 7 valid, 29 invalid), `ai/tests/test_step_schema.py` (44 tests pass; mutating three rules made 7 fail, so the cases bite), ADR (Proposed), `schemas/README.md` + `schemas/AGENTS.md` Commands
-- [ ] PR; review and approval by omer and hasan (acceptance criterion 4)
-- Next step: open the PR (`Closes #13`), then address review comments; on approval set the ADR to Accepted
+- [x] PR https://github.com/galipdg/AYNA/pull/134 opened 2026-10-27, reviewers omer and hasan
+- [ ] Approval by omer and hasan (acceptance criterion 4)
+- Next step: address review comments on #134; when all three approve, set the ADR to Accepted (and its README line) in the same PR
 
 ## Manual checks
 - none (no UI)
