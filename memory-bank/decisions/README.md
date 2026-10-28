@@ -18,3 +18,4 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-25 | [Windows-bound work moves to Hasan](2026-10-25-windows-work-to-hasan.md) | Accepted |
 | 2026-10-25 | [Graph schema v0: neo4j-migrations and UUID ids](2026-10-25-graph-schema-migrations.md) | Accepted |
 | 2026-10-27 | [Agent JSON-RPC v0: handshake token, env-var token, ready line](2026-10-27-agent-rpc-v0.md) | Proposed (#16) |
+| 2026-10-28 | [Healing proposal transport: agent → client or CLI runner → server](2026-10-28-healing-proposal-transport.md) | Proposed (#149) |
