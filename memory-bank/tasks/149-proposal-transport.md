@@ -28,7 +28,7 @@ In one line: the proposal rides inside the failing step's `run.stepResult` notif
 - [x] ADR (Proposed) + README line
 - [x] `docs/agent-rpc.md` "Proposed (#149)" section
 - [x] Schema, examples, tests
-- [ ] PR opened, reviews requested (HasanBerk18, omerfaruksaribal), inbox lines
+- [x] PR https://github.com/galipdg/AYNA/pull/151 (`Refs #149`, stacked on #135) opened 2026-10-28; reviews requested from HasanBerk18 and omerfaruksaribal; asks in their inboxes. Locally: 56 ai tests pass with jsonschema, 17 pass + 38 skip without; ruff clean
 - [ ] All three approve → ADR Accepted (and its README line) in the same PR
 - [ ] After approval: comment on #73 and #74 linking the ADR (AC 3); omer names the endpoint in the #74 REST contract (AC 2)
 - Next step: address review comments on the PR.
