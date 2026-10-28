@@ -49,3 +49,9 @@ Append-only. One entry per session, newest at the bottom:
   - #139: retrieval refs changed from #57 to #58.
 - Blocked on teammates: #42, #43, #57, #58, #72, #76 and the 40 pairs of #36.
 - Next: the advisor's answers for #19, reviews, the #71 offline manual check.
+
+## 2026-10-28 · #147, #149 (orchestrator, continued)
+- galip allowed GitHub writes: commented on #21 and #80 (ADRs go to `memory-bank/decisions/`). Opened #147 (schema v0.2 rows), #148 (server load test, proposed for omer) and #149 (healing proposal transport); all three are Todo on the board.
+- Health check: local repo clean, 12 PRs green and mergeable. Omer's #126 conflicts with main in `people/omer/active.md` only.
+- Subagents opened PR #150 (#147: `SelectRow`, row by index or key-cell value, `cell`/`rowExists`/`rowCount` checks, v0.2 keeps every 0.1 step valid, #37 derivation needs no change) and PR #151 (#149: one `run.stepResult` payload for client and CLI, first-write-wins per (runId, stepIndex), exact fractions as strings). Both ADRs are Proposed.
+- Next: reviews; the follow-ups listed in active.md once the ADRs are approved.
