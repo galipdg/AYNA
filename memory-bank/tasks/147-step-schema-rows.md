@@ -23,7 +23,8 @@ Smallest additive change that the #37 derivation accepts unchanged: a new keywor
 - [x] ADR (Proposed) + `decisions/README.md` line
 - [x] `schemas/step.schema.json` 0.2, `schemas/README.md`, examples (`customer-search-grid.json`: 9 steps; `cases.json`: 7 + 12 valid, 29 + 37 invalid), `ai/tests/test_step_schema.py` (117 tests; 16 mutations drop a 0.2 rule each and a named invalid case gets through)
 - [x] #37 compatibility (below)
-- [ ] PR, reviews by hasan and omer; all three approve (criterion 1)
+- [x] PR https://github.com/galipdg/AYNA/pull/150 opened 2026-10-28 (`Refs #147`, stacked on #134, merge after it), reviewers hasan and omer
+- [ ] All three approve (criterion 1)
 - [ ] After approval: #37, #36, #40, #38 adopt it (criterion 3)
 - Next step: answer review comments on the PR; when all three approve, set the ADR to Accepted in the same PR; then open the follow-ups on #37 and #36.
 
