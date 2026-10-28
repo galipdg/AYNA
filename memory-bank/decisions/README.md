@@ -18,3 +18,4 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-25 | [Windows-bound work moves to Hasan](2026-10-25-windows-work-to-hasan.md) | Accepted |
 | 2026-10-25 | [Graph schema v0: neo4j-migrations and UUID ids](2026-10-25-graph-schema-migrations.md) | Accepted |
 | 2026-10-27 | [Step schema v0](2026-10-27-step-schema-v0.md) | Proposed (#13) |
+| 2026-10-28 | [Step schema v0.2: grid and list rows](2026-10-28-step-schema-v0-2-rows.md) | Proposed (#147) |
