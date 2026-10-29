@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:eval:nl:objects",
+  "title": "AYNA NL dataset object list",
+  "description": "eval/nl/objects/<app>.json: the repository objects of one app version that gold steps may target (#36). Copied from the app's real controls, never invented. Checked by eval/nl/check_pairs.py.",
+  "type": "object",
+  "properties": {
+    "app": {
+      "description": "App code; equals the file name without .json.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$"
+    },
+    "appVersion": {
+      "description": "The version shown in the app's title bar, or the commit of the app's source when it shows none.",
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "description": "Where the objects come from (source file, UIA dump, test that checks the AutomationIds).",
+      "type": "string",
+      "minLength": 1
+    },
+    "objects": {
+      "description": "Logical name -> object. Names follow the step schema's logicalName pattern.",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z][A-Za-z0-9]*\\.[a-z][A-Za-z0-9]*$",
+        "maxLength": 100
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "automationId": {
+            "description": "The control's UIA AutomationId, exactly as the app exposes it.",
+            "type": "string",
+            "minLength": 1
+          },
+          "controlType": {
+            "description": "UIA ControlType name; decides which keywords and checkpoint properties fit (guideline section 6.3).",
+            "enum": [
+              "Button", "CheckBox", "ComboBox", "DataGrid", "DataItem", "Document", "Edit",
+              "Group", "Hyperlink", "List", "ListItem", "Menu", "MenuItem", "Pane",
+              "RadioButton", "Spinner", "Tab", "TabItem", "Table", "Text", "Window"
+            ]
+          },
+          "description": {
+            "description": "Short Turkish description, as a tester would name the control; the visible English text in parentheses when the UI is English.",
+            "type": "string",
+            "minLength": 1
+          },
+          "items": {
+            "description": "ComboBox or List only: the item texts exactly as shown. A Select value must be one of them.",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": ["automationId", "controlType", "description"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["app", "appVersion", "source", "objects"],
+  "additionalProperties": false
+}
