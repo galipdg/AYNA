@@ -3,90 +3,94 @@
 Only hasan's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-10-29
-- Current issue: none in progress. #6 is done and waiting for review as PR #159.
-- Branch: `hasan/6-uia-dumps` (PR #159 open, `Closes #6`)
-- Next step: #161 (the KeePass 2 snapshot hot spot) — it is Week 2 and #12 cannot size a
-  snapshot budget without it. Then #122 (`eval/` pyproject + ruff), which omer's CI job waits on
-  and which also carries the `docs/working-agreement.md` §1 / `docs/README.md` ownership fix.
+- Current issue: none in progress. #6 is done, waiting for galip's review as PR #159.
+- Branch: `hasan/6-uia-dumps` (PR #159 open, `Closes #6`, CLEAN)
+- Next step: **#161** — reproduce the KeePass 2 window state from #6 (database open, Add Entry
+  dialog) and bisect the 278.5 s walk. It is Week 2 and #12 cannot size a snapshot budget without
+  it. Then **#122** (`eval/` pyproject + ruff), which omer's CI job waits on and which also
+  carries the `docs/working-agreement.md` §1 / `docs/README.md` ownership fix.
 
-## What happened this session
+## This session: the review queue, cleared and merged
 
-Cleared the whole review queue: **all 11 PRs reviewed** (#135, #138, #141–#146, #150, #151, #157).
-Approved: #141, #142, #144, #145, #146, #151. Left as comments with specific asks: #135, #138,
-#143, #150, #157. Nothing is waiting on me for review any more.
+**Reviewed 12 PRs.** The 11 in my queue (#135, #138, #141–#146, #150, #151, #157) plus #163
+(omer's problem-details ADR, which arrived mid-session). Also gave two **late** reviews on
+already-merged PRs whose ADRs were stuck: **#134** (step schema v0 — my review was never requested
+and it merged the same day) and **#156** (graph schema v0.1 — merged with *zero* reviews).
 
-Reviews were backed by measurements taken on this machine rather than opinion, which is what made
-them worth the time:
+Approved: #141, #142, #144, #145, #146, #151, #163, and #135/#143/#157/#138 after converting my
+comment reviews once I had judged the asks post-merge. **Only #150 is still held**, on content.
 
-- **Qt grid/list probe** (for #150): answered all four of galip's UIA questions empirically and
-  found two defects in the step schema v0.2 — the "ValuePattern first" rule reads `''` for every
-  Qt cell (text is in `Name`), and a `cell` check can never be valid against a list, because it
-  requires a `column` and a list has no headers. Also found that every descendant of a Qt table
-  carries the table's own AutomationId.
-- **Scorer probe** (for #141): a *wrong* toolbar button scores **0.800** against a Win32 target
-  with no id and no Name, and the score is not comparable across targets (a "shares only
-  controlType" candidate scores 1.000 / 0.333 / 0.158 for a 1 / 3 / 11-property target) → #73's
-  minimum score must be derived per target, not a constant. The location cut-off is in physical
-  pixels, so the same move scores 0.36 at 100% and 0.20 at 125%.
-- **Trial app verification** (for #145): all six objects in `eval/nl/objects/trial.json` confirmed
-  live against the running app — galip had this marked "not verified".
-- **WinForms read cost** (for #143/#138): plain property reads 2.79 ms/element and the ten pattern
-  probes 1.56 ms/element, so finding 7's pattern-probe hypothesis does **not** hold and the
-  278.5 s is tied to that window state. Corrected finding 7 in `eval/spikes/uia-dump.md` and
-  posted the correction on #143 and #138, because I had overstated it in both reviews.
-- `ElementFromPoint` is ~5 ms, so NFR-01's 300 ms is comfortable.
+**Eight PRs merged** (#141, #142, #143, #144, #145, #146, #135, #151). I did the mechanical side
+with the user's approval: `git merge origin/main` + push on nine of galip's branches to clear
+GitHub's union-driver conflict flag, re-synced after every single merge (nine rounds — see
+`learnings.md`), and resolved three real conflicts: the ADR index twice and `docs/agent-rpc.md`
+once. Every push was a fast-forward; no content of galip's changed except the two ADR status
+lines below.
 
-## Sign-offs I gave (binding; others are building on them)
+### Reviews worth remembering, because they were measured rather than argued
 
-- **NFR-02** (2 s snapshot): confirmed **only** scoped to the sample app, with a sentence saying so.
-- **NFR-04** (500 ms/step): confirmed as a target, if it says what it measures and exempts the
-  polling checkpoints that #150 introduces.
-- **NFR-05** (10 000 ms default): confirmed; asked that `timeoutMs: 0` be documented as legal.
-- **TBD-5**: confirmed, **plus a third failure state** — "the search ran out of budget" must not be
+- **Qt grid probe (#150):** answered all four of galip's UIA questions on a real `QTableWidget`
+  and found **two defects in step schema v0.2** — the "ValuePattern first" rule reads `''` for
+  every Qt cell (text is in `Name`), and a `cell` check can never be valid against a list
+  (`column` required, lists have no headers). Also: every descendant of a Qt table carries the
+  table's own AutomationId.
+- **Scorer run (#141):** a *wrong* Win32 toolbar button scores **0.800** against a target with no
+  id and no Name, and the score is not comparable across targets (1.000 / 0.333 / 0.158 for a
+  1 / 3 / 11-property target), so **#73's minimum score must be derived per target, not a
+  constant**. The location cut-off is in physical pixels: the same move scores 0.36 at 100% and
+  0.20 at 125%.
+- **#145:** verified all six objects in `eval/nl/objects/trial.json` live against the running
+  trial app — galip had marked that unverified.
+- **#142:** found the *cause* of the grid behaviour galip flagged to me: the prompt itself says
+  `name` is "the text shown by a label, message, button or **table**".
+- **WinForms cost:** plain property reads 2.79 ms/element, the ten pattern probes 1.56 ms, so
+  finding 7's pattern-probe hypothesis does **not** hold. Corrected it in
+  `eval/spikes/uia-dump.md` and on #143/#138, since I had overstated it in both reviews.
+- **No Ollama on this machine**, so every LLM latency we have is from galip's M2 — where the
+  service's p95 is 25.3 s and its 30 s deadline already fires. Hence #162.
+
+### Sign-offs I gave (binding; others build on them)
+
+- **NFR-02** (2 s snapshot): confirmed **only** scoped to the sample app.
+- **NFR-04** (500 ms/step): confirmed if it says what it measures and exempts #150's polling
+  checkpoints. **NFR-05** (10 000 ms): confirmed, with `timeoutMs: 0` documented as legal.
+- **TBD-5:** confirmed **plus a third failure state** — "the search ran out of budget" must not be
   "element not found", or healing ranks candidates from an incomplete tree. Raised on #143, #138,
-  #144 and #157; whichever document decides it, the others follow.
-- **TBD-6** (stop after "repair proposed"): confirmed, accepting that measuring healing recall
-  over N broken elements then costs N runs.
-- **RQ2** (#69): confirmed, with an app-state reset between runs, "same result" meaning per-step,
-  and the detection limit stated (10 runs catch 26%-per-run flakiness at 95%, only 40% of a 5% one).
-- **RQ1** (#64): **refused as defined** — "identified uniquely from its descriptor" is vacuous
-  because `parentPath` + `siblingIndex` identify everything. Proposed two numbers (stable
-  properties only, then with positional fallback) and the `uia_dump.py` interactive set as the
-  population.
+  #144 and #157.
+- **TBD-6:** confirmed. **RQ2** (#69): confirmed with an app reset between runs, per-step
+  comparison, and the 10-run detection limit stated.
+- **RQ1** (#64): **refused as defined** — `parentPath` + `siblingIndex` identify everything, so
+  the metric is vacuous. Gave omer exact replacement wording on #157.
 - **CLI runner exit codes** (#61): 0 all passed and delivered · 1 a test failed or proposed a
-  repair · 2 operational failure even if every test passed. UC-14 in #138 contradicts this.
-- **Key naming**: camelCase at every contract boundary, snake_case only inside Python modules.
-  The #11 descriptor is mine to align.
-- **`parentPath`**: programmatic ControlType names joined by `/`, never localised ones — we test
-  Turkish UIs and a localised path would zero that property across machines.
+  repair · 2 operational failure even if every test passed.
+- **camelCase at every contract boundary**, snake_case only inside Python modules (#11 is mine to
+  align). **`parentPath`** = programmatic ControlType names joined by `/`, never localised.
 
-## Owed to teammates
+## Open, not mine
 
-1. **Done — both issues are open and assigned to me**, and linked from the PRs where I promised
-   them: **#161** (Week 2, `area:agent`) reproduce the #6 KeePass 2 window state and bisect the
-   278.5 s walk; **#162** (Week 3, `area:ai`) install Ollama here and measure #142/#146's batch,
-   because every LLM number we have is from galip's M2, the service's p95 is 25.3 s there and its
-   30 s deadline already fires, while Windows is the delivery platform.
-2. **#122** (`eval/` pyproject + ruff) — omer's CI job waits on it. It will also lint
-   `eval/nl/check_pairs.py`; I told galip I would cover all of `eval/` unless he objects.
-3. **`docs/working-agreement.md` §1 and `docs/README.md`** still show pre-*windows-work-to-hasan*
-   ownership (galip flagged it in #138). Mine to fix; said I would do it alongside #122.
-4. **#33 (sample app)**: its grid must set `setSelectionBehavior(SelectRows)` or #150's SelectRow
-   keyword is dishonest, and it needs a reset-to-baseline hook for RQ2.
-5. **Outsider NL pairs (#57, §8 of the guideline)**: I collect them. Consent must be written and
-   obtained before anything enters git (history cannot be rewritten, so a withdrawal cannot be
-   honoured afterwards), HAVELSAN testers need clearing with the advisor first, and I argued for
-   dropping the "don't use double-click / fixed waits" line from the brief so the drop rate stays
-   a finding. Cannot start until #33 exists.
-6. **Check-box toggle gap**: *işaretle* and *işaretini kaldır* both map to `Click`, so the dataset
-   would teach the model to ignore negation, and v0 cannot express "make sure it is checked".
-   Raised on #145; worth deciding in #147 while the schema is open.
+- **#150** — held by me. Galip needs to fix two sentences; I posted the exact replacement text and
+  will approve the moment it is pushed. It is a `schemas/` freeze document (#52).
+- **#138** — now **empty** (0 files): #143 was stacked on it and carried its content to `main`.
+  It should be **closed, not merged**. Side effect: its own "do not merge until §7 is filled" gate
+  was bypassed, so `docs/requirements-workshop.md` is on `main` with §7 still the empty template
+  saying nothing in §2–§5 is agreed. #19 is open, so it is tracked; galip must fill §7.
+- **Two ADRs still say Proposed although their condition is met:** `2026-10-27-step-schema-v0`
+  (I gave the third approval on #134; galip to flip, and #150 touches the file) and
+  `2026-10-29-graph-schema-application-links` (I approved on #156; needs galip's, then omer
+  flips it). I flipped `agent-rpc-v0` and `healing-proposal-transport` myself, with the user's OK.
+- **Checklist nit:** #141, #142, #145, #146 left the conditional "ADR added" DoD line unticked
+  although every merged PR in the repo ticks it with the reason inline. Told galip on #141.
+- **#159** (mine) waits on galip's review; #6 cannot close without it.
 
 ## Open questions
 
-- #9 / PR #116 is still open awaiting a review, and #2's last criterion ("all three members merged
-  one test PR") waits on it. Ask omer whether #9's PR counts for #2.
+- A branch `hasan/2209a-application` appeared mid-session and the main checkout was switched to
+  it. It was created from `main`, has **no commits**, and I did not create it — possibly another
+  session. I left it alone and worked from a worktree. Worth finding out whose it is.
+- #9 / PR #116 merged, so ask omer whether it satisfies #2's last criterion ("all three members
+  merged one test PR").
 - Inbox: omer's #3 CI-skeleton review; omer's two #8 criteria that disagree between the issue and
-  PR #121 (was the advisor summary sent?) — I asked galip on #138 to settle it in §7 of the
-  workshop doc, since the 27 Oct meeting is the likely answer and §7 is still empty.
-- #138 cannot merge until galip fills §7; #143, #150 and #157 are waiting on my asks.
+  PR #121 — I asked galip on #138 to settle it in §7, since the 27 Oct meeting is the likely
+  answer.
+- Proposed, needs an ADR: replace the single `learnings.md` with a directory of dated one-fact
+  files, so append-only memory stops causing the merge cascade (`learnings.md`, 2026-10-29).

@@ -42,3 +42,20 @@ Append-only. One entry per session, newest at the bottom:
   blocks #12's snapshot budget) and **#162** (measure local-model latency on Windows, Week 3 —
   every number we have is from an M2 and the service's 30 s deadline already fires there), linked
   from the PRs where I promised them. Pushed `47d1e8b` to `hasan/6-uia-dumps` (PR #159).
+
+## 2026-10-29 (second session) — review queue cleared and merged
+- Reviewed 12 PRs: the 11 in my queue plus #163, and two late reviews on merged PRs whose ADRs
+  were stuck unaccepted (#134, which merged without my review ever being requested, and #156,
+  which merged with no reviews at all). Approved all but #150, which I hold on two schema
+  defects I measured on a real Qt table.
+- Helped merge eight of them (#141-#146, #135, #151): pushed `git merge origin/main` to nine of
+  galip's branches to clear GitHub's union-driver conflict flag, re-synced after each merge —
+  nine rounds, because every PR appended to the same inbox file (now in `learnings.md`) — and
+  resolved three real conflicts, including `docs/agent-rpc.md`, where galip had meanwhile
+  implemented my #135 concurrency point on `main` while #151 still carried the old wording.
+- With the user's approval, flipped two ADRs to Accepted whose condition was met
+  (`agent-rpc-v0`, `healing-proposal-transport`) rather than repeat #134's mistake of merging a
+  binding decision labelled Proposed. Two more still need flipping by their owners.
+- Found that #138 is now empty (#143 carried its content) and that its "fill §7 first" gate was
+  bypassed, so the workshop document sits on `main` saying its own contents are not agreed yet.
+- Next step: #161 (reproduce the #6 KeePass 2 state and bisect the 278.5 s walk), then #122.
