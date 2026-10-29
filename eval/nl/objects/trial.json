@@ -1,0 +1,37 @@
+{
+  "app": "trial",
+  "appVersion": "5e23d15",
+  "source": "eval/apps/trial/app.py (#9, commit 5e23d15; the app shows no version). AutomationIds as listed in eval/apps/trial/README.md and checked on Windows by eval/apps/trial/tests/test_uia.py.",
+  "objects": {
+    "login.window": {
+      "automationId": "QApplication.loginWindow",
+      "controlType": "Window",
+      "description": "Giriş penceresi (başlık: AYNA Trial - Login)"
+    },
+    "login.usernameInput": {
+      "automationId": "QApplication.loginWindow.usernameInput",
+      "controlType": "Edit",
+      "description": "Kullanıcı adı alanı (Username)"
+    },
+    "login.passwordInput": {
+      "automationId": "QApplication.loginWindow.passwordInput",
+      "controlType": "Edit",
+      "description": "Şifre alanı (Password)"
+    },
+    "login.rememberMeCheckBox": {
+      "automationId": "QApplication.loginWindow.rememberMeCheckBox",
+      "controlType": "CheckBox",
+      "description": "Beni hatırla onay kutusu (Remember me)"
+    },
+    "login.loginButton": {
+      "automationId": "QApplication.loginWindow.loginButton",
+      "controlType": "Button",
+      "description": "Giriş butonu (Login)"
+    },
+    "login.statusLabel": {
+      "automationId": "QApplication.loginWindow.statusLabel",
+      "controlType": "Text",
+      "description": "Giriş sonucunu gösteren durum etiketi"
+    }
+  }
+}
