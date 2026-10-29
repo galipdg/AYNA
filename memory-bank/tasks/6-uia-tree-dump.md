@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/6
 - Owner: hasan (handover from galip) · Branch: `hasan/6-uia-dumps`
-- Started: 2026-10-25 · Last update: 2026-10-29
+- Started: 2026-10-25 · Last update: 2026-10-29 (KeePassXC retake done)
 
 ## Approach
 One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows only) walks the raw UIA view of every visible top-level window of a target process with pywinauto's `uia` backend and writes `eval/spikes/uia-dumps/<id>.json`. `stats` (any OS) reads the dumps and prints the property-richness tables for the note `eval/spikes/uia-dump.md`. Targets are listed in `eval/spikes/uia-targets.json`. Tests use stdlib `unittest` with fake nodes, so everything except the thin UIA reader runs on macOS.
@@ -28,20 +28,22 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
       target state on hasan's Windows machine
 - [x] `find_windows` fixed (commit ddc33b7): windows are found by handle, not through the UIA
       tree, and `walk()` deduplicates by handle
-- [x] Dumps of all four targets committed (ae855ff). `keepassxc.json` in that commit still holds
-      the unlock screen
+- [x] Dumps of all four targets committed (ae855ff). `keepassxc.json` in that commit still held
+      the unlock screen; re-taken on the entry form on 2026-10-29 (84 elements, 41 interactive)
 - [x] `eval/spikes/uia-dump.md` filled from the dumps (5ff8fcf): Results (stats table,
       secondary-property table, window states), nine Findings, a verdict on each pre-run
       expectation, and the Recommendation
 - [x] Three cross-cutting findings appended to `learnings.md` (Qt ids are not unique, LabeledBy
-      is never set, a WinForms walk is ~140x slower per element than WPF)
-- [ ] Retake `keepassxc.json` on the entry form (needs a human to unlock the database — see the
-      2026-10-29 manual check), then rerun the note generator and revise finding 3, finding 9
-      and verdict 3 with the entry-form numbers
+      is never set, a WinForms walk is ~140x slower per element than WPF). The first two were
+      measured on the locked KeePassXC screen and are corrected by the 2026-10-29 entries below
+- [x] `keepassxc.json` re-taken on the entry form (human unlocked, agent dumped) and the note
+      revised from it: both stats tables, the windows table, findings 3, 6 and 9, verdict 3 and
+      the recommendation. Three corrections appended to `learnings.md` — the biggest is that
+      **`LabeledBy` is not always empty**: Qt populates it on form rows (5/41), so the earlier
+      "0 of 204" finding was an artifact of dumping the unlock screen
 - [ ] Remove `needs-windows-test` from #6, open the PR with `Closes #6`
-- Next step (hasan): a human unlocks `C:\Users\pc\Passwords.kdbx` in KeePassXC (password
-  `ayna-demo`) and presses Ctrl+N, then immediately
-  `.venv\Scripts\python eval\spikes\uia_dump.py dump --only keepassxc`.
+- Next step (hasan): remove the label and open the PR (`Closes #6`), requesting galip's review
+  since he owns the spike's first half.
 
 ## Manual checks
 - 2026-10-25 · pending Windows session · UIA dump of the four targets
@@ -122,6 +124,18 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
     `[Locked]`.
   - **Report back**: the console output of step 4; if the title still says `[Locked]`, the
     database re-locked and steps 1-4 have to be repeated faster.
+  - **Result: pass (2026-10-29, hasan at the machine, agent ran the dump).** The human did
+    steps 1-3; the agent then ran
+    `.venv\Scripts\python eval\spikes\uia_dump.py dump --only keepassxc` →
+    `keepassxc: 84 elements in 0.5 s`, `read_errors: 0`, `truncated: false`, window title
+    `Passwords - KeePassXC` (no `[Locked]`). The split "a human unlocks, the agent dumps"
+    worked on the first try.
+  - What the new numbers changed in the note: interactive 26 → 41, unique AutomationIds
+    8% → 10%, Name 92% → 88%, `AutomationId or Name` stays 100%, and **`LabeledBy` 0% → 12%
+    (5/41)** — the one result that overturns a published finding (finding 6) and two
+    `learnings.md` entries, both of which had been measured on the form-less unlock screen.
+    Also new: 25 of the 84 ids exceed the 200-character clip, in 5 indistinguishable groups.
+    The pilot recommendation did not change.
 
 ## Open issues
 - **New issue worth opening (performance):** a property-complete UIA walk of a WinForms window
@@ -152,6 +166,9 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - The numbers that decided it: `AutomationId or Name` over interactive elements is 98%
   (KeePass 2), 96% (HandBrake), 100% (KeePassXC) and 59% (Notepad++) - and all 32 of
   Notepad++'s unidentifiable elements sit in one toolbar, so the rest of it is at 100% (47/47).
-- What the issue did not ask for but changes other issues: `LabeledBy` is unset in all four
-  frameworks (#11 must find labels geometrically), Qt AutomationIds are present but collide
-  (#11, #21 must not match on them alone), and the WinForms walk time puts NFR-02 at risk (#12).
+- What the issue did not ask for but changes other issues: `LabeledBy` is unset in WinForms,
+  WPF and Win32 (0/178) and set by Qt only on form rows (5/41), and there on the row
+  *container* rather than the editable control — so #11 must still find labels geometrically
+  and may use `LabeledBy` only as a confirmation; Qt AutomationIds are present but collide and
+  overflow a 200-character field (#11, #21 must not match on them alone); and the WinForms walk
+  time puts NFR-02 at risk (#12).

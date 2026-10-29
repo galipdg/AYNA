@@ -2,7 +2,7 @@
 
 Spike, started 2026-10-25, galip. Question: which open-source Windows apps expose enough identifying information through UI Automation to be AYNA's pilot apps, and how do WinForms, WPF, Qt and Win32 compare?
 
-**Status: done.** The four dumps were taken on hasan's Windows machine on 2026-10-27 (KeePassXC re-taken on 2026-10-29, after it had locked itself during the first run) and are committed in [`uia-dumps/`](uia-dumps/). *Results*, *Findings* and *Recommendation* below come from them. The expectations were written before the run; each one is marked confirmed or refuted at the end of *Findings*.
+**Status: done.** The four dumps were taken on hasan's Windows machine on 2026-10-27; `keepassxc` was re-taken on 2026-10-29 on the entry form, because the first run had caught it on its unlock screen. All four are committed in [`uia-dumps/`](uia-dumps/). *Results*, *Findings* and *Recommendation* below come from them. The expectations were written before the run; each one is marked confirmed or refuted at the end of *Findings*.
 
 ## Method
 
@@ -45,7 +45,7 @@ Output of `python eval/spikes/uia_dump.py stats`:
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | handbrake | HandBrake | WPF | 1.11.2.0 | 1.97 s | 149 | 45 | 73% (33/45) | 0% (0/33) | 100% (33/33) | 71% (32/45) | 96% (43/45) |
 | keepass2 | KeePass 2 | WinForms | 2.61.1.0 | 278.5 s | 106 | 54 | 35% (19/54) | 11% (2/19) | 100% (19/19) | 85% (46/54) | 98% (53/54) |
-| keepassxc | KeePassXC | Qt Widgets | 2.8.0.0 | 0.46 s | 58 | 26 | 100% (26/26) | 0% (0/26) | 8% (2/26) | 92% (24/26) | 100% (26/26) |
+| keepassxc | KeePassXC | Qt Widgets | 2.8.0.0 | 0.47 s | 84 | 41 | 100% (41/41) | 0% (0/41) | 10% (4/41) | 88% (36/41) | 100% (41/41) |
 | notepadpp | Notepad++ | Win32 | 8.9.8.1 | 1.04 s | 109 | 79 | 29% (23/79) | 96% (22/23) | 100% (23/23) | 57% (45/79) | 59% (47/79) |
 
 Interactive = control types Button, CheckBox, ComboBox, DataItem, Document, Edit, Hyperlink, ListItem, MenuItem, RadioButton, Slider, Spinner, SplitButton, TabItem, TreeItem, outside the window frame (TitleBar). AutomationId and Name count when non-blank. *… generated* (numeric or GUID) and *… unique in window* are shares of the interactive elements that have an AutomationId.
@@ -56,7 +56,7 @@ The same interactive sets, for the properties the descriptor of #11 might fall b
 |---|---|---|---|---|---|---|
 | handbrake | 0% (0/45) | 38% (17/45) | 13% (6/45) | 0% (0/45) | 0% (0/45) | 4% (2/45) |
 | keepass2 | 0% (0/54) | 4% (2/54) | 31% (17/54) | 0% (0/54) | 35% (19/54) | 2% (1/54) |
-| keepassxc | 0% (0/26) | 0% (0/26) | 23% (6/26) | 0% (0/26) | 0% (0/26) | 0% (0/26) |
+| keepassxc | 12% (5/41) | 0% (0/41) | 27% (11/41) | 0% (0/41) | 0% (0/41) | 0% (0/41) |
 | notepadpp | 0% (0/79) | 0% (0/79) | 39% (31/79) | 0% (0/79) | 28% (22/79) | 41% (32/79) |
 
 The windows each number was measured on, so the counts can be read in context:
@@ -65,7 +65,7 @@ The windows each number was measured on, so the counts can be read in context:
 |---|---|---|---|
 | handbrake | `HandBrake` | 1.97 s | 149 |
 | keepass2 | `Add Entry`; `Database.kdbx* - KeePass` | 278.5 s | 106 |
-| keepassxc | `Passwords.kdbx [Locked] - KeePassXC` | 0.46 s | 58 |
+| keepassxc | `Passwords - KeePassXC` | 0.47 s | 84 |
 | notepadpp | `Find`; `new 1 - Notepad++` | 1.04 s | 109 |
 
 Per-control-type tables come from `uia_dump.py stats --by-type`; the rows that carry a
@@ -88,7 +88,7 @@ fallback) needs. It also says what the fallback cannot do: there is no text to k
 has to use the toolbar button index or the position.
 
 **3. An AutomationId is not the same as a locator.** KeePassXC reports an AutomationId for
-100% of its interactive elements, but only **8% (2/26) are unique inside their window**. Qt
+100% of its interactive elements, but only **10% (4/41) are unique inside their window**. Qt
 builds the id as the dotted path of `objectName`s, and a widget without an `objectName`
 contributes its class name instead, so whole groups collide:
 
@@ -96,13 +96,18 @@ contributes its class name instead, so whole groups collide:
 14x  Application.MainWindow.toolBar.QToolButton
  6x  Application.MainWindow.menubar.QAction
  5x  Application.MainWindow.toolBar.QToolBarSeparator
+ 5x  ...DatabaseWidget.editEntryWidget.categoryList.categoryList
+ 2x  ...DatabaseWidget.editEntryWidget.buttonBox.QPushButton
 ```
 
-Two further problems with the same scheme: the path grows with nesting depth (KeePassXC's
-password box is 11 segments and over 200 characters, so the dump clips it), and any widget
-inserted above an element rewrites its id. For #11 and #21 a Qt AutomationId has to be treated
-as a *weak* property -- present, but neither unique nor stable -- while in WPF and WinForms
-every id that exists is unique in its window (100% for both).
+Two further problems with the same scheme. The path grows with nesting depth: **25 of the 84
+elements have an id longer than the dump's 200-character clip**, and the clipped prefixes form
+5 groups covering 23 elements that cannot be told apart at all. The password box is the
+clearest case -- the `Edit` that actually holds the password and the `Group` that wraps it
+share a clipped id, so parent and child are indistinguishable. And any widget inserted above an
+element rewrites its id. For #11 and #21 a Qt AutomationId has to be treated as a *weak*
+property -- present, but neither unique nor stable -- while in WPF and WinForms every id that
+exists is unique in its window (100% for both).
 
 **4. WinForms identifies by Name, WPF by AutomationId.** KeePass 2: AutomationId 35%, Name
 85%. HandBrake: AutomationId 73%, Name 71%. The split is visible per control type: every
@@ -121,14 +126,27 @@ work as a secondary property, but they carry no meaning for the user and they ar
 likely to be renumbered between releases -- worth re-checking in the version-drift experiments
 (#22).
 
-**6. `LabeledBy` is never populated -- in any of the four frameworks.** 0% of 204 interactive
-elements across WinForms, WPF, Qt and Win32. The reader takes it from the raw
-`IUIAutomationElement.CurrentLabeledBy` and `read_errors` is 0, so this is an absence, not a
-read failure: none of these apps sets `AutomationProperties.LabeledBy` or a Qt buddy label.
-**#11 must not rely on `LabeledBy` for `nearest_label`** -- the label has to be found
-geometrically (nearest `Text` to the left or above, inside the same container). The same holds
-for `AcceleratorKey`, 0% everywhere; `AccessKey` is populated for 13-39% (the `&` mnemonics)
-and `HelpText` only in HandBrake (38%, its tooltips).
+**6. `LabeledBy` is populated only by Qt, and only on form rows.** 5 of 219 interactive
+elements across the four apps (2%) have one, and **all five are in KeePassXC** (12% of its 41):
+the Title, Username, Notes, URL and expiry controls of the entry form, labelled `Title:`,
+`Username:`, `Notes:`, `URL:` and `Expires:`. WinForms, WPF and Win32 are at 0% over 178
+interactive elements. The reader takes the property from the raw
+`IUIAutomationElement.CurrentLabeledBy` and `read_errors` is 0, so those zeros are an absence,
+not a read failure: neither KeePass 2, HandBrake nor Notepad++ sets
+`AutomationProperties.LabeledBy`, while Qt derives it from the `QFormLayout` buddy label.
+
+Two caveats before #11 counts on the Qt case. The property hangs off the **row container, not
+the editable control**: the password row's `Group` carries `LabeledBy = "Password:"` while the
+`Edit` inside it -- the one with `IsPassword` -- has no Name and no `LabeledBy`, so a
+descriptor has to climb to the parent to find the label. And two elements outside the
+interactive set (the password and tags `Group`s) carry one, which is why the dump holds 7
+`LabeledBy` values where the table counts 5.
+
+**So #11 still cannot rely on `LabeledBy` for `nearest_label`**: it has to find the label
+geometrically (nearest `Text` to the left or above, inside the same container) and may use
+`LabeledBy`, including the parent's, as a cheap confirmation where it exists. The same absence
+holds for `AcceleratorKey`, 0% everywhere; `AccessKey` is populated for 13-39% (the `&`
+mnemonics) and `HelpText` only in HandBrake (38%, its tooltips).
 
 **7. A full walk is far from the 2 s target on WinForms.** HandBrake 1.97 s for 149 elements
 and Notepad++ 1.04 s for 109, but **KeePass 2 took 278.5 s for 106 elements** -- about 2.6 s
@@ -146,7 +164,7 @@ tree, and nothing at all on WPF or Qt: a supplement for Win32 dialogs, not a sec
 recognition engine.
 
 **9. Non-interactive elements are a third to three quarters of every tree.** HandBrake 104/149
-(76 of them `Text` labels), KeePass 2 52/106, KeePassXC 32/58 (14 `Group`s), Notepad++ 30/109.
+(76 of them `Text` labels), KeePass 2 52/106, KeePassXC 43/84 (20 `Group`s), Notepad++ 30/109.
 The `Text` elements are worth keeping in a snapshot even though no step targets them:
 HandBrake names 91% of them (69/76), and that is the material finding 6's geometric label
 search needs.
@@ -164,10 +182,10 @@ search needs.
    76 of 149 elements are `Text`, plus `Image`, `Separator` and `Thumb`.
 3. **Confirmed on the mechanism, refuted on the conclusion.** The id is the dotted `objectName`
    path #9 described, and KeePassXC names enough widgets that *every* interactive element has
-   one -- but the unnamed ones fall back to their class name, so the ids collide (8% unique)
-   and the deep ones exceed the 200-character clip. "The share depends on whether the app names
+   one -- but the unnamed ones fall back to their class name, so the ids collide (10% unique)
+   and 25 of the 84 exceed the 200-character clip. "The share depends on whether the app names
    its widgets" turned out to be the wrong question; uniqueness is the real one. Unnamed
-   widgets do show up as `Custom` (3) and `Pane` (4), as expected.
+   widgets do show up as `Custom` (1) and `Pane` (4), as expected.
 4. **Confirmed.** Notepad++'s ids are numeric (96% generated) and unique in their dialog
    (100%). Edit-field Names come from the preceding label -- the Find dialog's `Edit` is named
    `Find what :`. Not foreseen: the toolbar, where 30 buttons have neither id nor Name
@@ -183,7 +201,7 @@ schedule allows. Notepad++ is not a pilot** -- it stays as the fixture for the w
 |---|---|---|---|---|---|
 | KeePass 2 | 98% yes | entry editor, options, tree + list | WinForms | GPL-2, portable ZIP, releases back to 2.0 | yes, once the update check is off |
 | HandBrake | 96% yes | tabs, combo boxes, number fields | WPF | GPL-2, portable ZIP, many releases | yes, main window with no source |
-| KeePassXC | 100% yes, but 8% unique ids | entry form, wizards | Qt Widgets | GPL-2/3, portable ZIP | no -- locks itself (see below) |
+| KeePassXC | 100% yes, but 10% unique ids | entry form, wizards | Qt Widgets | GPL-2/3, portable ZIP | no -- locks itself (see below) |
 | Notepad++ | 59% **no** | dialogs, but editor-centred | Win32 | GPL-3, portable ZIP | yes |
 
 - **KeePass 2** -- the highest `id or Name` share (98%) and the screens closest to the
@@ -200,7 +218,9 @@ schedule allows. Notepad++ is not a pilot** -- it stays as the fixture for the w
   look best, so pairing it with KeePass 2 keeps the measurement honest.
 - **KeePassXC** -- third, and useful despite sharing a toolkit with the PySide6 sample app
   (#33): it is the only app in the set where ids exist but are not unique, which is the case
-  the recognition engine (#11, #21) is most likely to get wrong. Two costs: it duplicates
+  the recognition engine (#11, #21) is most likely to get wrong. It is also the only app that
+  populates `LabeledBy` (finding 6), so it is the one target that can check a label-based
+  descriptor against the toolkit's own answer. Two costs: it duplicates
   KeePass 2's domain, and it locks its database on inactivity and on workstation lock, throwing
   away the open form, so every run against it has to unlock first (see `learnings.md`). That is
   friction a pilot should not have -- take it only after the two above work.
