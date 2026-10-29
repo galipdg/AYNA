@@ -19,8 +19,9 @@ Package `server/src/main/java/com/ayna/server/tests/`. Endpoints: `POST/GET /api
 
 ## Status
 - [x] API, validation, migration V0002, ADR, `docs/graph-model.md`; `./mvnw verify` 32 tests green; two mutations caught; `docker compose build` + smoke run against the real container (migration 0002 applied, 400 with `$.steps[0].value`, UTF-8 filename).
-- [ ] PR (`Closes #39`), approvals for the ADR from galip and hasan
-- Next step: ask omer to push and open the PR.
+- [x] PR #156 opened 2026-10-29 (`Closes #39`), review requested from galip and hasan
+- [ ] ADR approvals from galip and hasan → switch ADR + index line to Accepted in this PR
+- Next step: check CI on PR #156; then answer the reviews and, on two approvals, mark the ADR Accepted.
 
 ## Manual checks
 - none needed: everything is covered by tests and the container smoke run above.
