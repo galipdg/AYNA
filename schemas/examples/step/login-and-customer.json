@@ -1,0 +1,86 @@
+{
+  "version": "0.1",
+  "steps": [
+    {
+      "id": "deb27841-13ea-4846-b144-07081ad912ce",
+      "keyword": "Wait",
+      "target": "login.usernameInput",
+      "timeoutMs": 10000
+    },
+    {
+      "id": "62b637f6-79e5-475f-9668-bd444c7ae20d",
+      "keyword": "Type",
+      "target": "login.usernameInput",
+      "value": "admin"
+    },
+    {
+      "id": "b7554599-0273-4f61-98bb-08e459200fb2",
+      "keyword": "Type",
+      "target": "login.passwordInput",
+      "value": "admin"
+    },
+    {
+      "id": "d49685d1-596e-45bc-a7a9-a7838607d86c",
+      "keyword": "Click",
+      "target": "login.rememberMeCheckBox"
+    },
+    {
+      "id": "f7f06365-ff80-4073-bc7f-a31f4b4489ae",
+      "keyword": "Verify",
+      "target": "login.rememberMeCheckBox",
+      "checkpoint": { "property": "checked", "operator": "equals", "expected": true }
+    },
+    {
+      "id": "a790c340-38b2-4350-980d-f7a9b560a55d",
+      "keyword": "Click",
+      "target": "login.loginButton"
+    },
+    {
+      "id": "eebb102f-724f-41be-83c4-72efc4018ab2",
+      "keyword": "Verify",
+      "target": "login.statusLabel",
+      "checkpoint": { "property": "name", "operator": "equals", "expected": "Welcome, admin!" },
+      "timeoutMs": 5000
+    },
+    {
+      "id": "8c2b7fab-6cac-4b08-b3c6-b23ab0c4df20",
+      "keyword": "Click",
+      "target": "main.newCustomerButton"
+    },
+    {
+      "id": "63df5efe-3a78-41b1-a43d-d7ec6461cf23",
+      "keyword": "Type",
+      "target": "customer.firstNameInput",
+      "value": "Ayşe"
+    },
+    {
+      "id": "22bcdf26-f983-461a-9ed7-2c2058725e55",
+      "keyword": "Select",
+      "target": "customer.cityComboBox",
+      "value": "Ankara"
+    },
+    {
+      "id": "dabd250a-0728-4543-a69e-85ca5e4b4cba",
+      "keyword": "Verify",
+      "target": "customer.saveButton",
+      "checkpoint": { "property": "enabled", "operator": "equals", "expected": true }
+    },
+    {
+      "id": "76b0c9cb-193e-4adf-a968-4978db82be1e",
+      "keyword": "Click",
+      "target": "customer.saveButton"
+    },
+    {
+      "id": "d6f6737b-4033-45d4-a9a9-79578fb79da7",
+      "keyword": "Verify",
+      "target": "customer.messageLabel",
+      "checkpoint": { "property": "name", "operator": "contains", "expected": "başarılı" }
+    },
+    {
+      "id": "25fa7242-3241-482a-b1db-4448970f0fa1",
+      "keyword": "Verify",
+      "target": "customer.errorLabel",
+      "checkpoint": { "property": "visible", "operator": "equals", "expected": false }
+    }
+  ]
+}
