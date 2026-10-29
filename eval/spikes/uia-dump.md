@@ -151,11 +151,16 @@ mnemonics) and `HelpText` only in HandBrake (38%, its tooltips).
 **7. A full walk is far from the 2 s target on WinForms.** HandBrake 1.97 s for 149 elements
 and Notepad++ 1.04 s for 109, but **KeePass 2 took 278.5 s for 106 elements** -- about 2.6 s
 per element, two orders of magnitude slower than WPF. `read_errors` is 0, so nothing timed out
-and was swallowed; the cost is in the reads themselves. The suspect is the ten pattern probes
-per element over the WinForms COM bridge, but that is a hypothesis: it was not isolated with
-`--no-patterns` on the same window state. **#12 (snapshot export) cannot assume a
-property-complete walk fits NFR-02's 2 s**, and should measure a WinForms window with and
-without pattern probes before deciding what a snapshot reads.
+and was swallowed; the cost is in the reads themselves. The suspect was the ten pattern probes
+per element over the WinForms COM bridge; **that hypothesis was tested on 2026-10-29 and does
+not hold.** On KeePass 2's start-up window, 15 plain property reads cost 2.79 ms per element and
+the ten pattern probes 1.56 ms -- the probes are *cheaper* than the properties, and both together
+extrapolate to about 0.5 s for 106 elements. The measurement reached only 6 elements (the
+start-up "open database" dialog, not the Add Entry dialog with a database open that this dump
+captured), so it rules out "the WinForms COM bridge is slow" without explaining the 278.5 s: the
+outlier is tied to that window state. Reproducing the dumped state and bisecting from there is
+the next step. **#12 (snapshot export) cannot assume a property-complete walk fits NFR-02's
+2 s** and needs a bounded walk with a budget-exceeded outcome, whatever the cause turns out to be.
 
 **8. UIA covers the whole tree; win32 does not.** `NativeWindowHandle` is 0% in HandBrake and
 KeePassXC -- WPF and Qt draw their controls, so none of them is a window. It is 35% in
