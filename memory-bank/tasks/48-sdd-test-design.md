@@ -13,8 +13,9 @@ Fill `docs/sdd/SDD.md` §6: principles, test levels (unit, integration, contract
 
 ## Status
 - [x] §6 drafted, open issues 8–12 added to §9, document history 0.2
-- [ ] PR (`Closes #48`), review by galip (hasan asked too)
-- Next step: ask omer to push and open the PR (base `omer/45-sdd-architecture`? see Handoff).
+- [x] PR #157 opened 2026-10-29 (`Closes #48`, base `omer/45-sdd-architecture`), reviewers galip and hasan
+- [ ] Review by one member
+- Next step: after #155 merges, switch #157's base to `main` (if GitHub has not) and answer the reviews.
 
 ## Manual checks
 - none (text only; no diagrams added)
