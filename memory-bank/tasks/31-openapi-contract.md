@@ -20,14 +20,15 @@ springdoc-openapi 3.2.0 (built on Boot 4.1.2, same as ours) serves `/v3/api-docs
 - [x] Dependency, `OpenApiConfig`, properties, generation test, CI step; `./mvnw verify` 34 tests green
 - [x] Generated twice in separate JVMs: byte-identical. CI check simulated locally: exit 0 when clean, 1 when stale.
 - [x] `docker compose up --build`: `/swagger-ui.html` → 302 → `/swagger-ui/index.html` 200; assets local; no petstore URL; served `/v3/api-docs.yaml` equals the committed file
-- [ ] Commit, push, PR (ask first)
-- Next step: commit and, with the user's OK, push and open the PR (`Closes #31`).
+- [x] Committed; `server/AGENTS.md` regeneration rule and galip's inbox note (RS.md status) added with the user's OK
+- [ ] PR open, CI green
+- Next step: watch CI on the PR; after merge close #31 with evidence.
 
 ## Manual checks
 - 2026-10-29 · omer (agent, curl) · Swagger UI on the dev server · pass · see Status. A look in a browser (operations listed, "Try it out" on `GET /api/health`) is optional.
 
 ## Open issues
-- `docs/rs/RS.md` (galip's) lists `docs/api/openapi.yaml` as "planned"; it exists after this PR.
+- `docs/rs/RS.md` (galip's) lists `docs/api/openapi.yaml` as "planned"; note in galip's inbox (2026-10-29).
 
 ## Handoff
 - Any REST change: run `./mvnw test` in `server/` and commit the regenerated `docs/api/openapi.yaml` with it, or CI fails.
