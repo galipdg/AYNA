@@ -20,8 +20,9 @@ One global `@RestControllerAdvice` (`server/.../error/ApiErrorHandler`) extendin
 - [x] integration tests: apps errors, Spring errors (`error/ApiErrorIntegrationTest`), 38/38 green locally
 - [x] `openapi.yaml` lists 400/404/409 per operation with the `Problem` schema
 - [x] ADR (Proposed)
-- [ ] push + PR (ask user); PR base: `main` once #160 is merged, otherwise `omer/31-openapi-contract`
-- Next step: ask to push and open the PR; request galip's and hasan's review of the ADR
+- [x] PR #163 (base `omer/31-openapi-contract`), reviewers galip + hasan for the ADR
+- [ ] CI green on #163; ADR approved → switch it to Accepted in the same PR
+- Next step: when #160 merges, `git merge origin/main`, retarget #163 to `main` (`gh pr edit 163 --base main`; `Closes #158` only works against `main`), rerun `./mvnw test`
 
 ## Manual checks
 None needed: everything is covered by integration tests (no UI, no Windows).
