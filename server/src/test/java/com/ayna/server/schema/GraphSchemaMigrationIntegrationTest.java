@@ -53,18 +53,17 @@ class GraphSchemaMigrationIntegrationTest {
 				Map.of("label", "RepoObject", "property", "name"),
 				Map.of("label", "Element", "property", "snapshotId"),
 				Map.of("label", "Element", "property", "automationId"),
-				Map.of("label", "Run", "property", "startedAt"));
+				Map.of("label", "Run", "property", "startedAt"), Map.of("label", "TestCase", "property", "name"));
 	}
 
 	@Test
-	void migrationIsRecorded() {
+	void migrationsAreRecorded() {
 		List<Record> applied = driver.executableQuery("""
-				MATCH (m:__Neo4jMigration) WHERE m.version = '0001'
-				RETURN m.description AS description""").execute().records();
+				MATCH (m:__Neo4jMigration) WHERE m.version <> 'BASELINE'
+				RETURN m.version AS version, m.description AS description ORDER BY version""").execute().records();
 
-		assertThat(applied).singleElement()
-			.extracting(r -> r.get("description").asString())
-			.isEqualTo("graph schema v0");
+		assertThat(applied).extracting(r -> r.get("version").asString() + " " + r.get("description").asString())
+			.containsExactly("0001 graph schema v0", "0002 tests and objects belong to an application");
 	}
 
 }
