@@ -60,3 +60,10 @@ Append-only. One entry per session, newest at the bottom:
 - Backup/restore: kept as NFR-44 (Could) in my install guide #91 (omer's choice), follow-up comment on #137.
 - `gh pr review` posts needed explicit user OK (auto-mode classifier).
 - Next: #17.
+
+## 2026-10-29 · reviews, #45 SDD, #39 tests API
+- Reviews: approved #142 (note: `objects` needs per-object `columns` once `column` becomes an enum); comment on #145 (all 12 pairs fail under #150's 0.2 → merge #150 first, then relabel).
+- #45: `docs/sdd/SDD.md` skeleton (IEEE 1016, omer's choice) + sections 1–4; galip's AI block = §5 (answer in his inbox). PR #155, review requested from galip; diagrams checked by omer.
+- galip's six PRs (#143–#146, #150, #151) show as conflicting on GitHub: only `merge=union` inbox files, except #151 (ADR index). Note in galip's inbox and in #155's body (learnings entry).
+- #39: tests and steps API, networknt validator 3.0.8, V0002 + Proposed ADR (HAS_TEST, HAS_OBJECT), Docker context at repo root. 32 server tests green, CI green. PR #156, reviewers galip + hasan.
+- Next: answer reviews on #155 and #156; then #48 (SDD test design) or #25 once #12/#22 move.
