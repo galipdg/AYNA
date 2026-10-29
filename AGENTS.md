@@ -15,9 +15,11 @@ AYNA (Akıllı, Yerli, Nesne Tabanlı Arayüz Testi) is a codeless, closed-netwo
 
 | id | Person | GitHub | Owns (primary) |
 |---|---|---|---|
-| `galip` | Galip Enes Doğan | @galipdg | `ai/`, `agent/ayna_agent/recognition/`, `agent/ayna_agent/heal/`, `eval/nl/` |
-| `omer` | Ömerfaruk Sarıbal | @omerfaruksaribal | `server/`, `client/`, `.github/`, `docker/` |
-| `hasan` | Hasan Berk Yanıkkaya | @HasanBerk18 | `agent/ayna_agent/playback/`, `agent/ayna_cli/`, `eval/` (except `eval/nl/`), `docs/` |
+| `galip` | Galip Enes Doğan | @galipdg | `ai/`, `agent/ayna_agent/heal/`, `agent/ayna_agent/rpc.py`, `eval/nl/`, `docs/rs/`, `docs/report/` |
+| `omer` | Ömerfaruk Sarıbal | @omerfaruksaribal | `server/`, `client/`, `.github/`, `docker/`, `docs/sdd/` (component sections by their owners) |
+| `hasan` | Hasan Berk Yanıkkaya | @HasanBerk18 | `agent/ayna_agent/recognition/`, `agent/ayna_agent/playback/`, `agent/ayna_cli/`, `eval/` (except `eval/nl/`), `docs/` (except `rs/`, `sdd/`, `report/`) |
+
+Work that needs a Windows machine (UI Automation, pilot apps, measurements on them) belongs to hasan; client screens stay with omer, who builds them on macOS and checks them at the weekly Windows session.
 
 Shared by all three: `schemas/` (frozen contracts — changing them needs an ADR and everyone's approval), `memory-bank/project/`, `memory-bank/decisions/`.
 
@@ -30,14 +32,14 @@ Shared by all three: `schemas/` (frozen contracts — changing them needs an ADR
 The user may open a session with just "continue" / "devam" — you work out where things stand yourself.
 
 1. `git status` and `git fetch origin`. See what is new with `git log --oneline main..origin/main` and tell the user in one line, especially teammates' merges that touch your area. Then update local `main`: `git switch main && git pull --ff-only` (if there are uncommitted changes, stop and ask). Do this before step 2: memory files are read from disk, so a stale `main` means a stale inbox.
-2. Read `memory-bank/people/<you>/active.md` and `memory-bank/people/<you>/inbox.md`.
+2. Read `memory-bank/people/<you>/active.md` and `memory-bank/people/<you>/inbox.md`. Then list the PRs waiting for your review: `gh pr list --search "review-requested:@me"`. A teammate's request for you can live in a PR body, and inbox entries on a PR branch reach you only when it merges, so read the body of each listed PR. Offer to review before new work: a review is short and unblocks a teammate.
 3. Pick the issue:
    - If the user named one, use it.
    - Else, if `active.md` names a current issue that is still open (`gh issue view <n>`), **resume it**: check out its branch; if `origin/main` has moved, merge it in (`git merge origin/main`, never rebase or force-push) and stop to resolve any conflict with the user; then continue from the task note's "Next step".
    - Else, **propose the next one**: `gh issue list --assignee @me --state open --json number,title,milestone,body`. Take the earliest-due milestone first, skip issues whose "Depends on" issues are still open, prefer your own issues over `owner:team` ones.
 4. Read the issue and `memory-bank/tasks/<n>-*.md`; create the note from `memory-bank/tasks/_template.md` if the task is new. Never work on `main`: for a new issue create its branch from the updated `main` (§6).
 5. Skim `memory-bank/decisions/README.md` (the index, not every ADR).
-6. Tell the user in 3–5 lines: which issue and why, where it stands, your first step, open questions (including anything waiting in your inbox). When **resuming**, start right away. When **starting a new issue**, wait for the user's OK first. Once work starts, set the issue's Status on the AYNA Project to **In progress** (commands in `memory-bank/project/conventions.md`); closing the issue moves it to Done automatically.
+6. Tell the user in 3–5 lines: which issue and why, where it stands, your first step, open questions (including anything waiting in your inbox and PRs waiting for your review). When **resuming**, start right away. When **starting a new issue**, wait for the user's OK first. Once work starts, set the issue's Status on the AYNA Project to **In progress** (commands in `memory-bank/project/conventions.md`); closing the issue moves it to Done automatically.
 
 Do **not** read the whole memory bank up front. Open other files only when the work needs them. Each top-level folder has its own `AGENTS.md` with build/test commands — read it when you work there.
 
@@ -63,7 +65,7 @@ Update at checkpoints, not after every step:
 - a decision is made → task note (small) or new ADR (affects others or is hard to reverse);
 - a meaningful unit is committed → task note "Status / Next step";
 - you hit a non-obvious problem → `learnings.md`;
-- something concerns a teammate → their `inbox.md`;
+- something concerns a teammate → their `inbox.md`. It reaches them only when your branch merges into `main`. For anything they must do before that, such as reviewing your PR, request their review on the PR and say in its body what each of them should check;
 - session ends → `active.md` + one `journal.md` entry (§11).
 
 Commit memory changes **together with** the code they describe. Write short, dated (`YYYY-MM-DD`) bullets. Record *why*, not what the code already says. Link issues (`#21`), paths and commits. Delete what has gone stale. Never write secrets.
@@ -121,7 +123,7 @@ Much of AYNA can only be judged by a person at the Windows machine: the Spy over
 
 Plan the manual check while designing anything the user will see, not after the code is written.
 
-**Weekly Windows session.** Galip works on macOS; Windows-only tests (`@pytest.mark.windows`, UI Automation, pilot apps) run once a week on Hasan's Windows machine with both present.
+**Weekly Windows session.** Galip and Ömerfaruk work on macOS; Windows-only tests (`@pytest.mark.windows`, UI Automation, pilot apps) run once a week on Hasan's Windows machine with both present.
 - *On a Mac*, when code is ready but needs Windows: post the manual check (shape above) and the exact test commands as a comment on the issue, add the label `needs-windows-test`, and record "pending Windows session" under the task note's "Manual checks". Keep working on what can be verified on macOS.
 - *At the session on Windows*: list the queue with `gh issue list --label needs-windows-test`, check out each issue's branch, run its commands and manual check with the user, and post the result as an issue comment. On pass, remove the label. On failure, keep the label and append the failure (issue, step, log lines, screenshot location) to the issue owner's `inbox.md`, committed on the owner's branch only if the owner agrees, otherwise on a `<you>/inbox-<issue>` branch.
 

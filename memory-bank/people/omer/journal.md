@@ -23,3 +23,47 @@ Append-only. One entry per session, newest at the bottom:
 - Next: manual check, push, PR, close #3 after the green client job.
 - Later: PR #120 opened (also `Closes #3`), CI all green with the real client steps; #4 closed with run 40217766040; `needs-windows-test` + Windows check on #5; `client/AGENTS.md` commands filled.
 - Later: team agreed to TypeScript for the client; switched `client/` to `.ts`/`.tsx` (TS 6.0, typescript-eslint, split tsconfigs), ADR `2026-10-25-client-typescript.md` (supersedes the client language only) and updated AGENTS.md / conventions / architecture. omer's manual `npm run dev` check passed.
+
+## 2026-10-25 · #14
+- PR #120 merged → #3 and #5 closed and Done. hasan's eval-CI note: opened #122 (hasan: pyproject + ruff; omer: CI job), replied in his inbox.
+- Started #14 on `omer/14-graph-schema`, board → In progress. Added neo4j-migrations starter 4.2.0 (omer OK; built for Boot 4.1), `V0001__graph_schema_v0.cypher` (11 unique `id` constraints + 5 indexes), `GraphSchemaMigrationIntegrationTest`, `docs/graph-model.md`, ADR `2026-10-25-graph-schema-migrations.md`.
+- `./mvnw test` green (5); compose run: migration applied on start, skipped on restart, all 14 sample queries pass EXPLAIN.
+- Next: push + PR `Closes #14` after omer's OK.
+
+## 2026-10-26 · #18
+- PR #124 merged → #14 closed and Done. Inbox: #18 and #48 now mine (ADR windows-work-to-hasan).
+- Picked #18 (Week 2, no deps; #15/#17 blocked). Branch `omer/18-tool-matrix`, board → In progress.
+- Wrote `docs/tool-matrix.md`: 15 rows (user-approved) × 7 tools + AYNA (target); every cell sourced. Link check: all 200 except Ranorex Zendesk (403 to bots), verified via its public API.
+- Correction while checking: TestComplete persists a healed locator only if the user accepts it; takeaway reworded.
+- Next: PR `Closes #18`, then #32.
+
+## 2026-10-26 · #32
+- Started #32 on `omer/32-server-settings`, board → In progress; agreed with omer to keep #32 open until the picker (needs #15) instead of splitting it.
+- Client: `src/main/server.ts` (URL normalisation + `/api/health` check, 5 failure types), `src/main/settings.ts` (`userData/settings.json`), IPC `settings:get` / `server:check` / `server:connect`, `ServerSettings.tsx` first-run screen. 22 tests green, build green; checked against the real compose backend (all 5 outcomes); omer's manual UI check passed (7 steps).
+- Draft PR #127 (`Refs #32`), CI green.
+- Next: picker after #15; propose splitting #15's applications list off snapshot import.
+
+## 2026-10-26 · #128, #32
+- #128 on `omer/128-apps-api`: `server/.../apps/` (`AppController`, `AppService` with plain Cypher via `Driver`), 4 endpoints with 400/404/409; duplicate checks in the create transaction, no constraint (omer chose option (a)); `technology` free text. `AppIntegrationTest` 7 cases, `./mvnw -B verify` green. PR #129, CI green. OpenAPI criterion left unticked (generation arrives with #31).
+- #32 picker: `client/src/main/apps.ts`, IPC `apps:list|create|choose`, `AppPicker.tsx` with create form (omer's choice), `applicationId` in `Settings`, cleared on server change. 33 tests + build green; `apps.ts` checked against the real #128 server; omer's 8-step manual check passed. Pushed; PR #127 CI green.
+- Next: after #129 merges, merge main into #32, mark #127 ready with `Closes #32`.
+
+## 2026-10-29 · review round
+- After three days away: #127 (#32) and #129 (#128) merged; galip opened 13 PRs needing omer's review; hasan inactive since 2026-10-26.
+- Approved #134, #135 (contracts), #141, #146, #150, #151 with server/client notes; decisions posted on #140, #143, #144; opened #152 (load test, TBD-9).
+- #10: merged main into `omer/10-literature-review`, applied galip's gaps-table fixes in `literature.md` and in the plan doc (Claude Docs, rev 17); found the plan doc's numbering matches the file, galip's export is another copy (asked on #126). `Closes #20` added to #126.
+- Carried the unpushed #32 note commit over to this branch; cleared handled inbox items.
+- Next: content reviews of the RS PRs, then #17.
+
+## 2026-10-29 · RS content reviews
+- #140 had merged before the review; my NFR confirmation on it stands. Approved with comments: #137 (RS outline; reference numbering waits for the plan copy on #126), #138 (workshop: API token for ROLE-5, uniqueness per AppVersion, UC-12 outline only with the AUT open), #143 (RS draft: apply TBD-9/10, FR-07/FR-08, server-down availability NFR, AI port, NFR-07 excludes screenshot uploads), #144 (SDD AI: retrieval through the server, AI-9 #6–#8 settled, #78 pass-through).
+- Backup/restore: kept as NFR-44 (Could) in my install guide #91 (omer's choice), follow-up comment on #137.
+- `gh pr review` posts needed explicit user OK (auto-mode classifier).
+- Next: #17.
+
+## 2026-10-29 · reviews, #45 SDD, #39 tests API
+- Reviews: approved #142 (note: `objects` needs per-object `columns` once `column` becomes an enum); comment on #145 (all 12 pairs fail under #150's 0.2 → merge #150 first, then relabel).
+- #45: `docs/sdd/SDD.md` skeleton (IEEE 1016, omer's choice) + sections 1–4; galip's AI block = §5 (answer in his inbox). PR #155, review requested from galip; diagrams checked by omer.
+- galip's six PRs (#143–#146, #150, #151) show as conflicting on GitHub: only `merge=union` inbox files, except #151 (ADR index). Note in galip's inbox and in #155's body (learnings entry).
+- #39: tests and steps API, networknt validator 3.0.8, V0002 + Proposed ADR (HAS_TEST, HAS_OBJECT), Docker context at repo root. 32 server tests green, CI green. PR #156, reviewers galip + hasan.
+- Next: answer reviews on #155 and #156; then #48 (SDD test design) or #25 once #12/#22 move.

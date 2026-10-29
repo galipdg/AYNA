@@ -15,3 +15,7 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-25 | [Shared memory bank structure and English as memory language](2026-10-25-memory-bank-structure.md) | Accepted |
 | 2026-10-25 | [Weekly Windows test session for macOS developers](2026-10-25-weekly-windows-test-session.md) | Accepted |
 | 2026-10-25 | [Client in TypeScript](2026-10-25-client-typescript.md) | Accepted |
+| 2026-10-25 | [Windows-bound work moves to Hasan](2026-10-25-windows-work-to-hasan.md) | Accepted |
+| 2026-10-25 | [Graph schema v0: neo4j-migrations and UUID ids](2026-10-25-graph-schema-migrations.md) | Accepted |
+| 2026-10-27 | [Step schema v0](2026-10-27-step-schema-v0.md) | Proposed (#13) |
+| 2026-10-29 | [Graph schema v0.1: tests and repository objects belong to an application](2026-10-29-graph-schema-application-links.md) | Proposed (#39) |

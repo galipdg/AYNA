@@ -25,6 +25,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>eu.michael-simons.neo4j</groupId>
+			<artifactId>neo4j-migrations-spring-boot-starter</artifactId>
+			<version>4.2.0</version>
+		</dependency>
+		<!-- Validates step documents against schemas/step.schema.json (JSON Schema 2020-12, #39). -->
+		<dependency>
+			<groupId>com.networknt</groupId>
+			<artifactId>json-schema-validator</artifactId>
+			<version>3.0.8</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -54,6 +65,28 @@
 	</dependencies>
 
 	<build>
+		<!-- The step schema is the shared contract in ../schemas; the server validates against that file, not a copy (#39). -->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>${project.basedir}/../schemas</directory>
+				<targetPath>schemas</targetPath>
+				<includes>
+					<include>step.schema.json</include>
+				</includes>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+			</testResource>
+			<testResource>
+				<directory>${project.basedir}/../schemas/examples</directory>
+				<targetPath>schemas/examples</targetPath>
+			</testResource>
+		</testResources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

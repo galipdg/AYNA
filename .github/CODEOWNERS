@@ -2,8 +2,9 @@
 *                                   @galipdg @omerfaruksaribal @HasanBerk18
 
 /ai/                                @galipdg
-/agent/ayna_agent/recognition/      @galipdg
+/agent/ayna_agent/recognition/      @HasanBerk18
 /agent/ayna_agent/heal/             @galipdg
+/agent/ayna_agent/rpc.py            @galipdg
 /agent/ayna_agent/playback/         @HasanBerk18
 /agent/ayna_cli/                    @HasanBerk18
 /server/                            @omerfaruksaribal
@@ -13,6 +14,9 @@
 /eval/                              @HasanBerk18
 /eval/nl/                           @galipdg
 /docs/                              @HasanBerk18
+/docs/rs/                           @galipdg
+/docs/report/                       @galipdg
+/docs/sdd/                          @omerfaruksaribal
 /schemas/                           @galipdg @omerfaruksaribal @HasanBerk18
 /AGENTS.md                          @galipdg @omerfaruksaribal @HasanBerk18
 /memory-bank/project/               @galipdg @omerfaruksaribal @HasanBerk18
