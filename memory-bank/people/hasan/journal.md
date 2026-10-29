@@ -38,3 +38,7 @@ Append-only. One entry per session, newest at the bottom:
 - Next step: open the two issues promised in the reviews (the KeePass 2 hot spot; Ollama on
   Windows — every LLM number is from an M2 and the service's 30 s deadline already fires there),
   then #122.
+- Followed through on both promises: opened **#161** (root-cause the 278.5 s WinForms walk, Week 2,
+  blocks #12's snapshot budget) and **#162** (measure local-model latency on Windows, Week 3 —
+  every number we have is from an M2 and the service's 30 s deadline already fires there), linked
+  from the PRs where I promised them. Pushed `47d1e8b` to `hasan/6-uia-dumps` (PR #159).

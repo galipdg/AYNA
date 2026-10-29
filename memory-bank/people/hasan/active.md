@@ -5,9 +5,9 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - Last update: 2026-10-29
 - Current issue: none in progress. #6 is done and waiting for review as PR #159.
 - Branch: `hasan/6-uia-dumps` (PR #159 open, `Closes #6`)
-- Next step: open the two issues promised in today's reviews (see "Owed to teammates" below),
-  then pick up #122 (`eval/` pyproject + ruff) — omer's CI job waits on it and it also carries
-  the `docs/working-agreement.md` §1 / `docs/README.md` ownership fix galip asked for.
+- Next step: #161 (the KeePass 2 snapshot hot spot) — it is Week 2 and #12 cannot size a
+  snapshot budget without it. Then #122 (`eval/` pyproject + ruff), which omer's CI job waits on
+  and which also carries the `docs/working-agreement.md` §1 / `docs/README.md` ownership fix.
 
 ## What happened this session
 
@@ -62,10 +62,11 @@ them worth the time:
 
 ## Owed to teammates
 
-1. **Open two issues** I promised in reviews: (a) reproduce the #6 KeePass 2 window state and
-   bisect the 278.5 s walk; (b) install Ollama on this Windows machine and measure #142/#146's
-   batch — every LLM number we have is from galip's M2, the service's p95 is already 25.3 s there
-   and its 30 s deadline fires, and Windows is the delivery platform.
+1. **Done — both issues are open and assigned to me**, and linked from the PRs where I promised
+   them: **#161** (Week 2, `area:agent`) reproduce the #6 KeePass 2 window state and bisect the
+   278.5 s walk; **#162** (Week 3, `area:ai`) install Ollama here and measure #142/#146's batch,
+   because every LLM number we have is from galip's M2, the service's p95 is 25.3 s there and its
+   30 s deadline already fires, while Windows is the delivery platform.
 2. **#122** (`eval/` pyproject + ruff) — omer's CI job waits on it. It will also lint
    `eval/nl/check_pairs.py`; I told galip I would cover all of `eval/` unless he objects.
 3. **`docs/working-agreement.md` §1 and `docs/README.md`** still show pre-*windows-work-to-hasan*
