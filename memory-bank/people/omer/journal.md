@@ -47,3 +47,10 @@ Append-only. One entry per session, newest at the bottom:
 - #128 on `omer/128-apps-api`: `server/.../apps/` (`AppController`, `AppService` with plain Cypher via `Driver`), 4 endpoints with 400/404/409; duplicate checks in the create transaction, no constraint (omer chose option (a)); `technology` free text. `AppIntegrationTest` 7 cases, `./mvnw -B verify` green. PR #129, CI green. OpenAPI criterion left unticked (generation arrives with #31).
 - #32 picker: `client/src/main/apps.ts`, IPC `apps:list|create|choose`, `AppPicker.tsx` with create form (omer's choice), `applicationId` in `Settings`, cleared on server change. 33 tests + build green; `apps.ts` checked against the real #128 server; omer's 8-step manual check passed. Pushed; PR #127 CI green.
 - Next: after #129 merges, merge main into #32, mark #127 ready with `Closes #32`.
+
+## 2026-10-29 · review round
+- After three days away: #127 (#32) and #129 (#128) merged; galip opened 13 PRs needing omer's review; hasan inactive since 2026-10-26.
+- Approved #134, #135 (contracts), #141, #146, #150, #151 with server/client notes; decisions posted on #140, #143, #144; opened #152 (load test, TBD-9).
+- #10: merged main into `omer/10-literature-review`, applied galip's gaps-table fixes in `literature.md` and in the plan doc (Claude Docs, rev 17); found the plan doc's numbering matches the file, galip's export is another copy (asked on #126). `Closes #20` added to #126.
+- Carried the unpushed #32 note commit over to this branch; cleared handled inbox items.
+- Next: content reviews of the RS PRs, then #17.
