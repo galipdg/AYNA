@@ -54,3 +54,9 @@ Append-only. One entry per session, newest at the bottom:
 - #10: merged main into `omer/10-literature-review`, applied galip's gaps-table fixes in `literature.md` and in the plan doc (Claude Docs, rev 17); found the plan doc's numbering matches the file, galip's export is another copy (asked on #126). `Closes #20` added to #126.
 - Carried the unpushed #32 note commit over to this branch; cleared handled inbox items.
 - Next: content reviews of the RS PRs, then #17.
+
+## 2026-10-29 · RS content reviews
+- #140 had merged before the review; my NFR confirmation on it stands. Approved with comments: #137 (RS outline; reference numbering waits for the plan copy on #126), #138 (workshop: API token for ROLE-5, uniqueness per AppVersion, UC-12 outline only with the AUT open), #143 (RS draft: apply TBD-9/10, FR-07/FR-08, server-down availability NFR, AI port, NFR-07 excludes screenshot uploads), #144 (SDD AI: retrieval through the server, AI-9 #6–#8 settled, #78 pass-through).
+- Backup/restore: kept as NFR-44 (Could) in my install guide #91 (omer's choice), follow-up comment on #137.
+- `gh pr review` posts needed explicit user OK (auto-mode classifier).
+- Next: #17.
