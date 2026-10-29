@@ -20,11 +20,12 @@ Tests: `src/main/__tests__/agent.test.ts` against `fixtures/fake-agent.ts`, a de
 ## Status
 - [x] `agent.ts` + fake agent + 17 tests; IPC + status bar; #127 notes. lint, typecheck, format, 52 tests, build green.
 - [x] Real agent from #135 (throwaway venv, macOS): connect, ping, heartbeat, kill → restart, stop (kill after 3 s, since EOF exit is not in #135 yet).
-- [ ] Manual UI check on macOS (below), then Windows session (`taskkill /T` path, venv launcher).
-- Next step: omer's manual check; then PR (`Closes #17` only after the Windows run, otherwise `Refs #17` + `needs-windows-test`).
+- [x] Manual UI check on macOS passed (below).
+- [ ] Windows session (`taskkill /T` path, venv launcher); PR open with `Refs #17`, issue labelled `needs-windows-test`.
+- Next step: after the Windows run passes, switch the PR body to `Closes #17` and mark it ready.
 
 ## Manual checks
-- pending · omer · status bar with fake failure + real agent on macOS (`npm run dev`)
+- 2026-10-29 · omer · status bar on macOS (`npm run dev`, 7 steps: failure path with retry and quick quit; real #135 agent connected, kill → restart ×3, 4th kill → failed, Start again, quit leaves no `ayna_agent.rpc` process) · pass · evidence: omer's report in session
 - pending Windows session · agent starts with the app, kill in Task Manager restarts it, quit leaves no `python.exe`
 
 ## Open issues
