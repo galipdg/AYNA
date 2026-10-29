@@ -36,6 +36,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/AppResponse"
           description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
       tags:
       - app-controller
   /api/apps/{appId}/tests:
@@ -56,6 +60,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/TestSummary"
           description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
     post:
@@ -79,6 +85,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
       tags:
       - test-controller
   /api/apps/{appId}/tests/import:
@@ -104,6 +116,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
       tags:
       - test-controller
   /api/apps/{appId}/versions:
@@ -124,6 +142,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/VersionResponse"
           description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - app-controller
     post:
@@ -147,6 +167,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResponse"
           description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
       tags:
       - app-controller
   /api/health:
@@ -175,6 +201,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
     get:
@@ -192,6 +220,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
     patch:
@@ -215,6 +245,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
       tags:
       - test-controller
   /api/tests/{testId}/export:
@@ -233,6 +269,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestExport"
           description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
   /api/tests/{testId}/steps:
@@ -258,9 +296,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
 components:
+  responses:
+    BadRequest:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The request body or a field in it is invalid
+    Conflict:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: A name is already taken
+    NotFound:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: An id in the path names nothing
   schemas:
     AppResponse:
       type: object
@@ -288,6 +349,46 @@ components:
       properties:
         version:
           type: string
+    FieldError:
+      type: object
+      properties:
+        message:
+          type: string
+        path:
+          type: string
+          description: "JSON path into the request body, e.g. $.steps[2].value"
+      required:
+      - message
+      - path
+    Problem:
+      type: object
+      description: RFC 9457 problem details; the body of every 4xx response
+      properties:
+        detail:
+          type: string
+          description: "Message for the user; names the field, object or id it concerns\
+            \ (NFR-15)"
+        errors:
+          type: array
+          description: Every failing field; only on a 400 caused by validation
+          items:
+            $ref: "#/components/schemas/FieldError"
+        instance:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+          description: Short summary of the HTTP status
+        type:
+          type: string
+          format: uri
+          description: Problem type; absent means about:blank (the only type so far)
+      required:
+      - status
+      - title
     RenameTestRequest:
       type: object
       properties:
