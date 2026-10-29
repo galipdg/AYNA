@@ -55,6 +55,22 @@ export interface ConnectionError {
 
 export type ConnectionResult = { ok: true; url: string } | ConnectionError
 
+/**
+ * The local agent as the main process sees it:
+ * `starting` (first launch) → `connected` ⇄ `restarting` (after a crash, up to the
+ * restart limit) → `failed`; `stopped` once the app quits.
+ */
+export type AgentState = 'starting' | 'connected' | 'restarting' | 'failed' | 'stopped'
+
+export interface AgentStatus {
+  state: AgentState
+  /** Restarts used since the agent was last stable; at most `maxRestarts`. */
+  restarts: number
+  maxRestarts: number
+  /** Why the last launch failed (exit code, stderr tail, timeout), for `restarting` and `failed`. */
+  detail?: string
+}
+
 export interface AynaApi {
   getAppInfo(): Promise<AppInfo>
   getSettings(): Promise<Settings>
@@ -68,6 +84,11 @@ export interface AynaApi {
   createApplication(name: string, technology: string): Promise<CreateApplicationResult>
   /** Saves `id` as this machine's chosen application. */
   chooseApplication(id: string): Promise<void>
+  getAgentStatus(): Promise<AgentStatus>
+  /** Calls `listener` on every agent status change; returns a function that unsubscribes. */
+  onAgentStatus(listener: (status: AgentStatus) => void): () => void
+  /** Starts the agent again after it has `failed`, with a fresh restart budget. */
+  retryAgent(): Promise<void>
 }
 
 export const IPC = {
@@ -78,4 +99,8 @@ export const IPC = {
   listApplications: 'apps:list',
   createApplication: 'apps:create',
   chooseApplication: 'apps:choose',
+  getAgentStatus: 'agent:get-status',
+  retryAgent: 'agent:retry',
+  /** Main → renderer event, not a handler. */
+  agentStatus: 'agent:status',
 } as const

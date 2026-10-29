@@ -1,8 +1,14 @@
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, ipcMain, session } from 'electron'
+import { app, BrowserWindow, ipcMain, session, type IpcMainInvokeEvent } from 'electron'
 import { IPC, type AppInfo } from '../shared/api.ts'
-import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.ts'
+import { AgentManager, resolveAgentCommand } from './agent.ts'
+import {
+  isAllowedNavigation,
+  isAllowedRequest,
+  isTrustedSender,
+  secureWebPreferences,
+} from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
 import { checkServer } from './server.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
@@ -28,10 +34,36 @@ app.on('web-contents-created', (_event, contents) => {
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
 })
 
+const agent = new AgentManager({
+  command: resolveAgentCommand({
+    env: process.env,
+    platform: process.platform,
+    appPath: app.getAppPath(),
+  }),
+})
+agent.onStatus((status) => {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(IPC.agentStatus, status)
+  }
+})
+
+/** `ipcMain.handle` that refuses calls from any frame other than the app's own page. */
+function handle(
+  channel: string,
+  listener: (event: IpcMainInvokeEvent, ...args: unknown[]) => unknown,
+) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!isTrustedSender(event.senderFrame?.url, entryUrl)) {
+      throw new Error(`IPC ${channel} refused: untrusted sender`)
+    }
+    return listener(event, ...args)
+  })
+}
+
 function registerIpc() {
   const settingsFile = join(app.getPath('userData'), SETTINGS_FILE)
 
-  ipcMain.handle(IPC.getAppInfo, (): AppInfo => ({
+  handle(IPC.getAppInfo, (): AppInfo => ({
     name: app.getName(),
     version: app.getVersion(),
     electron: process.versions.electron,
@@ -39,11 +71,11 @@ function registerIpc() {
     node: process.versions.node,
     platform: process.platform,
   }))
-  ipcMain.handle(IPC.getSettings, () => loadSettings(settingsFile))
+  handle(IPC.getSettings, () => loadSettings(settingsFile))
   // The check runs here, not in the renderer: the renderer's CSP allows no remote
   // connections, and Node's fetch is not subject to the session's request filter.
-  ipcMain.handle(IPC.checkServer, (_event, url: unknown) => checkServer(String(url)))
-  ipcMain.handle(IPC.connectServer, async (_event, url: unknown) => {
+  handle(IPC.checkServer, (_event, url) => checkServer(String(url)))
+  handle(IPC.connectServer, async (_event, url) => {
     const result = await checkServer(String(url))
     if (result.ok) {
       const settings = await loadSettings(settingsFile)
@@ -51,18 +83,20 @@ function registerIpc() {
     }
     return result
   })
-  ipcMain.handle(IPC.listApplications, async () => {
+  handle(IPC.listApplications, async () => {
     const { serverUrl } = await loadSettings(settingsFile)
     return listApplications(serverUrl)
   })
-  ipcMain.handle(IPC.createApplication, async (_event, name: unknown, technology: unknown) => {
+  handle(IPC.createApplication, async (_event, name, technology) => {
     const { serverUrl } = await loadSettings(settingsFile)
     return createApplication(serverUrl, String(name), String(technology))
   })
-  ipcMain.handle(IPC.chooseApplication, async (_event, id: unknown) => {
+  handle(IPC.chooseApplication, async (_event, id) => {
     const settings = await loadSettings(settingsFile)
     await saveSettings(settingsFile, { ...settings, applicationId: String(id) })
   })
+  handle(IPC.getAgentStatus, () => agent.getStatus())
+  handle(IPC.retryAgent, () => agent.retry())
 }
 
 function createMainWindow() {
@@ -83,9 +117,21 @@ app.whenReady().then(() => {
   hardenSession()
   registerIpc()
   createMainWindow()
+  agent.start()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+  })
+})
+
+// Quit waits for the agent to stop, so no agent outlives the client.
+let agentStopped = false
+app.on('before-quit', (event) => {
+  if (agentStopped) return
+  event.preventDefault()
+  agent.stop().finally(() => {
+    agentStopped = true
+    app.quit()
   })
 })
 
