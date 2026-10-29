@@ -1,0 +1,56 @@
+{
+  "base": "login-button-renamed.json",
+  "valid": [
+    {
+      "name": "one candidate, as when only one passes the minimum score",
+      "patch": [
+        { "op": "remove", "path": "/candidates/2" },
+        { "op": "remove", "path": "/candidates/1" }
+      ]
+    },
+    {
+      "name": "unsaved step and unknown target element",
+      "patch": [
+        { "op": "replace", "path": "/stepId", "value": null },
+        { "op": "replace", "path": "/target/serverElementId", "value": null }
+      ]
+    }
+  ],
+  "invalid": [
+    { "name": "wrong version", "rule": "const", "patch": [{ "op": "replace", "path": "/version", "value": "0.2" }] },
+    { "name": "no logical name", "rule": "required", "patch": [{ "op": "remove", "path": "/logicalName" }] },
+    { "name": "logical name with three parts", "rule": "pattern", "patch": [{ "op": "replace", "path": "/logicalName", "value": "login.form.loginButton" }] },
+    { "name": "run id in upper case", "rule": "pattern", "patch": [{ "op": "replace", "path": "/runId", "value": "3F6C2A9E-8B1D-4E7A-9C55-0D2F4B7A1E90" }] },
+    { "name": "app version id left out instead of null", "rule": "required", "patch": [{ "op": "remove", "path": "/appVersionId" }] },
+    { "name": "negative step index", "rule": "minimum", "patch": [{ "op": "replace", "path": "/stepIndex", "value": -1 }] },
+    { "name": "extra field", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/createdAt", "value": "2026-12-22T09:41:07Z" }] },
+    { "name": "no candidates", "rule": "minItems", "patch": [{ "op": "replace", "path": "/candidates", "value": [] }] },
+    { "name": "four candidates", "rule": "maxItems", "patch": [{ "op": "copy", "from": "/candidates/2", "path": "/candidates/-" }] },
+    { "name": "rank 0", "rule": "minimum", "patch": [{ "op": "replace", "path": "/candidates/0/rank", "value": 0 }] },
+    { "name": "score as a float", "rule": "type", "patch": [{ "op": "replace", "path": "/candidates/0/score", "value": 0.7864583333333334 }] },
+    { "name": "score as a decimal string", "rule": "pattern", "patch": [{ "op": "replace", "path": "/candidates/0/score", "value": "0.786" }] },
+    { "name": "fraction with denominator 1", "rule": "pattern", "patch": [{ "op": "replace", "path": "/candidates/0/similarities/controlType", "value": "1/1" }] },
+    { "name": "zero written as a fraction", "rule": "pattern", "patch": [{ "op": "replace", "path": "/candidates/2/contributions/name", "value": "0/1" }] },
+    { "name": "negative contribution", "rule": "pattern", "patch": [{ "op": "replace", "path": "/candidates/2/contributions/name", "value": "-1/48" }] },
+    { "name": "unknown scored property", "rule": "enum", "patch": [{ "op": "add", "path": "/candidates/0/contributions/text", "value": "0" }] },
+    { "name": "empty contributions", "rule": "minProperties", "patch": [{ "op": "replace", "path": "/candidates/0/contributions", "value": {} }] },
+    { "name": "bounds with three numbers", "rule": "minItems", "patch": [{ "op": "replace", "path": "/candidates/0/element/bounds", "value": [600, 412, 720] }] },
+    { "name": "bounds with fractional pixels", "rule": "type", "patch": [{ "op": "replace", "path": "/candidates/0/element/bounds/0", "value": 600.5 }] },
+    { "name": "raw UIA field in an element", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/candidates/0/element/frameworkId", "value": "Qt" }] },
+    { "name": "candidate without similarities", "rule": "required", "patch": [{ "op": "remove", "path": "/candidates/1/similarities" }] },
+    { "name": "scorer id with spaces", "rule": "pattern", "patch": [{ "op": "replace", "path": "/scorer/id", "value": "Similo v0" }] }
+  ],
+  "arithmetic": [
+    { "name": "contributions do not add up to the score", "rule": "sum", "patch": [{ "op": "replace", "path": "/candidates/0/score", "value": "4/5" }] },
+    { "name": "fraction not in lowest terms", "rule": "lowestTerms", "patch": [{ "op": "replace", "path": "/candidates/0/similarities/automationId", "value": "6/8" }] },
+    { "name": "similarity above 1", "rule": "unitInterval", "patch": [{ "op": "replace", "path": "/candidates/0/similarities/name", "value": "3/2" }] },
+    { "name": "contribution is not weight times similarity over total weight", "rule": "contribution", "patch": [{ "op": "replace", "path": "/candidates/0/similarities/name", "value": "1/8" }] },
+    { "name": "candidates not ordered by score", "rule": "order", "patch": [{ "op": "move", "from": "/candidates/0", "path": "/candidates/-" }] },
+    { "name": "ranks not 1, 2, 3", "rule": "ranks", "patch": [{ "op": "replace", "path": "/candidates/1/rank", "value": 3 }] },
+    { "name": "similarities and contributions name different properties", "rule": "sameKeys", "patch": [{ "op": "remove", "path": "/candidates/0/similarities/windowTitle" }] },
+    { "name": "candidates compared on different properties", "rule": "sameProperties", "patch": [{ "op": "remove", "path": "/candidates/1/similarities/windowTitle" }, { "op": "remove", "path": "/candidates/1/contributions/windowTitle" }] },
+    { "name": "compared property has no weight", "rule": "weight", "patch": [{ "op": "remove", "path": "/scorer/weights/windowTitle" }] },
+    { "name": "fewer candidates scored than proposed", "rule": "candidatesScored", "patch": [{ "op": "replace", "path": "/candidatesScored", "value": 2 }] },
+    { "name": "same element proposed twice", "rule": "uniqueElements", "patch": [{ "op": "replace", "path": "/candidates/1/elementId", "value": "e23" }] }
+  ]
+}

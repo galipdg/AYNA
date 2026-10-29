@@ -1,0 +1,410 @@
+{
+  "health": {
+    "status": "ok",
+    "ready": true,
+    "modelServer": {
+      "url": "http://127.0.0.1:11434",
+      "reachable": true
+    },
+    "defaultModel": "qwen3:8b",
+    "models": [
+      {
+        "name": "qwen3:8b",
+        "available": true
+      }
+    ],
+    "schemaVersion": "0.1",
+    "promptVersion": "3+reason",
+    "serviceVersion": "0.0.0"
+  },
+  "summary": {
+    "n": 10,
+    "http_200": 9,
+    "keyword_match": 8,
+    "steps_dropped": 0,
+    "p50_s": 12.98,
+    "p95_s": 25.17,
+    "max_s": 30.0
+  },
+  "rows": [
+    {
+      "id": 1,
+      "code": 200,
+      "status": "ok",
+      "client_s": 11.739,
+      "latencyMs": 11737,
+      "keywords": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "expected": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Type",
+            "target": "login.userNameInput",
+            "value": "admin",
+            "reason": "Kullanıcı adı alanına admin yaz"
+          },
+          {
+            "keyword": "Type",
+            "target": "login.passwordInput",
+            "value": "1234",
+            "reason": "Şifre alanına 1234 yaz"
+          },
+          {
+            "keyword": "Click",
+            "target": "login.loginButton",
+            "reason": "Giriş butonuna tıkla"
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 11737
+      }
+    },
+    {
+      "id": 2,
+      "code": 200,
+      "status": "ok",
+      "client_s": 7.586,
+      "latencyMs": 7585,
+      "keywords": [
+        "Verify"
+      ],
+      "expected": [
+        "Verify"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Verify",
+            "target": "main.statusLabel",
+            "checkpoint": {
+              "property": "name",
+              "operator": "equals",
+              "expected": "Hoş geldiniz"
+            },
+            "reason": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula."
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 7585
+      }
+    },
+    {
+      "id": 3,
+      "code": 200,
+      "status": "ok",
+      "client_s": 14.211,
+      "latencyMs": 14208,
+      "keywords": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "expected": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Click",
+            "target": "main.newCustomerButton",
+            "reason": "Yeni müşteri butonuna bas"
+          },
+          {
+            "keyword": "Type",
+            "target": "customer.nameInput",
+            "value": "Ayşe",
+            "reason": "ad alanına Ayşe, soyad alanına Yılmaz gir"
+          },
+          {
+            "keyword": "Type",
+            "target": "customer.surnameInput",
+            "value": "Yılmaz",
+            "reason": "ad alanına Ayşe, soyad alanına Yılmaz gir"
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 14208
+      }
+    },
+    {
+      "id": 4,
+      "code": 200,
+      "status": "ok",
+      "client_s": 8.903,
+      "latencyMs": 8902,
+      "keywords": [
+        "Select",
+        "Click"
+      ],
+      "expected": [
+        "Select",
+        "Click"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Select",
+            "target": "customer.cityCombo",
+            "value": "Ankara",
+            "reason": "Şehir listesinden Ankara'yı seç"
+          },
+          {
+            "keyword": "Click",
+            "target": "customer.saveButton",
+            "reason": "kaydet düğmesine tıkla"
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 8902
+      }
+    },
+    {
+      "id": 5,
+      "code": 200,
+      "status": "ok",
+      "client_s": 7.073,
+      "latencyMs": 7073,
+      "keywords": [
+        "Wait"
+      ],
+      "expected": [
+        "Wait"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Wait",
+            "target": "main.customerGrid",
+            "timeoutMs": 5000,
+            "reason": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle."
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 7073
+      }
+    },
+    {
+      "id": 6,
+      "code": 200,
+      "status": "ok",
+      "client_s": 19.264,
+      "latencyMs": 19263,
+      "keywords": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Type",
+            "target": "main.searchInput",
+            "value": "Yılmaz",
+            "reason": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla"
+          },
+          {
+            "keyword": "Click",
+            "target": "main.searchButton",
+            "reason": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla"
+          },
+          {
+            "keyword": "Verify",
+            "target": "main.customerGrid",
+            "checkpoint": {
+              "property": "name",
+              "operator": "contains",
+              "expected": "Yılmaz"
+            },
+            "reason": "tabloda Yılmaz'ın listelendiğini kontrol et"
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 19263
+      }
+    },
+    {
+      "id": 7,
+      "code": 200,
+      "status": "ok",
+      "client_s": 9.252,
+      "latencyMs": 9250,
+      "keywords": [
+        "Select"
+      ],
+      "expected": [
+        "Select"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Select",
+            "target": "customer.typeCombo",
+            "value": "Kurumsal",
+            "reason": "Müşteri tipini Kurumsal olarak seç."
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 9250
+      }
+    },
+    {
+      "id": 8,
+      "code": 200,
+      "status": "ok",
+      "client_s": 19.089,
+      "latencyMs": 19087,
+      "keywords": [
+        "Verify",
+        "Click"
+      ],
+      "expected": [
+        "Click",
+        "Verify",
+        "Click"
+      ],
+      "keyword_match": false,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Verify",
+            "target": "dialog.messageLabel",
+            "checkpoint": {
+              "property": "name",
+              "operator": "equals",
+              "expected": "Kayıt başarılı"
+            },
+            "reason": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula"
+          },
+          {
+            "keyword": "Click",
+            "target": "dialog.okButton",
+            "reason": "Tamam'a tıkla"
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 19087
+      }
+    },
+    {
+      "id": 9,
+      "code": 504,
+      "status": "timeout",
+      "client_s": 30.005,
+      "latencyMs": 30004,
+      "keywords": [],
+      "expected": [
+        "Type",
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": false,
+      "response": {
+        "status": "timeout",
+        "model": "qwen3:8b",
+        "error": "no answer within the service timeout",
+        "details": [
+          "no answer within 30 s"
+        ],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 30004
+      }
+    },
+    {
+      "id": 10,
+      "code": 200,
+      "status": "ok",
+      "client_s": 18.6,
+      "latencyMs": 18599,
+      "keywords": [
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true,
+      "response": {
+        "status": "ok",
+        "model": "qwen3:8b",
+        "steps": [
+          {
+            "keyword": "Click",
+            "target": "customer.cancelButton",
+            "reason": "İptal butonuna tıkla"
+          },
+          {
+            "keyword": "Verify",
+            "target": "main.searchInput",
+            "checkpoint": {
+              "property": "value",
+              "operator": "equals",
+              "expected": ""
+            },
+            "reason": "Ana ekrandaki arama kutusunun boş olduğunu doğrula"
+          }
+        ],
+        "dropped": [],
+        "schemaVersion": "0.1",
+        "promptVersion": "3+reason",
+        "latencyMs": 18599
+      }
+    }
+  ]
+}
