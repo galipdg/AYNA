@@ -63,3 +63,8 @@ Append-only. One entry per session, newest at the bottom:
 - galip decided retrieval: the server picks the candidate objects, AI service gets no Bolt edge (#58 to update).
 - Collected the review follow-ups left on merged PRs into `active.md`. PR-body edits (DoD ticks) are blocked by auto mode.
 - Next: RS follow-ups from the #143 reviews (FR-30 first), then the `ai/API.md` / scorer items.
+
+## 2026-10-30 · #71, #49 review follow-ups
+- PR #165 (`galip/71-ai-api-followups`): `AYNA_AI_TOKEN` bearer token, required with `--allow-remote`, checked before routing (12 new tests, 355 ai tests pass); `app`/`version`/`screen` documented as the server sends them; retrieval decision recorded in `ai/API.md`, README, `retrieve.py`, SDD-ai. omer told via inbox (contract change).
+- PR #166 (`galip/49-dpi-location`): per-element `dpi`, location and area in DIP, exact arithmetic kept; `parentPath` contract; U+0307 note corrected (hasan's `ż` example keeps its dot under NFC). 129 agent tests pass.
+- Next: reviews on #164–#166; #58 issue text; remaining small asks in `active.md`.
