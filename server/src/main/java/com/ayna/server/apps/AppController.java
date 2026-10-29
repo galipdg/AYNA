@@ -17,7 +17,7 @@ import com.ayna.server.apps.AppDtos.AppResponse;
 import com.ayna.server.apps.AppDtos.CreateAppRequest;
 import com.ayna.server.apps.AppDtos.CreateVersionRequest;
 import com.ayna.server.apps.AppDtos.VersionResponse;
-import com.ayna.server.apps.AppExceptions.InvalidRequestException;
+import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 
 /** Applications under test and their versions (#128). */
 @RestController
@@ -60,7 +60,7 @@ public class AppController {
 	/** Trims the value; a missing or blank value is a 400. */
 	private static String required(String value, String field) {
 		if (value == null || value.isBlank()) {
-			throw new InvalidRequestException("'" + field + "' must not be blank");
+			throw new InvalidRequestException("$." + field, "'" + field + "' must not be blank");
 		}
 		return value.strip();
 	}

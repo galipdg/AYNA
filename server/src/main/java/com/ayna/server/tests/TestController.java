@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.tests.TestDtos.CreateTestRequest;
 import com.ayna.server.tests.TestDtos.RenameTestRequest;
 import com.ayna.server.tests.TestDtos.TestExport;
 import com.ayna.server.tests.TestDtos.TestResponse;
 import com.ayna.server.tests.TestDtos.TestSummary;
-import com.ayna.server.tests.TestExceptions.InvalidRequestException;
 
 import tools.jackson.databind.JsonNode;
 
