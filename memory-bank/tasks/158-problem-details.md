@@ -11,6 +11,8 @@ One global `@RestControllerAdvice` (`server/.../error/ApiErrorHandler`) extendin
 - 2026-10-29 — milestone Week 4 (same as #31) — user's choice
 - 2026-10-29 — branch from #31's branch, not `main` — #158 changes the generated `openapi.yaml` that #31 introduces; merge `main` in once PR #160 is merged
 - 2026-10-29 — OpenAPI errors via `@ErrorResponses` + an `OperationCustomizer`, not swagger `@ApiResponse` — springdoc drops the generated 200 of an operation that has `@ApiResponse` but no `@ResponseStatus`
+- 2026-10-29 — `server/AGENTS.md` gets the error rule — user OK
+- 2026-10-29 — PR base `omer/31-openapi-contract` until #160 merges — user OK; diff shows only #158
 - 2026-10-29 — apps API 400s also list `errors[{path}]` — criterion 2; same `required()` helper as the tests API
 
 ## Status
@@ -27,7 +29,6 @@ None needed: everything is covered by integration tests (no UI, no Windows).
 ## Open issues
 - 5xx keeps Spring Boot's default body (noted in the ADR; revisit with #52).
 - Client (`client/src/main/apps.ts`) judges errors by status only; showing `detail` / `errors[].path` belongs to the screens (#24, #30, #38), not here.
-- `server/AGENTS.md` could add the rule "throw `ApiExceptions`, list statuses with `@ErrorResponses`" — needs user OK (AGENTS.md change).
 
 ## Handoff
 - `@ErrorResponses` may only name statuses that `OpenApiConfig` defines a response component for (400, 404, 409); otherwise the `$ref` dangles.
