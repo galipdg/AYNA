@@ -1,7 +1,7 @@
 # Healing proposal transport: agent → client or CLI runner → server
 
 - Date: 2026-10-28
-- Status: Proposed — accepted when Galip, Ömerfaruk and Hasan approve the #149 PR
+- Status: Accepted (Galip, Ömerfaruk and Hasan approved the #149 PR, 2026-10-29)
 - Deciders: Galip (proposal, agent RPC, scorer), Ömerfaruk (client, server, graph), Hasan (playback, CLI runner)
 - Issue: #149 (builds on #16, #49; consumers #73, #74, #75, #61; freeze #52)
 
