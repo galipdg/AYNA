@@ -28,14 +28,19 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - [x] application picker + create, `applicationId` in `Settings`; lint, typecheck, 33 unit tests, build green; `apps.ts` checked against the real #128 server (`docker compose` from a worktree of `omer/128-apps-api`): empty list, create, duplicate, blank, sorted, not-ayna (:7474)
 - [x] manual UI check of the picker on macOS (below)
 - [x] 2026-10-26: #129 merged; `origin/main` merged in, client lint, typecheck, 33 tests, format, build green again
-- Next step: push the merge, mark PR #127 ready, wait for review; Windows run at the weekly session.
+- [x] 2026-10-26: merge pushed, PR #127 ready for review; Windows check posted on #32 (label `needs-windows-test`)
+- [x] 2026-10-27: PR #127 approved by galip and merged; #32 closed (label `needs-windows-test` kept until the Windows run)
+- Next step: Windows run at the weekly session (comment on #32); the two review notes below go into #17.
 
 ## Manual checks
 - 2026-10-26 · omer · server settings screen on macOS (`npm run dev`, 7 steps: first run, unreachable, invalid URL, connect, restart remembers URL, saved server down) · pass · evidence: omer's report in session
 
 - 2026-10-26 · omer · application picker on macOS against #128's server (`npm run dev`, 8 steps: empty server, create + choose, change application, duplicate name, sorted list, restart remembers, reconnect same server keeps choice, deleted app shows notice) · pass · evidence: omer's report in session
 
+- Windows (9 steps, issue comment https://github.com/galipdg/AYNA/issues/32#issuecomment-6426014115) · pending Windows session
+
 ## Open issues
+- From galip's #127 review (non-blocking, to fix in #17, which adds IPC handlers anyway): (1) `AppPicker.choose()` has no `catch`, so a failed `chooseApplication` (settings file not writable) shows nothing; map it to an error like `create()` does. (2) IPC handlers do not check `event.senderFrame`; add one shared check against the entry page for every `ipcMain.handle`.
 - While Neo4j is shutting down, `/api/health` can take > 5 s (`Driver.verifyConnectivity` has no bound), so the client shows "timeout" instead of "db-down". Once Neo4j is fully stopped it answers 503 in ~50 ms. Possible server fix: bound the health check (driver connection timeout). Not in #32's scope.
 
 ## Handoff
@@ -43,4 +48,4 @@ Two halves: (1) server URL + connection check (done first), (2) application pick
 - The renderer has no component tests; all logic worth testing lives in `src/main/` (plain `node --test`).
 
 ## Outcome (fill when the issue closes)
-- 2026-10-26: both acceptance criteria met on macOS (manual checks above); PR #127 ready for review. Windows not run yet (no OS-specific code).
+- 2026-10-27: merged via PR #127 (approved by galip). Both acceptance criteria met on macOS (manual checks above); Windows run pending.
