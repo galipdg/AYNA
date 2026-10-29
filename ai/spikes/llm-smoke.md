@@ -51,11 +51,11 @@ Both models meet the acceptance criterion (at least 8 of 10 valid under the sche
    - make `target` an `enum` built from the repository objects;
    - cap `num_predict` (for example 256);
    - treat a timeout as a failed generation.
-2. **Semantic misses happen even when the JSON is valid.** qwen3 #8 (*"Kaydet'e bastıktan sonra … doğrula ve Tamam'a tıkla"*) dropped the first Click on `customer.saveButton`; the schema cannot catch this. Gemma4 got that sentence right. This is what RQ3 will measure on the real dataset (#35, #56).
+2. **Semantic misses happen even when the JSON is valid.** qwen3 #8 (*"Kaydet'e bastıktan sonra … doğrula ve Tamam'a tıkla"*) dropped the first Click on `customer.saveButton`; the schema cannot catch this. Gemma4 got that sentence right. This is what RQ3 will measure on the real dataset (#36, #57; evaluation #77).
 3. **Listing the object names in the prompt grounded every target.** No step in a valid response used a target outside the list, even though the schema did not enforce it. That is promising for C1, but 10 sentences against 17 objects is far easier than a real repository.
 4. **Turkish suffixes were handled.** Both models turned *Ankara'yı* into `Ankara` and *Yılmaz'ın* into `Yılmaz`. Gemma4 also mapped *Kaydet'e* to `customer.saveButton`. Both kept the Turkish characters in values (`Kayıt başarılı`, `Hatalı şifre`).
 5. **Both models think by default.** Pass `think: false`. If thinking is on, the response comes in a separate field, which wastes tokens and time.
-6. **Prompt processing speed differs a lot.** qwen3 processes the ~390-token prompt about 5× faster than gemma4. With a large repository in the prompt, this will matter more than generation speed. Retrieval (#57) should keep the prompt short.
+6. **Prompt processing speed differs a lot.** qwen3 processes the ~390-token prompt about 5× faster than gemma4. With a large repository in the prompt, this will matter more than generation speed. Retrieval (#58) should keep the prompt short.
 7. **Gemma4 slowed down from about 21 to about 17 tokens/s after its 204 s runaway.** This is probably thermal throttling and should be kept in mind when timing long runs on a laptop.
 
 ## Offline run
@@ -75,6 +75,6 @@ The steps were the same as in the online run: the same miss (qwen3 #8) and the s
 
 ## Next
 
-- #37 (constrained generation): apply finding 1 and compare runs with and without the schema.
-- #71 (model comparison): add `qwen3.5:9b` and a larger model once more disk space or the department GPU is available. The access request is drafted in [`gpu-request-draft.md`](gpu-request-draft.md).
+- #37 (constrained generation): apply finding 1 and compare runs with and without the schema. Done 2026-10-27 in `ai/ayna_ai/generate.py`: both models 10/10 valid on these inputs, gemma4 #5 no longer runs away; numbers in `memory-bank/tasks/37-constrained-generation.md`.
+- #72 (model comparison): add `qwen3.5:9b` and a larger model once more disk space or the department GPU is available. The access request is drafted in [`gpu-request-draft.md`](gpu-request-draft.md).
 - The real `schemas/step.schema.json` does not exist yet. This spike's schema is throwaway.
