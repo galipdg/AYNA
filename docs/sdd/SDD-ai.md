@@ -308,7 +308,7 @@ S lies in [0, 1], so scores are comparable across targets (Similo's own score is
 | `className` | Class | 0.5 | Normalised Levenshtein |
 | `parentPath` | XPath (absolute) | 0.5 | Normalised Levenshtein |
 | `siblingIndex` | XPath (id-relative) | 0.5 | Equal |
-| location | Location | 0.5 | 1 − d / 100 px, 0 beyond 100 px (top-left corners) |
+| location | Location | 0.5 | 1 − d / 100 DIP, 0 beyond 100 DIP (top-left corners; physical px × 96 / dpi of each element's window) |
 | area | Area | 0.5 | min / max |
 | shape | Shape (width / height) | 0.5 | min / max |
 | `windowTitle` | none (AYNA addition) | 0.5 | Normalised Levenshtein |
@@ -400,7 +400,7 @@ How the design supports each measurement. #48 (test design) describes how the ex
 | 8 | Contributions on the `CANDIDATE` relationship instead of the proposal node; `docs/graph-model.md` to update | omer | #74 |
 | 9 | Element keys camelCase (graph, scorer) vs snake_case (descriptor) | hasan, galip | #11, #43 |
 | 10 | Minimum score for a proposal, and its calibration | hasan, galip | #73, #103 |
-| 11 | Bounds are raw pixels; location, area and shape need DPI normalisation if the versions of a pair are captured at different scales | galip | #42, #46 |
+| 11 | **Closed 2026-10-29.** Location and area are compared in device-independent pixels from each element's `dpi`; shape needs none (hasan's #141 review) | galip | #49 follow-up; #43 supplies `dpi` |
 | 12 | Definition of RQ3's "without context" condition | galip | #77 |
 | 13 | Rule semantics beyond "approved mapping"; placement of the decision model (AI-6.3) | galip | #103 |
 | 14 | Constrained decoding not tried on llama.cpp | galip | #72, #80 |

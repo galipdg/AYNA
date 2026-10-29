@@ -370,6 +370,61 @@ def test_area_and_shape_similarity():
     assert shape_similarity(wide, (0, 0, 20, 100)) == Fraction(1, 25)
 
 
+# --- display scaling (dpi; hasan's #141 review) -------------------------------------
+
+
+def scaled(rect, dpi):
+    """`rect` in DIP as a window at `dpi` reports it, in physical pixels."""
+    return tuple(v * dpi // 96 for v in rect)
+
+
+@pytest.mark.parametrize("dpi", [96, 120, 144, 192])
+def test_the_same_move_scores_the_same_at_every_scaling(dpi):
+    # A control that moved 64 DIP: 64, 80, 96 and 128 physical pixels.
+    before, after = (64, 64, 164, 88), (128, 64, 228, 88)
+    assert location_similarity(
+        scaled(before, dpi), scaled(after, dpi), dpi, dpi
+    ) == Fraction(36, 100)
+    assert area_similarity(scaled(before, dpi), scaled(after, dpi), dpi, dpi) == 1
+
+
+def test_target_and_candidate_at_different_scaling_compare_in_dip():
+    target = (100, 40, 300, 64)  # recorded at 96 DPI (100 %)
+    candidate = scaled(target, 144)  # the same control on a 150 % display
+    assert location_similarity(target, candidate, 96, 144) == 1
+    assert area_similarity(target, candidate, 96, 144) == 1
+    assert shape_similarity(target, candidate) == 1
+    # Read as physical pixels, the 150 % control looks 53 px away and 2.25x larger.
+    assert location_similarity(target, candidate) == Fraction(47, 100)
+    assert area_similarity(target, candidate) == Fraction(4, 9)
+
+
+def test_a_fractional_dip_distance_is_truncated_exactly():
+    # 1 physical px at 144 DPI is 2/3 DIP: truncated to 0, as Similo truncates pixels.
+    assert location_similarity((0, 0, 30, 30), (1, 0, 31, 30), 144, 144) == 1
+    # sqrt(5^2 + 5^2) * 2/3 = 4.71... DIP -> 4.
+    assert location_similarity((0, 0, 30, 30), (5, 5, 35, 35), 144, 144) == Fraction(
+        96, 100
+    )
+
+
+def test_score_reads_dpi_from_each_element_and_defaults_to_96():
+    at_150 = {
+        **USERNAME,
+        "bounds": scaled(USERNAME["bounds"], 144),
+        "dpi": 144,
+    }
+    result = score(USERNAME, at_150)
+    assert result.similarities["location"] == 1
+    assert result.similarities["area"] == 1
+    assert result.score == 1
+    # Without dpi the same element reads as moved and grown.
+    result = score(USERNAME, {**at_150, "dpi": None})
+    assert result.similarities["location"] < 1
+    assert result.similarities["area"] < 1
+    assert score(USERNAME, {**USERNAME, "dpi": 96}) == score(USERNAME, USERNAME)
+
+
 # --- ranking, determinism and the sum property --------------------------------------
 
 POOL = [
@@ -493,6 +548,10 @@ def test_invalid_candidates_are_rejected():
         ({"bounds": "1,2,3,4"}, ValueError),
         ({"bounds": (0, 0, "10", 10)}, TypeError),
         ({"siblingIndex": "1"}, TypeError),
+        ({"dpi": 120.0}, TypeError),
+        ({"dpi": True}, TypeError),
+        ({"dpi": 0}, ValueError),
+        ({"dpi": -96}, ValueError),
         ({"name": 42}, TypeError),
     ],
 )

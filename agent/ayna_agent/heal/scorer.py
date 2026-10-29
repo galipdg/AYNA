@@ -17,9 +17,18 @@ Elements are plain mappings (:class:`Element`). Keys follow the Element properti
 from the snapshot:
 
 - ``automationId``, ``name``, ``controlType``, ``className``: strings from UI Automation.
-- ``bounds``: ``(left, top, right, bottom)`` in screen pixels (Win32 ``RECT`` order, as
-  in the #6 UIA dump). Floats are rounded to whole pixels.
-- ``parentPath``: the ancestor chain as one string (e.g. ``"Window/Pane/Group"``).
+- ``bounds``: ``(left, top, right, bottom)`` in physical pixels, virtual-desktop
+  coordinates, as UI Automation reports them to a per-monitor-v2 DPI aware agent
+  (Win32 ``RECT`` order, as in the #6 UIA dump). Floats are rounded to whole pixels.
+- ``dpi``: DPI of the element's window (``GetDpiForWindow``; 96 = 100 % scaling).
+  Not scored itself: location and area are compared in device-independent pixels
+  (DIP, physical * 96 / dpi), so the same layout scores the same at every display
+  scaling, also when the target and the candidate come from machines with different
+  scaling. Missing means 96. ``bounds`` stay physical everywhere else.
+- ``parentPath``: the ancestor chain as one string, root first, built from the
+  programmatic ControlType names joined by ``/`` (e.g. ``"Window/Pane/Group"``), never
+  from the localised control type: a Turkish Windows would give ``Pencere/Bölme/Grup``
+  and zero this property against an English one. #43 builds it.
 - ``siblingIndex``: position among the parent's children.
 - ``nearestLabel``: text of the label that names the element.
 - ``windowTitle``: title of the element's top-level window.
@@ -59,7 +68,7 @@ nearestLabel   Neighbor texts            1.5     shared-word ratio
 className      Class                     0.5     normalised Levenshtein
 parentPath     XPath (absolute)          0.5     normalised Levenshtein
 siblingIndex   XPath (id-relative)       0.5     equals
-location       Location                  0.5     1 - d / 100 px, 0 beyond 100 px
+location       Location                  0.5     1 - d / 100 DIP, 0 beyond 100 DIP
 area           Area                      0.5     min / max
 shape          Shape (width / height)    0.5     min / max
 windowTitle    none (AYNA addition)      0.5     normalised Levenshtein
@@ -74,7 +83,11 @@ Similarity details:
 
 - Text is normalised before comparing: NFC, ``casefold``, Turkish dotted/dotless i
   folded together (``İ``/``I``/``ı`` -> ``i``) so that upper/lower case Turkish matches,
-  whitespace collapsed. Other diacritics stay significant (``ş`` != ``s``).
+  whitespace collapsed. Other diacritics stay significant (``ş`` != ``s``). The one
+  exception: a combining dot above (U+0307) that is still a separate character after
+  NFC is dropped, wherever it is. That is what folding ``İ`` leaves, and also a dot
+  on a letter with no precomposed dotted form; ``ż`` and ``ė`` are single characters
+  and keep their dot.
 - Normalised Levenshtein: ``1 - distance / max(len_a, len_b)``.
 - ``automationId`` compares only its leaf, the text after the last ``.`` (ids without a
   dot compare whole), with normalised Levenshtein. Qt builds AutomationId as a dotted
@@ -90,7 +103,9 @@ Similarity details:
 - Location, area and shape follow the authors' code (github.com/michelnass/Similo2,
   ``WidgetLocator.java``: ``calcSimilarityScore``, ``integerSimilarity``), because the
   paper does not say how they are normalised: the top-left corners' distance is
-  truncated to whole pixels, and area / shape use ``min / max``.
+  truncated to whole pixels, and area / shape use ``min / max``. AYNA measures distance
+  and area in DIP (``dpi`` above): Similo's 100 px cut-off was set for web pages, whose
+  CSS pixels are device-independent too. Shape does not change with scaling.
 
 Differences from Similo: Similo's score is an unnormalised weighted sum; this one is
 divided by the weights of the properties the target has (issue #49), so it lies in
@@ -130,6 +145,7 @@ class Element(TypedDict, total=False):
     controlType: str
     className: str
     bounds: Sequence[int | float]
+    dpi: int
     parentPath: str
     siblingIndex: int
     nearestLabel: str
@@ -171,8 +187,12 @@ SIMILO_WEIGHTS: Mapping[str, Fraction] = MappingProxyType(
 #: Every property the scorer knows, in result order.
 PROPERTIES: tuple[str, ...] = tuple(SIMILO_WEIGHTS)
 
-#: Similo's location cut-off: corners this far apart (or more) have similarity 0.
-LOCATION_CUTOFF_PX = 100
+#: Similo's location cut-off: corners this far apart (or more), in device-independent
+#: pixels, have similarity 0.
+LOCATION_CUTOFF_DIP = 100
+
+#: The DPI at which a physical pixel is one device-independent pixel (100 % scaling).
+BASE_DPI = 96
 
 
 @dataclass(frozen=True)
@@ -280,15 +300,30 @@ def word_similarity(a: str, b: str) -> Fraction:
     return Fraction(len(words_a & words_b), max(len(words_a), len(words_b)))
 
 
-def location_similarity(a: Rect, b: Rect) -> Fraction:
-    """1 for the same top-left corner, falling linearly to 0 at 100 px apart."""
-    distance = math.isqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-    return Fraction(max(LOCATION_CUTOFF_PX - distance, 0), LOCATION_CUTOFF_PX)
+def location_similarity(
+    a: Rect, b: Rect, dpi_a: int = BASE_DPI, dpi_b: int = BASE_DPI
+) -> Fraction:
+    """1 for the same top-left corner, falling linearly to 0 at 100 DIP apart.
+
+    ``a`` and ``b`` are physical pixels at ``dpi_a`` and ``dpi_b``; the corners are
+    converted to device-independent pixels before the distance is taken.
+    """
+    dx = _dip(a[0], dpi_a) - _dip(b[0], dpi_b)
+    dy = _dip(a[1], dpi_a) - _dip(b[1], dpi_b)
+    squared = dx * dx + dy * dy
+    # floor(sqrt(x)) == isqrt(floor(x)) for x >= 0, so the truncation stays exact.
+    distance = math.isqrt(squared.numerator // squared.denominator)
+    return Fraction(max(LOCATION_CUTOFF_DIP - distance, 0), LOCATION_CUTOFF_DIP)
 
 
-def area_similarity(a: Rect, b: Rect) -> Fraction:
-    """Smaller area divided by the larger one."""
-    return _ratio(_width(a) * _height(a), _width(b) * _height(b))
+def area_similarity(
+    a: Rect, b: Rect, dpi_a: int = BASE_DPI, dpi_b: int = BASE_DPI
+) -> Fraction:
+    """Smaller area divided by the larger one, both in square DIP."""
+    return _ratio(
+        _width(a) * _height(a) * Fraction(BASE_DPI, dpi_a) ** 2,
+        _width(b) * _height(b) * Fraction(BASE_DPI, dpi_b) ** 2,
+    )
 
 
 def shape_similarity(a: Rect, b: Rect) -> Fraction:
@@ -372,6 +407,21 @@ def _bounds(element: Element) -> Rect | None:
     return left, top, right, bottom
 
 
+def _dpi(element: Element) -> int:
+    value = element.get("dpi")
+    if value is None:
+        return BASE_DPI
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"'dpi' must be an int, got {value!r}")
+    if value <= 0:
+        raise ValueError(f"'dpi' must be > 0, got {value}")
+    return value
+
+
+def _dip(pixel: int, dpi: int) -> Fraction:
+    return Fraction(pixel * BASE_DPI, dpi)
+
+
 def _pixel(value: float) -> int:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise TypeError(f"bounds coordinates must be numbers, got {value!r}")
@@ -421,10 +471,14 @@ def _compare_text(prop: str, similarity: Callable[[str, str], Fraction]) -> Comp
 
 
 def _compare_bounds(
-    similarity: Callable[[Rect, Rect], Fraction],
+    similarity: Callable[[Rect, Rect, int, int], Fraction],
 ) -> Comparator:
     def compare(target: Element, candidate: Element) -> Fraction | None:
-        return _apply_missing_rule(_bounds(target), _bounds(candidate), similarity)
+        return _apply_missing_rule(
+            _bounds(target),
+            _bounds(candidate),
+            lambda a, b: similarity(a, b, _dpi(target), _dpi(candidate)),
+        )
 
     return compare
 
@@ -470,7 +524,8 @@ _COMPARATORS: Mapping[str, Comparator] = MappingProxyType(
         "siblingIndex": _compare_sibling_index,
         "location": _compare_bounds(location_similarity),
         "area": _compare_bounds(area_similarity),
-        "shape": _compare_bounds(shape_similarity),
+        # Scaling does not change a shape, so the DPIs are not needed.
+        "shape": _compare_bounds(lambda a, b, _dpi_a, _dpi_b: shape_similarity(a, b)),
         "windowTitle": _compare_text("windowTitle", text_similarity),
     }
 )

@@ -20,6 +20,8 @@ The Similo → UIA mapping table, the sources and every similarity rule are in t
 - 2026-10-27 — Text normalisation: NFC, casefold, Turkish İ/I/ı folded to `i`, whitespace collapsed; other diacritics stay significant. Folding ı/i merges rare minimal pairs (`sıra`/`sira`), which is acceptable for a similarity score.
 - 2026-10-27 — `bounds` = `(left, top, right, bottom)` (Win32 RECT order, as in the #6 dump), floats rounded to pixels. `weights=` replaces the whole table (unnamed properties get 0), so "AutomationId only" for RQ4 is `weights={"automationId": 1}`.
 - 2026-10-27 — No new dependency: Levenshtein is ~15 lines of plain Python.
+- 2026-10-29 — DPI (hasan's #141 review §3): of his two options, `dpi` read per element rather than a cut-off parameter. A per-element value also covers a target recorded at 100 % and candidates captured at 150 %, which one cut-off cannot. Each element's corners and area are converted to DIP (physical * 96 / dpi) only inside the comparison; missing `dpi` means 96, so existing inputs score exactly as before. The distance stays exact: `isqrt(floor(x)) == floor(sqrt(x))`.
+- 2026-10-29 — hasan's note that `normalize_text` drops the dot from `ż` is not quite right: NFC makes `ż` one character, so it keeps the dot. Only a U+0307 that stays separate after NFC is dropped (what `İ` leaves after casefold, or a dot on a letter with no precomposed form). The docstring now says that.
 
 ## Status
 - [x] Branch, task note, board → In progress
@@ -27,15 +29,16 @@ The Similo → UIA mapping table, the sources and every similarity rule are in t
 - [x] 2026-10-27 revision on the same PR: target-only missing rule and leaf-only automationId; 55 tests pass
 - [x] Inbox notes to hasan (descriptor alignment) and omer (HealingProposal shape)
 - [x] PR https://github.com/galipdg/AYNA/pull/141 opened 2026-10-27; CI green (agent job on Windows included)
-- [ ] PR review (HasanBerk18, omerfaruksaribal)
-- Next step: address review comments on the PR; then #42 / #43 feed real snapshot data.
+- [x] PR review: omer and hasan approved; #141 merged 2026-10-29
+- [x] Follow-up from hasan's #141 review §3 (2026-10-29, branch `galip/49-dpi-location`): optional `dpi` per element; location and area compared in DIP (`LOCATION_CUTOFF_DIP`), shape unchanged; `parentPath` must use programmatic ControlType names; U+0307 note corrected. 129 agent tests pass (`-m "not windows"`)
+- Next step: #42 / #43 feed real snapshot data; #43 puts `dpi` on every element (hasan).
 
 ## Manual checks
 - None needed: pure Python, fully covered by unit tests. Speed (2026-10-27, M2, Python 3.12): 1,000 candidates ranked in ~0.4 s (~0.4 ms each).
 
 ## Open issues
 - No minimum score: like Similo, `rank` always returns candidates. The threshold belongs to #73 (and #103 later).
-- Bounds are raw pixels; the literature note asks for DPI normalisation. Both snapshots of a pair usually come from the same machine; revisit if #42's controlled versions mix scales.
+- ~~Bounds are raw pixels~~ — done 2026-10-29: `dpi` per element, location and area in DIP. Bounds stay physical in every document (hasan: one coordinate space through the system).
 - Neo4j cannot store a map as a property; per-candidate contributions probably belong on the `CANDIDATE` relationship, not the `HealingProposal` node (`docs/graph-model.md`). Raised with omer (#74).
 - Key names are camelCase (graph model) while #11 lists snake_case Python fields; an adapter or a shared choice is needed. Raised with hasan.
 
