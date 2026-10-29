@@ -20,6 +20,7 @@ AYNA_AGENT_TOKEN=<token> python -m ayna_agent.rpc --port 0
 |---|---|
 | `AYNA_AGENT_TOKEN` | Session token, at least 16 characters. Without it the agent exits with code 2. The agent removes it from its own environment, so the apps it starts do not inherit it. |
 | `--port <n>` | TCP port on `127.0.0.1`. `0` (default) lets the OS pick a free one, which avoids a race between choosing a port and binding it. |
+| stdin | A pipe the client keeps open and never writes to. The agent exits (code 0) when it reaches EOF, which the OS causes when the client quits **or crashes**, so the agent never outlives its client with UIA access. A terminal on stdin is not watched (stop with Ctrl+C). An empty stdin such as `/dev/null` or `NUL` makes the agent exit at once. |
 
 Once it listens, the agent prints exactly one line on **stdout** and nothing else there:
 
@@ -27,7 +28,9 @@ Once it listens, the agent prints exactly one line on **stdout** and nothing els
 {"event": "listening", "port": 53124}
 ```
 
-Logs go to stderr. To stop the agent, kill its process tree (`taskkill /F /T /PID <pid>` on Windows): a venv's `python.exe` is a launcher whose child is the real interpreter (`memory-bank/learnings.md`, 2026-10-25).
+Logs go to stderr. To stop the agent, close its stdin. If it has not exited after a grace period, kill its process tree with the PID of the process **you spawned** (`taskkill /F /T /PID <pid>` on Windows). A venv's `python.exe` is a launcher whose child is the real interpreter (`memory-bank/learnings.md`, 2026-10-25), so only the launcher's PID reaches both.
+
+The agent process is per-monitor DPI aware (v2), so every coordinate it reports is in physical pixels. The recognition backend sets this at startup (#12).
 
 ## Connecting
 
@@ -44,14 +47,15 @@ A handshake that is missing it, has a wrong token, uses another scheme or repeat
 - One request object per **text** frame, UTF-8 JSON. Batches (arrays) and binary frames are refused with `-32600`.
 - `params` is by name (an object). It may be left out for methods without parameters.
 - `id` is a string, an integer or `null`. A request without `id` is a notification: it runs, and no reply is sent.
-- Replies on one connection come in request order. UI Automation calls run one at a time on a single agent thread.
+- Each request starts as soon as it arrives, and replies come **in any order**: match them by `id`. UI Automation calls (`listWindows`, `snapshot`) still run one at a time, in the order they arrived, on a single agent thread. So `ping` answers at once even while a long snapshot runs.
+- Liveness: the library answers WebSocket ping frames at any time, and the `ping` method works too.
 - In v0.1 only the client sends requests. v0.2 (proposed, #149) adds notifications that the agent sends during a run; see the last section.
 
 ## Methods
 
 ### `ping`
 
-Checks that the agent is alive and which contract it speaks. No params.
+Checks that the agent answers and which contract it speaks. It does not wait for running UIA calls. No params.
 
 ```json
 → {"jsonrpc": "2.0", "id": 1, "method": "ping"}
@@ -77,17 +81,20 @@ The visible top-level windows on the desktop, for the Spy's window picker. No pa
 | `className` | string | UIA ClassName. For Qt it is the Python/C++ class name, the most stable handle for a window. |
 | `processId` | integer | Owning process. |
 | `processName` | string or null | Exe file name without path; `null` when it cannot be read (e.g. an elevated process). |
-| `bounds` | [left, top, right, bottom] | Screen pixels as UI Automation reports them. |
+| `bounds` | [left, top, right, bottom] | Physical pixels in virtual-screen coordinates. Values are negative on a monitor left of or above the primary one. |
 
 Without a UI Automation backend (not Windows, or before #12) the method answers `-32001`.
 
 ### `snapshot`
 
-Captures one window's whole UIA subtree.
+Captures one window's UIA subtree.
 
 | Param | Type | Meaning |
 |---|---|---|
-| `handle` | positive integer | A `handle` from `listWindows`. |
+| `handle` | positive integer, required | A `handle` from `listWindows`. |
+| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default applies (set with #12). When the budget runs out, the agent stops the walk and answers `-32002`. v0.1 returns no partial document. |
+
+Unknown params are refused with `-32602`. New optional ones (e.g. a depth or element limit from #12) are a minor `rpcVersion` bump.
 
 The result is one snapshot document as defined by `schemas/snapshot.schema.json` (#12). A success example will be added here together with that schema. Until then:
 
@@ -103,6 +110,13 @@ A window that has closed since `listWindows`:
 ← {"jsonrpc": "2.0", "id": 4, "error": {"code": -32000, "message": "Window not found: 12"}}
 ```
 
+A walk that did not finish within its budget (the message text comes from the backend):
+
+```json
+→ {"jsonrpc": "2.0", "id": 6, "method": "snapshot", "params": {"handle": 395942, "timeoutMs": 2000}}
+← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32002, "message": "Snapshot timeout: walk stopped after 2000 ms"}}
+```
+
 ## Errors
 
 | Code | Name | When |
@@ -110,10 +124,11 @@ A window that has closed since `listWindows`:
 | -32700 | Parse error | The frame is not valid JSON. `id` is `null`. |
 | -32600 | Invalid Request | Not one request object: a batch, a binary frame, `jsonrpc` not `"2.0"`, `method` not a string, `params` neither object nor array, or a bad `id` type (then `id` is `null`). |
 | -32601 | Method not found | Unknown method name. |
-| -32602 | Invalid params | Params given to a method that takes none, or a missing, extra or wrongly typed param. |
+| -32602 | Invalid params | Params given to a method that takes none, or a missing, unknown or wrongly typed param. |
 | -32603 | Internal error | The agent failed unexpectedly. The message names the exception and the traceback is in the agent's stderr. |
 | -32000 | Window not found | No top-level window has that handle (any more). |
 | -32001 | UI Automation unavailable | The agent cannot read UI Automation here: not Windows, or no backend yet. |
+| -32002 | Snapshot timeout | The snapshot walk used up its `timeoutMs` budget (or the default) before it finished. Retry with a bigger budget, or report it. |
 
 Errors from a request without `id` are not sent, except Invalid Request: only a valid request can be a notification.
 

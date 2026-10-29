@@ -7,7 +7,8 @@ on the command line (other processes can read command lines):
 
 The server binds 127.0.0.1 only, refuses every opening handshake without
 `Authorization: Bearer <token>`, and prints one JSON line on stdout once it listens:
-{"event": "listening", "port": 53124}. Methods, errors and examples: docs/agent-rpc.md.
+{"event": "listening", "port": 53124}. It exits when its stdin closes, so it does not
+outlive a client that crashed. Methods, errors and examples: docs/agent-rpc.md.
 """
 
 from __future__ import annotations
@@ -19,9 +20,10 @@ import json
 import logging
 import os
 import sys
+import threading
 from collections.abc import AsyncIterator, Awaitable, Callable
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from http import HTTPStatus
 from typing import Any, Protocol
 
@@ -35,6 +37,7 @@ HOST = "127.0.0.1"
 RPC_VERSION = "0.1"
 TOKEN_ENV = "AYNA_AGENT_TOKEN"
 MIN_TOKEN_LENGTH = 16
+MAX_TIMEOUT_MS = 600_000
 
 # JSON-RPC 2.0 error codes; -32000 to -32099 are ours (docs/agent-rpc.md).
 PARSE_ERROR = -32700
@@ -44,6 +47,7 @@ INVALID_PARAMS = -32602
 INTERNAL_ERROR = -32603
 WINDOW_NOT_FOUND = -32000
 UIA_UNAVAILABLE = -32001
+SNAPSHOT_TIMEOUT = -32002
 
 log = logging.getLogger(__name__)
 
@@ -56,16 +60,26 @@ class UiaUnavailable(Exception):
     """UI Automation cannot run here: not Windows, or no backend yet."""
 
 
+class SnapshotTimeout(Exception):
+    """The snapshot walk ran out of its time budget before it finished."""
+
+
 class Desktop(Protocol):
     """What the server needs from the recognition layer.
 
-    Calls block. The server runs them all on one dedicated worker thread, so a backend
-    can initialise COM there once and never sees two calls at the same time.
+    Calls block. The server runs them all on one dedicated worker thread, in the order
+    the requests arrived, so a backend never sees two calls at the same time. A backend
+    may also define `setup()` and `close()`: the server calls them on that thread once,
+    before the first request and after the last one (e.g. for CoInitializeEx and
+    CoUninitialize). If `setup()` raises, the server does not start.
     """
 
     def list_windows(self) -> list[dict[str, Any]]: ...
 
-    def snapshot(self, handle: int) -> dict[str, Any]: ...
+    def snapshot(self, handle: int, timeout_ms: int | None) -> dict[str, Any]:
+        """`timeout_ms` None means the backend's default budget; raise SnapshotTimeout
+        when the budget runs out."""
+        ...
 
 
 class UnavailableDesktop:
@@ -77,7 +91,7 @@ class UnavailableDesktop:
     def list_windows(self) -> list[dict[str, Any]]:
         raise UiaUnavailable(self.reason)
 
-    def snapshot(self, handle: int) -> dict[str, Any]:
+    def snapshot(self, handle: int, timeout_ms: int | None) -> dict[str, Any]:
         raise UiaUnavailable(self.reason)
 
 
@@ -147,14 +161,26 @@ class Dispatcher:
         return {"windows": await self._run(self._desktop.list_windows)}
 
     async def _snapshot(self, params: Params) -> dict[str, Any]:
-        if not isinstance(params, dict) or set(params) != {"handle"}:
+        # Unknown keys are refused; new optional ones are a minor rpcVersion bump.
+        if not isinstance(params, dict) or "handle" not in params:
             raise RpcError(INVALID_PARAMS, 'Invalid params: expected {"handle": <int>}')
+        unknown = set(params) - {"handle", "timeoutMs"}
+        if unknown:
+            raise RpcError(INVALID_PARAMS, f"Invalid params: unknown {sorted(unknown)}")
         handle = params["handle"]
-        if not isinstance(handle, int) or isinstance(handle, bool) or handle <= 0:
+        if not _positive_int(handle):
             raise RpcError(
                 INVALID_PARAMS, "Invalid params: handle must be a positive int"
             )
-        return await self._run(self._desktop.snapshot, handle)
+        timeout_ms = params.get("timeoutMs")
+        if "timeoutMs" in params and not (
+            _positive_int(timeout_ms) and timeout_ms <= MAX_TIMEOUT_MS
+        ):
+            raise RpcError(
+                INVALID_PARAMS,
+                f"Invalid params: timeoutMs must be an int from 1 to {MAX_TIMEOUT_MS}",
+            )
+        return await self._run(self._desktop.snapshot, handle, timeout_ms)
 
     async def _run(self, call: Callable[..., Any], *args: Any) -> Any:
         loop = asyncio.get_running_loop()
@@ -166,6 +192,12 @@ class Dispatcher:
             raise RpcError(
                 UIA_UNAVAILABLE, f"UI Automation unavailable: {exc}"
             ) from exc
+        except SnapshotTimeout as exc:
+            raise RpcError(SNAPSHOT_TIMEOUT, f"Snapshot timeout: {exc}") from exc
+
+
+def _positive_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
 def _valid_id(value: Any) -> bool:
@@ -233,33 +265,81 @@ async def serve_rpc(
         raise ValueError(
             f"the session token needs at least {MIN_TOKEN_LENGTH} characters"
         )
+    loop = asyncio.get_running_loop()
     with ThreadPoolExecutor(max_workers=1, thread_name_prefix="ayna-uia") as executor:
         dispatcher = Dispatcher(desktop, executor)
+        setup = getattr(desktop, "setup", None)
+        if setup is not None:
+            await loop.run_in_executor(executor, setup)
 
-        # Requests on one connection are answered in order; UIA work is serial anyway.
+        async def answer(connection: ServerConnection, message: str | bytes) -> None:
+            if isinstance(message, bytes):
+                reply = _error(
+                    None, INVALID_REQUEST, "Invalid Request: use text frames"
+                )
+            else:
+                reply = await dispatcher.handle(message)
+            if reply is not None:
+                with suppress(ConnectionClosed):  # the client left before the reply
+                    await connection.send(reply)
+
+        # One task per request, so `ping` answers while a snapshot runs. Replies carry
+        # the request id and may come in any order; UIA calls stay serial on the worker.
         async def handler(connection: ServerConnection) -> None:
+            tasks: set[asyncio.Task[None]] = set()
             try:
                 async for message in connection:
-                    if isinstance(message, bytes):
-                        reply = _error(
-                            None, INVALID_REQUEST, "Invalid Request: use text frames"
-                        )
-                    else:
-                        reply = await dispatcher.handle(message)
-                    if reply is not None:
-                        await connection.send(reply)
+                    task = asyncio.create_task(answer(connection, message))
+                    tasks.add(task)
+                    task.add_done_callback(tasks.discard)
             except ConnectionClosed:
                 log.info("client went away without closing the connection")
+            finally:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
 
-        # No compression: it only costs CPU on a loopback connection.
-        async with serve(
-            handler, HOST, port, process_request=require_token(token), compression=None
-        ) as server:
-            yield server
+        try:
+            # No compression: it only costs CPU on a loopback connection.
+            async with serve(
+                handler,
+                HOST,
+                port,
+                process_request=require_token(token),
+                compression=None,
+            ) as server:
+                yield server
+        finally:
+            close = getattr(desktop, "close", None)
+            if close is not None:
+                try:
+                    await loop.run_in_executor(executor, close)
+                except Exception:
+                    log.exception("closing the UI Automation backend failed")
 
 
 def bound_port(server: Server) -> int:
     return server.sockets[0].getsockname()[1]
+
+
+async def _stdin_closed() -> None:
+    """Return when stdin reaches EOF: the client holds the other end of the pipe, and
+    the OS closes it when the client quits or crashes. A terminal is not watched (a
+    background job reading it would be stopped by the shell), nor a missing stdin."""
+    if sys.stdin is None or sys.stdin.isatty():
+        await asyncio.Event().wait()
+    loop = asyncio.get_running_loop()
+    closed = asyncio.Event()
+
+    def watch() -> None:
+        while sys.stdin.buffer.read(4096):
+            pass
+        with suppress(RuntimeError):  # the loop is already gone
+            loop.call_soon_threadsafe(closed.set)
+
+    threading.Thread(target=watch, name="ayna-stdin", daemon=True).start()
+    await closed.wait()
+    log.info("stdin closed, shutting down")
 
 
 async def _serve_forever(desktop: Desktop, token: str, port: int) -> None:
@@ -267,7 +347,7 @@ async def _serve_forever(desktop: Desktop, token: str, port: int) -> None:
         print(
             json.dumps({"event": "listening", "port": bound_port(server)}), flush=True
         )
-        await server.serve_forever()
+        await _stdin_closed()
 
 
 def main(argv: list[str] | None = None) -> int:
