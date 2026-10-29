@@ -7,6 +7,8 @@ import time
 import pytest
 
 from ayna_ai.generate import (
+    PROMPT_VERSION,
+    REASON_PROMPT,
     GenerationSettings,
     Status,
     StepGenerator,
@@ -15,7 +17,7 @@ from ayna_ai.generate import (
     percentile,
 )
 from ayna_ai.ollama import ModelServerError, ModelTimeout
-from ayna_ai.validate import load_step_schema
+from ayna_ai.validate import NO_MATCH, load_step_schema
 
 TEXT = "Kullanıcı adı alanına admin yaz ve giriş butonuna tıkla."
 STEPS = [
@@ -45,10 +47,11 @@ def document(steps=STEPS) -> str:
 class FakeClient:
     def __init__(self, answer=None, error=None, delay=0.0):
         self.answer, self.error, self.delay = answer, error, delay
-        self.bodies = []
+        self.bodies, self.timeouts = [], []
 
-    def chat(self, body):
+    def chat(self, body, timeout_s=None):
         self.bodies.append(body)
+        self.timeouts.append(timeout_s)
         time.sleep(self.delay)
         if self.error:
             raise self.error
@@ -59,7 +62,7 @@ def test_valid_output_returns_the_document_and_metrics(spike_objects):
     result = StepGenerator(FakeClient(reply(document()))).generate(TEXT, spike_objects)
     assert result.status is Status.OK and result.ok
     assert result.document == {"version": "0.1", "steps": STEPS}
-    assert result.errors == []
+    assert result.errors == [] and result.dropped == []
     assert (result.prompt_tokens, result.output_tokens) == (441, 38)
     assert result.load_s == 0.05
     assert result.latency_s >= 0
@@ -81,6 +84,25 @@ def test_request_is_constrained_and_deterministic(spike_objects):
     assert user == {"role": "user", "content": TEXT}
     assert "- customer.cityCombo — Şehir listesi" in system["content"]
     assert '"version": "0.1"' in system["content"]
+    assert (
+        f"after the dash), or {NO_MATCH} if none of them fits:\n" in system["content"]
+    )
+    assert PROMPT_VERSION == "3"
+
+
+def test_the_model_call_gets_the_callers_timeout(spike_objects):
+    client = FakeClient(reply(document()))
+    generator = StepGenerator(client)
+    generator.generate(TEXT, spike_objects)
+    generator.generate(TEXT, spike_objects, timeout_s=12.5)
+    assert client.timeouts == [None, 12.5]
+
+
+def test_the_reserved_name_is_not_an_object(spike_objects):
+    client = FakeClient(reply(document()))
+    with pytest.raises(ValueError, match="reserved"):
+        StepGenerator(client).generate(TEXT, {**spike_objects, NO_MATCH: "yok"})
+    assert client.bodies == []
 
 
 def test_json_format_is_the_unconstrained_baseline(spike_objects):
@@ -123,43 +145,126 @@ def test_unparseable_output_is_a_failure(spike_objects, content, done_reason, st
 
 
 @pytest.mark.parametrize(
-    ("output", "path"),
+    ("output", "error"),
     [
-        (
-            document(
-                [{"keyword": "Click", "target": "login.loginButton", "value": "x"}]
-            ),
-            "$.steps[0]",
-        ),
-        (
-            document([{"keyword": "Type", "target": "login.userNameInput"}]),
-            "$.steps[0]",
-        ),
-        (
-            document([{"keyword": "Press", "target": "login.loginButton"}]),
-            "$.steps[0].keyword",
-        ),
-        (json.dumps({"steps": STEPS}), "$"),
+        (json.dumps({"steps": STEPS}), "$: 'version' is a required property"),
+        (json.dumps({"version": "0.2", "steps": STEPS}), "$.version"),
+        (json.dumps({"version": "0.1", "steps": STEPS[0]}), "$.steps"),
+        (json.dumps({"version": "0.1", "steps": STEPS, "x": 1}), "$: Additional"),
+        (json.dumps(STEPS), "$: "),
     ],
-    ids=["Click with value", "Type without value", "unknown keyword", "no version"],
+    ids=["no version", "wrong version", "steps not a list", "extra field", "a list"],
 )
-def test_output_against_the_step_schema_is_rejected(spike_objects, output, path):
+def test_an_answer_that_is_not_a_step_document_is_rejected_whole(
+    spike_objects, output, error
+):
     result = StepGenerator(FakeClient(reply(output))).generate(TEXT, spike_objects)
     assert result.status is Status.INVALID_SCHEMA
-    assert result.document is None
-    assert any(error.startswith(path) for error in result.errors), result.errors
+    assert result.document is None and result.dropped == []
+    assert any(e.startswith(error) for e in result.errors), result.errors
 
 
-def test_target_outside_the_repository_is_rejected(spike_objects):
-    steps = STEPS + [{"keyword": "Click", "target": "settings.deleteAllButton"}]
+@pytest.mark.parametrize(
+    ("step", "code", "reason"),
+    [
+        (
+            {"keyword": "Click", "target": "login.loginButton", "value": "x"},
+            "invalid_step",
+            "$.value: not allowed for this keyword",
+        ),
+        (
+            {"keyword": "Type", "target": "login.userNameInput"},
+            "invalid_step",
+            "$: 'value' is a required property",
+        ),
+        (
+            {"keyword": "Press", "target": "login.loginButton"},
+            "unknown_keyword",
+            "unknown keyword 'Press'",
+        ),
+        (
+            {"keyword": "Click", "target": "settings.deleteAllButton"},
+            "unknown_target",
+            "'settings.deleteAllButton' is not in the object repository",
+        ),
+        (
+            {"keyword": "Click", "target": "Login Button"},
+            "unknown_target",
+            "'Login Button' is not in the object repository",
+        ),
+        (
+            {"keyword": "Click", "target": NO_MATCH},
+            "no_match",
+            "no repository object matches",
+        ),
+        (
+            {"keyword": "Click"},
+            "invalid_step",
+            "$: 'target' is a required property",
+        ),
+        (
+            {"keyword": "DoubleClick", "target": "login.forgotPasswordLink"},
+            "unknown_keyword",
+            (
+                "unknown keyword 'DoubleClick'; 'login.forgotPasswordLink' is not "
+                "in the object repository"
+            ),
+        ),
+        ("Click login.loginButton", "invalid_step", "$: 'Click login.loginButton'"),
+    ],
+    ids=[
+        "Click with value",
+        "Type without value",
+        "unknown keyword",
+        "unknown target",
+        "invalid logical name",
+        "no match",
+        "no target",
+        "two problems",
+        "not an object",
+    ],
+)
+def test_a_bad_step_is_dropped_with_its_reason_and_the_rest_kept(
+    spike_objects, step, code, reason
+):
+    steps = [STEPS[0], step, STEPS[1]]
     result = StepGenerator(FakeClient(reply(document(steps)))).generate(
         TEXT, spike_objects
     )
-    assert result.status is Status.UNKNOWN_TARGET
-    assert result.document is None
-    assert result.errors == [
-        "$.steps[2].target: 'settings.deleteAllButton' is not in the object repository"
+    assert result.status is Status.OK
+    assert result.document == {"version": "0.1", "steps": STEPS}
+    (dropped,) = result.dropped
+    assert (dropped.index, dropped.code, dropped.step) == (1, code, step)
+    assert dropped.reason.startswith(reason), dropped.reason
+    assert result.errors == []
+
+
+def test_when_every_step_is_dropped_nothing_is_suggested(spike_objects):
+    steps = [
+        {"keyword": "Click", "target": NO_MATCH},
+        {"keyword": "Click", "target": "settings.deleteAllButton"},
     ]
+    result = StepGenerator(FakeClient(reply(document(steps)))).generate(
+        TEXT, spike_objects
+    )
+    assert result.status is Status.NO_VALID_STEPS and not result.ok
+    assert result.document is None and result.reasons is None
+    assert [(d.index, d.code) for d in result.dropped] == [
+        (0, "no_match"),
+        (1, "unknown_target"),
+    ]
+    assert result.errors == [
+        "$.steps[0]: no repository object matches",
+        "$.steps[1]: 'settings.deleteAllButton' is not in the object repository",
+    ]
+
+
+def test_an_answer_without_steps_has_no_valid_steps(spike_objects):
+    result = StepGenerator(FakeClient(reply(document([])))).generate(
+        TEXT, spike_objects
+    )
+    assert result.status is Status.NO_VALID_STEPS
+    assert result.dropped == [] and result.errors == ["the answer has no steps"]
 
 
 def test_timeout_is_a_failure_with_latency(spike_objects):
@@ -195,6 +300,86 @@ def test_latency_is_logged_per_scenario(spike_objects, caplog):
             38,
             2,
         )
+
+
+REASONED = [
+    {**STEPS[0], "reason": "'kullanıcı adı alanına admin yaz'"},
+    {**STEPS[1], "reason": "'giriş butonuna tıkla'"},
+]
+
+
+def test_reasons_are_asked_for_and_returned_beside_the_steps(spike_objects):
+    client = FakeClient(reply(document(REASONED)))
+    generator = StepGenerator(client, GenerationSettings(reasons=True))
+    result = generator.generate(TEXT, spike_objects)
+    assert result.ok
+    assert result.document == {"version": "0.1", "steps": STEPS}
+    assert result.reasons == [
+        "'kullanıcı adı alanına admin yaz'",
+        "'giriş butonuna tıkla'",
+    ]
+    body = client.bodies[0]
+    assert body["format"] == generation_schema(
+        load_step_schema(), list(spike_objects), reason_max_length=100
+    )
+    assert body["messages"][0]["content"].endswith(REASON_PROMPT)
+    assert generator.prompt_version == PROMPT_VERSION + "+reason"
+
+
+def test_without_reasons_the_prompt_and_result_are_unchanged(spike_objects):
+    client = FakeClient(reply(document()))
+    generator = StepGenerator(client)
+    result = generator.generate(TEXT, spike_objects)
+    assert result.ok and result.reasons is None
+    assert REASON_PROMPT not in client.bodies[0]["messages"][0]["content"]
+    assert generator.prompt_version == PROMPT_VERSION
+
+
+@pytest.mark.parametrize(
+    ("steps", "reason"),
+    [
+        ([REASONED[0], STEPS[1]], "reason: missing or empty"),
+        (
+            [REASONED[0], {**STEPS[1], "reason": "x" * 101}],
+            "reason: longer than 100 characters",
+        ),
+    ],
+    ids=["missing reason", "reason too long"],
+)
+def test_a_step_with_a_bad_reason_is_dropped(spike_objects, steps, reason):
+    result = StepGenerator(
+        FakeClient(reply(document(steps))), GenerationSettings(reasons=True)
+    ).generate(TEXT, spike_objects)
+    assert result.ok
+    assert result.document["steps"] == [STEPS[0]]
+    assert result.reasons == [REASONED[0]["reason"]]
+    (dropped,) = result.dropped
+    assert (dropped.index, dropped.code, dropped.reason) == (1, "invalid_step", reason)
+    assert dropped.step == steps[1]  # as the model wrote it
+
+
+def test_a_dropped_step_keeps_the_models_reason(spike_objects):
+    steps = [REASONED[0], {**REASONED[1], "target": "login.forgotPasswordLink"}]
+    result = StepGenerator(
+        FakeClient(reply(document(steps))), GenerationSettings(reasons=True)
+    ).generate(TEXT, spike_objects)
+    assert result.reasons == [REASONED[0]["reason"]]
+    assert result.dropped[0].step == steps[1]
+    assert result.dropped[0].to_dict() == {
+        "index": 1,
+        "code": "unknown_target",
+        "reason": "'login.forgotPasswordLink' is not in the object repository",
+        "step": steps[1],
+    }
+
+
+def test_a_reason_without_reasons_enabled_drops_the_step(spike_objects):
+    result = StepGenerator(FakeClient(reply(document(REASONED)))).generate(
+        TEXT, spike_objects
+    )
+    assert result.status is Status.NO_VALID_STEPS
+    assert {d.code for d in result.dropped} == {"invalid_step"}
+    assert "'reason' was unexpected" in result.dropped[0].reason
 
 
 def test_warm_up_only_loads_the_model():
@@ -247,24 +432,39 @@ def serve(fake_ollama, outputs: list[str]):
 
 def test_cli_batch_writes_results_and_a_latency_log(fake_ollama, batch_files, capsys):
     inputs, objects, tmp = batch_files
+    unknown = {"keyword": "Click", "target": "login.forgotPasswordLink"}
     serve(
         fake_ollama,
-        [document(), document([{"keyword": "Wait", "target": "login.loginButton"}])],
+        [
+            document(),
+            document([{"keyword": "Wait", "target": "login.loginButton"}, unknown]),
+        ],
     )
     out, log = tmp / "results.json", tmp / "latency.jsonl"
     argv = ["--input", str(inputs), "--objects", str(objects), "--out", str(out)]
     code = main(argv + ["--log", str(log), "--host", fake_ollama.url, "--note", "test"])
 
-    # Scenario 2 is a valid document with the wrong keyword: ok, but no keyword match.
+    # Scenario 2 keeps one valid step with the wrong keyword and drops one:
+    # ok, but no keyword match.
     assert code == 0
     results = json.loads(out.read_text("utf-8"))
     summary = results["summary"]
     assert (summary["n"], summary["ok"], summary["ok_rate"]) == (2, 2, 1.0)
     assert summary["by_status"] == {"ok": 2}
     assert summary["keyword_match"] == 1
+    assert summary["steps_dropped"] == 1
+    assert results["scenarios"][1]["dropped"] == [
+        {
+            "index": 1,
+            "code": "unknown_target",
+            "reason": "'login.forgotPasswordLink' is not in the object repository",
+            "step": unknown,
+        }
+    ]
     assert summary["latency_p50_s"] is not None and summary["latency_p95_s"] is not None
     assert results["environment"]["ollama"] == "0.0.test"
     assert results["settings"]["model"] == "qwen3:8b"
+    assert results["prompt_version"] == PROMPT_VERSION
     assert results["warmup_s"] is not None
     assert [s["keywords"] for s in results["scenarios"]] == [
         ["Type", "Click"],
@@ -273,6 +473,7 @@ def test_cli_batch_writes_results_and_a_latency_log(fake_ollama, batch_files, ca
 
     lines = [json.loads(line) for line in log.read_text("utf-8").splitlines()]
     assert [line["scenario"] for line in lines] == [1, 2]
+    assert [line["dropped"] for line in lines] == [0, 1]
     assert all("latency_ms" in line for line in lines)
     assert fake_ollama.requests[0] == (
         "/api/chat",
