@@ -12,6 +12,7 @@ from ayna_ai.validate import NO_MATCH, load_step_schema
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "schemas" / "examples" / "step"
 STEP_SCHEMA = load_step_schema()
+SCHEMA_VERSION = STEP_SCHEMA["properties"]["version"]["const"]
 ORIGINAL = Draft202012Validator(STEP_SCHEMA)
 OBJECTS = [
     "login.usernameInput",
@@ -46,7 +47,7 @@ def as_document(case: dict) -> dict:
     return (
         case["document"]
         if "document" in case
-        else {"version": "0.1", "steps": [case["step"]]}
+        else {"version": SCHEMA_VERSION, "steps": [case["step"]]}
     )
 
 
@@ -99,8 +100,10 @@ def test_fields_follow_the_per_keyword_rules():
         "Select": {"keyword", "target", "value", "timeoutMs"},
         "Verify": {"keyword", "target", "checkpoint", "timeoutMs"},
         "Wait": {"keyword", "target", "timeoutMs"},
+        "SelectRow": {"keyword", "target", "row", "timeoutMs"},
     }
     assert "value" in b["Type"]["required"]
+    assert "row" in b["SelectRow"]["required"]
     assert "value" in b["Select"]["required"]
     assert b["Select"]["properties"]["value"]["minLength"] == 1
     assert "checkpoint" in b["Verify"]["required"]
@@ -110,7 +113,7 @@ def test_fields_follow_the_per_keyword_rules():
 
 def test_checkpoint_is_split_by_property_kind():
     checkpoint = branches(derive())["Verify"]["properties"]["checkpoint"]
-    text, boolean = checkpoint["anyOf"]
+    text, boolean, cell, row_exists, row_count = checkpoint["anyOf"]
     assert text["properties"]["property"] == {"enum": ["name", "value"]}
     assert text["properties"]["expected"]["type"] == "string"
     assert boolean["properties"]["property"] == {
@@ -118,6 +121,13 @@ def test_checkpoint_is_split_by_property_kind():
     }
     assert boolean["properties"]["operator"] == {"const": "equals"}
     assert boolean["properties"]["expected"] == {"type": "boolean"}
+    assert cell["properties"]["property"] == {"const": "cell"}
+    assert {"row", "column"} <= set(cell["required"])
+    assert row_exists["properties"]["property"] == {"const": "rowExists"}
+    assert "row" in row_exists["required"]
+    assert row_count["properties"]["property"] == {"const": "rowCount"}
+    assert row_count["properties"]["operator"] == {"const": "equals"}
+    assert row_count["properties"]["expected"]["type"] == "integer"
 
 
 def test_free_strings_are_bounded():
