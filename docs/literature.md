@@ -126,9 +126,9 @@ Copied from the project plan (section "What has been done"). Keep the two in syn
 | Area | Key work | Finding | Gap for us |
 |---|---|---|---|
 | Record/replay fragility | Hammoudi et al., ICST 2016 [3]; Leotta et al., WCRE 2013 [4] | Over 70% of 722 studied test breakages came from element locators; record/replay is cheap to create but costly to maintain | Element identification must survive UI changes |
-| Robust locators | ROBULA+ [5]; contextual clues [6]; Similo [7] | Similo's weighted multi-attribute similarity cut wrong element matches from 27% to 11% on 48 websites | Studied on the web DOM, not on the desktop UI Automation tree |
+| Robust locators | ROBULA+ [5]; contextual clues [6]; Similo [7] | Similo's weighted multi-attribute similarity failed to locate 11% of 801 elements on 48 websites, against 27% for the best multi-locator baseline | Studied on the web DOM, not on the desktop UI Automation tree |
 | Visual GUI testing | Sikuli [8]; Alégroth et al. [9] | Screenshot matching is technology-independent | Sensitive to resolution, theme and layout changes |
-| Test repair / self-healing | WATER [10]; Vista [11]; Healenium [23] | Broken web locators can be repaired automatically | Web-only; fixes are often applied silently, which can hide real bugs |
+| Test repair / self-healing | WATER [10]; Vista [11]; Healenium [23] | Broken web locators can be repaired automatically | Web-only; property-only repair misses wrongly selected elements, and tools that heal mid-run (Healenium) can hide real bugs |
 | Flaky tests | Luo et al., FSE 2014 [12] | Async waits and timing are leading causes of flaky results | Playback needs readiness-based waits, not fixed sleeps |
 | LLMs in testing | Survey [14]; GPTDroid [15]; AUITestAgent [16]; UFO [40] | AUITestAgent reached a 77% task completion rate from natural-language requirements on mobile apps; UFO lets a cloud model choose every action in Windows apps (86% of 50 requests, best of three runs) | Mostly mobile/web and cloud models; the one Windows agent decides at run time, which is not repeatable; not closed-network, not in Turkish, not tied to an object repository |
 | Commercial tools | TestComplete [21], Ranorex [32], UFT One [31] | Recorder, object repository, keyword tests, reports | Per-user licences; TestComplete's basic plan starts at about $1,210 per user per year [22] |
