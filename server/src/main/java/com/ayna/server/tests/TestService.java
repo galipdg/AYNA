@@ -14,13 +14,13 @@ import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.Value;
 import org.springframework.stereotype.Service;
 
-import com.ayna.server.tests.StepSchema.FieldError;
+import com.ayna.server.error.ApiExceptions.ConflictException;
+import com.ayna.server.error.ApiExceptions.InvalidRequestException;
+import com.ayna.server.error.ApiExceptions.NotFoundException;
+import com.ayna.server.error.FieldError;
 import com.ayna.server.tests.TestDtos.TestExport;
 import com.ayna.server.tests.TestDtos.TestResponse;
 import com.ayna.server.tests.TestDtos.TestSummary;
-import com.ayna.server.tests.TestExceptions.DuplicateTestException;
-import com.ayna.server.tests.TestExceptions.InvalidRequestException;
-import com.ayna.server.tests.TestExceptions.NotFoundException;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -343,7 +343,7 @@ public class TestService {
 				MATCH (:Application {id: $appId})-[:HAS_TEST]->(t:TestCase {name: $name})
 				WHERE $self IS NULL OR t.id <> $self
 				RETURN t LIMIT 1""", params).hasNext()) {
-			throw new DuplicateTestException(name);
+			throw new ConflictException("A test with this name already exists in the application: " + name);
 		}
 	}
 

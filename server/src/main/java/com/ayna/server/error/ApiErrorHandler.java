@@ -1,21 +1,22 @@
-package com.ayna.server.tests;
+package com.ayna.server.error;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import com.ayna.server.tests.TestExceptions.DuplicateTestException;
-import com.ayna.server.tests.TestExceptions.InvalidRequestException;
-import com.ayna.server.tests.TestExceptions.NotFoundException;
+import com.ayna.server.error.ApiExceptions.ConflictException;
+import com.ayna.server.error.ApiExceptions.InvalidRequestException;
+import com.ayna.server.error.ApiExceptions.NotFoundException;
 
 /**
- * Error bodies of the tests API as RFC 9457 problem details, so the message reaches the
- * client (NFR-15). A 400 also lists `errors: [{path, message}]`. Whether every API adopts
- * this shape is settled in #158.
+ * One error body for every API (#158): RFC 9457 problem details, so the message reaches the
+ * client (NFR-15). A validation 400 also lists `errors: [{path, message}]`. The base class
+ * gives Spring's own errors (unreadable JSON, unknown path, wrong method) the same shape.
  */
-@RestControllerAdvice(basePackageClasses = TestController.class)
-class TestErrorHandler {
+@RestControllerAdvice
+class ApiErrorHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler
 	ProblemDetail notFound(NotFoundException ex) {
@@ -23,7 +24,7 @@ class TestErrorHandler {
 	}
 
 	@ExceptionHandler
-	ProblemDetail duplicate(DuplicateTestException ex) {
+	ProblemDetail conflict(ConflictException ex) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
 	}
 

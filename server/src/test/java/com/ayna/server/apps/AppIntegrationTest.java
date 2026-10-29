@@ -1,9 +1,11 @@
 package com.ayna.server.apps;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,14 +58,24 @@ class AppIntegrationTest {
 	@Test
 	void duplicateApplicationNameIsAConflict() throws Exception {
 		createApp("Notepad", "win32").andExpect(status().isCreated());
-		createApp("Notepad", "uia").andExpect(status().isConflict());
+		createApp("Notepad", "uia").andExpect(status().isConflict())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.status").value(409))
+			.andExpect(jsonPath("$.title").value("Conflict"))
+			.andExpect(jsonPath("$.detail").value("Application already exists: Notepad"));
 	}
 
 	@Test
 	void blankApplicationFieldsAreRejected() throws Exception {
-		createApp(" ", "win32").andExpect(status().isBadRequest());
+		createApp(" ", "win32").andExpect(status().isBadRequest())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.status").value(400))
+			.andExpect(jsonPath("$.detail").value("'name' must not be blank"))
+			.andExpect(jsonPath("$.errors[*].path").value(contains("$.name")))
+			.andExpect(jsonPath("$.errors[0].message").value("'name' must not be blank"));
 		mvc.perform(post("/api/apps").contentType(MediaType.APPLICATION_JSON).content("{\"name\": \"Notepad\"}"))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[*].path").value(contains("$.technology")));
 	}
 
 	@Test
@@ -99,15 +111,31 @@ class AppIntegrationTest {
 		String appId = appId(createApp("Notepad", "win32"));
 
 		createVersion(appId, "1.0").andExpect(status().isCreated());
-		createVersion(appId, "1.0").andExpect(status().isConflict());
+		createVersion(appId, "1.0").andExpect(status().isConflict())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.detail").value(containsString("Version 1.0 already exists")));
+	}
+
+	@Test
+	void blankVersionIsRejected() throws Exception {
+		String appId = appId(createApp("Notepad", "win32"));
+
+		createVersion(appId, " ").andExpect(status().isBadRequest())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.errors[*].path").value(contains("$.version")));
 	}
 
 	@Test
 	void versionsOfAnUnknownApplicationAreNotFound() throws Exception {
 		String unknown = "00000000-0000-0000-0000-000000000000";
 
-		createVersion(unknown, "1.0").andExpect(status().isNotFound());
-		mvc.perform(get("/api/apps/{id}/versions", unknown)).andExpect(status().isNotFound());
+		createVersion(unknown, "1.0").andExpect(status().isNotFound())
+			.andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+			.andExpect(jsonPath("$.status").value(404))
+			.andExpect(jsonPath("$.title").value("Not Found"))
+			.andExpect(jsonPath("$.detail").value("Application not found: " + unknown));
+		mvc.perform(get("/api/apps/{id}/versions", unknown)).andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("Application not found: " + unknown));
 	}
 
 	private ResultActions createApp(String name, String technology) throws Exception {
