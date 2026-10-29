@@ -43,3 +43,13 @@ Append-only. One entry per session, newest at the bottom:
 - Leotta PDF unreachable (sepl.dibris.unige.it refuses connections); only abstract figures used.
 - Draft PR #126 (`Closes #10`); inbox notes to galip and hasan with their sources.
 - Next: #32 while #126 waits for teammates.
+## 2026-10-26 · #32
+- Started #32 on `omer/32-server-settings`, board → In progress; agreed with omer to keep #32 open until the picker (needs #15) instead of splitting it.
+- Client: `src/main/server.ts` (URL normalisation + `/api/health` check, 5 failure types), `src/main/settings.ts` (`userData/settings.json`), IPC `settings:get` / `server:check` / `server:connect`, `ServerSettings.tsx` first-run screen. 22 tests green, build green; checked against the real compose backend (all 5 outcomes); omer's manual UI check passed (7 steps).
+- Draft PR #127 (`Refs #32`), CI green.
+- Next: picker after #15; propose splitting #15's applications list off snapshot import.
+
+## 2026-10-26 · #128, #32
+- #128 on `omer/128-apps-api`: `server/.../apps/` (`AppController`, `AppService` with plain Cypher via `Driver`), 4 endpoints with 400/404/409; duplicate checks in the create transaction, no constraint (omer chose option (a)); `technology` free text. `AppIntegrationTest` 7 cases, `./mvnw -B verify` green. PR #129, CI green. OpenAPI criterion left unticked (generation arrives with #31).
+- #32 picker: `client/src/main/apps.ts`, IPC `apps:list|create|choose`, `AppPicker.tsx` with create form (omer's choice), `applicationId` in `Settings`, cleared on server change. 33 tests + build green; `apps.ts` checked against the real #128 server; omer's 8-step manual check passed. Pushed; PR #127 CI green.
+- Next: after #129 merges, merge main into #32, mark #127 ready with `Closes #32`.

@@ -8,7 +8,14 @@ Owner: galip. Read `/AGENTS.md` first; this file adds only what is specific to `
 - `ayna_ai/validate.py` — rejects steps that target unknown objects
 
 ## Commands
-To be filled in when the module is scaffolded (build, test, lint, run). Until then, ask before inventing tooling.
+Python >= 3.11. Run from `ai/` inside the module's virtual environment (`.venv/` is git-ignored):
+- `python3 -m venv .venv`, activate it (`source .venv/bin/activate`; Windows: `.venv\Scripts\activate`), then `pip install -e ".[dev]"` — install with ruff and pytest
+- `ruff check .` — lint (`spikes/` is excluded: throwaway scripts)
+- `ruff format --check .` — formatting check; `ruff format .` fixes it
+- `pytest` — tests in `tests/`
+- Local model server for experiments: see `spikes/llm-smoke.md` (Ollama on 127.0.0.1 only)
+
+Before committing: `ruff check . && ruff format --check . && pytest` (the CI `ai` job runs the same on Ubuntu).
 
 ## Rules
 - Local models only (Ollama / llama.cpp); no external API calls.
