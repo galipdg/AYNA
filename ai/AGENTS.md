@@ -3,9 +3,11 @@
 Owner: galip. Read `/AGENTS.md` first; this file adds only what is specific to `ai/`.
 
 ## Layout
+- `ayna_ai/service.py` — HTTP service for the server: `POST /ai/generate-steps`, `GET /ai/health`; contract in `API.md`
+- `ayna_ai/ollama.py` — loopback-only client for the local model server
 - `ayna_ai/generate.py` — constrained JSON generation
 - `ayna_ai/retrieve.py` — graph + vector retrieval of repository objects
-- `ayna_ai/validate.py` — rejects steps that target unknown objects
+- `ayna_ai/validate.py` — checks each generated step; drops unknown keywords, unknown objects and the no-match target
 
 ## Commands
 Python >= 3.11. Run from `ai/` inside the module's virtual environment (`.venv/` is git-ignored):

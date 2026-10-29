@@ -99,3 +99,17 @@ def test_proxy_settings_are_ignored(fake_ollama, monkeypatch):
     monkeypatch.delenv("NO_PROXY", raising=False)
     fake_ollama.respond = lambda path, body: (200, {"version": "0.0.0"}, 0, {})
     assert OllamaClient(fake_ollama.url, timeout_s=2).version() == "0.0.0"
+
+
+def test_models_lists_the_pulled_model_names(fake_ollama):
+    listing = {"models": [{"name": "qwen3:8b", "size": 1}, {"name": "gemma4:e4b"}]}
+    fake_ollama.respond = lambda path, body: (200, listing, 0, {})
+    assert OllamaClient(fake_ollama.url).models() == ["qwen3:8b", "gemma4:e4b"]
+    assert fake_ollama.requests == [("/api/tags", None)]
+
+
+@pytest.mark.parametrize("answer", [{}, {"models": "x"}, ["qwen3:8b"]])
+def test_models_without_a_list_is_a_server_error(fake_ollama, answer):
+    fake_ollama.respond = lambda path, body: (200, answer, 0, {})
+    with pytest.raises(ModelServerError, match="model list"):
+        OllamaClient(fake_ollama.url).models()
