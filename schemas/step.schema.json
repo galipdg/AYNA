@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:schema:step",
+  "title": "AYNA test steps",
+  "description": "An ordered list of keyword steps: a test case, the NL assistant's answer or a playback request. The shared contract of editor, NL assistant, recorder, agent and server. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md); see memory-bank/decisions/2026-10-27-step-schema-v0.md.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change.",
+      "const": "0.1"
+    },
+    "steps": {
+      "description": "Steps in execution order. An empty list is a test with no steps yet.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "required": ["version", "steps"],
+  "additionalProperties": false,
+  "$defs": {
+    "step": {
+      "title": "Step",
+      "description": "One keyword action on one repository object. Before every step, playback waits until the target exists, is visible and enabled (smart wait), for at most timeoutMs.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Step id (UUID) assigned by the server when the step is saved; absent on steps that are not saved yet (NL suggestions, recorder output).",
+          "$ref": "#/$defs/uuid"
+        },
+        "keyword": {
+          "description": "Click: click the target. Type: replace the target's text with value (an empty value clears it). Select: choose the item whose text is value in the target list or combo box. Verify: check the checkpoint on the target. Wait: only wait until the target is ready; never a fixed sleep.",
+          "enum": ["Click", "Type", "Select", "Verify", "Wait"]
+        },
+        "target": {
+          "description": "Logical name of a repository object, never a coordinate or a raw UI Automation property.",
+          "$ref": "#/$defs/logicalName"
+        },
+        "value": {
+          "description": "Text for Type and Select. Not allowed for the other keywords.",
+          "type": "string",
+          "maxLength": 1000
+        },
+        "checkpoint": {
+          "description": "The check of a Verify step. Not allowed for the other keywords.",
+          "$ref": "#/$defs/checkpoint"
+        },
+        "timeoutMs": {
+          "description": "Longest wait for the target to become ready, in milliseconds. Absent means the run's default timeout.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 600000
+        }
+      },
+      "required": ["keyword", "target"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "required": ["keyword"], "properties": { "keyword": { "const": "Click" } } },
+          "then": { "properties": { "value": false, "checkpoint": false } }
+        },
+        {
+          "if": { "required": ["keyword"], "properties": { "keyword": { "const": "Type" } } },
+          "then": { "required": ["value"], "properties": { "checkpoint": false } }
+        },
+        {
+          "if": { "required": ["keyword"], "properties": { "keyword": { "const": "Select" } } },
+          "then": {
+            "required": ["value"],
+            "properties": { "value": { "minLength": 1 }, "checkpoint": false }
+          }
+        },
+        {
+          "if": { "required": ["keyword"], "properties": { "keyword": { "const": "Verify" } } },
+          "then": { "required": ["checkpoint"], "properties": { "value": false } }
+        },
+        {
+          "if": { "required": ["keyword"], "properties": { "keyword": { "const": "Wait" } } },
+          "then": { "properties": { "value": false, "checkpoint": false } }
+        }
+      ]
+    },
+    "checkpoint": {
+      "title": "Checkpoint",
+      "description": "Compares one property of the target with an expected value. Text comparisons are exact and case-sensitive.",
+      "type": "object",
+      "properties": {
+        "property": {
+          "description": "name: UI Automation Name (a label's or button's text). value: ValuePattern value (the text of an edit box or combo box). enabled: IsEnabled. visible: on screen (not IsOffscreen). checked: TogglePattern state is On. selected: SelectionItemPattern IsSelected.",
+          "enum": ["name", "value", "enabled", "visible", "checked", "selected"]
+        },
+        "operator": {
+          "description": "equals / notEquals: whole value; contains: expected is a substring. Boolean properties allow only equals.",
+          "enum": ["equals", "notEquals", "contains"]
+        },
+        "expected": {
+          "description": "A string for name and value (may be empty), a boolean for the other properties.",
+          "type": ["string", "boolean"]
+        }
+      },
+      "required": ["property", "operator", "expected"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "required": ["property"], "properties": { "property": { "enum": ["name", "value"] } } },
+          "then": { "properties": { "expected": { "type": "string", "maxLength": 1000 } } }
+        },
+        {
+          "if": {
+            "required": ["property"],
+            "properties": { "property": { "enum": ["enabled", "visible", "checked", "selected"] } }
+          },
+          "then": {
+            "properties": { "operator": { "const": "equals" }, "expected": { "type": "boolean" } }
+          }
+        }
+      ]
+    },
+    "logicalName": {
+      "description": "screen.element in lowerCamelCase ASCII, e.g. login.userNameInput (memory-bank/project/conventions.md).",
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9]*\\.[a-z][A-Za-z0-9]*$",
+      "maxLength": 100
+    },
+    "uuid": {
+      "description": "Lower-case UUID, as the server generates node ids (decision 2026-10-25 graph schema v0).",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
+}

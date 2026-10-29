@@ -1,0 +1,8 @@
+# Used instead of a root .dockerignore when building server/Dockerfile from the
+# repository root: send only what the build needs.
+*
+!server/.mvn/
+!server/mvnw
+!server/pom.xml
+!server/src/
+!schemas/step.schema.json
