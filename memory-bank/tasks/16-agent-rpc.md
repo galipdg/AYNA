@@ -43,6 +43,7 @@
 ## Open issues
 - `agent/README.md` still says "Owners: galip (recognition, heal, RPC) · hasan (playback, CLI)", stale since ADR `2026-10-25-windows-work-to-hasan`; not in scope, tell hasan/omer.
 - Every new ADR line in `memory-bank/decisions/README.md` conflicts with this branch (2026-10-29: twice); keep all lines in date order.
+- The default snapshot budget (when `timeoutMs` is absent) is sized in #12, after hasan's #161 finds why the KeePass 2 walk took 278.5 s; `rpc.py` does not depend on the number.
 - TBD-5 in `docs/rs/scenarios.md` (step "not found" vs "timeout") is playback's boundary, not settled by `-32002`; hasan linked the two in his review.
 
 ## Handoff
