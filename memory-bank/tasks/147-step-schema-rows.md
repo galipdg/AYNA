@@ -18,6 +18,9 @@ Smallest additive change that the #37 derivation accepts unchanged: a new keywor
 - 2026-10-28 — `version` stays a `const` ("0.2"), not `enum ["0.1","0.2"]` — v0 ADR rule, and the generator reads `version.const`. No stored documents exist (#134 unmerged).
 - 2026-10-28 — New cases carry `"since": "0.2"` so the tests can find the 0.1 cases and prove they still pass; consumers that read `cases.json` ignore the extra key (checked with #37's tests).
 
+- 2026-10-29 — Review round (omer approved; hasan held on two text items). Cell text rule is **non-empty ValuePattern value first, else Name**, not hasan's proposed Name-first: Microsoft's `DataGridViewCellAccessibleObject.Name` remarks say a WinForms cell's Name includes the column header text and the row index, so Name is never empty there and Name-first would never reach the real text (KeePass 2 pilot). Value-first-when-non-empty also covers hasan's Qt measurement (Value empty → Name). Took the rest of hasan's wording as given: a list row is the list item itself, `cell` is grid-only, `rowCount` of a list counts items, 0-based GridItem mapping, SelectRow defined on row-selecting targets, 250 ms re-read interval, schema cannot enforce grid-only.
+- 2026-10-29 — #142/#145/#146 and the server's #39 (PR #156) merged before #150. Tests now read the version from `step.schema.json` (as the server does) instead of hard-coding it; the 12 trial pairs move to 0.2. The server needed nothing: it reads `version.const` and already stores `row` as JSON.
+
 ## Status
 - [x] Branch, task note, board In progress
 - [x] ADR (Proposed) + `decisions/README.md` line
@@ -26,7 +29,8 @@ Smallest additive change that the #37 derivation accepts unchanged: a new keywor
 - [x] PR https://github.com/galipdg/AYNA/pull/150 opened 2026-10-28 (`Refs #147`, stacked on #134, merge after it), reviewers hasan and omer
 - [ ] All three approve (criterion 1)
 - [ ] After approval: #37, #36, #40, #38 adopt it (criterion 3)
-- Next step: answer review comments on the PR; when all three approve, set the ADR to Accepted in the same PR; then open the follow-ups on #37 and #36.
+- [x] 2026-10-29: merged main (conflict only in `decisions/README.md`), relabelled to 0.2 everywhere #142/#145/#146 had hard-coded 0.1, applied the review wording (454 ai tests pass)
+- Next step: hasan re-reviews (text rule explained on the PR); when all three approve, set the ADR to Accepted in the same PR; then the #37 prompt/`column` follow-up and the #36 labelling rules.
 
 ## #37 compatibility check (2026-10-28, `origin/galip/37-constrained-generation` 95de284, scratch copy)
 - `generation_schema()` derives the 0.2 schema with **no code change**: 6 keyword branches (SelectRow: keyword, target, row, timeoutMs), 5 checkpoint variants (name/value, booleans, cell, rowExists, rowCount), `row` as a nested `anyOf` of two closed objects, strings capped, no `if`/`then`/`allOf`/boolean subschemas left.

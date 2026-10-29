@@ -29,7 +29,7 @@ Every step may have `id` (UUID, set by the server) and `timeoutMs` (longest smar
 | `rowExists` | whether a row of a grid or list matches | `row` | `equals` | boolean |
 | `rowCount` | number of rows of a grid or list (headers not counted) | — | `equals` | integer 0–100000 |
 
-**Rows.** `row` is either `{"index": n}` — the n-th row from the top, counted from 1 — or `{"value": "Yılmaz", "column": "Soyad"}` — the first row with a cell whose text is exactly `value`, in that column if `column` is given, else in any column. `column` is the column header's text. A cell's text is its ValuePattern value if it has one, else its Name; a list item is a row with one cell.
+**Rows.** `row` is either `{"index": n}` — the n-th row from the top, counted from 1 — or `{"value": "Yılmaz", "column": "Soyad"}` — the first row with a cell whose text is exactly `value`, in that column if `column` is given, else in any column. `column` is the column header's text. A cell's text is its ValuePattern value when that value is non-empty, else its Name (Qt cells: empty Value, text in Name; WinForms cells: Name is the header and row index, text in Value). For a list, the row is the list item itself: `cell` is grid-only (a list has no columns), and `rowCount` of a list counts its items.
 
 **From 0.1.** Every 0.1 step is a valid 0.2 step; a 0.1 document becomes 0.2 by changing only `version`.
 

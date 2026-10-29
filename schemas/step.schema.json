@@ -100,7 +100,7 @@
       "type": "object",
       "properties": {
         "property": {
-          "description": "Of the target: name: UI Automation Name (a label's or button's text). value: ValuePattern value (the text of an edit box or combo box). enabled: IsEnabled. visible: on screen (not IsOffscreen). checked: TogglePattern state is On. selected: SelectionItemPattern IsSelected. Of a grid or list target: cell: the text of the cell in row and column. rowExists: a row matches row. rowCount: number of rows, header rows not counted.",
+          "description": "Of the target: name: UI Automation Name (a label's or button's text). value: ValuePattern value (the text of an edit box or combo box). enabled: IsEnabled. visible: on screen (not IsOffscreen). checked: TogglePattern state is On. selected: SelectionItemPattern IsSelected. Of a grid or list target: cell: the text of the cell in row and column; grid only, since a list has no columns (check a list item with rowExists or Select it by text). rowExists: a row (or list item) matches row. rowCount: number of rows, header rows not counted; for a list, the number of list items.",
           "enum": ["name", "value", "enabled", "visible", "checked", "selected", "cell", "rowExists", "rowCount"]
         },
         "operator": {
@@ -168,7 +168,7 @@
     },
     "row": {
       "title": "Row",
-      "description": "One row of a grid or list target; a list item is a row with one cell. {index}: the index-th row from the top as the target shows it now, counted from 1, header rows not counted. {value, column?}: the first row from the top with a cell whose text is exactly value (case-sensitive), in that column if column is given, else in any column. A cell's text is its ValuePattern value if it has one, else its UI Automation Name.",
+      "description": "One row of a grid or list target; for a list, the row is the list item itself. {index}: the index-th row from the top as the target shows it now, counted from 1, header rows not counted. {value, column?}: the first row from the top with a cell whose text is exactly value (case-sensitive), in that column if column is given, else in any column. A cell's text is its ValuePattern value when that value is non-empty, else its UI Automation Name (Qt cells and list items have an empty ValuePattern and carry their text in Name; a WinForms DataGridView cell's Name is its column header and row index, and its text is the Value).",
       "anyOf": [
         {
           "type": "object",

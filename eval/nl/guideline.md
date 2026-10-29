@@ -5,7 +5,7 @@
 | Issue | #36: this guideline and the first 40 pairs, written together with Hasan |
 | Next | #57: grow to 100 pairs (at least 20 by outsiders) and freeze a 30-pair held-out split |
 | Used by | #37 (constrained generation: 100 % of outputs on the 40 pairs parse and validate), #71 (model comparison), #77 (RQ3: step-level accuracy with and without repository context) |
-| Contract | Gold steps are `schemas/step.schema.json` v0.1 documents (#13, ADR `2026-10-27-step-schema-v0`) |
+| Contract | Gold steps are `schemas/step.schema.json` v0.2 documents (#13, #147; ADRs `2026-10-27-step-schema-v0`, `2026-10-28-step-schema-v0-2-rows`) |
 | Files | `pairs.jsonl` (dev set) · `heldout.jsonl` + `heldout.sha256` (frozen split, from #57) · `objects/<app>.json` · `pair.schema.json` · `objects.schema.json` · `check_pairs.py` |
 
 A **pair** is one Turkish test description, written as a tester would write it, together with its **gold steps**: the step document a perfect NL assistant would return for it. This file says how to write the description, how to label the gold steps and how pairs are stored, reviewed and used. Section numbers are referenced from the pairs' `notes` and from `check_pairs.py`.
@@ -35,7 +35,7 @@ One JSON object per line, UTF-8, Turkish characters written as they are (not `\u
 | `origin` | yes | `team` or `outsider` (#57). |
 | `author` | yes | `galip`, `hasan`, `omer`; for outsiders an anonymous code `ext-01`, `ext-02`… — never a name. |
 | `text` | yes | The description exactly as written. Line breaks are allowed (numbered lists); no leading or trailing white space. |
-| `gold` | yes | Step document `{"version": "0.1", "steps": [...]}` with at least one step and no step `id`. |
+| `gold` | yes | Step document `{"version": "0.2", "steps": [...]}` with at least one step and no step `id`. |
 | `notes` | no | Labelling choices a reviewer should know, with the rule number. |
 
 A worked example (pretty-printed here; in the file it is one line):
@@ -46,7 +46,7 @@ A worked example (pretty-printed here; in the file it is one line):
   "scenarioType": "login", "scenario": "trial-login-ok", "style": "polite",
   "origin": "team", "author": "galip",
   "text": "Lütfen kullanıcı adına ve şifreye admin yazıp Login'e tıklayın; ardından durum mesajının \"Welcome, admin!\" olduğunu kontrol edin.",
-  "gold": {"version": "0.1", "steps": [
+  "gold": {"version": "0.2", "steps": [
     {"keyword": "Type", "target": "login.usernameInput", "value": "admin"},
     {"keyword": "Type", "target": "login.passwordInput", "value": "admin"},
     {"keyword": "Click", "target": "login.loginButton"},
@@ -82,7 +82,7 @@ The types follow the sample app's screens (#33) and the reference scenarios in `
 
 **Quotas.** #36 (40 sample-app pairs): 5 pairs per type, from at least 2 scenarios, in at least 3 styles (the acceptance criterion "≥ 3 phrasing variants per scenario type" is read as ≥ 3 distinct `style` values per type, which the checker counts). Across the 40, use every style at least 4 times and tag about a quarter `implicitTarget`. #57 (100): 12–13 per type; outsider pairs fill whichever types they fall into.
 
-**Grids.** Schema v0 cannot select or check a grid row (`Verify main.customerGrid name contains "Yılmaz"` checks the grid's UIA Name, not its rows; #37). A `listSearch` pair may Select only in a list or combo box; a grid row is out of scope (§6.7) until a later schema version.
+**Grids.** Schema v0 cannot select or check a grid row (`Verify main.customerGrid name contains "Yılmaz"` checks the grid's UIA Name, not its rows; #37). A `listSearch` pair may Select only in a list or combo box; a grid row is out of scope (§6.7) until the labelling rules for schema v0.2's `SelectRow` and row checks (#147) are written with the sample-app pairs (#36).
 
 ## 4. Turkish vocabulary
 
@@ -229,6 +229,8 @@ Apply §4.2: property from what is checked and the control type, operator from t
 Apply §4.3: Wait only for an explicit *bekle* on a target; a time limit goes on the step the phrase modifies, converted to milliseconds; no limit, no `timeoutMs`.
 
 ### 6.7 Out of scope for step schema v0
+
+Schema v0.2 (#147) adds `SelectRow` and the `cell`, `rowExists` and `rowCount` checks. Until their labelling rules are written with the sample-app pairs (#36), grid rows, cells and item counts stay out of scope here.
 
 Do not write texts that need any of these; drop outsider texts that contain them (and count them for #57, as a finding of what users ask for):
 

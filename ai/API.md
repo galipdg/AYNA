@@ -70,7 +70,7 @@ Response **200** — at least one suggested step; here the model wrote three and
     {"index": 1, "code": "no_match", "reason": "no repository object matches",
      "step": {"keyword": "Click", "target": "none.noMatch", "reason": "Beni hatırla kutusunu işaretle"}}
   ],
-  "schemaVersion": "0.1",
+  "schemaVersion": "0.2",
   "promptVersion": "3+reason",
   "latencyMs": 6721
 }
@@ -117,7 +117,7 @@ Every error has the same shape; `details` (a list of strings, at most 20) and th
     {"index": 1, "code": "unknown_target", "reason": "'login.forgotPasswordLink' is not in the object repository",
      "step": {"keyword": "Click", "target": "login.forgotPasswordLink", "reason": "Şifremi unuttum bağlantısına"}}
   ],
-  "schemaVersion": "0.1",
+  "schemaVersion": "0.2",
   "promptVersion": "3+reason",
   "latencyMs": 7012
 }
@@ -154,7 +154,7 @@ Says whether generation can work right now. It never runs the model and asks Oll
     {"name": "qwen3:8b", "available": true},
     {"name": "gemma4:e4b-it-qat", "available": true}
   ],
-  "schemaVersion": "0.1",
+  "schemaVersion": "0.2",
   "promptVersion": "3+reason",
   "serviceVersion": "0.0.0"
 }
@@ -174,7 +174,7 @@ Says whether generation can work right now. It never runs the model and asks Oll
 
 ## Versions
 
-- `schemaVersion`: version of the step schema the steps follow (`schemas/step.schema.json`, now `0.1`).
+- `schemaVersion`: version of the step schema the steps follow (`schemas/step.schema.json`, now `0.2`, #147; the service reads it from the schema's `version` const).
 - `promptVersion`: changes whenever the prompt changes. Store it with accepted suggestions if you want to trace which prompt produced them (RQ3).
 - `serviceVersion`: the `ayna-ai` package version.
 
