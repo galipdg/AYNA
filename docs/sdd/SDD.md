@@ -348,7 +348,7 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 
 | Document | Schema | Produced by → consumed by | Status |
 |---|---|---|---|
-| Step document `{version, steps[]}` | `schemas/step.schema.json` | editor, AI service, recorder → server → agent | Built: v0.1 (PR #134); v0.2 adds grid rows (PR #150, proposed) |
+| Step document `{version, steps[]}` | `schemas/step.schema.json` | editor, AI service, recorder → server → agent | **Built**: v0.1 on `main` (#13); v0.2 adds grid rows (PR #150, proposed) |
 | Element descriptor | `schemas/element.schema.json` | agent → client, server | Planned: #11 |
 | Window snapshot | `schemas/snapshot.schema.json` | agent → server | Planned: #12 |
 | Healing proposal | proposed in PR #151 | agent → client → server | Proposed |
