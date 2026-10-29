@@ -22,10 +22,12 @@ from ayna_agent.rpc import (
     METHOD_NOT_FOUND,
     PARSE_ERROR,
     RPC_VERSION,
+    SNAPSHOT_TIMEOUT,
     TOKEN_ENV,
     UIA_UNAVAILABLE,
     WINDOW_NOT_FOUND,
     Dispatcher,
+    SnapshotTimeout,
     UnavailableDesktop,
     WindowNotFound,
     bound_port,
@@ -47,13 +49,16 @@ WINDOW = {
 class FakeDesktop:
     def __init__(self):
         self.threads = []
+        self.calls = []
 
     def list_windows(self):
         self.threads.append(threading.current_thread().name)
+        self.calls.append(("listWindows",))
         return [WINDOW]
 
-    def snapshot(self, handle):
+    def snapshot(self, handle, timeout_ms):
         self.threads.append(threading.current_thread().name)
+        self.calls.append(("snapshot", handle, timeout_ms))
         if handle != WINDOW["handle"]:
             raise WindowNotFound(handle)
         return {"snapshotId": "fake", "window": WINDOW, "elements": []}
@@ -62,6 +67,39 @@ class FakeDesktop:
 class BrokenDesktop(FakeDesktop):
     def list_windows(self):
         raise RuntimeError("COM blew up")
+
+
+class SlowDesktop(FakeDesktop):
+    """snapshot blocks until the test releases it."""
+
+    def __init__(self):
+        super().__init__()
+        self.release = threading.Event()
+
+    def snapshot(self, handle, timeout_ms):
+        self.release.wait(timeout=10)
+        return super().snapshot(handle, timeout_ms)
+
+
+class TimedOutDesktop(FakeDesktop):
+    def snapshot(self, handle, timeout_ms):
+        raise SnapshotTimeout(f"walk stopped after {timeout_ms} ms")
+
+
+class LifecycleDesktop(FakeDesktop):
+    def __init__(self):
+        super().__init__()
+        self.events = []
+
+    def setup(self):
+        self.events.append(("setup", threading.current_thread().name))
+
+    def close(self):
+        self.events.append(("close", threading.current_thread().name))
+
+    def list_windows(self):
+        self.events.append(("listWindows", threading.current_thread().name))
+        return super().list_windows()
 
 
 def worker():
@@ -104,8 +142,25 @@ def test_list_windows_returns_backend_windows():
 
 
 def test_snapshot_returns_backend_snapshot():
-    reply = call(FakeDesktop(), request("snapshot", {"handle": 1001}))
+    desktop = FakeDesktop()
+    reply = call(desktop, request("snapshot", {"handle": 1001}))
     assert reply["result"]["window"] == WINDOW
+    assert desktop.calls == [("snapshot", 1001, None)]
+
+
+def test_snapshot_passes_its_time_budget_on():
+    desktop = FakeDesktop()
+    reply = call(desktop, request("snapshot", {"handle": 1001, "timeoutMs": 2000}))
+    assert "result" in reply
+    assert desktop.calls == [("snapshot", 1001, 2000)]
+
+
+def test_snapshot_over_budget():
+    reply = call(
+        TimedOutDesktop(), request("snapshot", {"handle": 1001, "timeoutMs": 5})
+    )
+    assert reply["error"]["code"] == SNAPSHOT_TIMEOUT
+    assert "after 5 ms" in reply["error"]["message"]
 
 
 def test_snapshot_of_unknown_window():
@@ -184,6 +239,14 @@ INVALID = {
     "handle boolean": (request("snapshot", {"handle": True}, id=7), INVALID_PARAMS, 7),
     "handle zero": (request("snapshot", {"handle": 0}, id=7), INVALID_PARAMS, 7),
     "handle negative": (request("snapshot", {"handle": -5}, id=7), INVALID_PARAMS, 7),
+    **{
+        f"timeoutMs {value!r}": (
+            request("snapshot", {"handle": 1001, "timeoutMs": value}, id=7),
+            INVALID_PARAMS,
+            7,
+        )
+        for value in (0, -1, 600_001, 1.5, "2000", True, None)
+    },
 }
 
 
@@ -304,6 +367,81 @@ def test_binary_frames_are_refused():
     assert run_with_server(FakeDesktop(), client)["error"]["code"] == INVALID_REQUEST
 
 
+def test_ping_answers_while_a_snapshot_runs():
+    desktop = SlowDesktop()
+
+    async def client(uri, server):
+        async with connect(uri, additional_headers=auth()) as websocket:
+            try:
+                await websocket.send(json.dumps(request("snapshot", {"handle": 1001})))
+                await websocket.send(json.dumps(request("ping", id=2)))
+                first = json.loads(await asyncio.wait_for(websocket.recv(), 5))
+            finally:
+                desktop.release.set()
+            second = json.loads(await asyncio.wait_for(websocket.recv(), 5))
+            return first, second
+
+    first, second = run_with_server(desktop, client)
+    assert first["id"] == 2 and "result" in first
+    assert second["id"] == 1 and second["result"]["window"] == WINDOW
+
+
+def test_uia_calls_run_in_arrival_order():
+    desktop = FakeDesktop()
+    messages = [
+        request("snapshot", {"handle": 1001}, id=1),
+        request("listWindows", id=2),
+        request("snapshot", {"handle": 5, "timeoutMs": 10}, id=3),
+        request("listWindows", id=4),
+    ]
+
+    async def client(uri, server):
+        async with connect(uri, additional_headers=auth()) as websocket:
+            for message in messages:
+                await websocket.send(json.dumps(message))
+            replies = [json.loads(await websocket.recv()) for _ in messages]
+        return sorted(reply["id"] for reply in replies)
+
+    assert run_with_server(desktop, client) == [1, 2, 3, 4]
+    assert desktop.calls == [
+        ("snapshot", 1001, None),
+        ("listWindows",),
+        ("snapshot", 5, 10),
+        ("listWindows",),
+    ]
+
+
+def test_backend_setup_and_close_run_once_on_the_worker_thread():
+    desktop = LifecycleDesktop()
+
+    async def client(uri, server):
+        async with connect(uri, additional_headers=auth()) as websocket:
+            await roundtrip(websocket, request("listWindows"))
+            await roundtrip(websocket, request("listWindows", id=2))
+
+    run_with_server(desktop, client)
+    assert [name for name, _ in desktop.events] == [
+        "setup",
+        "listWindows",
+        "listWindows",
+        "close",
+    ]
+    assert len({thread for _, thread in desktop.events}) == 1
+
+
+def test_failed_backend_setup_stops_the_server():
+    class NoCom(FakeDesktop):
+        def setup(self):
+            raise OSError("CoInitializeEx failed")
+
+    async def run():
+        async with serve_rpc(NoCom(), TOKEN):
+            pass
+
+    with pytest.raises(OSError):
+        asyncio.run(run())
+
+
 def test_short_token_is_rejected():
     async def run():
         async with serve_rpc(FakeDesktop(), "short"):
@@ -330,15 +468,20 @@ def test_main_rejects_a_bad_port(monkeypatch):
     assert stopped.value.code == 2
 
 
-def test_cli_announces_its_port_and_answers():
-    env = {**os.environ, TOKEN_ENV: TOKEN}
-    process = subprocess.Popen(
+def start_agent():
+    """The agent as the client starts it: token in the env, stdin a pipe."""
+    return subprocess.Popen(
         [sys.executable, "-m", "ayna_agent.rpc", "--port", "0"],
-        env=env,
+        env={**os.environ, TOKEN_ENV: TOKEN},
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         text=True,
     )
+
+
+def test_cli_announces_its_port_and_answers():
+    process = start_agent()
     try:
         ready = json.loads(process.stdout.readline())
         assert ready["event"] == "listening"
@@ -355,6 +498,17 @@ def test_cli_announces_its_port_and_answers():
         assert ping["result"]["agentVersion"] == __version__
         # No UIA backend is wired in yet (#12).
         assert windows["error"]["code"] == UIA_UNAVAILABLE
+    finally:
+        process.kill()
+        process.wait(timeout=10)
+
+
+def test_cli_exits_when_its_stdin_closes():
+    process = start_agent()
+    try:
+        assert json.loads(process.stdout.readline())["event"] == "listening"
+        process.stdin.close()
+        assert process.wait(timeout=10) == 0
     finally:
         process.kill()
         process.wait(timeout=10)
