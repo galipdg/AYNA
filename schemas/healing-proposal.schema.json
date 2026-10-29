@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:schema:healing-proposal",
+  "title": "AYNA healing proposal",
+  "description": "PROPOSED (#149), not yet agreed or frozen. The top candidates the agent proposes when no element matches a step's target after the smart wait: the step ends as repairProposed and nothing is clicked. The document travels unchanged inside the failing step's result, from the agent (JSON-RPC run.stepResult) or the CLI runner to the server, which stores it for review. Numbers are exact fractions written as strings. See memory-bank/decisions/2026-10-28-healing-proposal-transport.md and docs/agent-rpc.md. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md).",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change.",
+      "const": "0.1"
+    },
+    "runId": {
+      "description": "The server's Run id. A CLI run without a server uses a locally generated UUID.",
+      "$ref": "#/$defs/uuid"
+    },
+    "stepIndex": {
+      "description": "Position of the failing step in the run, from 0. With runId, the key of the step result this proposal belongs to.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "stepId": {
+      "description": "The failing step's server id; null for a step that was never saved (a CLI run from a file).",
+      "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+    },
+    "logicalName": {
+      "description": "Logical name of the repository object that was not found (the step's target).",
+      "$ref": "#/$defs/logicalName"
+    },
+    "appVersionId": {
+      "description": "The server's AppVersion id the run was played against; approving a candidate makes the object resolve to it for this version. Null only in a run without a server.",
+      "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+    },
+    "snapshotId": {
+      "description": "Id of the window snapshot (schemas/snapshot.schema.json, #12) the candidates were taken from. The same step result carries that snapshot; every candidate's elementId is an element of it.",
+      "$ref": "#/$defs/opaqueId"
+    },
+    "target": {
+      "description": "What the candidates were compared against: the element the repository object resolved to before.",
+      "type": "object",
+      "properties": {
+        "serverElementId": {
+          "description": "The server's Element id (graph Element.id) the target properties came from; null when unknown (no server, or the object has no resolved element).",
+          "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
+        },
+        "properties": {
+          "description": "The target's properties exactly as the scorer read them.",
+          "$ref": "#/$defs/scoredElement"
+        }
+      },
+      "required": ["serverElementId", "properties"],
+      "additionalProperties": false
+    },
+    "scorer": {
+      "description": "Which scorer ranked the candidates and with which weights, so that every contribution can be recomputed.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Scorer and version, e.g. similo-v0 (agent/ayna_agent/heal/scorer.py, #49).",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "maxLength": 50
+        },
+        "weights": {
+          "description": "Weight of each scored property. A property not listed has weight 0.",
+          "$ref": "#/$defs/propertyMap"
+        }
+      },
+      "required": ["id", "weights"],
+      "additionalProperties": false
+    },
+    "candidatesScored": {
+      "description": "How many candidate elements the scorer ranked; candidates holds the best of them.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "candidates": {
+      "description": "The best candidates, at most 3, by score descending and then elementId ascending; rank 1 first. Fewer than 3 when fewer were scored or passed the playback's minimum score (#73).",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/candidate" }
+    }
+  },
+  "required": [
+    "version",
+    "runId",
+    "stepIndex",
+    "stepId",
+    "logicalName",
+    "appVersionId",
+    "snapshotId",
+    "target",
+    "scorer",
+    "candidatesScored",
+    "candidates"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "candidate": {
+      "title": "Candidate",
+      "description": "One proposed element with its score and the reasons for it. The contributions add up exactly to score, and each contribution is weight × similarity / (sum of the weights of the compared properties).",
+      "type": "object",
+      "properties": {
+        "rank": {
+          "description": "1 for the best candidate.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "elementId": {
+          "description": "The element's id inside the snapshot named by snapshotId (not a server node id).",
+          "$ref": "#/$defs/opaqueId"
+        },
+        "element": {
+          "description": "The candidate's properties exactly as the scorer read them.",
+          "$ref": "#/$defs/scoredElement"
+        },
+        "score": {
+          "description": "S = sum of the contributions, in [0, 1].",
+          "$ref": "#/$defs/exact"
+        },
+        "contributions": {
+          "description": "Each compared property's share of the score, in [0, 1]. The compared properties are the ones the target has; they are the same for every candidate of a proposal.",
+          "$ref": "#/$defs/propertyMap"
+        },
+        "similarities": {
+          "description": "Each compared property's raw similarity, in [0, 1]; same keys as contributions.",
+          "$ref": "#/$defs/propertyMap"
+        }
+      },
+      "required": ["rank", "elementId", "element", "score", "contributions", "similarities"],
+      "additionalProperties": false
+    },
+    "propertyMap": {
+      "description": "Scored property → exact number.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/property" },
+      "additionalProperties": { "$ref": "#/$defs/exact" },
+      "minProperties": 1
+    },
+    "property": {
+      "description": "The properties the scorer compares (SIMILO_WEIGHTS in agent/ayna_agent/heal/scorer.py). location, area and shape are computed from bounds.",
+      "enum": [
+        "automationId",
+        "name",
+        "controlType",
+        "nearestLabel",
+        "className",
+        "parentPath",
+        "siblingIndex",
+        "location",
+        "area",
+        "shape",
+        "windowTitle"
+      ]
+    },
+    "exact": {
+      "description": "A non-negative rational number as Python's str(Fraction) writes it: \"0\", an integer, or \"p/q\" in lowest terms with q > 1. Lowest terms, and the [0, 1] range of scores, contributions and similarities, are checked by consumers, not by this pattern.",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,63}(/([2-9]|[1-9][0-9]{1,63}))?)$"
+    },
+    "scoredElement": {
+      "title": "Scored element",
+      "description": "The scorer's input for one element (Element in agent/ayna_agent/heal/scorer.py). A key is left out when the element has no value.",
+      "type": "object",
+      "properties": {
+        "automationId": { "type": "string" },
+        "name": { "type": "string" },
+        "controlType": { "type": "string" },
+        "className": { "type": "string" },
+        "bounds": {
+          "description": "[left, top, right, bottom] in screen pixels.",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "parentPath": { "type": "string" },
+        "siblingIndex": { "type": "integer", "minimum": 0 },
+        "nearestLabel": { "type": "string" },
+        "windowTitle": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "opaqueId": {
+      "description": "An id the agent makes (snapshot and snapshot element ids, #12); compare it only for equality.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "logicalName": {
+      "description": "screen.element in lowerCamelCase ASCII, as in step.schema.json#/$defs/logicalName.",
+      "type": "string",
+      "pattern": "^[a-z][A-Za-z0-9]*\\.[a-z][A-Za-z0-9]*$",
+      "maxLength": 100
+    },
+    "uuid": {
+      "description": "Lower-case UUID, as the server generates node ids; as in step.schema.json#/$defs/uuid.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
+}

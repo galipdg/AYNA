@@ -1,6 +1,8 @@
-# Agent JSON-RPC (v0.1)
+# Agent JSON-RPC (v0.1 built; v0.2 proposed)
 
 How the Electron client talks to the automation agent on the same machine. Part of the agent JSON-RPC contract (see `memory-bank/project/architecture.md`), frozen at G1 (week 7). Code: `agent/ayna_agent/rpc.py` (#16).
+
+Everything up to [Trying it by hand](#trying-it-by-hand) is v0.1, as built. The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-v02-draft), is a draft for v0.2 that is not implemented and may still change until its ADR is accepted.
 
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over one WebSocket on `127.0.0.1`.
 - Only the client's main process connects. The renderer goes through the preload API, as for everything else.
@@ -47,6 +49,7 @@ A handshake that is missing it, has a wrong token, uses another scheme or repeat
 - `id` is a string, an integer or `null`. A request without `id` is a notification: it runs, and no reply is sent.
 - Each request starts as soon as it arrives, and replies come **in any order**: match them by `id`. UI Automation calls (`listWindows`, `snapshot`) still run one at a time, in the order they arrived, on a single agent thread. So `ping` answers at once even while a long snapshot runs.
 - Liveness: the library answers WebSocket ping frames at any time, and the `ping` method works too.
+- In v0.1 only the client sends requests. v0.2 (proposed, #149) adds notifications that the agent sends during a run; see the last section.
 
 ## Methods
 
@@ -157,3 +160,142 @@ asyncio.run(main())
 ```
 
 On Windows `cmd.exe`, set the variable first with `set AYNA_AGENT_TOKEN=...`.
+
+## Proposed (#149): step results and healing proposals (v0.2 draft)
+
+> **Proposed, not implemented.** Decision: `memory-bank/decisions/2026-10-28-healing-proposal-transport.md`, status Proposed until Galip, Ömerfaruk and Hasan approve it. Playback (#40, #73) implements it. Until then `ping` answers `rpcVersion` `"0.1"`; with these messages it answers `"0.2"` (an addition).
+
+When no element matches a step's target after the wait, the step ends as "repair proposed" with the top 3 candidate elements and the reasons for their scores (#73). This section says how that result reaches the client, which forwards it to the server unchanged. The CLI runner (#61) builds the same document without JSON-RPC and writes it to the same server endpoint.
+
+### Notifications from the agent
+
+- During a run the agent sends JSON-RPC **notifications**: objects with `jsonrpc`, `method` and `params` and no `id`. The client tells them apart from replies by the missing `id`.
+- The client never answers a notification, not even with an error, and ignores a notification method it does not know, so that later minor versions can add some.
+- All notifications of a run go to the connection that sent the run request, in the order the agent sends them.
+
+### The run request (defined by #40)
+
+Playback's request belongs to #40. For healing it must carry these params, which the agent copies into its results:
+
+| Param | Type | Meaning |
+|---|---|---|
+| `runId` | UUID string | The Run the client created on the server before starting (#44, #51). |
+| `appVersionId` | UUID string | The AppVersion under test. |
+| `targets` (name for #40 to settle) | object | Per logical name, the element the object resolved to before: `serverElementId` (graph `Element.id`) and `properties`, with the keys of `agent/ayna_agent/heal/scorer.py`. Candidates are compared against it. |
+
+Illustrative, with the request name used in the step schema ADR (`steps` shortened):
+
+```json
+→ {"jsonrpc": "2.0", "id": 7, "method": "runSteps", "params": {
+    "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90",
+    "appVersionId": "9a1d7c3e-2f4b-4c8a-b6e5-7d0f1a2b3c4d",
+    "steps": {"version": "0.1", "steps": ["… four steps; the third is Click login.loginButton …"]},
+    "targets": {
+      "login.loginButton": {
+        "serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f",
+        "properties": {"automationId": "QApplication.loginWindow.loginButton", "name": "Giriş",
+                       "controlType": "Button", "className": "QPushButton", "bounds": [600, 412, 720, 444],
+                       "parentPath": "loginWindow/credentialsBox", "siblingIndex": 4, "windowTitle": "AYNA Trial"}
+      }
+    }
+  }}
+```
+
+### `run.stepResult`
+
+One notification per step of the run, in step order, when the step has finished or will not run.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `runId` | UUID string | From the run request. |
+| `stepIndex` | integer ≥ 0 | The step's position in the run, from 0. With `runId`, the key of the result. |
+| `stepId` | UUID string or null | The step's server id; `null` for a step that was never saved. |
+| `status` | string | `passed`, `failed`, `repairProposed` or `notRun`. |
+| `snapshot` | object | Only with `repairProposed`: the snapshot document (`schemas/snapshot.schema.json`, #12) of the window the candidates came from, captured when the wait ended. |
+| `healingProposal` | object | Only with `repairProposed`: a document per `schemas/healing-proposal.schema.json` (below). |
+
+#40 (duration, message), #54 (screenshot) and #63 (failure category) add their own fields to this message.
+
+- `status` is `repairProposed` exactly when no element matched the target after the wait (TBD-5) and at least one candidate is left after playback's minimum score (#73). Then `snapshot` and `healingProposal` are both present, `healingProposal.snapshotId` is the snapshot's id, and the proposal's `runId`, `stepIndex` and `stepId` equal the result's.
+- No element matched and no candidate is left: `failed`, without a proposal.
+- After a `repairProposed` result the agent performs no further step of that test and never acts on a candidate. Each remaining step gets a `notRun` result, in order (TBD-6). Then the run ends as #40 defines.
+
+A step that passed:
+
+```json
+← {"jsonrpc": "2.0", "method": "run.stepResult", "params": {
+    "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90", "stepIndex": 1,
+    "stepId": "4a8e2f10-6c3b-4d9e-a157-3e0b9c6d2f81", "status": "passed"}}
+```
+
+The login button was renamed (`loginButton` → `signInButton`, "Giriş" → "Oturum Aç"), so nothing matches it any more. Shortened: the snapshot, the target's and candidates' properties and candidates 2 and 3 are cut; the whole proposal is `schemas/examples/healing-proposal/login-button-renamed.json`.
+
+```json
+← {"jsonrpc": "2.0", "method": "run.stepResult", "params": {
+    "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90", "stepIndex": 2,
+    "stepId": "b7e4d1c2-5a3f-4e8b-9d61-2c0a7f3e5b14", "status": "repairProposed",
+    "snapshot": {"…": "the snapshot document 5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b (#12)"},
+    "healingProposal": {
+      "version": "0.1",
+      "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90", "stepIndex": 2,
+      "stepId": "b7e4d1c2-5a3f-4e8b-9d61-2c0a7f3e5b14",
+      "logicalName": "login.loginButton",
+      "appVersionId": "9a1d7c3e-2f4b-4c8a-b6e5-7d0f1a2b3c4d",
+      "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
+      "target": {"serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f",
+                 "properties": {"automationId": "QApplication.loginWindow.loginButton", "name": "Giriş", "…": "…"}},
+      "scorer": {"id": "similo-v0",
+                 "weights": {"automationId": "3/2", "name": "3/2", "controlType": "3/2", "nearestLabel": "3/2",
+                             "className": "1/2", "parentPath": "1/2", "siblingIndex": "1/2", "location": "1/2",
+                             "area": "1/2", "shape": "1/2", "windowTitle": "1/2"}},
+      "candidatesScored": 4,
+      "candidates": [
+        {"rank": 1, "elementId": "e23",
+         "element": {"automationId": "QApplication.loginWindow.signInButton", "name": "Oturum Aç", "…": "…"},
+         "score": "151/192",
+         "contributions": {"automationId": "9/64", "name": "1/48", "controlType": "3/16", "className": "1/16",
+                           "parentPath": "1/16", "siblingIndex": "1/16", "location": "1/16", "area": "1/16",
+                           "shape": "1/16", "windowTitle": "1/16"},
+         "similarities": {"automationId": "3/4", "name": "1/9", "controlType": "1", "className": "1",
+                          "parentPath": "1", "siblingIndex": "1", "location": "1", "area": "1", "shape": "1",
+                          "windowTitle": "1"}},
+        {"rank": 2, "elementId": "e25", "score": "3969/6400", "…": "…"},
+        {"rank": 3, "elementId": "e24", "score": "19/32", "…": "…"}
+      ]}}}
+```
+
+How to read it: the target has no `nearestLabel`, so that property is not compared, and the weights of the ten compared properties add up to 8. `name` contributes 3/2 × 1/9 / 8 = 1/48, and the contributions add up exactly to the score: 9/64 + 1/48 + 3/16 + 7 × 1/16 = 151/192 ≈ 0.786.
+
+The remaining step:
+
+```json
+← {"jsonrpc": "2.0", "method": "run.stepResult", "params": {
+    "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90", "stepIndex": 3,
+    "stepId": "e1f3a5c7-9b2d-4f6e-8a0c-2d4f6b8e0a13", "status": "notRun"}}
+```
+
+### The healing proposal
+
+Schema: `schemas/healing-proposal.schema.json` (version `0.1`, proposed). Examples, including a CLI run without a server: `schemas/examples/healing-proposal/`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `version` | string | `"0.1"`. |
+| `runId`, `stepIndex`, `stepId` | | As in the step result. |
+| `logicalName` | string | The repository object that was not found. |
+| `appVersionId` | UUID string or null | The AppVersion under test; approving a candidate makes the object resolve to it for this version. `null` only without a server. |
+| `snapshotId` | string | Id of the snapshot sent with the result. |
+| `target` | object | `serverElementId` (UUID or null) and `properties`: what the candidates were compared against, exactly as scored. |
+| `scorer` | object | `id` (`"similo-v0"`) and `weights` per property. |
+| `candidatesScored` | integer | How many candidates were ranked. |
+| `candidates` | array of 1–3 | By score descending, then `elementId` ascending. Each has `rank` (1 = best), `elementId` (the element's id inside the snapshot, not a server id), `element` (its properties as scored), `score`, `contributions` and `similarities` (per compared property). |
+
+**Numbers are exact fractions written as strings**, as Python's `str(Fraction)` writes them: `"0"`, `"1"` or `"p/q"` in lowest terms; never floats. Scores, contributions and similarities lie in [0, 1]; weights may be larger. For each candidate, `contributions[p] = weights[p] × similarities[p] / Σ weights` over the compared properties, and the contributions add up exactly to `score`; the compared properties are the same for every candidate. Convert to a double only to draw.
+
+### What the client does with a result
+
+1. Show it live.
+2. Append its `params`, unchanged, to a durable outbox.
+3. One forwarder writes the outbox in order to the server, with `params` as the body of `PUT /api/runs/{runId}/results/{stepIndex}` (proposed in the ADR; the REST contract is #51's and #74's). The ADR lists the retry rules for an unreachable server, a client closed mid-run and a rejected document.
+
+The client does not need to read the proposal to forward it. There are no new error codes: notifications get no reply.
