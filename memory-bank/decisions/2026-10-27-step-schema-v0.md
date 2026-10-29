@@ -1,7 +1,7 @@
 # Step schema v0
 
 - Date: 2026-10-27
-- Status: Proposed — accepted when Galip, Ömerfaruk and Hasan approve the #13 PR
+- Status: Accepted (Ömerfaruk approved the #13 PR #134, 2026-10-29; Hasan approved in a comment on #134, 2026-10-29)
 - Deciders: Galip (proposal), Ömerfaruk, Hasan
 - Issue: #13
 
