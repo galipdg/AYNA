@@ -55,3 +55,11 @@ Append-only. One entry per session, newest at the bottom:
 - Health check: local repo clean, 12 PRs green and mergeable. Omer's #126 conflicts with main in `people/omer/active.md` only.
 - Subagents opened PR #150 (#147: `SelectRow`, row by index or key-cell value, `cell`/`rowExists`/`rowCount` checks, v0.2 keeps every 0.1 step valid, #37 derivation needs no change) and PR #151 (#149: one `run.stepResult` payload for client and CLI, first-write-wins per (runId, stepIndex), exact fractions as strings). Both ADRs are Proposed.
 - Next: reviews; the follow-ups listed in active.md once the ADRs are approved.
+
+## 2026-10-29 · review round (no issue started)
+- Pulled main (nothing new locally; #134–#146, #151 merged today). Inbox: hasan asked to flip the step schema v0 ADR; done on #150 (`a759985`, pushed).
+- Approved #160 (OpenAPI + problem details), #159 (UIA dumps, pilots KeePass 2 + HandBrake), #155 (SDD §1–4), #157 (SDD §6). Approved as decider: the problem-details ADR and the graph schema v0.1 ADR (#156).
+- Cross-PR finding raised on #155/#160: the server cannot pass AI 4xx bodies through unchanged under the problem-details ADR (`status` is a string there); proposed mapping with `code` + extension members.
+- galip decided retrieval: the server picks the candidate objects, AI service gets no Bolt edge (#58 to update).
+- Collected the review follow-ups left on merged PRs into `active.md`. PR-body edits (DoD ticks) are blocked by auto mode.
+- Next: RS follow-ups from the #143 reviews (FR-30 first), then the `ai/API.md` / scorer items.
