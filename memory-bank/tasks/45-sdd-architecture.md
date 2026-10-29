@@ -16,10 +16,10 @@
 - [x] Skeleton + sections 1–4 drafted
 - [x] PR #155 opened 2026-10-29 (`Closes #45`), review requested from galip; body also carries the conflict note for his six PRs
 - [ ] Review by one other member (galip)
-- Next step: check the 6 Mermaid diagrams in the PR's rendered file view; then address galip's review.
+- Next step: address galip's review on PR #155.
 
 ## Manual checks
-- pending · Mermaid diagrams (6) render on GitHub — no local renderer here, not checked
+- 2026-10-29 · omer · the 6 Mermaid diagrams render in PR #155's rich diff · pass · evidence: omer's report in session
 
 ## Open issues
 - Found while writing (listed in SDD §9): no Application → RepoObject / TestCase links in graph v0 (#25, #39); FR-07 says names unique per application, the #134 review said per application version (#25); no common REST error body, Spring's default leaves out the message, needed for NFR-15 (#31, RFC 9457 proposed); nginx in `architecture.md` has no designed role.
