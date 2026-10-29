@@ -3,12 +3,14 @@ package com.ayna.server.apps;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ayna.server.apps.AppDtos.AppResponse;
@@ -29,6 +31,7 @@ public class AppController {
 	}
 
 	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<AppResponse> createApp(@RequestBody CreateAppRequest request) {
 		AppResponse app = service.createApp(required(request.name(), "name"),
 				required(request.technology(), "technology"));
@@ -41,6 +44,7 @@ public class AppController {
 	}
 
 	@PostMapping("/{appId}/versions")
+	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<VersionResponse> createVersion(@PathVariable String appId,
 			@RequestBody CreateVersionRequest request) {
 		VersionResponse version = service.createVersion(appId, required(request.version(), "version"));

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ayna.server.tests.TestDtos.CreateTestRequest;
@@ -36,6 +38,7 @@ public class TestController {
 	}
 
 	@PostMapping("/api/apps/{appId}/tests")
+	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<TestResponse> createTest(@PathVariable String appId, @RequestBody CreateTestRequest request) {
 		TestResponse test = service.createTest(appId, required(request.name(), "name"));
 		return ResponseEntity.created(URI.create("/api/tests/" + test.id())).body(test);
@@ -57,6 +60,7 @@ public class TestController {
 	}
 
 	@DeleteMapping("/api/tests/{testId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public ResponseEntity<Void> deleteTest(@PathVariable String testId) {
 		service.deleteTest(testId);
 		return ResponseEntity.noContent().build();
@@ -78,6 +82,7 @@ public class TestController {
 	}
 
 	@PostMapping("/api/apps/{appId}/tests/import")
+	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<TestResponse> importTest(@PathVariable String appId, @RequestBody JsonNode file) {
 		TestResponse test = service.importTest(appId, file);
 		return ResponseEntity.created(URI.create("/api/tests/" + test.id())).body(test);

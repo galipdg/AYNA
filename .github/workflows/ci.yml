@@ -28,6 +28,14 @@ jobs:
           cache: maven
       # Testcontainers integration tests use the runner's Docker.
       - run: ./mvnw -B verify
+      # OpenApiContractIntegrationTest regenerated docs/api/openapi.yaml during verify (#31).
+      - name: REST contract is up to date
+        run: |
+          if [ -n "$(git status --porcelain -- ../docs/api/openapi.yaml)" ]; then
+            git diff -- ../docs/api/openapi.yaml
+            echo "::error file=docs/api/openapi.yaml::Out of date. Run ./mvnw test in server/ and commit docs/api/openapi.yaml."
+            exit 1
+          fi
 
   client:
     name: client (lint + build)

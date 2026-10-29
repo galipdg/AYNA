@@ -1,0 +1,334 @@
+openapi: 3.1.0
+info:
+  description: REST API between the AYNA client and server. Generated from the code;
+    do not edit by hand.
+  title: AYNA server API
+  version: v0
+servers:
+- url: /
+paths:
+  /api/apps:
+    get:
+      operationId: listApps
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppResponse"
+          description: OK
+      tags:
+      - app-controller
+    post:
+      operationId: createApp
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppResponse"
+          description: Created
+      tags:
+      - app-controller
+  /api/apps/{appId}/tests:
+    get:
+      operationId: listTests
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TestSummary"
+          description: OK
+      tags:
+      - test-controller
+    post:
+      operationId: createTest
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTestRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResponse"
+          description: Created
+      tags:
+      - test-controller
+  /api/apps/{appId}/tests/import:
+    post:
+      operationId: importTest
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: JSON document; steps are validated against schemas/step.schema.json
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResponse"
+          description: Created
+      tags:
+      - test-controller
+  /api/apps/{appId}/versions:
+    get:
+      operationId: listVersions
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VersionResponse"
+          description: OK
+      tags:
+      - app-controller
+    post:
+      operationId: createVersion
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVersionRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionResponse"
+          description: Created
+      tags:
+      - app-controller
+  /api/health:
+    get:
+      operationId: health
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+          description: OK
+      tags:
+      - health-controller
+  /api/tests/{testId}:
+    delete:
+      operationId: deleteTest
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+      tags:
+      - test-controller
+    get:
+      operationId: getTest
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResponse"
+          description: OK
+      tags:
+      - test-controller
+    patch:
+      operationId: renameTest
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenameTestRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResponse"
+          description: OK
+      tags:
+      - test-controller
+  /api/tests/{testId}/export:
+    get:
+      operationId: exportTest
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestExport"
+          description: OK
+      tags:
+      - test-controller
+  /api/tests/{testId}/steps:
+    put:
+      operationId: replaceSteps
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: JSON document; steps are validated against schemas/step.schema.json
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResponse"
+          description: OK
+      tags:
+      - test-controller
+components:
+  schemas:
+    AppResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        technology:
+          type: string
+    CreateAppRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        technology:
+          type: string
+    CreateTestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    CreateVersionRequest:
+      type: object
+      properties:
+        version:
+          type: string
+    RenameTestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    TestExport:
+      type: object
+      properties:
+        document:
+          type: object
+          description: JSON document; steps are validated against schemas/step.schema.json
+        format:
+          type: string
+        name:
+          type: string
+    TestResponse:
+      type: object
+      properties:
+        appId:
+          type: string
+        document:
+          type: object
+          description: JSON document; steps are validated against schemas/step.schema.json
+        id:
+          type: string
+        name:
+          type: string
+    TestSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        stepCount:
+          type: integer
+          format: int32
+    VersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        version:
+          type: string

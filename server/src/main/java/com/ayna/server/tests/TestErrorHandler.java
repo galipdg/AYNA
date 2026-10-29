@@ -12,7 +12,7 @@ import com.ayna.server.tests.TestExceptions.NotFoundException;
 /**
  * Error bodies of the tests API as RFC 9457 problem details, so the message reaches the
  * client (NFR-15). A 400 also lists `errors: [{path, message}]`. Whether every API adopts
- * this shape is settled in #31.
+ * this shape is settled in #158.
  */
 @RestControllerAdvice(basePackageClasses = TestController.class)
 class TestErrorHandler {
