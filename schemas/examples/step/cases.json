@@ -1,0 +1,227 @@
+{
+  "$comment": "Named test cases for step.schema.json. A case gives either a whole `document` or a single `step`, which the tests wrap in {\"version\": \"0.1\", \"steps\": [step]}. Invalid cases name the JSON Schema keyword (`rule`) that must reject them; `false` means a property the keyword does not allow.",
+  "valid": [
+    {
+      "name": "empty test",
+      "document": { "version": "0.1", "steps": [] }
+    },
+    {
+      "name": "NL suggestion without ids",
+      "document": {
+        "version": "0.1",
+        "steps": [
+          { "keyword": "Type", "target": "main.searchInput", "value": "Yılmaz" },
+          { "keyword": "Click", "target": "main.searchButton" }
+        ]
+      }
+    },
+    {
+      "name": "Type with an empty value clears the field",
+      "step": { "keyword": "Type", "target": "main.searchInput", "value": "" }
+    },
+    {
+      "name": "Verify that a text box is empty",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.searchInput",
+        "checkpoint": { "property": "value", "operator": "equals", "expected": "" }
+      }
+    },
+    {
+      "name": "Verify name with notEquals",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.statusLabel",
+        "checkpoint": { "property": "name", "operator": "notEquals", "expected": "Invalid username or password" }
+      }
+    },
+    {
+      "name": "Verify a selected radio button",
+      "step": {
+        "keyword": "Verify",
+        "target": "customer.corporateRadioButton",
+        "checkpoint": { "property": "selected", "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "timeoutMs 0 does not wait",
+      "step": { "keyword": "Click", "target": "login.loginButton", "timeoutMs": 0 }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "missing version",
+      "rule": "required",
+      "document": { "steps": [] }
+    },
+    {
+      "name": "unknown version",
+      "rule": "const",
+      "document": { "version": "1.0", "steps": [] }
+    },
+    {
+      "name": "steps is not a list",
+      "rule": "type",
+      "document": { "version": "0.1", "steps": { "keyword": "Click", "target": "login.loginButton" } }
+    },
+    {
+      "name": "unknown field at the root",
+      "rule": "additionalProperties",
+      "document": { "version": "0.1", "steps": [], "name": "Login test" }
+    },
+    {
+      "name": "unknown keyword",
+      "rule": "enum",
+      "step": { "keyword": "DoubleClick", "target": "login.loginButton" }
+    },
+    {
+      "name": "keyword in lower case",
+      "rule": "enum",
+      "step": { "keyword": "click", "target": "login.loginButton" }
+    },
+    {
+      "name": "missing target",
+      "rule": "required",
+      "step": { "keyword": "Click" }
+    },
+    {
+      "name": "coordinates instead of a target",
+      "rule": "additionalProperties",
+      "step": { "keyword": "Click", "target": "login.loginButton", "x": 120, "y": 48 }
+    },
+    {
+      "name": "target is free text",
+      "rule": "pattern",
+      "step": { "keyword": "Click", "target": "Login button" }
+    },
+    {
+      "name": "target has three segments",
+      "rule": "pattern",
+      "step": { "keyword": "Click", "target": "login.form.loginButton" }
+    },
+    {
+      "name": "target has Turkish characters",
+      "rule": "pattern",
+      "step": { "keyword": "Click", "target": "giriş.girişButonu" }
+    },
+    {
+      "name": "Type without value",
+      "rule": "required",
+      "step": { "keyword": "Type", "target": "login.usernameInput" }
+    },
+    {
+      "name": "Select with an empty value",
+      "rule": "minLength",
+      "step": { "keyword": "Select", "target": "customer.cityComboBox", "value": "" }
+    },
+    {
+      "name": "Click with a value",
+      "rule": "false",
+      "step": { "keyword": "Click", "target": "login.loginButton", "value": "admin" }
+    },
+    {
+      "name": "Click with a checkpoint",
+      "rule": "false",
+      "step": {
+        "keyword": "Click",
+        "target": "login.loginButton",
+        "checkpoint": { "property": "enabled", "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "Wait used as a fixed sleep",
+      "rule": "false",
+      "step": { "keyword": "Wait", "target": "customer.table", "value": "5" }
+    },
+    {
+      "name": "Verify without checkpoint",
+      "rule": "required",
+      "step": { "keyword": "Verify", "target": "login.statusLabel" }
+    },
+    {
+      "name": "Verify with a value instead of a checkpoint",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.statusLabel",
+        "value": "Welcome, admin!",
+        "checkpoint": { "property": "name", "operator": "equals", "expected": "Welcome, admin!" }
+      }
+    },
+    {
+      "name": "checkpoint with an unknown property",
+      "rule": "enum",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.statusLabel",
+        "checkpoint": { "property": "color", "operator": "equals", "expected": "red" }
+      }
+    },
+    {
+      "name": "checkpoint without operator",
+      "rule": "required",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.statusLabel",
+        "checkpoint": { "property": "name", "expected": "Welcome, admin!" }
+      }
+    },
+    {
+      "name": "boolean property with a string expected value",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.loginButton",
+        "checkpoint": { "property": "enabled", "operator": "equals", "expected": "true" }
+      }
+    },
+    {
+      "name": "boolean property with contains",
+      "rule": "const",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.rememberMeCheckBox",
+        "checkpoint": { "property": "checked", "operator": "contains", "expected": true }
+      }
+    },
+    {
+      "name": "text property with a boolean expected value",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "login.statusLabel",
+        "checkpoint": { "property": "name", "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "negative timeout",
+      "rule": "minimum",
+      "step": { "keyword": "Click", "target": "login.loginButton", "timeoutMs": -1 }
+    },
+    {
+      "name": "timeout longer than 10 minutes",
+      "rule": "maximum",
+      "step": { "keyword": "Click", "target": "login.loginButton", "timeoutMs": 600001 }
+    },
+    {
+      "name": "timeout as a string",
+      "rule": "type",
+      "step": { "keyword": "Click", "target": "login.loginButton", "timeoutMs": "5000" }
+    },
+    {
+      "name": "timeout as a fraction",
+      "rule": "type",
+      "step": { "keyword": "Click", "target": "login.loginButton", "timeoutMs": 1.5 }
+    },
+    {
+      "name": "id is not a UUID",
+      "rule": "pattern",
+      "step": { "id": "step-1", "keyword": "Click", "target": "login.loginButton" }
+    },
+    {
+      "name": "id in upper case",
+      "rule": "pattern",
+      "step": { "id": "DEB27841-13EA-4846-B144-07081AD912CE", "keyword": "Click", "target": "login.loginButton" }
+    }
+  ]
+}
