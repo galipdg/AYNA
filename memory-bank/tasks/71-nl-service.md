@@ -63,7 +63,7 @@ Load average 3.9–5.2 (other agents on the machine). `spikes/service_check.py -
 - [x] Acceptance "never returns a step that targets an object missing from the repository (tests)" — for the pass-through retriever; holds for #58's retriever by construction (guard uses whatever the retriever returns), re-check when #58 lands. Since the revision such steps are listed in `dropped`, never in `steps` (property test).
 - [ ] Acceptance "p95 latency on team hardware recorded" — recorded on galip's M2 under load (25.3 s); rerun on an idle machine / GPU machine (#131) for the report
 - [x] ~~Retrieval (#58) replaces `PassThroughRetriever`~~ — no longer planned: on 2026-10-29 galip decided the server chooses the candidate objects (SDD AI-4, §2.2.2 rule 5), so the pass-through retriever stays and #71 does not wait on #58
-- [x] Review follow-ups from PR #146 (2026-10-29, branch `galip/71-ai-api-followups`): `app`/`version`/`screen` documented as the server sends them (omer); `AYNA_AI_TOKEN` bearer token, required with `--allow-remote` (hasan); `ai/API.md`, README, SDD-ai AI-1/AI-2/AI-4/AI-9 #5 updated; 355 ai tests pass
+- [x] Review follow-ups from PR #146 (2026-10-29, branch `galip/71-ai-api-followups`): `app`/`version`/`screen` documented as the server sends them (omer); `AYNA_AI_TOKEN` bearer token, required with `--allow-remote` (hasan); `ai/API.md`, README, SDD-ai AI-1/AI-2/AI-4/AI-9 #5 updated; `ai/AGENTS.md` layout line for `retrieve.py` (approved by galip 2026-10-30); 355 ai tests pass
 - Next step: galip runs the offline manual check below and records it here; then rerun `spikes/service_check.py` on an idle machine for the p95.
 
 ## Manual checks
@@ -80,7 +80,6 @@ Load average 3.9–5.2 (other agents on the machine). `spikes/service_check.py -
 
 ## Open issues
 - From hasan's #142/#146 reviews, not yet done: `is_loopback_host` accepts the literal `localhost` without resolving it; hitting `max_steps` (12) gives a silently shortened document with `status: ok`; reasons could become opt-in per request if Windows latency (#162) needs it.
-- `ai/AGENTS.md` layout still says `retrieve.py` does "graph + vector retrieval"; needs galip's OK to change an AGENTS.md (§7).
 - Reason cost: ~+75% output tokens. If #78 feels slow, levers in order: shorter reason (prompt "at most 6 words", cap 60), gemma4 (faster per #37), GPU (#131). Measure on the #36 pairs before choosing.
 - **30 s timeout is tight on a loaded laptop**: #9 hit it live (load ~5). Keep 30 s (FR-27 panel should not hang; SDD AI-2) but measure on team hardware; if the idle p95 is > ~15 s there, raise the default or shorten reasons first.
 - **SC-27 live depends on the model**: qwen3:8b used `none.noMatch` for "Şifremi unuttum bağlantısına çift tıkla" in some runs and `login.passwordInput` in others (identical prompt). #77 should count how often no-match is used and how often it is used wrongly (on sentences whose objects exist); #72 can compare models on it.
