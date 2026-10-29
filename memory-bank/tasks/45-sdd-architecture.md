@@ -14,8 +14,9 @@
 
 ## Status
 - [x] Skeleton + sections 1–4 drafted
-- [ ] PR with review by one other member (galip suggested: he wrote the AI sections and owns the contracts on #135/#146/#151)
-- Next step: ask omer to push and open the PR (`Closes #45`), review requested from galip; then render the Mermaid diagrams on GitHub and fix any that fail.
+- [x] PR #155 opened 2026-10-29 (`Closes #45`), review requested from galip; body also carries the conflict note for his six PRs
+- [ ] Review by one other member (galip)
+- Next step: check the 6 Mermaid diagrams in the PR's rendered file view; then address galip's review.
 
 ## Manual checks
 - pending · Mermaid diagrams (6) render on GitHub — no local renderer here, not checked
