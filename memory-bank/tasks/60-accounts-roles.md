@@ -10,13 +10,15 @@ ADR `2026-10-31-accounts-and-tokens` (Proposed): opaque Bearer tokens hashed in 
 ## Decisions (small, local to this task)
 - 2026-10-31 — Scope: storing the user id on runs and approvals moved to #44 and #74 (omer's choice; neither API exists yet). #60 does edits (tests) and the rule in the ADR.
 - 2026-10-31 — Session over cookie or JWT, `spring-boot-starter-security`, first admin from env vars: omer's choices.
+- 2026-10-31 — Usernames ASCII `[a-z0-9._-]{1,64}`, stored lower-case: avoids Turkish İ/ı case-folding surprises in a unique key. Passwords 8 chars to 72 UTF-8 bytes (BCrypt's limit; Spring refuses longer).
+- 2026-10-31 — `UserDetailsServiceAutoConfiguration` excluded: otherwise Boot creates an unused in-memory user and logs its password.
+- 2026-10-31 — Tests: `SignedIn` (test config) sends every MockMvc request as a tester principal that is not in the database; `AuthIntegrationTest` uses real logins. `@PublicEndpoint` drives the contract's `security: []`; a test checks it matches `SecurityConfig`.
 
 ## Status
 - [x] Branch, task note, board → In progress, ADR draft
-- [ ] Server: deps, V0003, `auth/` (login/logout/me, bearer filter, bootstrap admin), 401/403 problems
-- [ ] Server: `/api/users`, tokens; `createdBy`/`updatedBy` on tests; OpenAPI regenerated
-- [ ] Client: login screen, user management
-- Next step: server deps + V0003 + login.
+- [x] Server: `spring-boot-starter-security` (+ `-security-test`), V0003, `auth/` (login/logout/me, Bearer filter, first admin, 401/403 problems), `/api/users`, API tokens, `createdBy`/`updatedBy` on tests, OpenAPI regenerated, `graph-model.md` v0.2, `.env.example` + Compose. 54 server tests green; Compose smoke test (first admin, 401 without token, login 200) 2026-10-31
+- [ ] Client: login screen after server settings, admin user management
+- Next step: client: keep the token in the main process, login screen, 401 → back to login; then user management.
 
 ## Manual checks
 - Client login screen at the weekly Windows session (pending).
