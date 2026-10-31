@@ -81,20 +81,22 @@ class OpenApiConfig {
 	/** RFC 9457 problem details, as `ApiErrorHandler` writes them. */
 	private static Schema<?> problemSchema() {
 		return new ObjectSchema().description("RFC 9457 problem details; the body of every 4xx response")
-			.addProperty("type", new StringSchema().format("uri").description("Problem type; absent means about:blank (the only type so far)"))
+			.addProperty("type", new StringSchema().format("uri")
+				.description("Problem kind, urn:ayna:error:<kind>; absent means about:blank. Treat an unknown type like about:blank"))
 			.addProperty("title", new StringSchema().description("Short summary of the HTTP status"))
 			.addProperty("status", new IntegerSchema())
 			.addProperty("detail", new StringSchema()
 				.description("Message for the user; names the field, object or id it concerns (NFR-15)"))
 			.addProperty("instance", new StringSchema().format("uri"))
 			.addProperty("errors", new ArraySchema().items(new Schema<>().$ref("FieldError"))
-				.description("Every failing field; only on a 400 caused by validation"))
+				.description("Failing fields, at most the first 50; only on a 400 caused by validation"))
+			.addProperty("errorCount", new IntegerSchema().description("Number of failing fields, also those not listed in errors"))
 			.required(List.of("title", "status"));
 	}
 
 	private static Schema<?> fieldErrorSchema() {
 		return new ObjectSchema()
-			.addProperty("path", new StringSchema().description("JSON path into the request body, e.g. $.steps[2].value"))
+			.addProperty("path", new StringSchema().description("JSONPath (RFC 9535) into the request body, member names and array indices only, e.g. $.steps[2].value"))
 			.addProperty("message", new StringSchema())
 			.required(List.of("path", "message"));
 	}

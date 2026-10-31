@@ -356,7 +356,8 @@ components:
           type: string
         path:
           type: string
-          description: "JSON path into the request body, e.g. $.steps[2].value"
+          description: "JSONPath (RFC 9535) into the request body, member names and\
+            \ array indices only, e.g. $.steps[2].value"
       required:
       - message
       - path
@@ -368,9 +369,14 @@ components:
           type: string
           description: "Message for the user; names the field, object or id it concerns\
             \ (NFR-15)"
+        errorCount:
+          type: integer
+          format: int32
+          description: "Number of failing fields, also those not listed in errors"
         errors:
           type: array
-          description: Every failing field; only on a 400 caused by validation
+          description: "Failing fields, at most the first 50; only on a 400 caused\
+            \ by validation"
           items:
             $ref: "#/components/schemas/FieldError"
         instance:
@@ -385,7 +391,8 @@ components:
         type:
           type: string
           format: uri
-          description: Problem type; absent means about:blank (the only type so far)
+          description: "Problem kind, urn:ayna:error:<kind>; absent means about:blank.\
+            \ Treat an unknown type like about:blank"
       required:
       - status
       - title

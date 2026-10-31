@@ -21,8 +21,9 @@ One global `@RestControllerAdvice` (`server/.../error/ApiErrorHandler`) extendin
 - [x] `openapi.yaml` lists 400/404/409 per operation with the `Problem` schema
 - [x] ADR (Proposed)
 - [x] PR #163 (base `omer/31-openapi-contract`), reviewers galip + hasan for the ADR
-- [ ] CI green on #163; ADR approved → switch it to Accepted in the same PR
-- Next step: when #160 merges, `git merge origin/main`, retarget #163 to `main` (`gh pr edit 163 --base main`; `Closes #158` only works against `main`), rerun `./mvnw test`
+- [x] #163 approved by hasan and merged into `omer/31-openapi-contract` (2026-10-29), so #158 lands with #160; galip approved the ADR there
+- [x] 2026-10-31 review points folded in before Accepted (on `omer/31-openapi-contract`): `errors[]` capped at 50 + `errorCount` (hasan: a bad snapshot must not give a bigger error body), `type` reserved as `urn:ayna:error:<kind>` for the API that needs it (hasan: #61 must branch on 4xx kinds), JSONPath named, idempotent repeat = 200 not 409 (#149), AI 422/503/504 mapped to problems with `code` (galip). 40/40 green
+- Next step: #160's body needs `Closes #158` (the issue stays open otherwise)
 
 ## Manual checks
 None needed: everything is covered by integration tests (no UI, no Windows).

@@ -23,7 +23,8 @@ springdoc-openapi 3.2.0 (built on Boot 4.1.2, same as ours) serves `/v3/api-docs
 - [x] Committed; `server/AGENTS.md` regeneration rule and galip's inbox note (RS.md status) added with the user's OK
 - [x] PR #160 opened 2026-10-29 (`Closes #31`), review requested from galip
 - [x] CI green on #160 (all four jobs; Linux-generated contract matched the macOS one) 2026-10-29
-- Next step: answer galip's review on #160; after merge, check #31 closed and Done on the board.
+- [x] galip approved #160 (2026-10-29); #163 (#158) merged into this branch; 2026-10-31 `origin/main` merged in (conflict on GitHub, clean locally), both ADRs (graph schema v0.1, problem details) Accepted as galip asked
+- Next step: after merge, check #31 and #158 closed and Done on the board.
 
 ## Manual checks
 - 2026-10-29 · omer (agent, curl) · Swagger UI on the dev server · pass · see Status. A look in a browser (operations listed, "Try it out" on `GET /api/health`) is optional.
