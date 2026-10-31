@@ -21,6 +21,7 @@ Build the parts that need no snapshot format first: window list over `listWindow
 - [x] Spy screen (`ObjectSpy.tsx`, shown in the "ready" view): window list, select → highlight + window details, agent error messages, refetch when the agent reconnects. Lint, typecheck, format, 63 tests green 2026-10-31
 - [x] Global pick hotkey (`PickHotkey` in `spy.ts`, wired in `index.ts`; the Spy shows the key, or a message when another program holds it, and the picked point). Element lookup needs #22. 66 tests, lint, typecheck, format green 2026-10-31
 - [ ] Element tree + property panel (needs the snapshot schema from #12)
+- [x] Pushed `937a06f` over HTTPS 2026-10-31; reminded hasan on #12 (schema draft, or fields in a comment and omer drafts the file; answer asked by 2 Nov) and #22 (`elementFromPoint` contract in `docs/agent-rpc.md` first)
 - Next step: wait for the snapshot schema (#12, asked on the issue 2026-10-31) for the element tree + property panel; when #22 adds `elementFromPoint` to agent RPC, call it from the pick handler.
 
 ## Manual checks
