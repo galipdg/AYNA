@@ -88,6 +88,35 @@ export interface AgentManagerOptions {
   log?: (line: string) => void
 }
 
+/** `call()` failed because no agent is connected, or it stopped before answering. */
+export class AgentNotConnectedError extends Error {
+  constructor(message = 'the agent is not connected') {
+    super(message)
+    this.name = 'AgentNotConnectedError'
+  }
+}
+
+/** `call()` got no answer within its timeout. */
+export class AgentTimeoutError extends Error {
+  constructor(method: string, timeoutMs: number) {
+    super(`no answer to ${method} within ${timeoutMs} ms`)
+    this.name = 'AgentTimeoutError'
+  }
+}
+
+/** The agent answered with a JSON-RPC error; codes are listed in `docs/agent-rpc.md`. */
+export class AgentRpcError extends Error {
+  readonly code: number | undefined
+  readonly rpcMessage: string
+
+  constructor(code: number | undefined, message: string | undefined) {
+    super(`${message ?? 'error'} (${code})`)
+    this.name = 'AgentRpcError'
+    this.code = code
+    this.rpcMessage = message ?? ''
+  }
+}
+
 interface Pending {
   resolve(result: unknown): void
   reject(error: Error): void
@@ -187,13 +216,13 @@ export class AgentManager {
   call(method: string, params?: Record<string, unknown>, timeoutMs = 30_000): Promise<unknown> {
     const socket = this.socket
     if (!socket || socket.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error('the agent is not connected'))
+      return Promise.reject(new AgentNotConnectedError())
     }
     const id = this.nextId++
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id)
-        reject(new Error(`no answer to ${method} within ${timeoutMs} ms`))
+        reject(new AgentTimeoutError(method, timeoutMs))
       }, timeoutMs)
       this.pending.set(id, { resolve, reject, timer })
       socket.send(JSON.stringify({ jsonrpc: '2.0', id, method, ...(params && { params }) }))
@@ -321,7 +350,7 @@ export class AgentManager {
     this.pending.delete(message.id as number)
     clearTimeout(pending.timer)
     if (message.error) {
-      pending.reject(new Error(`${message.error.message ?? 'error'} (${message.error.code})`))
+      pending.reject(new AgentRpcError(message.error.code, message.error.message))
     } else {
       pending.resolve(message.result)
     }
@@ -355,7 +384,7 @@ export class AgentManager {
     this.launchTimers.clear()
     for (const [id, pending] of this.pending) {
       clearTimeout(pending.timer)
-      pending.reject(new Error('the agent stopped'))
+      pending.reject(new AgentNotConnectedError('the agent stopped'))
       this.pending.delete(id)
     }
   }

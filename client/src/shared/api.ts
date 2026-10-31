@@ -71,6 +71,32 @@ export interface AgentStatus {
   detail?: string
 }
 
+/** `[left, top, right, bottom]` in physical pixels, virtual-screen coordinates (`docs/agent-rpc.md`). */
+export type Bounds = [number, number, number, number]
+
+/** A visible top-level window, as the agent's `listWindows` reports it. */
+export interface WindowInfo {
+  /** Native window handle; valid only while the window exists. */
+  handle: number
+  title: string
+  className: string
+  processId: number
+  /** Null when the agent cannot read it (e.g. an elevated process). */
+  processName: string | null
+  bounds: Bounds
+}
+
+/** Why a call to the local agent failed. */
+export type AgentFailure =
+  | 'not-connected' // no agent running, or it stopped before answering
+  | 'uia-unavailable' // the agent has no UI Automation backend (not Windows, or before #12)
+  | 'timeout'
+  | 'bad-response' // the answer does not match `docs/agent-rpc.md`
+  | 'agent-error' // any other JSON-RPC error; `detail` has the agent's message
+
+export type WindowsResult =
+  { ok: true; windows: WindowInfo[] } | { ok: false; reason: AgentFailure; detail?: string }
+
 export interface AynaApi {
   getAppInfo(): Promise<AppInfo>
   getSettings(): Promise<Settings>
@@ -89,6 +115,13 @@ export interface AynaApi {
   onAgentStatus(listener: (status: AgentStatus) => void): () => void
   /** Starts the agent again after it has `failed`, with a fresh restart budget. */
   retryAgent(): Promise<void>
+  /** Lists the visible top-level windows through the agent, for the Spy. */
+  listWindows(): Promise<WindowsResult>
+  /**
+   * Draws a frame around `bounds` on screen for a few seconds, above every window and
+   * without taking focus or clicks; `null` removes it at once.
+   */
+  highlight(bounds: Bounds | null): Promise<void>
 }
 
 export const IPC = {
@@ -101,6 +134,8 @@ export const IPC = {
   chooseApplication: 'apps:choose',
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
+  listWindows: 'spy:list-windows',
+  highlight: 'spy:highlight',
   /** Main → renderer event, not a handler. */
   agentStatus: 'agent:status',
 } as const

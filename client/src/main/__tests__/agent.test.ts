@@ -4,6 +4,9 @@ import { afterEach, describe, it } from 'node:test'
 import type { AgentState, AgentStatus } from '../../shared/api.ts'
 import {
   AgentManager,
+  AgentNotConnectedError,
+  AgentRpcError,
+  AgentTimeoutError,
   parseListening,
   resolveAgentCommand,
   type AgentManagerOptions,
@@ -144,7 +147,22 @@ describe('AgentManager', () => {
     assert.equal((await connected).restarts, 0)
     assert.deepEqual(seen, ['starting', 'connected'])
     assert.deepEqual(await agent.call('ping'), { agentVersion: '0.0.0', rpcVersion: '0.1' })
-    await assert.rejects(agent.call('noSuchMethod'), /Method not found \(-32601\)/)
+    await assert.rejects(agent.call('noSuchMethod'), (error: unknown) => {
+      assert.ok(error instanceof AgentRpcError)
+      assert.equal(error.code, -32601)
+      assert.equal(error.rpcMessage, 'Method not found')
+      assert.equal(error.message, 'Method not found (-32601)')
+      return true
+    })
+  })
+
+  it('refuses calls before it is connected and times out slow ones', async () => {
+    const agent = manager('ok')
+    await assert.rejects(agent.call('ping'), AgentNotConnectedError)
+    const connected = waitFor(agent, 'connected')
+    agent.start()
+    await connected
+    await assert.rejects(agent.call('block', { ms: 500 }, 50), AgentTimeoutError)
   })
 
   it('restarts the agent after it is killed', async () => {

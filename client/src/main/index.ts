@@ -12,6 +12,8 @@ import {
 import { createApplication, listApplications } from './apps.ts'
 import { checkServer } from './server.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
+import { Highlighter } from './overlay.ts'
+import { isBounds, listWindows } from './spy.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -41,6 +43,8 @@ const agent = new AgentManager({
     appPath: app.getAppPath(),
   }),
 })
+const highlighter = new Highlighter()
+
 agent.onStatus((status) => {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(IPC.agentStatus, status)
@@ -97,6 +101,11 @@ function registerIpc() {
   })
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
+  handle(IPC.listWindows, () => listWindows(agent))
+  // Anything that is not a valid rectangle (null included) removes the frame.
+  handle(IPC.highlight, (_event, bounds) =>
+    isBounds(bounds) ? highlighter.show(bounds) : highlighter.hide(),
+  )
 }
 
 function createMainWindow() {
@@ -110,6 +119,7 @@ function createMainWindow() {
     webPreferences: secureWebPreferences(join(__dirname, '../preload/index.js')),
   })
   window.once('ready-to-show', () => window.show())
+  window.on('closed', () => highlighter.destroy())
   window.loadURL(entryUrl)
 }
 

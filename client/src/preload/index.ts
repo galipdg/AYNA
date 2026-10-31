@@ -17,6 +17,8 @@ const api: AynaApi = {
     return () => ipcRenderer.removeListener(IPC.agentStatus, forward)
   },
   retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
+  listWindows: () => ipcRenderer.invoke(IPC.listWindows),
+  highlight: (bounds) => ipcRenderer.invoke(IPC.highlight, bounds),
 }
 
 // Only these functions cross the bridge; ipcRenderer itself never reaches the renderer.
