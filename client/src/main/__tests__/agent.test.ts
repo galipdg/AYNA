@@ -220,15 +220,17 @@ describe('AgentManager', () => {
     assert.deepEqual(seen, ['starting', 'connected', 'restarting'])
   })
 
-  it('skips the heartbeat while a long call is running', async () => {
+  it('keeps the heartbeat going while a long call is running', async () => {
     const agent = manager('ok')
     const connected = waitFor(agent, 'connected')
     agent.start()
     await connected
     const seen: AgentState[] = []
     agent.onStatus((status) => seen.push(status.state))
-    // Blocks the fake agent for longer than pingTimeoutMs, as a long Wait step would.
-    await agent.call('block', { ms: 600 }, 2_000)
+    // Runs longer than pingTimeoutMs, as a long Wait step would; replies come in any order.
+    const long = agent.call('block', { ms: 600 }, 2_000)
+    await agent.call('ping', undefined, 100)
+    await long
     assert.deepEqual(seen, [])
     assert.equal(agent.getStatus().state, 'connected')
   })

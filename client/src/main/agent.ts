@@ -75,7 +75,7 @@ export interface AgentManagerOptions {
   maxRestarts?: number
   /** How long the agent may take to print its port (Python start and imports). */
   listenTimeoutMs?: number
-  /** Heartbeat period; the heartbeat is a JSON-RPC `ping` sent only while no other call is pending. */
+  /** Heartbeat period; the heartbeat is a JSON-RPC `ping`, answered at once even during a long call. */
   heartbeatMs?: number
   pingTimeoutMs?: number
   /** Delay before the first restart; doubled for each further one. */
@@ -299,13 +299,11 @@ export class AgentManager {
       if (this.status.state === 'connected') this.setStatus('connected', 0)
     }, this.options.stableMs)
     const beat = () => {
-      // Replies come in request order, so a long call (a Wait step) would delay the ping;
-      // while a call is pending its own timeout covers a hung agent.
-      if (this.pending.size === 0) {
-        this.call('ping', undefined, this.options.pingTimeoutMs).catch((error: Error) =>
-          fail(`heartbeat failed: ${error.message}`),
-        )
-      }
+      // The agent answers requests concurrently and in any order (agent RPC 0.1), so a ping
+      // is answered even while a long snapshot or Wait step runs.
+      this.call('ping', undefined, this.options.pingTimeoutMs).catch((error: Error) =>
+        fail(`heartbeat failed: ${error.message}`),
+      )
       this.launchTimer(this.options.heartbeatMs, beat)
     }
     this.launchTimer(this.options.heartbeatMs, beat)

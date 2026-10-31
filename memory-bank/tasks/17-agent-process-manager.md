@@ -12,6 +12,7 @@ Tests: `src/main/__tests__/agent.test.ts` against `fixtures/fake-agent.ts`, a de
 ## Decisions (small, local to this task)
 - 2026-10-29 — Node's built-in WebSocket (undici), no `ws` dependency — it sends handshake headers through its init object (checked in Node 23.5 and Electron 45's Node 24.22).
 - 2026-10-29 — Heartbeat is the contract's JSON-RPC `ping`, not WebSocket ping frames as said in the #135 review — the built-in WebSocket cannot send ping frames; no contract change. It is sent only while no other call is pending, because replies come in request order and a long call (a Wait step, up to 600 s) would otherwise look like a hang.
+- 2026-10-31 — Superseded: since #135 merged, the agent answers requests concurrently and in any order, so the heartbeat now pings even during a long call (galip's #155 review); the fake agent's `block` no longer blocks its thread.
 - 2026-10-29 — Python: `AYNA_AGENT_PYTHON`, else `../agent/.venv` next to the client, else `python`/`python3` from PATH — the installer (#84) sets the variable for the bundled interpreter.
 - 2026-10-29 — Windows stop/kill uses `taskkill /F /T` — a venv `python.exe` is a launcher; killing it alone leaves the interpreter (learnings 2026-10-25).
 - 2026-10-29 — While stopping, launch failures (heartbeat, socket close) are ignored — found with the real agent: the heartbeat killed it during the EOF grace period; regression test added.

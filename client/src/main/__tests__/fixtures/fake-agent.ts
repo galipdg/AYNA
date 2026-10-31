@@ -57,10 +57,11 @@ function handle(socket: Socket, text: string) {
       result: { agentVersion: '0.0.0', rpcVersion: '0.1' },
     })
   } else if (request.method === 'block') {
-    // Like a long UI Automation call: the single agent thread answers nothing meanwhile.
-    const end = Date.now() + (request.params?.ms ?? 0)
-    while (Date.now() < end);
-    send(socket, { jsonrpc: '2.0', id: request.id, result: {} })
+    // Like a long UI Automation call; the real agent answers other requests meanwhile.
+    setTimeout(
+      () => send(socket, { jsonrpc: '2.0', id: request.id, result: {} }),
+      request.params?.ms ?? 0,
+    )
   } else {
     send(socket, {
       jsonrpc: '2.0',
