@@ -2,19 +2,27 @@
 
 Only galip's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-10-30 (review round of 2026-10-29: approved #160, #159, #155, #157; flipped the step schema v0 ADR on #150; review follow-ups opened as PRs #164 RS, #165 AI service, #166 scorer DPI)
-- Current issue: none in progress. Open PRs of mine, all waiting for review: **#164** (`Refs #35`, RS 0.6 with the #143 review comments; omer + hasan; after merge tick #35 criterion 2), **#165** (`Refs #71 #58`, `AYNA_AI_TOKEN` for `--allow-remote`, `app`/`version`/`screen` semantics, server-chosen objects; omer + hasan; contract change, omer's inbox has it), **#166** (`Refs #49`, location and area in DIP from a per-element `dpi`; hasan, who adds `dpi` in #43) and **#150** (`Refs #147`, step schema v0.2 rows). omer approved; hasan holds it until he re-reads `2e50749` (cell text rule is non-empty-Value-first, not his Name-first; reasons in the PR comment of 2026-10-29). After it merges: `SelectRow` into RS FR-11, `column` limited to known headers in the #37 derivation, adopt in the #36 guideline.
-- Merged 2026-10-29: #134, #135, #137, #139–#146, #151. #138 was closed (empty after #143 carried its files); #19 stays open until §7 of `docs/requirements-workshop.md` is filled.
-- Decided 2026-10-29 (galip): **retrieval — the server picks the candidate objects**; the AI service has no Bolt edge. Recorded in `ai/API.md`, SDD-ai AI-4 / AI-9 #5 (PR #165). Still to do: update #58's expected output on GitHub (was `ai/ayna_ai/retrieve.py`; now server queries + `POST /ai/embed`); the `ai/AGENTS.md` layout line is fixed in #165 (galip's OK, 2026-10-30). Asked omer on #155 whether galip writes the Cypher in `server/`.
-- Review follow-ups asked of galip on merged PRs (none blocks anyone today; most are "before the #52 freeze"):
-  - **RS `docs/rs/RS.md`**: omer's and hasan's #143 lists are done in PR #164 (FR-30, FR-23 exit codes 0/1/2, TBD-5/6/9/10 closed, FR-35 "search incomplete", NFR-45/46). Left: REST API row → v0 once #160 merges (omer #31 inbox); `SelectRow` + row checks into FR-11/15/18 after #150.
-  - **`ai/API.md` / service**: omer's field semantics and hasan's token are done in PR #165. Left from hasan's #142/#146 reviews: loopback guard trusts the name `localhost`; `max_steps` cap gives a silently short document; reasons opt-in per request (wait for #162's Windows numbers).
-  - **SDD-ai** (#144): AI-5.2 "under 1 s per object, measured from an available snapshot; capture is NFR-02 / #12".
-  - **heal scorer**: DPI and the `parentPath` contract done in PR #166.
-  - **#151 ADR / v0.2 doc**: `featureVersion` (or extractor id + version) next to proposals; say explicitly that an `aborted` run makes the gap visible; screenshot crop note; one line that notifications carry no `id`.
-  - **NL dataset** (#145): quoting required for team-written pairs; style enum; `settings` pairs.
-  - **#19 §7** after the advisor meeting, with UC-14 exit codes 0/1/2 (#149 ADR), Q5 scoped to the sample app (#161), Q7/CON-02 naming the pilots (KeePass 2 + HandBrake, #159).
-  - hasan asked to tick the "ADR added" DoD box in the bodies of #141, #142, #145, #146 (reason is already inline). Auto mode blocks PR-body edits; galip runs it by hand.
-- Blocked on teammates: #42 and #43 (hasan's #11/#12), the 40 pairs of #36 and then #57 (#33 ← #21 ← #6), #58 (omer's #25 + #36), #72 (#71 + #57), #76 (#49 + hasan's #46), #21 D1 (hasan's #6, now in PR #159). #131 GPU request is on hold.
-- Inbox: handled but not yet deleted: omer #3, hasan #9, omer #7 (→ #131), hasan #16 (step schema v0 flip, done on #150). Delete them only when no open PR touches `people/galip/inbox.md` (#126, #155, #157, #159, #160 still do; GitHub ignores `merge=union`).
-- Open questions: project licence (TBD-7, team decision before #41); plan-doc copy and reference numbering (TBD-11, waits on #126); 30 s service timeout on a loaded laptop (#71, measured on Windows in hasan's #162); qwen3:8b 3/12 vs gemma4 9/12 on the trial pairs (#36): input for #72/#80.
+- Last update: 2026-10-31 (orchestrator session: review round of 10-31; no new issue started)
+- Current issue: none in progress. Open PRs of mine:
+  - **#150** `Refs #147` step schema v0.2 rows. omer approved. Waiting on hasan's re-review: the cell text rule is non-empty-Value-first, not his Name-first, because a WinForms `DataGridView` cell's Name is header + row index (MS docs). The reasons are in the 2026-10-29 PR comment. 2026-10-31: main merged in; ADR notes fixed (WinForms timing: normal is 9–12 ms/element and seconds only while a modal blocks, #170; the KeePass 2 check now targets Grid/Table on `m_lvEntries`, a SysListView32). When all three approve, flip the ADR to Accepted in the PR.
+  - **#166** `Refs #49` scorer DPI. omer and hasan both asked for the one-sided `dpi` fix (when one side has `dpi`, use it for both). A parallel session ("Proje kuralları ve inbox görevleri") committed it **locally** in the main checkout (`0da0c92`, not pushed on 2026-10-31). Push it, reply on the PR, and ask omer to re-review. Confirm to omer: key `dpi`, int, 96 = 100 %.
+  - **#173** `Refs #71` loopback by resolved address (the name `localhost` is no longer trusted); `stepLimitReached` flag at the 12-step cap. omer's inbox has the contract note.
+  - **#174** `Refs #149` healing-proposal schema 0.2: optional `dpi` on `scoredElement`, optional `featureVersion` on scorer and target, plus #151 doc asks and SDD AI-5.2. New ADR `2026-10-31-healing-proposal-schema-0-2` is Proposed and needs three approvals.
+  - **#176** `Refs #36` NL dataset: team-pair quoting (`bare-suffix`), check-box pairs (`start-state`, §6.8), and a style-enum sync test.
+- Reviews of teammates' PRs: drafted, **not posted** (auto mode blocked `gh pr review`). The drafts are in the 2026-10-31 session scratchpad (`r167.md` … `r172.md`); the verdicts:
+  - #169 (D1 ADR): COMMENT. Fix the #161 paragraph, the wrong refs (#22 is not version drift), name P1 = HandBrake and P2 = KeePass 2 (SC-07), exclude Qt item views from #33's unique-id test.
+  - #170 (#161 bisect): REQUEST_CHANGES. `kp_state.py --fresh` kills any KeePass and deletes `%USERPROFILE%\OneDrive\Belgeler\Database.kdbx`; the probe walks `PwEntryForm` twice; two numbers are wrong.
+  - #167 (eval CI): APPROVE (`eval/nl` passes; CI run on head needs approval).
+  - #172: APPROVE.
+- After those merge (galip):
+  - RS: close TBD-1 with pinned pilots; SC-07 on KeePass 2; CON-02/Q7/trace row; NFR-02 cause from #161.
+  - `ai/tests/test_nl_dataset.py` docstring (eval now has a project).
+  - RQ4 validity threat: Qt AutomationId is a dotted path, so an id-only baseline breaks on every container move in #46.
+  - #42: "< 1 s per object" excludes snapshot capture (one snapshot per window).
+- After #150 merges: `SelectRow` + row checks into RS FR-11/15/18; #37 prompt lines and `column` enum when `columns` is non-empty; #36 grid labelling rules (the grid sentence, the *seç* rule, the statusLabel note).
+- Needs galip by hand (auto mode blocked): update #58's expected output (server-side retrieval + `POST /ai/embed`, decision of 2026-10-29); post the four reviews.
+- Still open from earlier: REST API row → v0 once #160 merges; SDD AI-5.5 storage / AI-9 rows 7–8 (omer's #144 point 3); reasons opt-in (waits on #162); the 200-char string cap and quoted-literal check (change #37's grammar); NL dataset §8 outsider consent/brief (galip's decision); #19 §7 after the advisor meeting.
+- Blocked on teammates: #42 and #43 (hasan's #11/#12), the 40 pairs of #36 and then #57 (#33), #58 (omer's #25 + #36), #72 (#71 + #57), #76 (#49 + #46). #131 GPU request is on hold.
+- Inbox: handled but not yet deleted: omer #3, hasan #9, hasan #6, omer #7 (→ #131), hasan #16 (step schema v0 flip, done on #150). Delete them when no open PR touches `people/galip/inbox.md`.
+- Workspace: `~/Desktop` is iCloud-synced (`CloudDocs/Desktop` → `~/Desktop`). It produced " 2" duplicate files and stale `.git` locks on 2026-10-31. Consider moving the repo out of `~/Desktop`.
+- Open questions: project licence (TBD-7, before #41); plan-doc reference numbering (TBD-11); 30 s service timeout on a loaded laptop (#71, #162); qwen3:8b 3/12 vs gemma4 9/12 on the trial pairs (#36).

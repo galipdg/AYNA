@@ -72,3 +72,11 @@ Append-only. One entry per session, newest at the bottom:
 - Folded omer's and hasan's #143 reviews into RS 0.6 on `galip/35-rs-review-followups`: FR-30/FR-23 follow the healing-transport ADR, TBD-5/6/9/10 closed, FR-35 "search incomplete", NFR-45 and NFR-46 added. SDD-ai AI-5.1/AI-6.1 aligned.
 - Consistency check rerun (scratch script): 0 errors; 40 FR, 46 NFR, 16 UC, 36 SC.
 - Next: PR review by omer and hasan; tick #35 criterion 2 after merge.
+
+## 2026-10-31 · review round (orchestrator; no new issue)
+- Pulled main (#159, #164, #165, plus teammates' merges). Found the main checkout on another session's branch and iCloud " 2" duplicates; a parallel session ("Proje kuralları ve inbox görevleri") is doing #166 in the main checkout, so my agents worked only in their own worktrees.
+- #150: merged main (GitHub flagged union-driver memory files; no real conflict), 466 ai tests pass. Fixed two ADR notes from the #170 findings.
+- New PRs from subagents: #173 (#71 loopback by resolved address, `stepLimitReached`), #174 (#149 healing-proposal schema 0.2, ADR Proposed), #176 (#36 quoting and check-box rules).
+- Ticked the "ADR added" DoD box in the bodies of #141, #142, #145, #146 (hasan's ask).
+- Drafted reviews for #167, #169, #170, #172; posting and the #58 body edit were blocked by auto mode, so galip posts them by hand.
+- Next: post the reviews; push the #166 fix from the main checkout; hasan's re-review of #150.
