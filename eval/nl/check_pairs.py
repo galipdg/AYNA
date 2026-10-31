@@ -9,7 +9,11 @@ schemas it checks what a schema cannot:
 - ids and texts are unique, and an id starts with its app code;
 - each keyword and checkpoint property fits the target's control type;
 - a Select value is one of the target's items, when the object lists them;
-- every Type/Select value and text checkpoint appears in the text;
+- every Type/Select value and text checkpoint appears in the text, and in a
+  team pair at least once with no letter or digit glued to it (no suffix
+  dropped from a bare value; quote it or use an apostrophe);
+- a pair that clicks a check box states the assumed start state in `notes`
+  (Click toggles);
 - the scenario-type rules (checkpoint: only Verify; wait: has a Wait);
 - the variants of one scenario share app, type and gold steps, and a scenario
   never sits on both sides of the held-out split;
@@ -28,6 +32,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import unicodedata
 from collections import Counter, defaultdict
@@ -55,6 +60,9 @@ PROPERTY_CONTROLS = {
     "selected": {"RadioButton", "ListItem", "TabItem", "DataItem"},
 }
 ITEM_CONTROLS = {"ComboBox", "List"}
+# A Click toggles a check box, so the pair must say what it toggled from
+# (guideline 6.8): "start state: unchecked", optionally naming the box.
+START_STATE = re.compile(r"\bstart state\b[^;\n]*?\b(?:un)?checked\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -226,6 +234,26 @@ def _literals(step: dict) -> Iterable[str]:
             yield expected
 
 
+def _stands_alone(literal: str, text: str) -> bool:
+    """True if `literal` occurs in `text` with no letter or digit glued to it.
+
+    Both are folded. Only an end of `literal` that is itself a letter or digit
+    needs a boundary: "Welcome, admin!" may be followed by anything.
+    """
+    start = text.find(literal)
+    while start != -1:
+        end = start + len(literal)
+        before = text[start - 1] if start else ""
+        after = text[end] if end < len(text) else ""
+        glued = (literal[0].isalnum() and before.isalnum()) or (
+            literal[-1].isalnum() and after.isalnum()
+        )
+        if not glued:
+            return True
+        start = text.find(literal, start + 1)
+    return False
+
+
 def _check_pair(pair: Pair, report: Report) -> None:
     record, where = pair.record, pair.where
     app = record["app"]
@@ -244,11 +272,21 @@ def _check_pair(pair: Pair, report: Report) -> None:
         report.add(where, "type-rule", "a pair with a Wait step is scenarioType wait")
 
     text = fold(record["text"])
+    team = record["origin"] == "team"
     for i, step in enumerate(steps):
         at = f"gold.steps[{i}]"
         for literal in _literals(step):
-            if fold(literal) not in text:
+            folded = fold(literal)
+            if folded not in text:
                 report.add(where, "ungrounded", f"{at}: {literal!r} is not in the text")
+            elif team and not _stands_alone(folded, text):
+                report.add(
+                    where,
+                    "bare-suffix",
+                    f"{at}: {literal!r} is in the text only with letters attached; "
+                    "a team pair quotes the value or puts a suffix after an "
+                    "apostrophe (4.4)",
+                )
 
     objects = report.objects.get(app)
     if objects is None:  # reported once per app
@@ -274,6 +312,17 @@ def _check_pair(pair: Pair, report: Report) -> None:
         allowed = KEYWORD_CONTROLS.get(keyword)
         if allowed and control not in allowed:
             report.add(where, "control-type", f"{at}: {keyword} on a {control}")
+        if (
+            keyword == "Click"
+            and control == "CheckBox"
+            and not START_STATE.search(record.get("notes", ""))
+        ):
+            report.add(
+                where,
+                "start-state",
+                f"{at}: Click toggles {step['target']}; give the assumed start "
+                "state in notes, e.g. 'start state: unchecked' (6.8)",
+            )
         if keyword == "Verify":
             prop = step["checkpoint"]["property"]
             allowed = PROPERTY_CONTROLS.get(prop)
