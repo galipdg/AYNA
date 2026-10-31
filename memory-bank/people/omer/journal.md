@@ -79,3 +79,10 @@ Append-only. One entry per session, newest at the bottom:
 - Global `ApiErrorHandler` (extends `ResponseEntityExceptionHandler`) + shared `error/ApiExceptions`; removed tests/apps-specific handlers. Apps 400s now list `errors[{path}]`. `@ErrorResponses` + `OperationCustomizer` add 400/404/409 to `openapi.yaml` (swagger `@ApiResponse` dropped the 200; learnings). 38 server tests green.
 - Proposed ADR `2026-10-29-rest-error-problem-details`; `server/AGENTS.md` error rule (user OK). PR #163 stacked on #160, reviewers galip + hasan.
 - Next: CI on #163; retarget to `main` after #160 merges; reviews; #25 when #12/#22 move.
+
+## 2026-10-31 · reviews and conflicts
+- `main` +93 commits (galip's #135, #141–#146, #151 merged). #163 had been merged into #160's branch.
+- Conflicts: merged `origin/main` into #160, #155, #126 (all clean locally); #155 into #157 (SDD header conflict resolved).
+- #160: `errors[]` capped at 50 + `errorCount` (new `ApiErrorHandlerTest`, 40/40 server tests), ADR clarified and Accepted, graph v0.1 ADR Accepted. #155/#157: galip's and hasan's review points applied. #154: heartbeat during long calls (52/52 client tests).
+- Approved #164 (RS 0.6) and #165 (AI token, retrieval split). galip owns #58's server query, omer reviews.
+- Next: merges; then #25 if #12/#22 move, else #122 or #51.
