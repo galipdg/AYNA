@@ -92,3 +92,10 @@ Append-only. One entry per session, newest at the bottom:
 - Reviewed #166 (comment): one-sided `dpi` makes the same control score location 0 (ran it), `healing-proposal.schema.json` rejects `dpi`, graph must store the target's `dpi` (#25/#74).
 - #60 (omer's choices: opaque Bearer tokens in Neo4j, `spring-boot-starter-security`, first admin from env vars, runs/approvals criterion moved to #44/#74). ADR Proposed. Server: `auth/`, V0003, users/tokens API, createdBy/updatedBy on tests, OpenAPI regenerated, graph-model v0.2; 54 tests + Compose smoke test. Client: login screen, token in main memory, 401 → login; 40 tests, build green.
 - Next: user management screen, manual check, PR.
+
+## 2026-10-31 · #60 user management, PR
+- Nothing new on `main`; no PRs waiting for my review.
+- Client: Manage users screen (`Users.tsx`, `ApiTokens.tsx`, main `users.ts`): list/add/role/password/remove + API tokens; tester or 403 → "only admins manage users". Server `detail` shown as is. 51 tests, lint, typecheck, build green.
+- Checked against a fresh Compose stack: `users.ts` against the real API, and the built app driven over CDP with screenshots (fixed button wrapping and notice placement).
+- `server/AGENTS.md` who-did-it rule (omer's OK). Pushed over HTTPS; PR #168, reviewers galip + hasan.
+- Next: omer's manual look, reviews, retarget after #160.
