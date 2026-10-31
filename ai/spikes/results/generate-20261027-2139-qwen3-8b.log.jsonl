@@ -1,0 +1,10 @@
+{"ts": "2026-10-27T21:39:27.330+03:00", "event": "generate", "scenario": 1, "model": "qwen3:8b", "status": "ok", "latency_ms": 6612, "load_ms": 0, "prompt_tokens": 457, "output_tokens": 70, "steps": 3}
+{"ts": "2026-10-27T21:39:31.990+03:00", "event": "generate", "scenario": 2, "model": "qwen3:8b", "status": "ok", "latency_ms": 4658, "load_ms": 2, "prompt_tokens": 445, "output_tokens": 51, "steps": 1}
+{"ts": "2026-10-27T21:39:39.949+03:00", "event": "generate", "scenario": 3, "model": "qwen3:8b", "status": "ok", "latency_ms": 7958, "load_ms": 1, "prompt_tokens": 450, "output_tokens": 71, "steps": 3}
+{"ts": "2026-10-27T21:39:48.607+03:00", "event": "generate", "scenario": 4, "model": "qwen3:8b", "status": "ok", "latency_ms": 8657, "load_ms": 1, "prompt_tokens": 448, "output_tokens": 49, "steps": 2}
+{"ts": "2026-10-27T21:39:57.573+03:00", "event": "generate", "scenario": 5, "model": "qwen3:8b", "status": "ok", "latency_ms": 8964, "load_ms": 2, "prompt_tokens": 448, "output_tokens": 37, "steps": 1}
+{"ts": "2026-10-27T21:40:16.364+03:00", "event": "generate", "scenario": 6, "model": "qwen3:8b", "status": "ok", "latency_ms": 18790, "load_ms": 1, "prompt_tokens": 461, "output_tokens": 86, "steps": 3}
+{"ts": "2026-10-27T21:40:22.416+03:00", "event": "generate", "scenario": 7, "model": "qwen3:8b", "status": "ok", "latency_ms": 6051, "load_ms": 2, "prompt_tokens": 439, "output_tokens": 36, "steps": 1}
+{"ts": "2026-10-27T21:40:34.321+03:00", "event": "generate", "scenario": 8, "model": "qwen3:8b", "status": "ok", "latency_ms": 11903, "load_ms": 2, "prompt_tokens": 457, "output_tokens": 65, "steps": 2}
+{"ts": "2026-10-27T21:40:57.803+03:00", "event": "generate", "scenario": 9, "model": "qwen3:8b", "status": "ok", "latency_ms": 23480, "load_ms": 1, "prompt_tokens": 468, "output_tokens": 111, "steps": 4}
+{"ts": "2026-10-27T21:41:10.726+03:00", "event": "generate", "scenario": 10, "model": "qwen3:8b", "status": "ok", "latency_ms": 12922, "load_ms": 1, "prompt_tokens": 454, "output_tokens": 61, "steps": 2}
