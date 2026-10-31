@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { AppInfo, Application, ConnectionError } from '../../shared/api.ts'
 import AgentStatusBar from './AgentStatusBar.tsx'
 import AppPicker from './AppPicker.tsx'
+import ObjectSpy from './ObjectSpy.tsx'
 import ServerSettings from './ServerSettings.tsx'
 import { strings } from './strings.ts'
 
@@ -105,6 +106,7 @@ export default function App() {
           </button>
         </section>
       )}
+      {view.phase === 'ready' && <ObjectSpy />}
 
       <section className="card">
         <h2>{strings.versionsTitle}</h2>

@@ -1,4 +1,9 @@
-import type { AgentState, ConnectionFailure, RequestFailure } from '../../shared/api.ts'
+import type {
+  AgentFailure,
+  AgentState,
+  ConnectionFailure,
+  RequestFailure,
+} from '../../shared/api.ts'
 
 // All UI text in one place, for later translation.
 export const strings = {
@@ -64,4 +69,28 @@ export const strings = {
   } satisfies Record<AgentState, string>,
   agentAttempt: (restarts: number, max: number) => `attempt ${restarts} of ${max}`,
   agentRetry: 'Start again',
+
+  spyTitle: 'Object Spy',
+  spyIntro: 'Choose a window to see where it is on screen.',
+  spyRefresh: 'Refresh',
+  spyEmpty: 'The agent sees no open windows.',
+  spyNoTitle: '(no title)',
+  spyUnknownProcess: 'unknown process',
+  spyTreePending: 'The element tree appears here once the agent can capture windows.',
+  spyFields: {
+    title: 'Title',
+    className: 'Class',
+    process: 'Process',
+    handle: 'Handle',
+    bounds: 'Bounds (px)',
+  },
+  agentErrors: {
+    'not-connected': () => 'The agent is not running. Wait for it to connect, then refresh.',
+    'uia-unavailable': () =>
+      'UI Automation is not available on this machine. The Spy works on Windows only.',
+    timeout: () => 'The agent did not answer in time. Refresh to try again.',
+    'bad-response': () => 'The agent answered with something unexpected.',
+    'agent-error': (detail?: string) =>
+      detail ? `The agent reported an error: ${detail}` : 'The agent reported an error.',
+  } satisfies Record<AgentFailure, (detail?: string) => string>,
 } as const

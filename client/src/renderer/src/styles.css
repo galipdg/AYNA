@@ -146,3 +146,17 @@ button {
   align-items: center;
   gap: 8px;
 }
+
+.spy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spy-header h2 {
+  margin: 0;
+}
+
+.spy-pending {
+  opacity: 0.75;
+}

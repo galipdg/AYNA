@@ -17,12 +17,13 @@ Build the parts that need no snapshot format first: window list over `listWindow
 ## Status
 - [x] Branch from `omer/17-agent-process-manager` (with `origin/main` merged in), task note, board → In progress
 - [x] Typed agent errors; `listWindows` + `highlight` IPC; `Highlighter`; 63 client tests, lint, typecheck green 2026-10-31
-- [ ] Spy screen: window list, select → highlight, error messages
+- [x] Spy screen (`ObjectSpy.tsx`, shown in the "ready" view): window list, select → highlight + window details, agent error messages, refetch when the agent reconnects. Lint, typecheck, format, 63 tests green 2026-10-31
 - [ ] Global hotkey plumbing (cursor point in physical px; lookup needs #22)
 - [ ] Element tree + property panel (needs the snapshot schema from #12)
-- Next step: Spy screen in the renderer (`ObjectSpy.tsx`), reached from the "ready" view.
+- Next step: global hotkey plumbing in main (`globalShortcut`, registered only while the Spy is shown; cursor point → physical px with `screen.dipToScreenPoint` on Windows), then wait for #12's schema for the tree.
 
 ## Manual checks
+- 2026-10-31 · agent · macOS · built app over CDP with a scratch stub server (health + apps, no auth: the running Compose server is the #60 build and needs a login this branch lacks) and a scratch fake agent answering `listWindows`: list shows both windows ("(no title)", "unknown process" for null), selecting shows details and opens the overlay at 646×486 for a 640×480 window (border 3 px each side), visible then hidden after 3 s; `-32001` variant shows "UI Automation is not available…"; quitting leaves no Electron or agent process. Pass; screenshots in the session scratchpad only (not kept). The overlay itself could not be photographed (no screen-recording permission for the terminal).
 - Planned for the weekly Windows session (needs a UIA backend, #12): highlight lands exactly on the window at 100 %, 150 % and mixed-DPI monitors (incl. one left of the primary); the frame takes no clicks and no focus; it disappears after 3 s; closing AYNA leaves no frame behind.
 
 ## Open issues
