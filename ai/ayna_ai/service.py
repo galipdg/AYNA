@@ -4,9 +4,9 @@
     GET  /ai/health           does the model server answer and have the model?
 
 The caller is the AYNA server (#78 chat panel); the contract is `ai/API.md`.
-The service listens on loopback unless started with --allow-remote, and talks
-only to a loopback model server (`ayna_ai.ollama`), so it works on a closed
-network. Every step in a response's `steps` targets an object the retriever
+The service listens on loopback unless started with --allow-remote, which also
+needs a token in AYNA_AI_TOKEN that every request must carry, and talks only to
+a loopback model server (`ayna_ai.ollama`), so it works on a closed network. Every step in a response's `steps` targets an object the retriever
 returned for that request: the generator constrains and checks it, and the
 service checks it once more before answering. A generated step that fails
 either check is not suggested; it is listed in `dropped` with the reason.
@@ -19,9 +19,11 @@ From `ai/`, with `ollama serve` running:
 from __future__ import annotations
 
 import argparse
+import hmac
 import ipaddress
 import json
 import logging
+import os
 import socket
 import socketserver
 import sys
@@ -58,6 +60,8 @@ HEALTH_PATH = "/ai/health"
 MAX_TEXT = 2000  # characters of instruction
 MAX_OBJECTS = 100  # keeps the prompt well inside num_ctx 4096 (~8-20 tokens each)
 DRAIN_LIMIT = 1024 * 1024  # an oversized body is read up to this, then dropped
+TOKEN_ENV = "AYNA_AI_TOKEN"
+MIN_TOKEN_LENGTH = 16  # as the agent's session token (NFR-31)
 MAX_DETAILS = 20
 
 # Generator failure -> HTTP status and a message for people.
@@ -392,9 +396,15 @@ def is_loopback_host(host: str) -> bool:
 class ServiceServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address: tuple[str, int], service: StepService) -> None:
+    def __init__(
+        self,
+        address: tuple[str, int],
+        service: StepService,
+        token: str | None = None,
+    ) -> None:
         self.address_family = socket.AF_INET6 if ":" in address[0] else socket.AF_INET
         self.service = service
+        self.token = token
         super().__init__(address, ServiceHandler)
 
     def server_bind(self) -> None:
@@ -415,6 +425,8 @@ class ServiceHandler(BaseHTTPRequestHandler):
         return super().parse_request()
 
     def do_GET(self) -> None:
+        if not self._authorized():
+            return
         path = self._route()
         if path == HEALTH_PATH:
             self._send(200, self.server.service.health())
@@ -424,6 +436,8 @@ class ServiceHandler(BaseHTTPRequestHandler):
             self._not_found()
 
     def do_POST(self) -> None:
+        if not self._authorized():
+            return
         path = self._route()
         if path != GENERATE_PATH:
             self._discard_body()
@@ -442,6 +456,8 @@ class ServiceHandler(BaseHTTPRequestHandler):
         self._send(code, body)
 
     def _other_method(self) -> None:
+        if not self._authorized():
+            return
         self._discard_body()
         path = self._route()
         if path == GENERATE_PATH:
@@ -452,6 +468,27 @@ class ServiceHandler(BaseHTTPRequestHandler):
             self._not_found()
 
     do_PUT = do_PATCH = do_DELETE = _other_method
+
+    def _authorized(self) -> bool:
+        """With a token set, every request needs one `Authorization: Bearer <token>`.
+
+        Checked before routing, so a caller without the token learns nothing, not
+        even which paths exist. Constant-time compare, as in the agent (#16).
+        """
+        token = self.server.token
+        if token is None:
+            return True
+        values = self.headers.get_all("Authorization") or []
+        expected = f"Bearer {token}".encode()
+        if len(values) == 1 and hmac.compare_digest(values[0].encode(), expected):
+            return True
+        self._discard_body()
+        self._send(
+            401,
+            {"status": "unauthorized", "error": "missing or wrong bearer token"},
+            {"WWW-Authenticate": "Bearer"},
+        )
+        return False
 
     def _read_json(self) -> object:
         data = self._read_body(self.server.service.config.max_body_bytes)
@@ -591,13 +628,24 @@ def create_server(
     port: int = DEFAULT_PORT,
     *,
     allow_remote: bool = False,
+    token: str | None = None,
 ) -> ServiceServer:
-    """Bind the service; a non-loopback `host` needs `allow_remote` and is logged."""
+    """Bind the service; a non-loopback `host` needs `allow_remote` and a `token`.
+
+    With a `token`, every request must carry it as a bearer token, on loopback too.
+    """
+    if token is not None and len(token) < MIN_TOKEN_LENGTH:
+        raise ValueError(f"{TOKEN_ENV} needs at least {MIN_TOKEN_LENGTH} characters")
     if not is_loopback_host(host):
         if not allow_remote:
             raise ValueError(
                 f"refusing to listen on {host!r}: not a loopback address (closed "
                 "network). Pass --allow-remote to expose the service, e.g. in a container."
+            )
+        if token is None:
+            raise ValueError(
+                f"refusing to listen on {host!r} without a token: set {TOKEN_ENV} "
+                f"({MIN_TOKEN_LENGTH}+ characters) with --allow-remote"
             )
         log.warning(
             _record(
@@ -607,7 +655,7 @@ def create_server(
                 message="listening on a non-loopback address: reachable from other machines",
             )
         )
-    return ServiceServer((host, port), service)
+    return ServiceServer((host, port), service, token=token)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -624,7 +672,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--allow-remote",
         action="store_true",
-        help="allow a non-loopback --host (e.g. 0.0.0.0 in a container); logged",
+        help=f"allow a non-loopback --host (e.g. 0.0.0.0 in a container); needs "
+        f"{TOKEN_ENV}; logged",
     )
     parser.add_argument(
         "--model",
@@ -660,10 +709,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         timeout_s=args.timeout,
         max_body_bytes=args.max_body_bytes,
     )
+    token = os.environ.get(TOKEN_ENV) or None
     try:
         service = StepService(config)
         server = create_server(
-            service, args.host, args.port, allow_remote=args.allow_remote
+            service,
+            args.host,
+            args.port,
+            allow_remote=args.allow_remote,
+            token=token,
         )
     except ValueError as exc:
         parser.error(str(exc))
@@ -680,6 +734,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             model_host=config.model_host,
             timeout_s=config.timeout_s,
             prompt_version=service.prompt_version,
+            token_required=token is not None,
         )
     )
     if args.warmup:
