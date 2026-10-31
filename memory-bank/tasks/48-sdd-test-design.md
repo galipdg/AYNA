@@ -14,8 +14,9 @@ Fill `docs/sdd/SDD.md` §6: principles, test levels (unit, integration, contract
 ## Status
 - [x] §6 drafted, open issues 8–12 added to §9, document history 0.2
 - [x] PR #157 opened 2026-10-29 (`Closes #48`, base `omer/45-sdd-architecture`), reviewers galip and hasan
-- [ ] Review by one member
-- Next step: after #155 merges, switch #157's base to `main` (if GitHub has not) and answer the reviews.
+- [x] Reviewed: hasan and galip approved 2026-10-29
+- [x] 2026-10-31: #155's branch merged in; reviews applied. hasan: RQ1 = stable vs positional identification over the `uia_dump.py stats` interactive set, per app only; RQ2 per-step comparison, reset between runs, detection limit, load recorded; RQ5 paired on the run's verdict; 125 % scaling; pilots from #159; `localhost` caveat. galip: RQ3 paired per gold step + pair-level exact match + dependence threat; RQ4 ambiguous = miss. My call on §9 #11: exact McNemar everywhere (simpler, galip's suggestion)
+- Next step: after #155 merges, switch #157's base to `main` (if GitHub has not).
 
 ## Manual checks
 - none (text only; no diagrams added)
