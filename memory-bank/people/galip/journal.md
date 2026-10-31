@@ -80,3 +80,9 @@ Append-only. One entry per session, newest at the bottom:
 - Ticked the "ADR added" DoD box in the bodies of #141, #142, #145, #146 (hasan's ask).
 - Drafted reviews for #167, #169, #170, #172; posting and the #58 body edit were blocked by auto mode, so galip posts them by hand.
 - Next: post the reviews; push the #166 fix from the main checkout; hasan's re-review of #150.
+
+## 2026-10-31 · review replies (main-checkout session)
+- #164, #165, #159 merged. On #166 (omer, hasan): a `dpi` on one side only made an unchanged control off 100 % look moved; fixed by using the known `dpi` for both (`0da0c92`, 132 agent tests). The schema `dpi` change is in the orchestrator's #174, not duplicated.
+- Opened #177 (RS 0.7, NFR-45 dead-letter clause from omer's #164 review).
+- Coordinated with the orchestrator session over `SendMessage`: it took #150, #173, #174, #176, the four reviews and #58; this session took #166 and #177.
+- Moved two identical " 2" duplicate files (iCloud Desktop) to the session scratchpad; two transient `.git` lock errors during fetch, gone on retry.
