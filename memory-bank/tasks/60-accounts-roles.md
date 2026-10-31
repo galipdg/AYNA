@@ -22,11 +22,12 @@ ADR `2026-10-31-accounts-and-tokens` (Proposed): opaque Bearer tokens hashed in 
 - [x] Server: `spring-boot-starter-security` (+ `-security-test`), V0003, `auth/` (login/logout/me, Bearer filter, first admin, 401/403 problems), `/api/users`, API tokens, `createdBy`/`updatedBy` on tests, OpenAPI regenerated, `graph-model.md` v0.2, `.env.example` + Compose. 54 server tests green; Compose smoke test (first admin, 401 without token, login 200) 2026-10-31
 - [x] Client: session token in the main process memory only, tied to the server URL; login screen after the server check; "Logged in as" + Log out; a 401 anywhere → login screen with "session ended". 40 client tests, lint, typecheck, build green 2026-10-31
 - [x] Client: admin user management screen (`Users.tsx`, `ApiTokens.tsx`, main `users.ts`): list, create, role, password, remove, API tokens; a tester (or a 403) sees "only admins manage users" (SC-03). 51 client tests, lint, typecheck, build green 2026-10-31
-- Next step: omer's own look at the screens (manual check below), then push and open the PR (base `omer/31-openapi-contract` until #160 merges), reviewers galip + hasan for the ADR.
+- Next step: PR #168 open (base `omer/31-openapi-contract` until #160 merges); answer galip's and hasan's reviews (ADR approval), retarget to `main` after #160; Windows session check.
 
 ## Manual checks
 - 2026-10-31 · agent · macOS · built app driven over CDP (`--remote-debugging-port`, throwaway `--user-data-dir`) against a fresh Compose stack: login, user list, add tester, API token (secret shown once), last-admin refusal (409 shown, select reverts), log out, tester login, "Manage users" refused. Pass; screenshots not kept. Also `users.ts` against the real server: every status mapped as expected.
-- Look and feel by a person (omer, `npm run dev` + `docker compose up`): pending. Same at the weekly Windows session.
+- 2026-10-31 · omer · macOS · `npm run dev` + `docker compose up` (fresh volume): login; Manage users list; add tester; API token shown once; last-admin refusal (select reverts); tester sees "only admins manage users". All pass, reported by omer in the session (no screenshots).
+- Weekly Windows session: pending.
 
 ## Open issues
 - RS NFR-32 should name the public exceptions (health, API docs) → galip's inbox.

@@ -4,7 +4,7 @@ Only omer's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-10-31 (fourth session)
 - Current issue: **#60** (accounts and roles), PR **#168** (base `omer/31-openapi-contract` until #160 merges), reviewers galip + hasan (ADR `2026-10-31-accounts-and-tokens` Proposed, needs both). Server + client + user management done; 51 client tests. Task note: `tasks/60-accounts-roles.md`
-- Next step: omer's own look at the screens (manual check in the task note); answer #168 reviews; when #160 merges, retarget #168 to `main`. Then pick the next issue (#25 if #12/#22 moved, else #122 or #51).
+- Next step: manual check passed on macOS 2026-10-31; answer #168 reviews; when #160 merges, retarget #168 to `main`. Then pick the next issue (#25 if #12/#22 moved, else #122 or #51).
 - Scope change 2026-10-31 (omer's choice): user id on runs → #44 (new criterion), approvals → #74 (already had it).
 - Other open work (waiting for teammates): #122 PR #167 (hasan's review); #31+#158 PR #160 and #45 PR #155 approved, waiting for a merge; #48 PR #157 stacked on #155; #17 draft PR #154 `needs-windows-test`; #10 draft PR #126.
 - When #160/#155 merge: check #31/#158/#45 closed and Done; retarget #157 and #168 to `main` if GitHub has not.
