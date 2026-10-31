@@ -40,7 +40,8 @@ In one line: the proposal rides inside the failing step's `run.stepResult` notif
 - [x] All three approved; transport ADR Accepted; PR #151 merged
 - [ ] After approval: comment on #73 and #74 linking the ADR (AC 3); omer names the endpoint in the #74 REST contract (AC 2)
 - [x] 2026-10-31 schema 0.2 on `galip/149-proposal-schema-0-2`: `dpi`, `scorer.featureVersion`, `target.featureVersion`, `bounds` wording, version `"0.2"`; examples and cases; tests (69 pass); ADR 0.2 (Proposed) + README line; `docs/agent-rpc.md` "Proposed (#149)" review follow-ups; SDD AI-5.2 latency wording (#144 review) and AI-5.5 payload; `schemas/README.md` section
-- [ ] PR for schema 0.2 reviewed by all three → ADR 0.2 Accepted (and its README line) in that PR
+- [x] PR https://github.com/galipdg/AYNA/pull/174 (`Refs #149`) opened 2026-10-31; reviews requested from HasanBerk18 and omerfaruksaribal; asks in their inboxes
+- [ ] All three approve #174 → ADR 0.2 Accepted (and its README line) in that PR
 - Next step: answer the reviews on the schema 0.2 PR; once accepted, comment on #73 and #74 with both ADR links.
 
 ## Manual checks
