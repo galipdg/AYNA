@@ -1,0 +1,158 @@
+{
+  "version": "0.1",
+  "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90",
+  "stepIndex": 2,
+  "stepId": "b7e4d1c2-5a3f-4e8b-9d61-2c0a7f3e5b14",
+  "logicalName": "login.loginButton",
+  "appVersionId": "9a1d7c3e-2f4b-4c8a-b6e5-7d0f1a2b3c4d",
+  "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
+  "target": {
+    "serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f",
+    "properties": {
+      "automationId": "QApplication.loginWindow.loginButton",
+      "name": "Giriş",
+      "controlType": "Button",
+      "className": "QPushButton",
+      "bounds": [600, 412, 720, 444],
+      "parentPath": "loginWindow/credentialsBox",
+      "siblingIndex": 4,
+      "windowTitle": "AYNA Trial"
+    }
+  },
+  "scorer": {
+    "id": "similo-v0",
+    "weights": {
+      "automationId": "3/2",
+      "name": "3/2",
+      "controlType": "3/2",
+      "nearestLabel": "3/2",
+      "className": "1/2",
+      "parentPath": "1/2",
+      "siblingIndex": "1/2",
+      "location": "1/2",
+      "area": "1/2",
+      "shape": "1/2",
+      "windowTitle": "1/2"
+    }
+  },
+  "candidatesScored": 4,
+  "candidates": [
+    {
+      "rank": 1,
+      "elementId": "e23",
+      "element": {
+        "automationId": "QApplication.loginWindow.signInButton",
+        "name": "Oturum Aç",
+        "controlType": "Button",
+        "className": "QPushButton",
+        "bounds": [600, 412, 720, 444],
+        "parentPath": "loginWindow/credentialsBox",
+        "siblingIndex": 4,
+        "windowTitle": "AYNA Trial"
+      },
+      "score": "151/192",
+      "contributions": {
+        "automationId": "9/64",
+        "name": "1/48",
+        "controlType": "3/16",
+        "className": "1/16",
+        "parentPath": "1/16",
+        "siblingIndex": "1/16",
+        "location": "1/16",
+        "area": "1/16",
+        "shape": "1/16",
+        "windowTitle": "1/16"
+      },
+      "similarities": {
+        "automationId": "3/4",
+        "name": "1/9",
+        "controlType": "1",
+        "className": "1",
+        "parentPath": "1",
+        "siblingIndex": "1",
+        "location": "1",
+        "area": "1",
+        "shape": "1",
+        "windowTitle": "1"
+      }
+    },
+    {
+      "rank": 2,
+      "elementId": "e25",
+      "element": {
+        "automationId": "QApplication.loginWindow.forgotPasswordButton",
+        "name": "Şifremi unuttum",
+        "controlType": "Button",
+        "className": "QPushButton",
+        "bounds": [600, 456, 760, 480],
+        "parentPath": "loginWindow/credentialsBox",
+        "siblingIndex": 6,
+        "windowTitle": "AYNA Trial"
+      },
+      "score": "3969/6400",
+      "contributions": {
+        "automationId": "3/40",
+        "name": "3/80",
+        "controlType": "3/16",
+        "className": "1/16",
+        "parentPath": "1/16",
+        "siblingIndex": "0",
+        "location": "7/200",
+        "area": "1/16",
+        "shape": "9/256",
+        "windowTitle": "1/16"
+      },
+      "similarities": {
+        "automationId": "2/5",
+        "name": "1/5",
+        "controlType": "1",
+        "className": "1",
+        "parentPath": "1",
+        "siblingIndex": "0",
+        "location": "14/25",
+        "area": "1",
+        "shape": "9/16",
+        "windowTitle": "1"
+      }
+    },
+    {
+      "rank": 3,
+      "elementId": "e24",
+      "element": {
+        "automationId": "QApplication.loginWindow.cancelButton",
+        "name": "İptal",
+        "controlType": "Button",
+        "className": "QPushButton",
+        "bounds": [730, 412, 850, 444],
+        "parentPath": "loginWindow/credentialsBox",
+        "siblingIndex": 5,
+        "windowTitle": "AYNA Trial"
+      },
+      "score": "19/32",
+      "contributions": {
+        "automationId": "3/32",
+        "name": "0",
+        "controlType": "3/16",
+        "className": "1/16",
+        "parentPath": "1/16",
+        "siblingIndex": "0",
+        "location": "0",
+        "area": "1/16",
+        "shape": "1/16",
+        "windowTitle": "1/16"
+      },
+      "similarities": {
+        "automationId": "1/2",
+        "name": "0",
+        "controlType": "1",
+        "className": "1",
+        "parentPath": "1",
+        "siblingIndex": "0",
+        "location": "0",
+        "area": "1",
+        "shape": "1",
+        "windowTitle": "1"
+      }
+    }
+  ]
+}

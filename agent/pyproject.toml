@@ -3,7 +3,7 @@ name = "ayna-agent"
 version = "0.0.0"
 description = "AYNA automation agent (pywinauto) and headless CLI runner"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["websockets~=17.3"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff~=0.17.2"]
