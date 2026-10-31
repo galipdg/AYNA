@@ -22,13 +22,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
 
 /** Applications and versions API against a real Neo4j started by Testcontainers (needs Docker). */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({ TestcontainersConfiguration.class, SignedIn.class })
+@Import(TestcontainersConfiguration.class)
 class AppIntegrationTest {
 
 	static final String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";

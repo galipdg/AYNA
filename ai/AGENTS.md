@@ -6,7 +6,7 @@ Owner: galip. Read `/AGENTS.md` first; this file adds only what is specific to `
 - `ayna_ai/service.py` — HTTP service for the server: `POST /ai/generate-steps`, `GET /ai/health`; contract in `API.md`
 - `ayna_ai/ollama.py` — loopback-only client for the local model server
 - `ayna_ai/generate.py` — constrained JSON generation
-- `ayna_ai/retrieve.py` — candidate objects of a request; the server chooses them and the service never reads the graph (#58)
+- `ayna_ai/retrieve.py` — graph + vector retrieval of repository objects
 - `ayna_ai/validate.py` — checks each generated step; drops unknown keywords, unknown objects and the no-match target
 
 ## Commands

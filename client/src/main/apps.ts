@@ -1,6 +1,5 @@
-// Calls to the server's applications API (#128) and the request helper every API
-// call shares. Kept free of Electron imports so plain `node --test` can use it; the
-// main process passes in the real `fetch` and the session token (#60).
+// Calls to the server's applications API (#128). Kept free of Electron imports so
+// plain `node --test` can use it; the main process passes in the real `fetch`.
 
 import type {
   Application,
@@ -12,11 +11,9 @@ import type {
 export const APPS_PATH = '/api/apps'
 export const REQUEST_TIMEOUT_MS = 5000
 
-export interface Options {
+interface Options {
   fetch?: typeof globalThis.fetch
   timeoutMs?: number
-  /** Sent as `Authorization: Bearer`; every API except login and health needs it. */
-  token?: string | null
 }
 
 /** Lists the applications on the server at `baseUrl`. Never throws. */
@@ -24,7 +21,7 @@ export async function listApplications(
   baseUrl: string | null,
   options: Options = {},
 ): Promise<ApplicationsResult> {
-  const answer = await request(baseUrl, APPS_PATH, { method: 'GET' }, options)
+  const answer = await request(baseUrl, { method: 'GET' }, options)
   if (!answer.ok) return answer
   const { status, body } = answer
   if (status === 200 && Array.isArray(body) && body.every(isApplication)) {
@@ -45,7 +42,7 @@ export async function createApplication(
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name, technology }),
   }
-  const answer = await request(baseUrl, APPS_PATH, init, options)
+  const answer = await request(baseUrl, init, options)
   if (!answer.ok) return answer
   const { status, body } = answer
   if (status === 201 && isApplication(body)) return { ok: true, app: body }
@@ -54,23 +51,19 @@ export async function createApplication(
   return { ok: false, reason: 'bad-response' }
 }
 
-export type Answer =
-  { ok: true; status: number; body: unknown } | { ok: false; reason: RequestFailure }
+type Answer = { ok: true; status: number; body: unknown } | { ok: false; reason: RequestFailure }
 
-/** One call to `baseUrl` + `path`. Never throws; a 401 becomes `unauthorized`. */
-export async function request(
+async function request(
   baseUrl: string | null,
-  path: string,
   init: RequestInit,
-  { fetch = globalThis.fetch, timeoutMs = REQUEST_TIMEOUT_MS, token }: Options,
+  { fetch = globalThis.fetch, timeoutMs = REQUEST_TIMEOUT_MS }: Options,
 ): Promise<Answer> {
   if (!baseUrl) return { ok: false, reason: 'no-server' }
-  const auth: Record<string, string> = token ? { authorization: `Bearer ${token}` } : {}
   let response: Response
   try {
-    response = await fetch(`${baseUrl}${path}`, {
+    response = await fetch(`${baseUrl}${APPS_PATH}`, {
       ...init,
-      headers: { accept: 'application/json', ...auth, ...init.headers },
+      headers: { accept: 'application/json', ...init.headers },
       signal: AbortSignal.timeout(timeoutMs),
     })
   } catch (error) {
@@ -84,7 +77,6 @@ export async function request(
     // undefined: error statuses are judged by their code alone.
     if (isTimeout(error)) return { ok: false, reason: 'timeout' }
   }
-  if (response.status === 401) return { ok: false, reason: 'unauthorized' }
   return { ok: true, status: response.status, body }
 }
 

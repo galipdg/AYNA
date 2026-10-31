@@ -42,29 +42,6 @@ describe('applications API', () => {
       assert.equal(request, 'GET /api/apps')
     })
 
-    it('sends the session token as a Bearer token, and none without one', async () => {
-      const seen: Array<string | undefined> = []
-      handle = (req, _body, res) => {
-        seen.push(req.headers.authorization)
-        json(res, 200, [])
-      }
-      await listApplications(base, { token: 'secret-token' })
-      await listApplications(base)
-      assert.deepEqual(seen, ['Bearer secret-token', undefined])
-    })
-
-    it('reports unauthorized on a 401, so the client asks for a login', async () => {
-      handle = (_req, _body, res) => json(res, 401, { status: 401, title: 'Unauthorized' })
-      assert.deepEqual(await listApplications(base, { token: 'expired' }), {
-        ok: false,
-        reason: 'unauthorized',
-      })
-      assert.deepEqual(await createApplication(base, 'Notepad', 'Win32'), {
-        ok: false,
-        reason: 'unauthorized',
-      })
-    })
-
     it('reports bad-response for anything but a list of applications', async () => {
       const answers: Array<(res: ServerResponse) => void> = [
         (res) => json(res, 200, { apps: [] }),

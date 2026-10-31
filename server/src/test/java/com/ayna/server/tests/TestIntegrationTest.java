@@ -29,7 +29,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
 
 import tools.jackson.databind.JsonNode;
@@ -38,7 +37,7 @@ import tools.jackson.databind.ObjectMapper;
 /** Tests and steps API against a real Neo4j started by Testcontainers (needs Docker). */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({ TestcontainersConfiguration.class, SignedIn.class })
+@Import(TestcontainersConfiguration.class)
 class TestIntegrationTest {
 
 	static final String UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -75,9 +74,6 @@ class TestIntegrationTest {
 			.andExpect(jsonPath("$.name").value("Giriş başarılı"))
 			.andExpect(jsonPath("$.document.version").value(schema.version()))
 			.andExpect(jsonPath("$.document.steps.length()").value(0))
-			.andExpect(jsonPath("$.createdBy.id").value(SignedIn.TESTER.userId()))
-			.andExpect(jsonPath("$.updatedBy.id").value(SignedIn.TESTER.userId()))
-			.andExpect(jsonPath("$.createdAt").isString())
 			.andExpect(header().string("Location", matchesPattern("/api/tests/" + UUID_PATTERN)));
 	}
 

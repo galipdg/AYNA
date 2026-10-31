@@ -11,15 +11,6 @@ public final class ApiExceptions {
 	private ApiExceptions() {
 	}
 
-	/** 401: the login failed; a missing or invalid token is answered by the security chain. */
-	public static class UnauthorizedException extends RuntimeException {
-
-		public UnauthorizedException(String message) {
-			super(message);
-		}
-
-	}
-
 	/** 404: an id in the path names nothing. */
 	public static class NotFoundException extends RuntimeException {
 

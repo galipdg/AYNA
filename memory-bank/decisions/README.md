@@ -22,4 +22,3 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-28 | [Healing proposal transport: agent → client or CLI runner → server](2026-10-28-healing-proposal-transport.md) | Accepted |
 | 2026-10-29 | [Graph schema v0.1: tests and repository objects belong to an application](2026-10-29-graph-schema-application-links.md) | Accepted |
 | 2026-10-29 | [REST error body: RFC 9457 problem details](2026-10-29-rest-error-problem-details.md) | Accepted |
-| 2026-10-31 | [Accounts, roles, sessions and API tokens](2026-10-31-accounts-and-tokens.md) | Proposed (#60) |

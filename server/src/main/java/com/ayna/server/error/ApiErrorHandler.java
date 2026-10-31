@@ -11,7 +11,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import com.ayna.server.error.ApiExceptions.ConflictException;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
-import com.ayna.server.error.ApiExceptions.UnauthorizedException;
 
 /**
  * One error body for every API (#158): RFC 9457 problem details, so the message reaches the
@@ -24,11 +23,6 @@ class ApiErrorHandler extends ResponseEntityExceptionHandler {
 
 	/** A large invalid body (a window snapshot) must not get an even larger error body. */
 	static final int MAX_FIELD_ERRORS = 50;
-
-	@ExceptionHandler
-	ProblemDetail unauthorized(UnauthorizedException ex) {
-		return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
-	}
 
 	@ExceptionHandler
 	ProblemDetail notFound(NotFoundException ex) {

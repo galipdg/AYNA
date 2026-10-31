@@ -55,8 +55,3 @@ Append-only. One entry per session, newest at the bottom:
 - Health check: local repo clean, 12 PRs green and mergeable. Omer's #126 conflicts with main in `people/omer/active.md` only.
 - Subagents opened PR #150 (#147: `SelectRow`, row by index or key-cell value, `cell`/`rowExists`/`rowCount` checks, v0.2 keeps every 0.1 step valid, #37 derivation needs no change) and PR #151 (#149: one `run.stepResult` payload for client and CLI, first-write-wins per (runId, stepIndex), exact fractions as strings). Both ADRs are Proposed.
 - Next: reviews; the follow-ups listed in active.md once the ADRs are approved.
-
-## 2026-10-29 · #35 review follow-ups
-- Folded omer's and hasan's #143 reviews into RS 0.6 on `galip/35-rs-review-followups`: FR-30/FR-23 follow the healing-transport ADR, TBD-5/6/9/10 closed, FR-35 "search incomplete", NFR-45 and NFR-46 added. SDD-ai AI-5.1/AI-6.1 aligned.
-- Consistency check rerun (scratch script): 0 errors; 40 FR, 46 NFR, 16 UC, 36 SC.
-- Next: PR review by omer and hasan; tick #35 criterion 2 after merge.

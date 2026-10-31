@@ -25,8 +25,8 @@ AYNA has two AI contributions in semester 1 and collects the data for a third in
 | Part | Code | Model | Runs when | Status |
 |---|---|---|---|---|
 | Step generation: prompt, constrained decoding, validation | `ai/ayna_ai/generate.py`, `ollama.py`, `validate.py` | Local 7–8B LLM via Ollama | Authoring | **Built**, PR #142 (#37) |
-| Retrieval of repository objects | Queries and vector index migration in `server/`; `POST /ai/embed` in `ai/` | Small multilingual embedding model | Authoring | Planned, #58 |
-| NL service endpoint `POST /ai/generate-steps`, `GET /ai/health` | `ai/ayna_ai/service.py`; contract `ai/API.md` | (uses the above) | Authoring | **Built**, PR #146 (#71); candidate objects come from the request, chosen by the server (AI-4) |
+| Retrieval of repository objects | `ai/ayna_ai/retrieve.py` + vector index migration | Small multilingual embedding model | Authoring | Planned, #58 |
+| NL service endpoint `POST /ai/generate-steps`, `GET /ai/health` | `ai/ayna_ai/service.py`; contract `ai/API.md` | (uses the above) | Authoring | **Built**, PR #146 (#71); candidate objects come from the request until #58 |
 | NL chat panel | `client/` | none | Authoring | Planned, #78 (omer) |
 | Healing candidates and graph features | `agent/ayna_agent/heal/candidates.py`, `features.py` | none | Playback; offline for RQ4 | Planned, #42, #43 |
 | Healing scorer | `agent/ayna_agent/heal/scorer.py` | none | Playback; offline for RQ4 | **Built**, PR #141 (#49) |
@@ -57,20 +57,21 @@ flowchart LR
     S["Server"]
     N[("Neo4j<br/>graph + vector index")]
     subgraph AIH["AI service host"]
-      AI["AI service<br/>embed · generate · validate"]
+      AI["AI service<br/>retrieve · generate · validate"]
       M["Model server<br/>Ollama / llama.cpp<br/>127.0.0.1 only"]
     end
   end
   C -- "REST: Turkish text, screen" --> S
   S -- "HTTP, authoring only" --> AI
   AI -- "loopback HTTP" --> M
+  AI -. "retrieval reads, planned #58 (AI-4)" .-> N
   S -- "Bolt" --> N
   C -- "JSON-RPC, localhost" --> A
   A -. "repair proposed + top 3, planned #73" .-> C
   C -. "proposal, decision, planned #74" .-> S
 ```
 
-The dotted edges are planned. The AI service has no edge to Neo4j: the server chooses the candidate objects and sends them (AI-4).
+The dotted edges are planned, and the AI-9 open issues settle them: how the AI service reads the graph, and how a proposal reaches the server.
 
 ---
 
@@ -80,7 +81,7 @@ The dotted edges are planned. The AI service has no edge to Neo4j: the server ch
 
 The JSON shape is fixed in `ai/API.md` (built, #71, PR #146); the part the client sees goes into the REST contract (#31, frozen in #52).
 
-- **In** (built, #71): `POST /ai/generate-steps` with the Turkish description (`text`), the application (`app`), its `version` and the current window (`screen`), and the candidate `objects` the server chose (≤ 100, logical name + Turkish description; AI-4). The server adds the user. The NL panel sends it through the server (#78).
+- **In** (built, #71): `POST /ai/generate-steps` with the Turkish description (`text`), the application (`app`), its `version` and the current window (`screen`), and, until retrieval exists (#58), the candidate `objects` (≤ 100, logical name + Turkish description). The server adds the user. The NL panel sends it through the server (#78).
 - **Out** (built, #71): `steps`, the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` plus a short Turkish `reason`; `dropped`, every step the model wrote that cannot be suggested, as `{index, code, reason, step}`; the `status`, the `model`, `schemaVersion`, `promptVersion` and `latencyMs`. HTTP 200 always carries at least one step.
 - **In the library** (#37, #71): `StepGenerator.generate(text, objects, timeout_s=None)` takes the text and a map `logical name → Turkish description` and returns a `GenerationResult`: the status, the kept steps as a step document `{"version": "0.1", "steps": [...]}` when the status is `ok`, one reason per kept step, the dropped steps, the raw output, the errors, the latency and the token counts.
 
@@ -239,8 +240,8 @@ The Type branch for a three-object request, for example:
 - **What is embedded.** For each RepoObject: its logical name, the UIA Name of the element it resolves to, and that element's label (`LABELLED_BY` or nearest label). The control type may help the model choose between `name` and `value` (#37 handoff); #58 measures it. The same text, in Turkish, becomes the description in the prompt.
 - **Embedding model.** A small multilingual open-weight model, bundled with the AI service, with its licence documented (NFR-23, NFR-30). #58 chooses it.
 - **Storage.** The `embedding` property on RepoObject (already in `docs/graph-model.md`) with a Neo4j vector index. Community Edition has vector search, so no second database is needed (NFR-24). The index migration is a server migration (`server/`, reviewed by omer).
-- **Refresh.** The embedding is recomputed whenever a RepoObject is created or changed, or resolves to a new element (#58 acceptance). The server asks the AI service for the vector (`POST /ai/embed`) and writes it itself, so the AI service never writes to the graph. While the AI service is down, the object is marked stale and refreshed later.
-- **Query (run by the server).** (a) The current screen: the RepoObjects that resolve, in the current version, to an element of the current window. (b) The vector top-k over the application's RepoObjects (`HAS_OBJECT`) for the Turkish text, embedded with `POST /ai/embed`. Merge the two without duplicates, current screen first, at most N objects. k and N are tuned on the dev split. Acceptance: Recall@10 of the gold objects ≥ 90 %, query < 200 ms (NFR-11). Without embeddings (stale, or no AI service at indexing time), (a) is used alone.
+- **Refresh.** The embedding is recomputed whenever a RepoObject is created or changed, or resolves to a new element (#58 acceptance). *Proposed:* the server asks the AI service for the vector (`POST /ai/embed`) and writes it itself, so the AI service never writes to the graph. While the AI service is down, the object is marked stale and refreshed later.
+- **Query.** (a) The current screen: the RepoObjects that resolve, in the current version, to an element of the current window. (b) The vector top-k over the application's RepoObjects for the embedded Turkish text. Merge the two without duplicates, current screen first, at most N objects. k and N are tuned on the dev split. Acceptance: Recall@10 of the gold objects ≥ 90 %, query < 200 ms (NFR-11). Without embeddings (stale, or no AI service at indexing time), (a) is used alone.
 
 ```cypher
 // (a) repository objects of the current window, for one app version
@@ -249,7 +250,7 @@ MATCH (w)-[:CONTAINS*1..]->(e:Element)<-[:RESOLVES_TO {version: $versionId}]-(o:
 RETURN o.name, e.name
 ```
 
-**Decided 2026-10-29 (AI-9 #5).** The server runs both queries and sends the merged objects in `POST /ai/generate-steps`; the AI service has no Bolt edge and no database credentials (SDD §2.2.2 rule 5). The embedding model stays in the AI service behind `POST /ai/embed`. The queries live next to the data in `server/`, so #58's expected output changes from `ai/ayna_ai/retrieve.py` to the server queries plus `/ai/embed`; `retrieve.py` keeps the pass-through retriever.
+**Open (AI-9 #5).** #58's expected output, `ai/ayna_ai/retrieve.py`, implies that the AI service reads Neo4j over Bolt with a read-only user. That edge is not in the architecture diagram yet. The alternative is that the server runs both queries and passes the objects to the AI service. #58 decides this with omer, and the SDD component view (#45) has to show the result.
 
 ---
 
@@ -274,7 +275,7 @@ flowchart TD
 
 ### AI-5.1 Trigger (planned, #73)
 
-Healing starts only when **no** element matches the object's primary or fallback properties by the end of the smart wait (FR-10, FR-29). An element that matches but never becomes visible and enabled is a `timeout` and gets no healing. A search or snapshot that runs out of its time budget before it covers the window is `search incomplete` and gets no healing either, because candidates from a partial tree would give a confident but unfounded proposal (FR-29, FR-35; TBD-5, closed 2026-10-29). Healing never acts on a candidate: the step ends as "repair proposed", the test stops, and the remaining steps are marked not run (FR-30, TBD-6).
+Healing starts only when **no** element matches the object's primary or fallback properties by the end of the smart wait (FR-10, FR-29). An element that matches but never becomes visible and enabled is a `timeout` and gets no healing (TBD-5, owned by hasan). Healing never acts on a candidate: the step ends as "repair proposed", the test stops, and the remaining steps are marked not run (FR-30, TBD-6).
 
 ### AI-5.2 Candidate generation (planned, #42)
 
@@ -338,7 +339,7 @@ Similo's HTML Name, HRef, Alt and IsButton have no UIA counterpart, or are cover
 
 ### AI-6.1 Rule-based triage (planned, #63, hasan)
 
-Every failed step gets exactly one category: *element not found*, *unexpected window*, *assertion failed*, *timeout* or *search incomplete* (FR-35). TBD-5 (closed) set the boundaries; only *element not found* starts healing (AI-5.1). The client shows the category with the step.
+Every failed step gets exactly one category: *element not found*, *unexpected window*, *assertion failed* or *timeout* (FR-35). TBD-5 sets the boundary between the first and the last. The client shows the category with the step.
 
 ### AI-6.2 Decision log (planned, #63)
 
@@ -393,7 +394,7 @@ How the design supports each measurement. #48 (test design) describes how the ex
 | 2 | **Closed 2026-10-27.** Per-step drop list instead of whole-document rejection (FR-26, SC-27): built (AI-2; 422 `no_valid_steps` when nothing is left) | galip | #71, PR #146 |
 | 3 | Forced choice: the reserved no-match target is built (AI-3, limit 3); how often the model uses it, and how often wrongly, is open | galip | measured in #77 |
 | 4 | Step schema v0 cannot check table rows or cells; needs v0.2 and an ADR | galip, hasan, omer | new issue (from #37) |
-| 5 | **Closed 2026-10-29.** The server runs the retrieval queries, writes the embeddings and passes the objects; the AI service only embeds (`POST /ai/embed`) and generates (AI-4) | galip, omer | #58; SDD §2.2.2 (#45) |
+| 5 | How retrieval reads the graph (AI service over read-only Bolt, or the server passes objects) and who writes embeddings | galip, omer | #58; component view #45 |
 | 6 | The loopback-only model client against a separate Ollama container in Compose: run the model server in the AI service's container or share its network namespace | galip, omer | #82 |
 | 7 | How a "repair proposed" result and its proposal travel from the agent to the server (via the client; the CLI runner in CI); not in agent JSON-RPC v0.1 | hasan, omer | #73, #74; freeze #52 |
 | 8 | Contributions on the `CANDIDATE` relationship instead of the proposal node; `docs/graph-model.md` to update | omer | #74 |
