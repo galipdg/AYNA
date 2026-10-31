@@ -59,3 +59,28 @@ Append-only. One entry per session, newest at the bottom:
 - Found that #138 is now empty (#143 carried its content) and that its "fill §7 first" gate was
   bypassed, so the workshop document sits on `main` saying its own contents are not agreed yet.
 - Next step: #161 (reproduce the #6 KeePass 2 state and bisect the 278.5 s walk), then #122.
+
+## 2026-10-31 — #6 closed, two reviews, #21 D1 ADR
+- Session started from a 95-commit-behind `main` and a stale `active.md`; #6's work was already
+  finished on `hasan/6-uia-dumps`, so the first move was the user merging PR #159 (approved) —
+  #6 is closed and the dumps are on `main`.
+- Triaged the inbox: of 13 entries, 7 were already handled by last session's review round. Six
+  live items left, the two urgent ones being review requests on my own area.
+- Reviewed PR #167 (omer did my `eval/` half of #122) on this Windows machine instead of
+  trusting CI: editable install resolves, ruff clean, `pytest eval/apps/trial/tests` 12 passed
+  including the 5 UIA tests, spike `unittest` 24 OK. Two notes: the removed `noqa: E402` is
+  unused only because E402 is outside ruff's default rules (`--select E4` reports 2 errors there),
+  and CI covers neither ruff nor pytest for `spikes/` — which now holds the measurement tool
+  #161 depends on.
+- Reviewed PR #166 (galip's DIP fix). Found by measuring that a missing `dpi` on one side is
+  worse than the old behaviour: an element against itself scores 0.33 location / 0.44 area.
+  Asked for "if one side has dpi, use it for both". Also raised that `docs/graph-model.md` has
+  nowhere to store the recording-time DPI → note in omer's inbox for #14/#25.
+- Wrote the D1 ADR for #21. The decision turns on one thing: KeePassXC's 10 % id uniqueness is
+  caused by unnamed widgets, not by Qt, and in our own app `objectName` is ours to set — the
+  trial app, re-dumped today, gives 8/8 app-owned controls a unique dotted AutomationId. So
+  PySide6 stays and the plan's WPF exception is not taken; pilots are KeePass 2 + HandBrake.
+- Found that #21's criterion "pilot apps installed on every member's machine" cannot hold for
+  two macOS members, and that the issue's expected ADR path contradicts the memory-structure
+  ADR. Both are written up for the team instead of being quietly worked around.
+- Next step: open the PR for #21, then #161 (the only result that can reopen this ADR).
