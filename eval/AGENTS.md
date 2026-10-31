@@ -8,16 +8,20 @@ Owner: hasan (`nl/`: galip). Read `/AGENTS.md` first; this file adds only what i
 - `nl/` — Turkish NL/step dataset (held-out split is frozen)
 
 ## Commands
-Dependencies live next to what needs them (`eval/apps/trial/requirements.txt`), not in
-a repo-wide `pyproject.toml` — that is still an open devops decision.
+Dependencies are in `eval/pyproject.toml` (install with `[dev]` for ruff and pytest).
+Commands run from the repository root.
 
 ```powershell
 # setup, once
 python -m venv .venv
-.venv/Scripts/python.exe -m pip install -r eval/apps/trial/requirements.txt
+.venv/Scripts/python.exe -m pip install -e "eval[dev]"
 
 # run the trial app
 .venv/Scripts/python.exe eval/apps/trial/app.py
+
+# lint and format (CI runs both; `spikes/` is excluded)
+.venv/Scripts/ruff.exe check eval
+.venv/Scripts/ruff.exe format --check eval
 
 # tests (`@pytest.mark.windows` ones skip themselves off Windows)
 .venv/Scripts/python.exe -m pytest eval/apps/trial/tests -v
@@ -26,7 +30,8 @@ python -m venv .venv
 .venv/Scripts/python.exe eval/apps/trial/uia_dump.py
 ```
 
-No linter is set up yet; ask before adding one.
+CI (`eval` job, Windows runner) runs ruff and pytest in `eval/`, including the
+`@pytest.mark.windows` tests.
 
 ## Rules
 - Every experiment is reproducible with one documented command.
