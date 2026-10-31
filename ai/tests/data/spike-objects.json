@@ -1,0 +1,19 @@
+{
+  "login.userNameInput": "Kullanıcı adı alanı",
+  "login.passwordInput": "Şifre alanı",
+  "login.loginButton": "Giriş butonu",
+  "login.errorLabel": "Giriş hata mesajı",
+  "main.statusLabel": "Ana ekran durum etiketi",
+  "main.newCustomerButton": "Yeni müşteri butonu",
+  "main.searchInput": "Arama kutusu",
+  "main.searchButton": "Ara butonu",
+  "main.customerGrid": "Müşteri tablosu",
+  "customer.nameInput": "Ad alanı",
+  "customer.surnameInput": "Soyad alanı",
+  "customer.cityCombo": "Şehir listesi",
+  "customer.typeCombo": "Müşteri tipi listesi",
+  "customer.saveButton": "Kaydet butonu",
+  "customer.cancelButton": "İptal butonu",
+  "dialog.messageLabel": "Bilgi penceresindeki mesaj",
+  "dialog.okButton": "Bilgi penceresindeki Tamam butonu"
+}

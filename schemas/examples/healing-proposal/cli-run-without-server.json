@@ -1,0 +1,83 @@
+{
+  "version": "0.1",
+  "runId": "0c9e7b52-61d4-4f3a-8e2b-5a7d9c1f3e64",
+  "stepIndex": 0,
+  "stepId": null,
+  "logicalName": "login.usernameInput",
+  "appVersionId": null,
+  "snapshotId": "snap-20261222-094107-1",
+  "target": {
+    "serverElementId": null,
+    "properties": {
+      "automationId": "QApplication.loginWindow.usernameInput",
+      "name": "Kullanıcı adı",
+      "controlType": "Edit",
+      "className": "QLineEdit",
+      "bounds": [600, 300, 840, 328],
+      "parentPath": "loginWindow/credentialsBox",
+      "siblingIndex": 1,
+      "nearestLabel": "Kullanıcı adı",
+      "windowTitle": "AYNA Trial"
+    }
+  },
+  "scorer": {
+    "id": "similo-v0",
+    "weights": {
+      "automationId": "3/2",
+      "name": "3/2",
+      "controlType": "3/2",
+      "nearestLabel": "3/2",
+      "className": "1/2",
+      "parentPath": "1/2",
+      "siblingIndex": "1/2",
+      "location": "1/2",
+      "area": "1/2",
+      "shape": "1/2",
+      "windowTitle": "1/2"
+    }
+  },
+  "candidatesScored": 2,
+  "candidates": [
+    {
+      "rank": 1,
+      "elementId": "7",
+      "element": {
+        "automationId": "QApplication.loginWindow.userNameField",
+        "controlType": "Edit",
+        "className": "QLineEdit",
+        "bounds": [600, 306, 840, 334],
+        "parentPath": "loginWindow/credentialsBox",
+        "siblingIndex": 1,
+        "nearestLabel": "Kullanıcı adınız",
+        "windowTitle": "AYNA Trial"
+      },
+      "score": "4318/6175",
+      "contributions": {
+        "automationId": "24/247",
+        "name": "0",
+        "controlType": "3/19",
+        "nearestLabel": "3/38",
+        "className": "1/19",
+        "parentPath": "1/19",
+        "siblingIndex": "1/19",
+        "location": "47/950",
+        "area": "1/19",
+        "shape": "1/19",
+        "windowTitle": "1/19"
+      },
+      "similarities": {
+        "automationId": "8/13",
+        "name": "0",
+        "controlType": "1",
+        "nearestLabel": "1/2",
+        "className": "1",
+        "parentPath": "1",
+        "siblingIndex": "1",
+        "location": "47/50",
+        "area": "1",
+        "shape": "1",
+        "windowTitle": "1"
+      }
+    }
+  ]
+}
