@@ -15,7 +15,7 @@ python -m ayna_ai.service --port 8090 --model qwen3:8b
 python spikes/service_check.py   # the 10 spike sentences through HTTP, with p50/p95
 ```
 
-It listens on loopback only unless started with `--allow-remote`. Candidate objects come from the request through a `Retriever` (`ayna_ai/retrieve.py`); repository retrieval (#58) will replace the pass-through one.
+It listens on loopback only unless started with `--allow-remote`, which needs a bearer token in `AYNA_AI_TOKEN`. Candidate objects come from the request through a `Retriever` (`ayna_ai/retrieve.py`): the AYNA server chooses them (#58), so the service never reads the graph.
 
 ## Generating steps
 
