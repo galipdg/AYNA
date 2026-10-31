@@ -47,3 +47,23 @@ Append-only. One entry per session, newest at the bottom:
 - #128 on `omer/128-apps-api`: `server/.../apps/` (`AppController`, `AppService` with plain Cypher via `Driver`), 4 endpoints with 400/404/409; duplicate checks in the create transaction, no constraint (omer chose option (a)); `technology` free text. `AppIntegrationTest` 7 cases, `./mvnw -B verify` green. PR #129, CI green. OpenAPI criterion left unticked (generation arrives with #31).
 - #32 picker: `client/src/main/apps.ts`, IPC `apps:list|create|choose`, `AppPicker.tsx` with create form (omer's choice), `applicationId` in `Settings`, cleared on server change. 33 tests + build green; `apps.ts` checked against the real #128 server; omer's 8-step manual check passed. Pushed; PR #127 CI green.
 - Next: after #129 merges, merge main into #32, mark #127 ready with `Closes #32`.
+
+## 2026-10-29 · review round
+- After three days away: #127 (#32) and #129 (#128) merged; galip opened 13 PRs needing omer's review; hasan inactive since 2026-10-26.
+- Approved #134, #135 (contracts), #141, #146, #150, #151 with server/client notes; decisions posted on #140, #143, #144; opened #152 (load test, TBD-9).
+- #10: merged main into `omer/10-literature-review`, applied galip's gaps-table fixes in `literature.md` and in the plan doc (Claude Docs, rev 17); found the plan doc's numbering matches the file, galip's export is another copy (asked on #126). `Closes #20` added to #126.
+- Carried the unpushed #32 note commit over to this branch; cleared handled inbox items.
+- Next: content reviews of the RS PRs, then #17.
+
+## 2026-10-29 · RS content reviews
+- #140 had merged before the review; my NFR confirmation on it stands. Approved with comments: #137 (RS outline; reference numbering waits for the plan copy on #126), #138 (workshop: API token for ROLE-5, uniqueness per AppVersion, UC-12 outline only with the AUT open), #143 (RS draft: apply TBD-9/10, FR-07/FR-08, server-down availability NFR, AI port, NFR-07 excludes screenshot uploads), #144 (SDD AI: retrieval through the server, AI-9 #6–#8 settled, #78 pass-through).
+- Backup/restore: kept as NFR-44 (Could) in my install guide #91 (omer's choice), follow-up comment on #137.
+- `gh pr review` posts needed explicit user OK (auto-mode classifier).
+- Next: #17.
+
+## 2026-10-29 · reviews, #45 SDD, #39 tests API
+- Reviews: approved #142 (note: `objects` needs per-object `columns` once `column` becomes an enum); comment on #145 (all 12 pairs fail under #150's 0.2 → merge #150 first, then relabel).
+- #45: `docs/sdd/SDD.md` skeleton (IEEE 1016, omer's choice) + sections 1–4; galip's AI block = §5 (answer in his inbox). PR #155, review requested from galip; diagrams checked by omer.
+- galip's six PRs (#143–#146, #150, #151) show as conflicting on GitHub: only `merge=union` inbox files, except #151 (ADR index). Note in galip's inbox and in #155's body (learnings entry).
+- #39: tests and steps API, networknt validator 3.0.8, V0002 + Proposed ADR (HAS_TEST, HAS_OBJECT), Docker context at repo root. 32 server tests green, CI green. PR #156, reviewers galip + hasan.
+- Next: answer reviews on #155 and #156; then #48 (SDD test design) or #25 once #12/#22 move.
