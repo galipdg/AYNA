@@ -24,7 +24,10 @@ from the snapshot:
   Not scored itself: location and area are compared in device-independent pixels
   (DIP, physical * 96 / dpi), so the same layout scores the same at every display
   scaling, also when the target and the candidate come from machines with different
-  scaling. Missing means 96. ``bounds`` stay physical everywhere else.
+  scaling. When only one of the two has ``dpi``, the other is taken to have the same
+  (one machine, as before ``dpi`` existed), so an unchanged control still matches
+  itself; when neither has it, both are taken as 96, which compares raw pixels as
+  before. ``bounds`` stay physical everywhere else.
 - ``parentPath``: the ancestor chain as one string, root first, built from the
   programmatic ControlType names joined by ``/`` (e.g. ``"Window/Pane/Group"``), never
   from the localised control type: a Turkish Windows would give ``Pencere/Bölme/Grup``
@@ -407,15 +410,29 @@ def _bounds(element: Element) -> Rect | None:
     return left, top, right, bottom
 
 
-def _dpi(element: Element) -> int:
+def _dpi(element: Element) -> int | None:
     value = element.get("dpi")
     if value is None:
-        return BASE_DPI
+        return None
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"'dpi' must be an int, got {value!r}")
     if value <= 0:
         raise ValueError(f"'dpi' must be > 0, got {value}")
     return value
+
+
+def _dpis(target: Element, candidate: Element) -> tuple[int, int]:
+    """Both DPIs. One missing takes the other's value; both missing are 96.
+
+    Defaulting a single missing side to 96 would make an unchanged control off 100 %
+    scaling look moved and resized (the #166 review).
+    """
+    target_dpi, candidate_dpi = _dpi(target), _dpi(candidate)
+    if target_dpi is None:
+        target_dpi = candidate_dpi or BASE_DPI
+    if candidate_dpi is None:
+        candidate_dpi = target_dpi
+    return target_dpi, candidate_dpi
 
 
 def _dip(pixel: int, dpi: int) -> Fraction:
@@ -477,7 +494,7 @@ def _compare_bounds(
         return _apply_missing_rule(
             _bounds(target),
             _bounds(candidate),
-            lambda a, b: similarity(a, b, _dpi(target), _dpi(candidate)),
+            lambda a, b: similarity(a, b, *_dpis(target, candidate)),
         )
 
     return compare

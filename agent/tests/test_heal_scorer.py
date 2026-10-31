@@ -408,21 +408,33 @@ def test_a_fractional_dip_distance_is_truncated_exactly():
     )
 
 
-def test_score_reads_dpi_from_each_element_and_defaults_to_96():
+def test_score_reads_dpi_from_each_element():
     at_150 = {
         **USERNAME,
         "bounds": scaled(USERNAME["bounds"], 144),
         "dpi": 144,
     }
-    result = score(USERNAME, at_150)
+    result = score({**USERNAME, "dpi": 96}, at_150)
     assert result.similarities["location"] == 1
     assert result.similarities["area"] == 1
     assert result.score == 1
-    # Without dpi the same element reads as moved and grown.
+    # Without dpi on either side, raw pixels are compared, as before dpi existed.
     result = score(USERNAME, {**at_150, "dpi": None})
     assert result.similarities["location"] < 1
     assert result.similarities["area"] < 1
     assert score(USERNAME, {**USERNAME, "dpi": 96}) == score(USERNAME, USERNAME)
+
+
+@pytest.mark.parametrize("dpi", [96, 120, 144])
+def test_dpi_on_one_side_only_is_assumed_for_both(dpi):
+    # omer's case on #166: a target stored before dpi existed, the same control from a
+    # snapshot that has it. It must still match itself, in both directions.
+    target = {"name": "OK", "controlType": "Button", "bounds": (500, 400, 600, 430)}
+    assert score(target, {**target, "dpi": dpi}).score == 1
+    assert score({**target, "dpi": dpi}, target).score == 1
+    # A move is measured in DIP of the known dpi: 96 * dpi / 96 physical px = 96 DIP.
+    moved = {**target, "bounds": (500 + dpi, 400, 600 + dpi, 430), "dpi": dpi}
+    assert score(target, moved).similarities["location"] == Fraction(4, 100)
 
 
 # --- ranking, determinism and the sum property --------------------------------------
