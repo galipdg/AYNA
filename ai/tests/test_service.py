@@ -18,6 +18,8 @@ from ayna_ai.service import (
     FAILURES,
     GENERATE_PATH,
     HEALTH_PATH,
+    MIN_TOKEN_LENGTH,
+    TOKEN_ENV,
     ServiceConfig,
     StepService,
     create_server,
@@ -29,6 +31,7 @@ from ayna_ai.validate import NO_MATCH, DroppedStep, load_step_schema
 STEP_SCHEMA = Draft202012Validator(load_step_schema())
 SCHEMA_VERSION = load_step_schema()["properties"]["version"]["const"]
 TEXT = "Kullanıcı adı alanına admin yaz ve giriş butonuna tıkla."
+TOKEN = "test-token-0123456789abcdef"
 STEPS = [
     {
         "keyword": "Type",
@@ -117,13 +120,13 @@ class Running:
 
 @pytest.fixture
 def start_service(fake_ollama):
-    """start(retriever=None, **ServiceConfig fields) -> Running, on 127.0.0.1:<free>."""
+    """start(retriever=None, token=None, **ServiceConfig fields) -> Running."""
     servers = []
 
-    def start(retriever=None, **fields):
+    def start(retriever=None, token=None, **fields):
         fields.setdefault("model_host", fake_ollama.url)
         service = StepService(ServiceConfig(**fields), retriever=retriever)
-        server = create_server(service, "127.0.0.1", 0)
+        server = create_server(service, "127.0.0.1", 0, token=token)
         thread = threading.Thread(
             target=server.serve_forever, args=(0.05,), daemon=True
         )
@@ -581,7 +584,7 @@ def test_the_timeout_is_30_s_by_default_and_set_by_the_cli(monkeypatch):
         def server_close(self):
             pass
 
-    def fake_create_server(service, host, port, allow_remote=False):
+    def fake_create_server(service, host, port, allow_remote=False, token=None):
         started.append(service)
         return Stub()
 
@@ -950,11 +953,130 @@ def test_the_cli_refuses_a_remote_model_server(capsys):
 def test_allow_remote_binds_and_logs_a_warning(fake_ollama, monkeypatch, caplog):
     bound = []
     monkeypatch.setattr(
-        service_module, "ServiceServer", lambda address, service: bound.append(address)
+        service_module,
+        "ServiceServer",
+        lambda address, service, token: bound.append((address, token)),
     )
     service = StepService(ServiceConfig(model_host=fake_ollama.url))
     with caplog.at_level(logging.WARNING, logger="ayna_ai.service"):
-        create_server(service, "0.0.0.0", 8090, allow_remote=True)
-    assert bound == [("0.0.0.0", 8090)]
+        create_server(service, "0.0.0.0", 8090, allow_remote=True, token=TOKEN)
+    assert bound == [(("0.0.0.0", 8090), TOKEN)]
     (warning,) = [json.loads(r.getMessage()) for r in caplog.records]
     assert warning["event"] == "remote_bind" and warning["host"] == "0.0.0.0"
+
+
+# --- bearer token (AYNA_AI_TOKEN; #146 review) ----------------------------------
+
+
+def test_allow_remote_without_a_token_is_refused(fake_ollama):
+    service = StepService(ServiceConfig(model_host=fake_ollama.url))
+    with pytest.raises(ValueError, match=TOKEN_ENV):
+        create_server(service, "0.0.0.0", 0, allow_remote=True)
+
+
+def test_a_short_token_is_refused(fake_ollama):
+    service = StepService(ServiceConfig(model_host=fake_ollama.url))
+    with pytest.raises(ValueError, match=str(MIN_TOKEN_LENGTH)):
+        create_server(service, "127.0.0.1", 0, token="x" * (MIN_TOKEN_LENGTH - 1))
+
+
+def test_the_cli_needs_the_token_env_with_allow_remote(monkeypatch, capsys):
+    monkeypatch.delenv(TOKEN_ENV, raising=False)
+    with pytest.raises(SystemExit) as caught:
+        main(["--host", "0.0.0.0", "--allow-remote", "--port", "0", "--no-warmup"])
+    assert caught.value.code == 2
+    assert TOKEN_ENV in capsys.readouterr().err
+
+
+def test_the_cli_passes_the_token_env_to_the_server(monkeypatch):
+    seen = []
+
+    class Stub:
+        server_address = ("0.0.0.0", 8090)
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            pass
+
+    def fake_create_server(service, host, port, allow_remote=False, token=None):
+        seen.append((host, allow_remote, token))
+        return Stub()
+
+    monkeypatch.setattr(service_module, "create_server", fake_create_server)
+    monkeypatch.setenv(TOKEN_ENV, TOKEN)
+    assert main(["--host", "0.0.0.0", "--allow-remote", "--no-warmup"]) == 0
+    assert seen == [("0.0.0.0", True, TOKEN)]
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {},
+        {"Authorization": "Bearer wrong-token-0123456789"},
+        {"Authorization": TOKEN},
+        {"Authorization": f"Basic {TOKEN}"},
+    ],
+)
+def test_with_a_token_a_request_without_it_is_401(start_service, request_body, headers):
+    running = start_service(token=TOKEN)
+    body = json.dumps(request_body).encode()
+    status, payload, response_headers = running.request(
+        "POST",
+        GENERATE_PATH,
+        body,
+        {"Content-Type": "application/json", **headers},
+    )
+    assert status == 401
+    assert payload == {
+        "status": "unauthorized",
+        "error": "missing or wrong bearer token",
+    }
+    assert response_headers["WWW-Authenticate"] == "Bearer"
+
+
+def test_with_a_token_every_path_and_method_is_checked_first(start_service):
+    running = start_service(token=TOKEN)
+    for method, path in [
+        ("GET", HEALTH_PATH),
+        ("GET", "/no/such/path"),
+        ("DELETE", GENERATE_PATH),
+    ]:
+        status, payload, _ = running.request(method, path)
+        assert (status, payload["status"]) == (401, "unauthorized"), (method, path)
+
+
+def test_two_authorization_headers_are_refused(start_service):
+    running = start_service(token=TOKEN)
+    conn = http.client.HTTPConnection("127.0.0.1", running.port, timeout=10)
+    try:
+        conn.putrequest("GET", HEALTH_PATH)
+        conn.putheader("Authorization", f"Bearer {TOKEN}")
+        conn.putheader("Authorization", f"Bearer {TOKEN}")
+        conn.endheaders()
+        assert conn.getresponse().status == 401
+    finally:
+        conn.close()
+
+
+def test_with_the_right_token_requests_are_served(
+    start_service, request_body, fake_ollama
+):
+    model_answers(fake_ollama)
+    running = start_service(token=TOKEN)
+    auth = {"Authorization": f"Bearer {TOKEN}"}
+    status, health, _ = running.request("GET", HEALTH_PATH, headers=auth)
+    assert status == 200 and health["ready"] is True
+    body = json.dumps(request_body, ensure_ascii=False).encode("utf-8")
+    status, payload, _ = running.request(
+        "POST", GENERATE_PATH, body, {"Content-Type": "application/json", **auth}
+    )
+    assert status == 200 and payload["status"] == "ok"
+
+
+def test_without_a_token_loopback_stays_open(start_service, request_body, fake_ollama):
+    model_answers(fake_ollama)
+    running = start_service()
+    assert running.health()[0] == 200
+    assert running.generate(request_body)[0] == 200

@@ -68,3 +68,7 @@ Append-only. One entry per session, newest at the bottom:
 - PR #165 (`galip/71-ai-api-followups`): `AYNA_AI_TOKEN` bearer token, required with `--allow-remote`, checked before routing (12 new tests, 355 ai tests pass); `app`/`version`/`screen` documented as the server sends them; retrieval decision recorded in `ai/API.md`, README, `retrieve.py`, SDD-ai. omer told via inbox (contract change).
 - PR #166 (`galip/49-dpi-location`): per-element `dpi`, location and area in DIP, exact arithmetic kept; `parentPath` contract; U+0307 note corrected (hasan's `ż` example keeps its dot under NFC). 129 agent tests pass.
 - Next: reviews on #164–#166; #58 issue text; remaining small asks in `active.md`.
+## 2026-10-29 · #35 review follow-ups
+- Folded omer's and hasan's #143 reviews into RS 0.6 on `galip/35-rs-review-followups`: FR-30/FR-23 follow the healing-transport ADR, TBD-5/6/9/10 closed, FR-35 "search incomplete", NFR-45 and NFR-46 added. SDD-ai AI-5.1/AI-6.1 aligned.
+- Consistency check rerun (scratch script): 0 errors; 40 FR, 46 NFR, 16 UC, 36 SC.
+- Next: PR review by omer and hasan; tick #35 criterion 2 after merge.
