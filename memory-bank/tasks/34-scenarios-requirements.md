@@ -39,6 +39,7 @@ Counts were checked with a one-off parser in the session scratch area (not commi
 
 ## Handoff
 - #35: move §5 and §6 into `docs/rs/RS.md` §3.2–§3.8 and leave a pointer; copy the §3 summary table into RS §3.1; take the TBDs into Appendix E, starting at TBD-7; build the §5.1 matrix from the FR Scenarios column and the §7.1 table.
+- 2026-10-27 — Done in #35 (`galip/35-rs-draft`): the summary, FR/NFR tables, traceability and TBDs now live in `docs/rs/RS.md` (§3.1–§3.8, §5, Appendix E); `scenarios.md` is the Appendix C source (C.1–C.3). The summary was moved, not copied, to keep one place per item.
 - #55 and #62 (building and running the reference scenarios) can start from SC-14, SC-16–SC-22, SC-24 and SC-29–SC-31; those need only the sample app and its versions.
 
 ## Outcome (fill when the issue closes)

@@ -1,0 +1,306 @@
+{
+  "started": "2026-10-27T20:34:03+03:00",
+  "note": "baseline: format json (no schema); prompt v2",
+  "input": "spikes/llm-smoke-inputs.jsonl",
+  "objects": "tests/data/spike-objects.json",
+  "host": "http://127.0.0.1:11434",
+  "settings": {
+    "model": "gemma4:e4b-it-qat",
+    "format": "json",
+    "num_predict": 512,
+    "num_ctx": 4096,
+    "seed": 42,
+    "max_steps": 12,
+    "max_text": 200
+  },
+  "warmup_s": 0.0,
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.11.13",
+    "ollama": "0.40.11"
+  },
+  "summary": {
+    "n": 10,
+    "ok": 0,
+    "ok_rate": 0.0,
+    "by_status": {
+      "invalid_schema": 10
+    },
+    "latency_p50_s": 6.08,
+    "latency_p95_s": 12.55,
+    "latency_max_s": 15.46,
+    "output_tokens_median": 66.5,
+    "keyword_match": 0
+  },
+  "scenarios": [
+    {
+      "id": 1,
+      "text": "Kullanıcı adı alanına admin yaz, şifre alanına 1234 yaz ve giriş butonuna tıkla.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"target\": \"login.userNameInput\", \"action\": \"type\", \"value\": \"admin\"}, {\"target\": \"login.passwordInput\", \"action\": \"type\", \"value\": \"1234\"}, {\"target\": \"login.loginButton\", \"action\": \"click\"}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[2]: 'keyword' is a required property",
+        "$.steps[2]: Additional properties are not allowed ('action' was unexpected)"
+      ],
+      "latency_s": 6.279,
+      "load_s": 0.001,
+      "prompt_tokens": 459,
+      "output_tokens": 73,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 2,
+      "text": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"Verify\": {\"target\": \"main.statusLabel\", \"operator\": \"equals\", \"expected\": \"Hoş geldiniz\"}}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: 'target' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('Verify' was unexpected)"
+      ],
+      "latency_s": 4.027,
+      "load_s": 0.001,
+      "prompt_tokens": 446,
+      "output_tokens": 39,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Verify"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 3,
+      "text": "Yeni müşteri butonuna bas, ad alanına Ayşe, soyad alanına Yılmaz gir.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"action\": \"Click\", \"target\": \"main.newCustomerButton\"}, {\"action\": \"Type\", \"target\": \"customer.nameInput\", \"value\": \"Ayşe\"}, {\"action\": \"Type\", \"target\": \"customer.surnameInput\", \"value\": \"Yılmaz\"}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[2]: 'keyword' is a required property",
+        "$.steps[2]: Additional properties are not allowed ('action' was unexpected)"
+      ],
+      "latency_s": 6.446,
+      "load_s": 0.001,
+      "prompt_tokens": 451,
+      "output_tokens": 73,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 4,
+      "text": "Şehir listesinden Ankara'yı seç ve kaydet düğmesine tıkla.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"step\": \"Select Ankara in customer.cityCombo\"}, {\"step\": \"Click customer.saveButton\"}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: 'target' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('step' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: 'target' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('step' was unexpected)"
+      ],
+      "latency_s": 4.052,
+      "load_s": 0.001,
+      "prompt_tokens": 449,
+      "output_tokens": 35,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Select",
+        "Click"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 5,
+      "text": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"Wait: main.customerGrid, 5000}]}<tool_call|> shalt_output_format: json_only_with_version_and_steps_array_and_no_extra_text_or_explanation_in_the_final_output_unless_it_is_part_of_the_step_definition_itself_and_only_if_the_instruction_requires_it_for_clarity_or_completeness_but_in_this_case_it_is_not_required_so_just_the_json_is_fine_and_the_step_definition_is_already_provided_in_the_prompt_so_I_just_need_to_follow_the_format_strictly}<tool_call|>```json{\": \"0.1\", \"steps\": [{\"Wait\": \"main.customerGrid\", \"5000\":-1}]}\n]\n}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: 'target' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('Wait: main.customerGrid, 5000}]}<tool_call|> shalt_output_format: json_only_with_version_and_steps_array_and_no_extra_text_or_explanation_in_the_final_output_unless_it_is_part_of_the_step_definition_itself_and_only_if_the_instruction_requires_it_for_clarity_or_completeness_but_in_this_case_it_is_not_required_so_just_the_json_is_fine_and_the_step_definition_is_already_provided_in_the_prompt_so_I_just_need_to_follow_the_format_strictly}<tool_call|>```json{', 'steps' were unexpected)"
+      ],
+      "latency_s": 15.461,
+      "load_s": 0.001,
+      "prompt_tokens": 449,
+      "output_tokens": 211,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Wait"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 6,
+      "text": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla, ardından tabloda Yılmaz'ın listelendiğini kontrol et.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"action\": \"type\", \"target\": \"main.searchInput\", \"value\": \"Yılmaz\"}, {\"action\": \"click\", \"target\": \"main.searchButton\"}, {\"action\": \"verify\", \"target\": \"main.customerGrid\", \"checkpoint\": {\"property\": \"contains\", \"operator\": \"contains\", \"expected\": \"Yılmaz\"}}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[2]: 'keyword' is a required property",
+        "$.steps[2]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[2].checkpoint.property: 'contains' is not one of ['name', 'value', 'enabled', 'visible', 'checked', 'selected']"
+      ],
+      "latency_s": 6.956,
+      "load_s": 0.001,
+      "prompt_tokens": 461,
+      "output_tokens": 86,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 7,
+      "text": "Müşteri tipini Kurumsal olarak seç.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"step\": \"Select\", \"target\": \"customer.typeCombo\", \"value\": \"Kurumsal\"}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('step' was unexpected)"
+      ],
+      "latency_s": 3.688,
+      "load_s": 0.001,
+      "prompt_tokens": 441,
+      "output_tokens": 35,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Select"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 8,
+      "text": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula ve Tamam'a tıkla.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"Click\": \"customer.saveButton\"}, {\"Verify\": \"dialog.messageLabel\", \"equals\": \"Kayıt başarılı\"}, {\"Click\": \"dialog.okButton\"}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: 'target' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('Click' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: 'target' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('Verify', 'equals' were unexpected)",
+        "$.steps[2]: 'keyword' is a required property",
+        "$.steps[2]: 'target' is a required property",
+        "$.steps[2]: Additional properties are not allowed ('Click' was unexpected)"
+      ],
+      "latency_s": 4.772,
+      "load_s": 0.001,
+      "prompt_tokens": 461,
+      "output_tokens": 49,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Click",
+        "Verify",
+        "Click"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 9,
+      "text": "Kullanıcı adına admin, şifreye yanlis123 yaz, girişe tıkla ve hata mesajının 'Hatalı şifre' olduğunu doğrula.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"action\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\"}, {\"action\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"yanlis123\"}, {\"action\": \"Click\", \"target\": \"login.loginButton\"}, {\"action\": \"Verify\", \"target\": \"login.errorLabel\", \"value\": \"Hatalı şifre\", \"operator\": \"equals\"}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[2]: 'keyword' is a required property",
+        "$.steps[2]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[3]: 'keyword' is a required property",
+        "$.steps[3]: Additional properties are not allowed ('action', 'operator' were unexpected)"
+      ],
+      "latency_s": 8.986,
+      "load_s": 0.001,
+      "prompt_tokens": 469,
+      "output_tokens": 106,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Type",
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 10,
+      "text": "İptal butonuna tıkla ve ana ekrandaki arama kutusunun boş olduğunu doğrula.",
+      "status": "invalid_schema",
+      "document": null,
+      "output": "{\"version\": \"0.1\", \"steps\": [{\"action\": \"Click\", \"target\": \"customer.cancelButton\"}, {\"action\": \"Verify\", \"target\": \"main.searchInput\", \"checkpoint\": {\"value\": \"\",\"operator\": \"equals\", \"expected\": true}}]}",
+      "errors": [
+        "$.steps[0]: 'keyword' is a required property",
+        "$.steps[0]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[1]: 'keyword' is a required property",
+        "$.steps[1]: Additional properties are not allowed ('action' was unexpected)",
+        "$.steps[1].checkpoint: 'property' is a required property",
+        "$.steps[1].checkpoint: Additional properties are not allowed ('value' was unexpected)"
+      ],
+      "latency_s": 5.883,
+      "load_s": 0.001,
+      "prompt_tokens": 454,
+      "output_tokens": 60,
+      "done_reason": "stop",
+      "ok": false,
+      "keywords": [],
+      "expected": [
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": false
+    }
+  ]
+}

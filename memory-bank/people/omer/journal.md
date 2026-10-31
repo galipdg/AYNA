@@ -66,3 +66,9 @@ Append-only. One entry per session, newest at the bottom:
 - #48: SDD §6 written on `omer/48-sdd-test-design`, stacked on #45; PR #157 (base `omer/45-sdd-architecture`), reviewers galip + hasan. Proposed RQ1/RQ2 definitions and exact McNemar listed in SDD §9; owners asked in their inboxes.
 - `active.md` lives on #156's branch this time (overwrite file; editing it on several open branches would conflict).
 - Next: reviews of #155, #156, #157; then #25 when #12/#22 move.
+## 2026-10-29 · reviews, #45 SDD, #39 tests API
+- Reviews: approved #142 (note: `objects` needs per-object `columns` once `column` becomes an enum); comment on #145 (all 12 pairs fail under #150's 0.2 → merge #150 first, then relabel).
+- #45: `docs/sdd/SDD.md` skeleton (IEEE 1016, omer's choice) + sections 1–4; galip's AI block = §5 (answer in his inbox). PR #155, review requested from galip; diagrams checked by omer.
+- galip's six PRs (#143–#146, #150, #151) show as conflicting on GitHub: only `merge=union` inbox files, except #151 (ADR index). Note in galip's inbox and in #155's body (learnings entry).
+- #39: tests and steps API, networknt validator 3.0.8, V0002 + Proposed ADR (HAS_TEST, HAS_OBJECT), Docker context at repo root. 32 server tests green, CI green. PR #156, reviewers galip + hasan.
+- Next: answer reviews on #155 and #156; then #48 (SDD test design) or #25 once #12/#22 move.

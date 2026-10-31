@@ -15,8 +15,9 @@
 ## Status
 - [x] Skeleton + sections 1–4 drafted
 - [x] PR #155 opened 2026-10-29 (`Closes #45`), review requested from galip; body also carries the conflict note for his six PRs
-- [ ] Review by one other member (galip)
-- Next step: address galip's review on PR #155.
+- [x] Review by one other member: galip approved 2026-10-29
+- [x] 2026-10-31: `origin/main` merged in; galip's review applied: status after #135/#151/#156/#158, retrieval settled (server picks objects, `/ai/embed`), AI errors mapped to problems with `code` (not passed through), agent row, heartbeat (needs the #17 change: ping regardless of pending calls), §9 #1–#4 settled
+- Next step: merged by a teammate; then #157 retargets to `main`.
 
 ## Manual checks
 - 2026-10-29 · omer · the 6 Mermaid diagrams render in PR #155's rich diff · pass · evidence: omer's report in session

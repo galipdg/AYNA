@@ -9,7 +9,7 @@
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
 | Version | 0.2 — draft of sections 1–4 and 6 |
-| Date | 2026-10-29 |
+| Date | 2026-10-31 |
 | Status | Sections 1–4 (#45) and 6 (#48) drafted. Section 5: #50. Final PDF: #53, due 7 Dec 2026 |
 
 ## Document history
@@ -17,7 +17,8 @@
 | Version | Date | Author | Change |
 |---|---|---|---|
 | 0.1 | 2026-10-29 | Ömerfaruk Sarıbal | Skeleton; introduction, architecture, data design and interface design (#45) |
-| 0.2 | 2026-10-29 | Ömerfaruk Sarıbal | Test design (#48) |
+| 0.1 | 2026-10-31 | Ömerfaruk Sarıbal | Status after #135, #151, #156, #158 merged; retrieval and AI errors settled (#155 review) |
+| 0.2 | 2026-10-31 | Ömerfaruk Sarıbal | Test design (#48) |
 
 ---
 
@@ -105,10 +106,10 @@ AYNA has six run-time components. The table gives each one's responsibility; §2
 | Component | Responsibility | Technology | Code | Owner | Status |
 |---|---|---|---|---|---|
 | **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); agent process manager (#17, PR #154). Planned: the screens of #24, #30, #38, #44, #68, #75, #78 |
-| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UIA, win32 fallback) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with `ping`, `listWindows`, `snapshot` (#16, PR #135); healing scorer v0 (#49, PR #141). Planned: #12, #22, #23, #26, #40, #54, #73 |
+| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UIA, win32 fallback) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping`; `listWindows` and `snapshot` in the contract, backed by UI Automation from #12 (#16, PR #135); healing scorer v0 (#49, PR #141). Planned: #12, #22, #23, #26, #40, #54, #73 |
 | **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | Planned: #61, #66 |
-| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); graph schema v0 migration (#14). Planned: #15, #25, #39, #51, #59, #60, #74 |
-| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14). Planned: vector index (#58) |
+| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160). Planned: #15, #25, #51, #59, #60, #74 |
+| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39). Planned: vector index (#58) |
 | **AI service** | Turkish instruction + candidate objects → suggested steps with reasons. Saves nothing. Uses a local model server. | Python; Ollama or llama.cpp with a 7–8B quantised model | `ai/` | galip | **Built**: constrained generation (#37, PR #142), HTTP service (#71, PR #146). Planned: retrieval (#58), offline packaging (#82). Design: §5 |
 
 ```mermaid
@@ -153,9 +154,9 @@ This keeps the server URL, the session and the agent token out of the renderer, 
 
 1. **Only the agent touches the AUT** (NFR-21). It reaches it through a driver interface, so a web or mobile driver can be added in semester 2 without changing the step schema, the server or the client.
 2. **Only the client's main process talks to the network.** The renderer reaches the server and the agent only through IPC.
-3. **The agent never calls the server in interactive use.** The client forwards its results (proposed in ADR *Proposal transport*, PR #151). The CLI runner, which has no client, writes the same documents to the same endpoint.
+3. **The agent never calls the server in interactive use.** The client forwards its results (ADR *Healing proposal transport*, accepted with PR #151). The CLI runner, which has no client, writes the same documents to the same endpoint.
 4. **Only the server calls the AI service, and only while a test is being written** (ADR *Language models only at authoring time*). The agent and the CLI runner call no model; a run gives the same result with the AI service stopped (NFR-22).
-5. **Only the server reads or writes Neo4j.** The AI service gets the candidate objects in the request instead of querying the graph (proposed for #58; see §5, open issue on retrieval).
+5. **Only the server reads or writes Neo4j.** The server picks the candidate objects (the current screen's objects, then the vector top-k over the application's objects) and sends them in the request; for the vector query it gets the instruction's embedding from the AI service (`POST /ai/embed`, #58). The AI service has no Bolt edge and no database credentials (settled in the #155 review; SDD-ai AI-4).
 6. **Self-healing proposes and never applies a repair during a run** (ADR *Self-healing proposes, never applies mid-run*; FR-30). Only an approval in the client changes the repository (FR-32).
 
 #### 2.2.3 Main flows
@@ -214,7 +215,7 @@ sequenceDiagram
   S->>S: choose candidate objects (current screen + vector top-k)
   S->>AI: POST /ai/generate-steps (text, objects)
   AI-->>S: steps with reasons, or 422 / 503 / 504
-  S-->>C: suggestions (AI errors passed through unchanged)
+  S-->>C: suggestions, or the AI error as a problem (code = AI status)
   T->>C: edit, accept all or some
   C->>S: save accepted steps (validated against the step schema)
 ```
@@ -268,15 +269,15 @@ No component connects outside the closed network at run time: no CDN, telemetry,
 | Client ↔ agent | Agent listens on 127.0.0.1 only; every connection must carry the per-session token (≥ 16 characters) that the client creates and passes in `AYNA_AGENT_TOKEN`, never on the command line; the agent removes it from its environment (NFR-31) | **Built** (#16, #17) |
 | Renderer | Sandbox, context isolation, no Node integration, strict CSP, navigation limited to the entry page, IPC sender check | **Built** (#5, #17) |
 | Client ↔ server | Local accounts with roles admin and tester, passwords as bcrypt hashes; every REST and WebSocket request except login needs a session (NFR-32, FR-39). Every test edit, run and healing decision stores the acting user (FR-40) | Planned: #60 |
-| CI ↔ server | Revocable API token for a CI service account in `AYNA_SERVER_TOKEN` (answer to TBD-10, proposed in PR #151) | Planned: #60, #61 |
+| CI ↔ server | Revocable API token for a CI service account in `AYNA_SERVER_TOKEN` (answer to TBD-10, ADR *Healing proposal transport*; RS NFR-32) | Planned: #60, #61 |
 | Server ↔ AI service | No authentication; the AI service is reachable only on the Compose network | Planned: #82 |
 | Test data | The AI service never logs the instruction text, which may hold passwords | **Built** (PR #146) |
 
 #### 2.4.3 Failures, timeouts and recovery
 
-- **Agent crash or hang.** The client's heartbeat (JSON-RPC `ping`, sent only while no call is pending) or the process exit triggers a restart with back-off, at most three times; the counter resets after 60 s of healthy connection; after that the status bar offers "Start again" (FR-05, SC-08; #17).
+- **Agent crash or hang.** The client's heartbeat (JSON-RPC `ping` every 5 s; replies come in any order since PR #135, so it answers at once even during a long snapshot) or the process exit triggers a restart with back-off, at most three times; the counter resets after 60 s of healthy connection; after that the status bar offers "Start again" (FR-05, SC-08; #17).
 - **Server unreachable.** The client names the URL in its error (FR-37, NFR-15). Run results go through a durable outbox and are delivered when the server is back, also after a client restart (#44). Result writes are idempotent per `(runId, stepIndex)`, so retries are safe (PR #151).
-- **AI service slow or down.** The AI service answers 504 after its own timeout (30 s by default, model load included) and 503 when the model server is down. The server's read timeout is 35 s, so the AI service's answer always arrives first; the server passes 422, 503 and 504 bodies through unchanged (#78). Everything except NL generation keeps working (FR-28).
+- **AI service slow or down.** The AI service answers 504 after its own timeout (30 s by default, model load included) and 503 when the model server is down. The server's read timeout is 35 s, so the AI service's answer always arrives first; the server maps its 422, 503 and 504 into problem details with the same status, the AI service's `status` code in `code` and its `error` in `detail` (ADR *REST error body*, #78). Everything except NL generation keeps working (FR-28).
 - **Client request timeouts.** The server check and the applications calls give up after 5 s (`client/src/main/server.ts`, `apps.ts`).
 
 #### 2.4.4 Other concerns
@@ -334,13 +335,13 @@ Schema v0 was written before the APIs that use it. The issues below change it; e
 
 | Change | Why | Issue | Status |
 |---|---|---|---|
-| `(Application)-[:HAS_OBJECT]->(RepoObject)` | v0 links a RepoObject to an application only through `RESOLVES_TO`, so an object not yet resolved in any version belongs to no application, and FR-07's uniqueness check has nothing to scope by | #25 | Proposed |
-| `(Application)-[:HAS_TEST]->(TestCase)` | Tests are listed and counted per application (NFR-08); v0 has no such link | #39 | Proposed |
-| Logical names unique per application, pattern of the step schema, `none.noMatch` refused | FR-07, SC-11; `none.noMatch` is reserved by the AI service | #25 | Planned. The #134 review said "per application version"; FR-07 says per application, which is stricter and fits a version-independent RepoObject. #25 settles it |
+| `(Application)-[:HAS_OBJECT]->(RepoObject)` | v0 links a RepoObject to an application only through `RESOLVES_TO`, so an object not yet resolved in any version belongs to no application, and FR-07's uniqueness check has nothing to scope by | #39, #25 | **Built**: migration `V0002` (#39, PR #156); #25 writes it. ADR *Graph schema v0.1*, accepted |
+| `(Application)-[:HAS_TEST]->(TestCase)` | Tests are listed and counted per application (NFR-08); v0 has no such link | #39 | **Built** (PR #156) |
+| Logical names unique per application, pattern of the step schema, `none.noMatch` refused | FR-07, SC-11; `none.noMatch` is reserved by the AI service | #25 | Planned. Per application, not per version (ADR *Graph schema v0.1*) |
 | `RepoObject.columns` (list of strings) | Grid column headers from the snapshot, for the editor and for `column` in generated steps | #25, #15 | Planned |
-| `Step.checkpoint` and `Step.row` as JSON strings; `Step.timeoutMs` integer | Neo4j properties cannot hold maps; v0 lists neither `timeoutMs` nor `row` | #39 | Planned |
+| `Step.checkpoint` and `Step.row` as JSON strings; `Step.timeoutMs` integer | Neo4j properties cannot hold maps; v0 lists neither `timeoutMs` nor `row` | #39 | **Built** (PR #156) |
 | `User` node; acting user on edits, runs and decisions | FR-39, FR-40 | #60 | Planned |
-| Per-candidate data on `CANDIDATE`; whole proposal JSON on `HealingProposal`; `(StepResult)-[:PROPOSED]->(HealingProposal)` | Contributions and raw similarities per candidate; the proposal kept exactly as the agent scored it | #74 | Proposed (PR #151) |
+| Per-candidate data on `CANDIDATE`; whole proposal JSON on `HealingProposal`; `(StepResult)-[:PROPOSED]->(HealingProposal)` | Contributions and raw similarities per candidate; the proposal kept exactly as the agent scored it | #74 | Planned (ADR *Healing proposal transport*, accepted) |
 | Vector index on `RepoObject.embedding` | NL retrieval (NFR-11) | #58 | Planned |
 
 ### 3.4 Exchange documents
@@ -352,7 +353,7 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 | Step document `{version, steps[]}` | `schemas/step.schema.json` | editor, AI service, recorder → server → agent | **Built**: v0.1 on `main` (#13); v0.2 adds grid rows (PR #150, proposed) |
 | Element descriptor | `schemas/element.schema.json` | agent → client, server | Planned: #11 |
 | Window snapshot | `schemas/snapshot.schema.json` | agent → server | Planned: #12 |
-| Healing proposal | proposed in PR #151 | agent → client → server | Proposed |
+| Healing proposal | `schemas/healing-proposal.schema.json` | agent → client or CLI runner → server | **Built**: v0.1 on `main` (#149, PR #151) |
 
 ---
 
@@ -364,7 +365,7 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 |---|---|---|---|---|---|
 | REST API | client, CLI runner → server | HTTP/1.1, JSON | `docs/api/openapi.yaml`, generated from the server (#31) | v0 | **Built** in part (§4.2) |
 | Live updates | server → clients | WebSocket | in the OpenAPI document's description (#31) until #52 | — | Planned: #44, #51 |
-| Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [3] over WebSocket on 127.0.0.1 | `docs/agent-rpc.md` | 0.1; 0.2 draft in PR #151 | **Built** (PR #135) |
+| Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [3] over WebSocket on 127.0.0.1 | `docs/agent-rpc.md` | 0.1 built; 0.2 (step results with proposals) drafted there, ADR accepted | **Built**: 0.1 (PR #135). Planned: 0.2 (#73) |
 | AI service API | server → AI service | HTTP/1.1, JSON | `ai/API.md` | v0 | **Built** (PR #146); design in §5 |
 | Database | server → Neo4j | Bolt | `docs/graph-model.md` + migrations | v0 | **Built** (#14) |
 | Exchange documents | all | JSON in the above | `schemas/` | per schema | §3.4 |
@@ -380,15 +381,15 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 | Versions | `POST /api/apps/{id}/versions` (201; 404 unknown app; 409 duplicate) · `GET /api/apps/{id}/versions` | FR-38 | **Built** (#128) |
 | Snapshots | `POST /api/apps/{id}/versions/{v}/snapshots`, idempotent on the snapshot id | FR-04 | Planned: #15 |
 | Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests) | FR-06 – FR-09 | Planned: #25, #30 |
-| Tests and steps | create, read, replace the step list (validated against the step schema), export and import | FR-11 – FR-14 | Planned: #39 |
-| Runs and results | create a run; `PUT /api/runs/{runId}/results/{stepIndex}`, first write wins, 409 for a repeat with a different body; screenshot uploaded separately | FR-20, FR-28 | Planned: #51 (shape proposed in PR #151) |
+| Tests and steps | create, read, replace the step list (validated against the step schema), export and import | FR-11 – FR-14 | **Built** (#39, PR #156) |
+| Runs and results | create a run; `PUT /api/runs/{runId}/results/{stepIndex}`, first write wins and a repeat answers 200 with the stored result, never 409; screenshot uploaded separately | FR-20, FR-28 | Planned: #51 (shape in ADR *Healing proposal transport*) |
 | Reports | HTML report of a run | FR-21 | Planned: #59 |
-| Healing | list proposals, approve or reject (`/api/healing/proposals…`) | FR-31, FR-32 | Planned: #74 (shape proposed in PR #151) |
-| NL suggestions | suggest steps for an instruction; AI errors passed through | FR-25 – FR-27 | Planned: #78 |
+| Healing | list proposals, approve or reject (`/api/healing/proposals…`) | FR-31, FR-32 | Planned: #74 (shape in ADR *Healing proposal transport*) |
+| NL suggestions | suggest steps for an instruction; AI errors mapped to problems with `code` | FR-25 – FR-27 | Planned: #78 |
 | Change impact | changed objects and affected tests between two versions | FR-33 | Planned: #81 |
 | Accounts and tokens | login, users and roles, API tokens for CI | FR-39, FR-40 | Planned: #60 |
 
-**Errors.** Status codes carry the meaning, and the client reacts to the code (`client/src/main/apps.ts`). The body today is Spring Boot's default error object, which leaves out the message. NFR-15 needs the message to name the step, object, field or URL, so #31 should settle one error body for all endpoints; RFC 9457 problem details, which Spring Boot supports, is the proposed format.
+**Errors.** Every 4xx body is an RFC 9457 problem (`application/problem+json`): `status`, `title`, `detail` (the message for the user, naming the step, object, field or id, NFR-15) and `instance`. A validation 400 adds `errors: [{path, message}]` (at most 50, JSONPath into the body) and `errorCount`. `type` is `urn:ayna:error:<kind>` where a caller must tell two problems with one status apart (the CLI runner, #61), otherwise absent. One global handler writes them; each endpoint lists its statuses in `docs/api/openapi.yaml` (ADR *REST error body*, accepted; **Built** in #158, PR #160). The client reacts to the status code and shows `detail` (`client/src/main/apps.ts`).
 
 **Performance.** 95 % of requests other than report downloads and snapshot imports within 500 ms under the NFR-08 load (NFR-07); the HTML report of a 50-step run within 5 s (NFR-09).
 
@@ -498,10 +499,10 @@ _Requirement → section table for every FR and NFR of the RS. Filled at #53, on
 
 | # | Issue | Affects | Settled in |
 |---|---|---|---|
-| 1 | Uniqueness scope of logical names: per application (FR-07) or per application version (#134 review) | §3.3 | #25 |
-| 2 | v0 has no Application → RepoObject and Application → TestCase links | §3.3 | #25, #39 |
-| 3 | One REST error body for all endpoints (RFC 9457 proposed) | §4.2 | #31 |
-| 4 | Retrieval: the server picks the candidate objects and the AI service has no Bolt edge (proposed), or the AI service reads Neo4j | §2.2.2 rule 5, §5 | #58 |
+| 1 | Uniqueness scope of logical names: per application (FR-07) or per application version (#134 review) | §3.3 | Settled: per application (ADR *Graph schema v0.1*) |
+| 2 | v0 has no Application → RepoObject and Application → TestCase links | §3.3 | Settled: migration `V0002` (#39) |
+| 3 | One REST error body for all endpoints (RFC 9457 proposed) | §4.2 | Settled: RFC 9457 (ADR *REST error body*, #158) |
+| 4 | Retrieval: the server picks the candidate objects and the AI service has no Bolt edge (proposed), or the AI service reads Neo4j | §2.2.2 rule 5, §5 | Settled: the server picks them (#155 review, PR #165); built in #58 |
 | 5 | How live updates are framed on the WebSocket (topics, message shape) | §4.1 | #44, #51 |
 | 6 | `architecture.md` foresees an nginx container; its role (TLS, static files) is not designed | §2.3 | #84 |
 | 7 | `/api/health` has no bound on how long it waits while Neo4j shuts down (`memory-bank/tasks/32-server-settings.md`) | §4.2 | #31 |
