@@ -1,11 +1,20 @@
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, BrowserWindow, ipcMain, session } from 'electron'
-import { IPC, type AppInfo } from '../shared/api.ts'
+import { IPC, type AppInfo, type Role } from '../shared/api.ts'
 import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
 import { login, logout, type Session } from './auth.ts'
 import { checkServer } from './server.ts'
+import {
+  createToken,
+  createUser,
+  listTokens,
+  listUsers,
+  removeUser,
+  revokeToken,
+  updateUser,
+} from './users.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
@@ -94,6 +103,47 @@ function registerIpc() {
   ipcMain.handle(IPC.currentUser, async () => {
     const { token } = await server()
     return token ? session!.user : null
+  })
+  // User management: the server decides who is an admin; the client only passes the call on.
+  ipcMain.handle(IPC.listUsers, async () => {
+    const { serverUrl, token } = await server()
+    return track(await listUsers(serverUrl, { token }))
+  })
+  ipcMain.handle(
+    IPC.createUser,
+    async (_event, username: unknown, password: unknown, role: unknown) => {
+      const { serverUrl, token } = await server()
+      const name = String(username)
+      return track(
+        await createUser(serverUrl, name, String(password), String(role) as Role, { token }),
+      )
+    },
+  )
+  ipcMain.handle(IPC.updateUser, async (_event, id: unknown, change: unknown) => {
+    const { serverUrl, token } = await server()
+    const { role, password } = (change ?? {}) as { role?: Role; password?: string }
+    const result = track(await updateUser(serverUrl, String(id), { role, password }, { token }))
+    // An admin who made themselves a tester: the client's menus follow the new role.
+    if (result.ok && session?.user.id === result.user.id) {
+      session.user = { ...session.user, role: result.user.role }
+    }
+    return result
+  })
+  ipcMain.handle(IPC.removeUser, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await removeUser(serverUrl, String(id), { token }))
+  })
+  ipcMain.handle(IPC.listTokens, async (_event, userId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listTokens(serverUrl, String(userId), { token }))
+  })
+  ipcMain.handle(IPC.createToken, async (_event, userId: unknown, name: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await createToken(serverUrl, String(userId), String(name), { token }))
+  })
+  ipcMain.handle(IPC.revokeToken, async (_event, tokenId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await revokeToken(serverUrl, String(tokenId), { token }))
   })
 }
 

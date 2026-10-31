@@ -3,6 +3,7 @@ import type { AppInfo, Application, ConnectionError, CurrentUser } from '../../s
 import AppPicker from './AppPicker.tsx'
 import Login from './Login.tsx'
 import ServerSettings from './ServerSettings.tsx'
+import Users from './Users.tsx'
 import { strings } from './strings.ts'
 
 type View =
@@ -18,6 +19,9 @@ type View =
       previous?: View
     }
   | { phase: 'ready'; url: string; user: CurrentUser; app: Application }
+  | { phase: 'users'; url: string; user: CurrentUser; previous: SignedIn }
+
+type SignedIn = Extract<View, { phase: 'picker' | 'ready' }>
 
 /**
  * After connecting: the login screen without a session (#60), then the saved application
@@ -91,7 +95,10 @@ export default function App() {
           onCancel={view.previous ? () => setView(view.previous!) : undefined}
         />
       )}
-      {(view.phase === 'login' || view.phase === 'picker' || view.phase === 'ready') && (
+      {(view.phase === 'login' ||
+        view.phase === 'picker' ||
+        view.phase === 'ready' ||
+        view.phase === 'users') && (
         <section className="card connected">
           <p className="ok">{strings.connectedTo(view.url)}</p>
           <button
@@ -105,13 +112,33 @@ export default function App() {
       {view.phase === 'login' && (
         <Login url={view.url} ended={view.ended} onLoggedIn={() => connected(view.url)} />
       )}
-      {(view.phase === 'picker' || view.phase === 'ready') && (
+      {(view.phase === 'picker' || view.phase === 'ready' || view.phase === 'users') && (
         <section className="card connected">
           <p>{strings.signedInAs(view.user.username, view.user.role)}</p>
-          <button type="button" onClick={() => logOut(view.url)}>
-            {strings.logOut}
-          </button>
+          <span className="actions">
+            {view.phase !== 'users' && (
+              <button
+                type="button"
+                onClick={() =>
+                  setView({ phase: 'users', url: view.url, user: view.user, previous: view })
+                }
+              >
+                {strings.manageUsers}
+              </button>
+            )}
+            <button type="button" onClick={() => logOut(view.url)}>
+              {strings.logOut}
+            </button>
+          </span>
         </section>
+      )}
+      {view.phase === 'users' && (
+        <Users
+          user={view.user}
+          onSessionEnded={() => setView({ phase: 'login', url: view.url, ended: true })}
+          onUserChanged={(user) => setView({ ...view, user, previous: { ...view.previous, user } })}
+          onClose={() => setView(view.previous)}
+        />
       )}
       {view.phase === 'picker' && (
         <AppPicker
