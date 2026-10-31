@@ -33,7 +33,7 @@ ADR `2026-10-31-accounts-and-tokens` (Proposed): opaque Bearer tokens hashed in 
 - `.env.example` (#82) needs `AYNA_ADMIN_USERNAME` / `AYNA_ADMIN_PASSWORD`.
 
 ## Handoff
-- `server/AGENTS.md` should get a rule "every write API stores the acting user id (ADR accounts-and-tokens)": needs omer's OK (AGENTS.md change).
+- `server/AGENTS.md` has the "who did it" rule for every later write API (omer's OK 2026-10-31).
 - Client: a 401 clears the main-process session (`track()` in `src/main/index.ts`); new API calls must go through `server()` + `track()`.
 - Inbox notes to galip (NFR-32 exceptions) and hasan (CLI Bearer token) are on this branch.
 
