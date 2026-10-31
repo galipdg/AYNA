@@ -1,0 +1,913 @@
+{
+ "format": "ayna-uia-probe/0",
+ "measured_at": "2026-10-31T19:09:42",
+ "platform": "Windows-11-10.0.26300-SP0",
+ "python": "3.13.0",
+ "pywinauto": "0.6.9",
+ "windows": [
+  {
+   "handle": 1444030,
+   "title": "Add Entry",
+   "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+   "dpi": 120
+  },
+  {
+   "handle": 1508968,
+   "title": "Database.kdbx - KeePass",
+   "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+   "dpi": 120
+  }
+ ],
+ "modes": [
+  {
+   "mode": "navigate",
+   "elements": 154,
+   "total_s": 0.6927290998864919,
+   "per_element_ms": {
+    "min": 0.026300083845853806,
+    "max": 87.77990005910397,
+    "p50": 1.2443000450730324,
+    "p90": 6.089000031352043,
+    "p99": 68.84720013476908
+   },
+   "slowest": [
+    {
+     "ms": 87.77990005910397,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 68.84720013476908,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 30.59049998410046,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 30.10589978657663,
+     "depth": 1,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 21.867600036785007,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Database.kdbx - KeePass",
+     "automation_id": "MainForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 13.186599826440215,
+     "depth": 1,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitHorizontal",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.748999986797571,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitVertical",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 10.69130003452301,
+     "depth": 5,
+     "control_type": "List",
+     "name": "",
+     "automation_id": "m_lvEntries",
+     "class_name": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 10.319999884814024,
+     "depth": 2,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 10.10920014232397,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1246692",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.71220014616847,
+     "depth": 1,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.687100071460009,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1902394",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.235299890860915,
+     "depth": 6,
+     "control_type": "TreeItem",
+     "name": "Database",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 8.821900002658367,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1378036",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 7.671299856156111,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1181510",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 6.089000031352043,
+     "depth": 2,
+     "control_type": "ComboBox",
+     "name": "",
+     "automation_id": "2950438",
+     "class_name": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 5.104599986225367,
+     "depth": 1,
+     "control_type": "ToolBar",
+     "name": "",
+     "automation_id": "m_toolMain",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 5.010799970477819,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry #2",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 5.008799955248833,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 3.8949998561292887,
+     "depth": 5,
+     "control_type": "Tree",
+     "name": "",
+     "automation_id": "m_tvGroups",
+     "class_name": "WindowsForms10.SysTreeView32.app.0.2bf8098_r6_ad1"
+    }
+   ],
+   "read_errors": 0,
+   "run": 1
+  },
+  {
+   "mode": "properties",
+   "elements": 154,
+   "total_s": 1.3956726000178605,
+   "per_element_ms": {
+    "min": 0.42380020022392273,
+    "max": 92.91060012765229,
+    "p50": 5.432900041341782,
+    "p90": 12.862900039181113,
+    "p99": 78.40360002592206
+   },
+   "slowest": [
+    {
+     "ms": 92.91060012765229,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 78.40360002592206,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 43.061899952590466,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 40.51749990321696,
+     "depth": 1,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 26.473599951714277,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Database.kdbx - KeePass",
+     "automation_id": "MainForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 21.95159997791052,
+     "depth": 6,
+     "control_type": "TreeItem",
+     "name": "Database",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 17.089499859139323,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry #2",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 16.877599991858006,
+     "depth": 1,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 16.803399892523885,
+     "depth": 1,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitHorizontal",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 15.583400148898363,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitVertical",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 14.845400117337704,
+     "depth": 7,
+     "control_type": "TreeItem",
+     "name": "Homebanking",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 13.971800217404962,
+     "depth": 3,
+     "control_type": "TabItem",
+     "name": "General",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 13.903700048103929,
+     "depth": 2,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 13.704700162634254,
+     "depth": 3,
+     "control_type": "TabItem",
+     "name": "History",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 13.598500052466989,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 12.862900039181113,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1902394",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.382399989292026,
+     "depth": 5,
+     "control_type": "List",
+     "name": "",
+     "automation_id": "m_lvEntries",
+     "class_name": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.342500034719706,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1246692",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.203200021758676,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1378036",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.118699960410595,
+     "depth": 7,
+     "control_type": "TreeItem",
+     "name": "Internet",
+     "automation_id": "",
+     "class_name": ""
+    }
+   ],
+   "read_errors": 0,
+   "run": 1
+  },
+  {
+   "mode": "patterns",
+   "elements": 154,
+   "total_s": 1.0449644001200795,
+   "per_element_ms": {
+    "min": 0.13770000077784061,
+    "max": 82.26649998687208,
+    "p50": 3.581100143492222,
+    "p90": 9.713999927043915,
+    "p99": 74.63849987834692
+   },
+   "slowest": [
+    {
+     "ms": 82.26649998687208,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 74.63849987834692,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 37.27740002796054,
+     "depth": 1,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 33.82159979082644,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 23.785800207406282,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Database.kdbx - KeePass",
+     "automation_id": "MainForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 16.72720001079142,
+     "depth": 6,
+     "control_type": "TreeItem",
+     "name": "Database",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 14.757900033146143,
+     "depth": 1,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 13.876199955120683,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitVertical",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 13.766000047326088,
+     "depth": 1,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitHorizontal",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 13.619099976494908,
+     "depth": 2,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 11.78139983676374,
+     "depth": 5,
+     "control_type": "List",
+     "name": "",
+     "automation_id": "m_lvEntries",
+     "class_name": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 11.474700178951025,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1181510",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 11.18170004338026,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1378036",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 10.334799997508526,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1902394",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.846400003880262,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 9.713999927043915,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1246692",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.25110001116991,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry #2",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 9.223500033840537,
+     "depth": 2,
+     "control_type": "ComboBox",
+     "name": "",
+     "automation_id": "2950438",
+     "class_name": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 6.909599993377924,
+     "depth": 7,
+     "control_type": "TreeItem",
+     "name": "Network",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 6.780300056561828,
+     "depth": 7,
+     "control_type": "Text",
+     "name": "********",
+     "automation_id": "",
+     "class_name": ""
+    }
+   ],
+   "read_errors": 0,
+   "run": 1
+  },
+  {
+   "mode": "labeledby",
+   "elements": 154,
+   "total_s": 0.7594649000093341,
+   "per_element_ms": {
+    "min": 0.03060000017285347,
+    "max": 83.57709995470941,
+    "p50": 1.5070000663399696,
+    "p90": 5.9640000108629465,
+    "p99": 79.28639999590814
+   },
+   "slowest": [
+    {
+     "ms": 83.57709995470941,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 79.28639999590814,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 41.77660006098449,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 35.58449982665479,
+     "depth": 1,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 22.5615999661386,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Database.kdbx - KeePass",
+     "automation_id": "MainForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 16.00730000063777,
+     "depth": 1,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.891599908471107,
+     "depth": 1,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitHorizontal",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.531599961221218,
+     "depth": 5,
+     "control_type": "List",
+     "name": "",
+     "automation_id": "m_lvEntries",
+     "class_name": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12.285599950700998,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitVertical",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 10.493200039491057,
+     "depth": 2,
+     "control_type": "Tab",
+     "name": "",
+     "automation_id": "m_tabMain",
+     "class_name": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 10.402800049632788,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1378036",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.819699916988611,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1902394",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.494700003415346,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1246692",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9.143800009042025,
+     "depth": 6,
+     "control_type": "TreeItem",
+     "name": "Database",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 8.047399809584022,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "1181510",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 5.9640000108629465,
+     "depth": 2,
+     "control_type": "ComboBox",
+     "name": "",
+     "automation_id": "2950438",
+     "class_name": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 5.695000058040023,
+     "depth": 6,
+     "control_type": "Header",
+     "name": "Header Control",
+     "automation_id": "Header",
+     "class_name": "SysHeader32"
+    },
+    {
+     "ms": 5.463400157168508,
+     "depth": 1,
+     "control_type": "ToolBar",
+     "name": "",
+     "automation_id": "m_toolMain",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 4.658999852836132,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 4.519000183790922,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry #2",
+     "automation_id": "",
+     "class_name": ""
+    }
+   ],
+   "read_errors": 0,
+   "run": 1
+  },
+  {
+   "mode": "full",
+   "elements": 154,
+   "total_s": 1.7862992999143898,
+   "per_element_ms": {
+    "min": 0.46539981849491596,
+    "max": 90.00430000014603,
+    "p50": 7.2824000380933285,
+    "p90": 17.424799967557192,
+    "p99": 77.73040002211928
+   },
+   "slowest": [
+    {
+     "ms": 90.00430000014603,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 77.73040002211928,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "General",
+     "automation_id": "m_tabEntry",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 38.17850002087653,
+     "depth": 1,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 37.63110004365444,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Add Entry",
+     "automation_id": "PwEntryForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 36.02200001478195,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "Database.kdbx - KeePass",
+     "automation_id": "MainForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 23.827000055462122,
+     "depth": 6,
+     "control_type": "TreeItem",
+     "name": "Database",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 22.79320009984076,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry #2",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 21.845899987965822,
+     "depth": 6,
+     "control_type": "ListItem",
+     "name": "Sample Entry",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 20.150699885562062,
+     "depth": 2,
+     "control_type": "TabItem",
+     "name": "Auto-Type",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 19.788999808952212,
+     "depth": 2,
+     "control_type": "TabItem",
+     "name": "History",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 19.359099911525846,
+     "depth": 2,
+     "control_type": "TabItem",
+     "name": "Properties",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 18.31239997409284,
+     "depth": 1,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitHorizontal",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 18.147399881854653,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": "",
+     "automation_id": "m_splitVertical",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 17.766600009053946,
+     "depth": 2,
+     "control_type": "TabItem",
+     "name": "Advanced",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 17.558500170707703,
+     "depth": 3,
+     "control_type": "TabItem",
+     "name": "General",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 17.424799967557192,
+     "depth": 7,
+     "control_type": "TreeItem",
+     "name": "Windows",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 17.313900170847774,
+     "depth": 7,
+     "control_type": "Text",
+     "name": "",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 16.906500095501542,
+     "depth": 7,
+     "control_type": "Text",
+     "name": "https://keepass.info/help/kb/testform.html",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 16.755100106820464,
+     "depth": 7,
+     "control_type": "Text",
+     "name": "Sample Entry #2",
+     "automation_id": "",
+     "class_name": ""
+    },
+    {
+     "ms": 16.62489981390536,
+     "depth": 7,
+     "control_type": "Text",
+     "name": "Sample Entry",
+     "automation_id": "",
+     "class_name": ""
+    }
+   ],
+   "read_errors": 0,
+   "run": 1
+  },
+  {
+   "mode": "cached",
+   "elements": 152,
+   "total_s": 1.7795798999723047,
+   "find_all_s": 1.7760418001562357,
+   "per_element_ms": {},
+   "slowest": [],
+   "read_errors": 0,
+   "run": 1
+  }
+ ]
+}
