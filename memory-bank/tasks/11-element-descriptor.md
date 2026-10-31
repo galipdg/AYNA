@@ -26,6 +26,9 @@ judged against UI Automation's own `LabeledBy` relation. The numbers are in the 
 - 2026-10-31 — The label rule accepts **only a label to the left**, within **48 DIP**. Both
   numbers come from the data (see Results); a version that also accepted a label above was
   written, measured and discarded.
+- 2026-10-31 — `jsonschema` goes into agent's `[dev]` extras rather than putting the element
+  schema's tests in `ai/` as the step schema does: the agent is what produces descriptors, so
+  the contract test belongs next to the producer.
 - 2026-10-31 — The trial app's captured tree is committed as a test fixture
   (`agent/tests/data/trial-app-tree.json`, 14 nodes) so the acceptance criterion "a descriptor
   for every element of the trial app" is checked by CI on every platform, not only by a Windows
@@ -35,8 +38,9 @@ judged against UI Automation's own `LabeledBy` relation. The numbers are in the 
 - [x] `schemas/element.schema.json` v0.1 + named cases in `schemas/examples/element/cases.json`
 - [x] `agent/ayna_agent/model.py`: `Element`, `describe_tree`, `parent_path`, `nearest_label`,
       `is_generated_id`, `PRIMARY_PRIORITY`, `NEVER_MATCH`
-- [x] `agent/tests/test_model.py` — 50 tests; whole agent suite **168 passed, 3 skipped**
-      (the 3 need `jsonschema`, see Open issues); ruff check and format clean
+- [x] `agent/tests/test_model.py` — 53 tests; whole agent suite **171 passed**; ruff check and
+      format clean. `jsonschema~=4.26` added to agent's `[dev]` extras (user's decision,
+      2026-10-31) so the schema cases and the trial-app descriptors are checked in CI
 - [x] Trial app captured on Windows at 125 % scaling: 14 elements, 14 descriptors, 0 read
       errors, all 14 valid against the schema
 - [x] ADR `2026-10-31-element-descriptor-v0` (Proposed) + index line
@@ -63,11 +67,10 @@ judged against UI Automation's own `LabeledBy` relation. The numbers are in the 
   labels it produces are asserted in `test_model.py`
 
 ## Open issues
-- **`jsonschema` is not an agent dependency**, so the three tests that validate the schema cases
-  and the trial-app descriptors skip. They ran locally in a throwaway environment: 15 of 15
-  named cases behave as named, 14 of 14 descriptors validate. Adding `jsonschema` to agent's
-  `[dev]` extras is a dependency decision for the user and the team; the step schema solves the
-  same problem by living in `ai/`, which already has it.
+- **New dev dependency**: `jsonschema~=4.26` in agent's `[dev]` extras, the same version `ai/`
+  and `eval/` use. It is only needed to validate the contract in tests; nothing in the product
+  path imports it. 15 of 15 named cases behave as named and 14 of 14 trial-app descriptors
+  validate.
 - **`healing-proposal.schema.json` has no `dpi`** and `additionalProperties: false` on
   `scoredElement`, so a proposal carrying the `dpi` that PR #166 introduces would be invalid.
   galip's file, flagged in the ADR and in the PR.
