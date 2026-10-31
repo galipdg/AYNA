@@ -274,7 +274,7 @@ flowchart TD
 
 ### AI-5.1 Trigger (planned, #73)
 
-Healing starts only when **no** element matches the object's primary or fallback properties by the end of the smart wait (FR-10, FR-29). An element that matches but never becomes visible and enabled is a `timeout` and gets no healing (TBD-5, owned by hasan). Healing never acts on a candidate: the step ends as "repair proposed", the test stops, and the remaining steps are marked not run (FR-30, TBD-6).
+Healing starts only when **no** element matches the object's primary or fallback properties by the end of the smart wait (FR-10, FR-29). An element that matches but never becomes visible and enabled is a `timeout` and gets no healing. A search or snapshot that runs out of its time budget before it covers the window is `search incomplete` and gets no healing either, because candidates from a partial tree would give a confident but unfounded proposal (FR-29, FR-35; TBD-5, closed 2026-10-29). Healing never acts on a candidate: the step ends as "repair proposed", the test stops, and the remaining steps are marked not run (FR-30, TBD-6).
 
 ### AI-5.2 Candidate generation (planned, #42)
 
@@ -338,7 +338,7 @@ Similo's HTML Name, HRef, Alt and IsButton have no UIA counterpart, or are cover
 
 ### AI-6.1 Rule-based triage (planned, #63, hasan)
 
-Every failed step gets exactly one category: *element not found*, *unexpected window*, *assertion failed* or *timeout* (FR-35). TBD-5 sets the boundary between the first and the last. The client shows the category with the step.
+Every failed step gets exactly one category: *element not found*, *unexpected window*, *assertion failed*, *timeout* or *search incomplete* (FR-35). TBD-5 (closed) set the boundaries; only *element not found* starts healing (AI-5.1). The client shows the category with the step.
 
 ### AI-6.2 Decision log (planned, #63)
 
