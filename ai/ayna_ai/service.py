@@ -6,10 +6,15 @@
 The caller is the AYNA server (#78 chat panel); the contract is `ai/API.md`.
 The service listens on loopback unless started with --allow-remote, which also
 needs a token in AYNA_AI_TOKEN that every request must carry, and talks only to
-a loopback model server (`ayna_ai.ollama`), so it works on a closed network. Every step in a response's `steps` targets an object the retriever
-returned for that request: the generator constrains and checks it, and the
-service checks it once more before answering. A generated step that fails
-either check is not suggested; it is listed in `dropped` with the reason.
+a loopback model server (`ayna_ai.ollama`), so it works on a closed network.
+A host name counts as loopback only if every address it resolves to is
+loopback (`ollama.loopback_address`).
+
+Every step in a response's `steps` targets an object the retriever returned
+for that request: the generator constrains and checks it, and the service
+checks it once more before answering. A generated step that fails either check
+is not suggested; it is listed in `dropped` with the reason. An answer at the
+step limit is flagged (`stepLimitReached`), never cut short silently.
 
 From `ai/`, with `ollama serve` running:
 
@@ -20,7 +25,6 @@ from __future__ import annotations
 
 import argparse
 import hmac
-import ipaddress
 import json
 import logging
 import os
@@ -43,7 +47,12 @@ from ayna_ai.generate import (
     Status,
     StepGenerator,
 )
-from ayna_ai.ollama import DEFAULT_HOST, ModelServerError, OllamaClient
+from ayna_ai.ollama import (
+    DEFAULT_HOST,
+    ModelServerError,
+    OllamaClient,
+    loopback_address,
+)
 from ayna_ai.retrieve import (
     PassThroughRetriever,
     RetrievalInputError,
@@ -243,6 +252,7 @@ class StepService:
                 body["steps"] = []
         if result.ok or result.status is Status.NO_VALID_STEPS:
             body["dropped"] = [d.to_dict() for d in result.dropped]
+            body["stepLimitReached"] = result.step_limit_reached
         body["schemaVersion"] = self.schema_version
         body["promptVersion"] = self.prompt_version
         return code, body
@@ -381,16 +391,6 @@ def _record(event: str, **fields) -> str:
 
 
 # --- HTTP ---------------------------------------------------------------------
-
-
-def is_loopback_host(host: str) -> bool:
-    """True for localhost and loopback IP addresses (127.0.0.0/8, ::1)."""
-    if host == "localhost":
-        return True
-    try:
-        return ipaddress.ip_address(host).is_loopback
-    except ValueError:
-        return False
 
 
 class ServiceServer(ThreadingHTTPServer):
@@ -632,16 +632,23 @@ def create_server(
 ) -> ServiceServer:
     """Bind the service; a non-loopback `host` needs `allow_remote` and a `token`.
 
+    A loopback `host` is bound by its checked address (`loopback_address`): a
+    name such as `localhost` counts as loopback only if every address it
+    resolves to is loopback, and it is not looked up again for the bind.
     With a `token`, every request must carry it as a bearer token, on loopback too.
     """
     if token is not None and len(token) < MIN_TOKEN_LENGTH:
         raise ValueError(f"{TOKEN_ENV} needs at least {MIN_TOKEN_LENGTH} characters")
-    if not is_loopback_host(host):
+    try:
+        address = loopback_address(host)
+    except ValueError as exc:
         if not allow_remote:
             raise ValueError(
-                f"refusing to listen on {host!r}: not a loopback address (closed "
-                "network). Pass --allow-remote to expose the service, e.g. in a container."
-            )
+                f"refusing to listen on {host!r}: {exc} (closed network). Pass "
+                "--allow-remote to expose the service, e.g. in a container."
+            ) from None
+        address = None
+    if address is None:
         if token is None:
             raise ValueError(
                 f"refusing to listen on {host!r} without a token: set {TOKEN_ENV} "
@@ -655,7 +662,8 @@ def create_server(
                 message="listening on a non-loopback address: reachable from other machines",
             )
         )
-    return ServiceServer((host, port), service, token=token)
+        address = host
+    return ServiceServer((address, port), service, token=token)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -666,7 +674,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--host",
         default="127.0.0.1",
-        help="address to listen on; must be loopback unless --allow-remote",
+        help="address to listen on; must be loopback unless --allow-remote (a "
+        "name must resolve to loopback addresses only)",
     )
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument(

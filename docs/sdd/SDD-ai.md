@@ -41,7 +41,7 @@ Change-impact analysis (C3, #81) is a graph query in the server and belongs with
 
 Every AI part follows these rules.
 
-1. **Closed network** (NFR-29, NFR-30). The model server runs on the same host as the AI service. `OllamaClient` (`ai/ayna_ai/ollama.py`) accepts only a loopback URL (127.0.0.0/8, `::1`, `localhost`), ignores proxy environment variables and refuses redirects, so a request cannot leave the machine. The model weights and the embedding model are bundled into the AI service image, and nothing is downloaded at start (#82).
+1. **Closed network** (NFR-29, NFR-30). The model server runs on the same host as the AI service. `OllamaClient` (`ai/ayna_ai/ollama.py`) accepts only a loopback URL (127.0.0.0/8, `::1`, or a name such as `localhost` only if every address it resolves to is loopback; it then connects to the checked address, never to the name), ignores proxy environment variables and refuses redirects, so a request cannot leave the machine. The service's own listen address follows the same rule. The model weights and the embedding model are bundled into the AI service image, and nothing is downloaded at start (#82).
 2. **Language models only at authoring time** (ADR; FR-28, NFR-22). Only the server calls the AI service, and only while a test is being written. The agent and the CLI runner never call a model. Systems that let a model choose actions at run time are not repeatable, so they report the best of three runs ([15], [40]); a regression test has to replay the same way every time. With the AI service stopped, everything except step generation works (SC-28).
 3. **A person approves everything AI produces.** Generated steps are suggestions until the author accepts them, and nothing is saved before that (FR-27). Healing candidates are proposals until a reviewer approves one (ADR; FR-30–FR-32). No AI output changes a test or the repository on its own.
 4. **Grounded in the repository.** A step targets a repository object by logical name only (step schema `target`, FR-10). Generation can only choose among the objects it was given, and a validator drops anything else (FR-26).
@@ -81,7 +81,7 @@ The dotted edges are planned. The AI service has no edge to Neo4j: the server ch
 The JSON shape is fixed in `ai/API.md` (built, #71, PR #146); the part the client sees goes into the REST contract (#31, frozen in #52).
 
 - **In** (built, #71): `POST /ai/generate-steps` with the Turkish description (`text`), the application (`app`), its `version` and the current window (`screen`), and the candidate `objects` the server chose (≤ 100, logical name + Turkish description; AI-4). The server adds the user. The NL panel sends it through the server (#78).
-- **Out** (built, #71): `steps`, the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` plus a short Turkish `reason`; `dropped`, every step the model wrote that cannot be suggested, as `{index, code, reason, step}`; the `status`, the `model`, `schemaVersion`, `promptVersion` and `latencyMs`. HTTP 200 always carries at least one step.
+- **Out** (built, #71): `steps`, the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` plus a short Turkish `reason`; `dropped`, every step the model wrote that cannot be suggested, as `{index, code, reason, step}`; `stepLimitReached`, true when the model wrote as many steps as the grammar allows (12), so later steps may be missing; the `status`, the `model`, `schemaVersion`, `promptVersion` and `latencyMs`. HTTP 200 always carries at least one step.
 - **In the library** (#37, #71): `StepGenerator.generate(text, objects, timeout_s=None)` takes the text and a map `logical name → Turkish description` and returns a `GenerationResult`: the status, the kept steps as a step document `{"version": "0.1", "steps": [...]}` when the status is `ok`, one reason per kept step, the dropped steps, the raw output, the errors, the latency and the token counts.
 
 ### Stages
@@ -147,7 +147,7 @@ When the server cannot reach the AI service at all, the NL panel is disabled wit
 
 | Limit | Value | Why |
 |---|---|---|
-| Steps per request | 1–12 | Bounds the output |
+| Steps per request | 1–12 | Bounds the output; an answer of exactly 12 is flagged (`stepLimitReached`), so the cap never shortens it silently |
 | Free strings (`value`, `expected`) | ≤ 200 characters (the contract allows 1000) | Stops a runaway string early (#7 finding 1) |
 | Output tokens (`num_predict`) | 512; 768 in the service | About 25–40 tokens per step, so 12 steps fit; a reason adds about 15–25 per step |
 | Context (`num_ctx`) | 4096 tokens | Prompt plus object list plus answer |
@@ -184,7 +184,7 @@ The #37 runs shared the machine with other jobs (load average about 6), and so d
 
 ### Logging and input safety
 
-Each generation logs one JSON line: `ts`, `event: generate`, `scenario`, `model`, `status`, `latency_ms`, `load_ms`, `prompt_tokens`, `output_tokens`, `steps`, `dropped`; the service adds one `event: request` line per HTTP request. The lines hold no user text, so service logs carry no test content (tested). The batch CLI (`python -m ayna_ai.generate`) writes the full results, with the environment (platform, Ollama version), for evaluation.
+Each generation logs one JSON line: `ts`, `event: generate`, `scenario`, `model`, `status`, `latency_ms`, `load_ms`, `prompt_tokens`, `output_tokens`, `steps`, `dropped`, `step_limit_reached`; the service adds one `event: request` line per HTTP request. The lines hold no user text, so service logs carry no test content (tested). The batch CLI (`python -m ayna_ai.generate`) writes the full results, with the environment (platform, Ollama version), for evaluation.
 
 The user's text is untrusted input to the model. The model has no tools, and its output can only be a step document over objects that already exist, which a person then reviews. A hostile description can therefore at worst produce wrong suggestions.
 
