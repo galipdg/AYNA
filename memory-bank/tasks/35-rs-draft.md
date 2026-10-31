@@ -2,7 +2,8 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/35
 - Owner: galip · Branch: `galip/35-rs-draft` (from `galip/27-rs-outline`, with `galip/34-scenarios-requirements` and `galip/19-requirements-workshop` merged in)
-- Started: 2026-10-27 · Last update: 2026-10-27
+- Started: 2026-10-27 · Last update: 2026-10-29
+- Review follow-ups: branch `galip/35-rs-review-followups` (from `main` after #143 merged; `Refs #35`)
 
 ## Approach
 Fill every section of the #27 outline in `docs/rs/RS.md` from the brief, the plan export, the ADRs, `docs/graph-model.md`, `docs/agent-rpc.md` (PR #135), the step schema (PR #134), the tool matrix and the two stacked drafts: #34's `docs/rs/scenarios.md` and #19's `docs/requirements-workshop.md`. The branch is stacked on PRs #137, #140 and #138, so it merges after them.
@@ -28,6 +29,14 @@ Consistency was checked with a one-off script in the session scratch area (not c
 - 2026-10-27 — New references: [41] JSON Schema 2020-12, [42] JSON-RPC 2.0 and [43] OpenAPI 3, after [40] 29148 as the outline set. They clash with #20's provisional [40]–[47]: TBD-11.
 - 2026-10-27 — Assumption written in §1.3.5: playback needs an unlocked interactive desktop, also on the CI runner. Real input fails on a locked session. Sent to hasan for #67.
 
+- 2026-10-29 — Review round (PR #143, omer and hasan), folded in as version 0.6:
+  - FR-35 gets a fifth category, "search incomplete" (hasan preferred it over folding into timeout): the tester's action differs, and healing on an incomplete tree would propose a confident repair from a partial view. FR-29 now heals only after a search that covered the whole window. TBD-5 closed.
+  - FR-07 stays "unique per application". omer's review asked for "per application version", but his own ADR graph schema v0.1 (#156) settles it per application; FR-07 and FR-08 cite that ADR.
+  - NFR-32's open point is advisor Q8 (accounts), not Q5 (numbers) as the review wrote.
+  - NFR-04 stays "(proposed, to confirm)": hasan agreed the target but it cannot be measured before #40. NFR-02 and NFR-05 are "team-confirmed (#143)", omer's NFR-06–09 and NFR-32 "team-confirmed (#140)", all with the advisor's Q5/Q8 still open.
+  - FR-23 takes hasan's #61 exit codes from his #151 review: 0 all passed and delivered, 1 a test failed or proposed a repair, 2 operational failure.
+  - New: NFR-45 (client result outbox, omer item 6) in §3.8.2 and NFR-46 (AI service port not published, omer item 7) in §3.8.3. omer's "agent exits on stdin EOF" is a §3.8.2 bullet, not a requirement, because FR-05 and `docs/agent-rpc.md` already carry it.
+
 ## Status
 - [x] Branch from #27 with #34 and #19 merged (sequential merges; the octopus merge stopped on hasan's inbox, which the union driver resolves in a normal merge)
 - [x] Board: #35 In progress
@@ -35,14 +44,16 @@ Consistency was checked with a one-off script in the session scratch area (not c
 - [x] scenarios.md restructured into Appendix C
 - [x] Consistency check: 0 errors
 - [x] PR https://github.com/galipdg/AYNA/pull/143 opened (`Closes #35`, stacked on #137, #140, #138), reviews requested from omerfaruksaribal (required) and HasanBerk18 (FYI)
-- [ ] Reviewed by Galip and Ömerfaruk with comments resolved (human step)
-- Next step: answer review comments on the #35 PR. After the advisor meeting, apply #19 §7's answers (Q1–Q8) to §1.3.3, §3.1, Appendix B and E.2, and rerun the check.
+- [x] Reviewed by Ömerfaruk (approved) and Hasan (approved) on PR #143
+- [x] Review comments resolved on `galip/35-rs-review-followups` (2026-10-29): consistency check rerun, 0 errors; 40 FR, 46 NFR (44 Must), 16 UC, 36 SC, 11 TBD (TBD-5, 6, 9, 10 closed)
+- Next step: merge the follow-up PR; then tick criterion 2 on #35 (it closed with #143 before the comments were resolved). After the advisor meeting, apply #19 §7's answers (Q1–Q8) to §1.3.3, §3.1, Appendix B and E.2, and rerun the check.
 
 ## Manual checks
 - none (documentation only)
 
 ## Open issues
-- TBD-9: the load test for NFR-07/NFR-08 has no issue. Suggest a new issue (omer, before G2); noted in his inbox.
+- REST API row of §3.5.4 / the SDD contracts table: switch to v0 once #160 (`docs/api/openapi.yaml`) merges (omer's inbox note).
+- After #150 merges: `SelectRow` and the row checks into FR-11, FR-15, FR-18.
 - TBD-8: the plan document (Claude Docs) still names Hasan as RS lead.
 - TBD-11: one reference numbering for RS, SDD, report and `docs/literature.md` is needed before #41.
 - The RS rests on #19's draft use cases until the advisor agrees them (Appendix E.2).
