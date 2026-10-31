@@ -10,6 +10,9 @@ const api: AynaApi = {
   createApplication: (name, technology) =>
     ipcRenderer.invoke(IPC.createApplication, name, technology),
   chooseApplication: (id) => ipcRenderer.invoke(IPC.chooseApplication, id),
+  login: (username, password) => ipcRenderer.invoke(IPC.login, username, password),
+  logout: () => ipcRenderer.invoke(IPC.logout),
+  currentUser: () => ipcRenderer.invoke(IPC.currentUser),
 }
 
 // Only these functions cross the bridge; ipcRenderer itself never reaches the renderer.

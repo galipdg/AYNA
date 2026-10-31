@@ -1,24 +1,39 @@
 import { useEffect, useState } from 'react'
-import type { AppInfo, Application, ConnectionError } from '../../shared/api.ts'
+import type { AppInfo, Application, ConnectionError, CurrentUser } from '../../shared/api.ts'
 import AppPicker from './AppPicker.tsx'
+import Login from './Login.tsx'
 import ServerSettings from './ServerSettings.tsx'
 import { strings } from './strings.ts'
 
 type View =
   | { phase: 'loading'; url?: string }
   | { phase: 'settings'; url: string; failure?: ConnectionError; previous?: View }
-  | { phase: 'picker'; url: string; selectedId?: string; missing?: boolean; previous?: View }
-  | { phase: 'ready'; url: string; app: Application }
+  | { phase: 'login'; url: string; ended?: boolean }
+  | {
+      phase: 'picker'
+      url: string
+      user: CurrentUser
+      selectedId?: string
+      missing?: boolean
+      previous?: View
+    }
+  | { phase: 'ready'; url: string; user: CurrentUser; app: Application }
 
-/** After connecting: the saved application if the server still has it, otherwise the picker. */
+/**
+ * After connecting: the login screen without a session (#60), then the saved application
+ * if the server still has it, otherwise the picker.
+ */
 async function viewForServer(url: string): Promise<View> {
+  const user = await window.ayna.currentUser()
+  if (!user) return { phase: 'login', url }
   const { applicationId } = await window.ayna.getSettings()
-  if (!applicationId) return { phase: 'picker', url }
+  if (!applicationId) return { phase: 'picker', url, user }
   const result = await window.ayna.listApplications()
-  // A failed list is shown (with a retry) by the picker itself.
-  if (!result.ok) return { phase: 'picker', url, selectedId: applicationId }
+  if (!result.ok && result.reason === 'unauthorized') return { phase: 'login', url, ended: true }
+  // Other failures are shown (with a retry) by the picker itself.
+  if (!result.ok) return { phase: 'picker', url, user, selectedId: applicationId }
   const app = result.apps.find((candidate) => candidate.id === applicationId)
-  return app ? { phase: 'ready', url, app } : { phase: 'picker', url, missing: true }
+  return app ? { phase: 'ready', url, user, app } : { phase: 'picker', url, user, missing: true }
 }
 
 export default function App() {
@@ -55,6 +70,11 @@ export default function App() {
     viewForServer(url).then(setView, () => setError(true))
   }
 
+  async function logOut(url: string) {
+    await window.ayna.logout().catch(() => undefined)
+    setView({ phase: 'login', url })
+  }
+
   return (
     <main className="app">
       <h1>{strings.appName}</h1>
@@ -71,7 +91,7 @@ export default function App() {
           onCancel={view.previous ? () => setView(view.previous!) : undefined}
         />
       )}
-      {(view.phase === 'picker' || view.phase === 'ready') && (
+      {(view.phase === 'login' || view.phase === 'picker' || view.phase === 'ready') && (
         <section className="card connected">
           <p className="ok">{strings.connectedTo(view.url)}</p>
           <button
@@ -82,11 +102,23 @@ export default function App() {
           </button>
         </section>
       )}
+      {view.phase === 'login' && (
+        <Login url={view.url} ended={view.ended} onLoggedIn={() => connected(view.url)} />
+      )}
+      {(view.phase === 'picker' || view.phase === 'ready') && (
+        <section className="card connected">
+          <p>{strings.signedInAs(view.user.username, view.user.role)}</p>
+          <button type="button" onClick={() => logOut(view.url)}>
+            {strings.logOut}
+          </button>
+        </section>
+      )}
       {view.phase === 'picker' && (
         <AppPicker
           selectedId={view.selectedId}
           missing={view.missing}
-          onChosen={(app) => setView({ phase: 'ready', url: view.url, app })}
+          onChosen={(app) => setView({ phase: 'ready', url: view.url, user: view.user, app })}
+          onSessionEnded={() => setView({ phase: 'login', url: view.url, ended: true })}
           onCancel={view.previous ? () => setView(view.previous!) : undefined}
         />
       )}
@@ -96,7 +128,13 @@ export default function App() {
           <button
             type="button"
             onClick={() =>
-              setView({ phase: 'picker', url: view.url, selectedId: view.app.id, previous: view })
+              setView({
+                phase: 'picker',
+                url: view.url,
+                user: view.user,
+                selectedId: view.app.id,
+                previous: view,
+              })
             }
           >
             {strings.changeApplication}

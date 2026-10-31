@@ -4,6 +4,7 @@ import { app, BrowserWindow, ipcMain, session } from 'electron'
 import { IPC, type AppInfo } from '../shared/api.ts'
 import { isAllowedNavigation, isAllowedRequest, secureWebPreferences } from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
+import { login, logout, type Session } from './auth.ts'
 import { checkServer } from './server.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 
@@ -30,6 +31,21 @@ app.on('web-contents-created', (_event, contents) => {
 
 function registerIpc() {
   const settingsFile = join(app.getPath('userData'), SETTINGS_FILE)
+  // In memory only: closing the client logs out. Tied to the server it came from.
+  let session: (Session & { serverUrl: string }) | null = null
+
+  /** The saved server and the session token for it, if any. */
+  async function server() {
+    const { serverUrl } = await loadSettings(settingsFile)
+    const token = session && session.serverUrl === serverUrl ? session.token : null
+    return { serverUrl, token }
+  }
+
+  /** A 401 means the session is gone on the server; forget it here too. */
+  function track<T extends { ok: boolean; reason?: string }>(result: T): T {
+    if (!result.ok && result.reason === 'unauthorized') session = null
+    return result
+  }
 
   ipcMain.handle(IPC.getAppInfo, (): AppInfo => ({
     name: app.getName(),
@@ -52,16 +68,32 @@ function registerIpc() {
     return result
   })
   ipcMain.handle(IPC.listApplications, async () => {
-    const { serverUrl } = await loadSettings(settingsFile)
-    return listApplications(serverUrl)
+    const { serverUrl, token } = await server()
+    return track(await listApplications(serverUrl, { token }))
   })
   ipcMain.handle(IPC.createApplication, async (_event, name: unknown, technology: unknown) => {
-    const { serverUrl } = await loadSettings(settingsFile)
-    return createApplication(serverUrl, String(name), String(technology))
+    const { serverUrl, token } = await server()
+    return track(await createApplication(serverUrl, String(name), String(technology), { token }))
   })
   ipcMain.handle(IPC.chooseApplication, async (_event, id: unknown) => {
     const settings = await loadSettings(settingsFile)
     await saveSettings(settingsFile, { ...settings, applicationId: String(id) })
+  })
+  ipcMain.handle(IPC.login, async (_event, username: unknown, password: unknown) => {
+    const { serverUrl } = await server()
+    const answer = await login(serverUrl, String(username), String(password))
+    if (!answer.ok) return answer
+    session = { ...answer.session, serverUrl: serverUrl! }
+    return { ok: true, user: answer.session.user }
+  })
+  ipcMain.handle(IPC.logout, async () => {
+    const { serverUrl, token } = await server()
+    session = null
+    if (token) await logout(serverUrl, token)
+  })
+  ipcMain.handle(IPC.currentUser, async () => {
+    const { token } = await server()
+    return token ? session!.user : null
   })
 }
 

@@ -1,4 +1,4 @@
-import type { ConnectionFailure, RequestFailure } from '../../shared/api.ts'
+import type { ConnectionFailure, LoginResult, RequestFailure } from '../../shared/api.ts'
 
 // All UI text in one place, for later translation.
 export const strings = {
@@ -47,8 +47,27 @@ export const strings = {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
     timeout: 'The server did not answer within 5 seconds.',
+    unauthorized: 'Your session has ended. Log in again.',
     'bad-response': 'The server answered with something unexpected.',
     duplicate: 'An application with this name already exists. Choose it from the list.',
     invalid: 'Enter both a name and a technology.',
   } satisfies Record<RequestFailure | 'duplicate' | 'invalid', string>,
+
+  loginTitle: 'Log in',
+  loginIntro: (url: string) => `Log in to the AYNA server at ${url}.`,
+  usernameLabel: 'User name',
+  passwordLabel: 'Password',
+  logIn: 'Log in',
+  loggingIn: 'Logging in…',
+  logOut: 'Log out',
+  sessionEnded: 'Your session has ended. Log in again.',
+  signedInAs: (username: string, role: string) => `Logged in as ${username} (${role})`,
+  loginErrors: {
+    'wrong-credentials': 'Wrong user name or password.',
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer within 5 seconds.',
+    unauthorized: 'Wrong user name or password.',
+    'bad-response': 'The server answered with something unexpected.',
+  } satisfies Record<Extract<LoginResult, { ok: false }>['reason'], string>,
 } as const
