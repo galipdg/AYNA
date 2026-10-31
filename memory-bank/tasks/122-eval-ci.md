@@ -28,15 +28,16 @@ CI job `eval` on `windows-latest`, same steps as `agent` (ruff check, ruff forma
 - [x] `eval` job in `.github/workflows/ci.yml`
 - [x] macOS check 2026-10-31 (fresh py3.11 venv): ruff check/format clean, pytest
       7 passed 1 skipped, spike unittest 24 OK, `check_pairs.py --min-styles 0` OK
-- [ ] PR; CI `eval` job green on Windows (first real run of `test_uia.py` in CI)
-- Next step: push and open the PR (after the user's OK), watch the `eval` job.
+- [x] PR #167 (`Closes #122`, review requested from hasan); CI green 2026-10-31
+      (run 41190050901): `eval` job 12 passed, the 5 `test_uia.py` UIA tests included
+- Next step: answer hasan's review on #167; nothing else left.
 
 ## Manual checks
 - none needed: the CI job itself is the check.
 
 ## Open issues
-- If `test_uia.py` cannot open a window on the GitHub-hosted runner, either mark it
-  out of CI (`-m "not windows"`) or move it to #67's Windows-runner job; decide on CI result.
+- none. Learned for #67: GitHub-hosted `windows-latest` can launch a PySide6 window and
+  drive it with pywinauto UIA (the `eval` job does it in ~3 s).
 
 ## Handoff
 - Not touched on purpose: hasan's task note `tasks/9-*.md` and `tasks/8-*.md` still say
