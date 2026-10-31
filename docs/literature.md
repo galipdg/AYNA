@@ -2,7 +2,7 @@
 
 Annotated sources behind AYNA's design and research questions. Section 1 (#10) covers test fragility, locators and self-healing; section 2 (#20) covers language models in GUI testing and decision models. Each entry gives the finding and what it means for AYNA. Full citations use the numbering of the project plan ("AYNA – 14-Week Project Plan", References).
 
-Last update: 2026-10-27
+Last update: 2026-10-31
 
 ## Section 1 — Fragility, locators, self-healing (#10)
 
@@ -18,11 +18,11 @@ Each member annotates at least three sources (#10 acceptance criteria). The spli
 | [7] | Similo (Nass et al., TOSEM 2023) | Robust locators | galip | done |
 | [10] | WATER (Choudhary et al., 2011) | Test repair / self-healing | galip | done |
 | [11] | Vista (Stocco et al., ESEC/FSE 2018) | Test repair / self-healing | galip | done |
-| [5] | ROBULA+ (Leotta et al., JSEP 2016) | Robust locators | hasan | todo |
-| [6] | Contextual clues (Yandrapally et al., ISSTA 2014) | Robust locators | hasan | todo |
-| [12] | Luo et al., FSE 2014 | Flaky tests | hasan | todo |
-| [8] | Sikuli (Yeh et al., UIST 2009) | Visual GUI testing | hasan | todo |
-| [9] | Alégroth et al., IST 2016 | Visual GUI testing | hasan | todo |
+| [5] | ROBULA+ (Leotta et al., JSEP 2016) | Robust locators | hasan | done |
+| [6] | Contextual clues (Yandrapally et al., ISSTA 2014) | Robust locators | hasan | done |
+| [12] | Luo et al., FSE 2014 | Flaky tests | hasan | done |
+| [8] | Sikuli (Yeh et al., UIST 2009) | Visual GUI testing | hasan | done |
+| [9] | Alégroth et al., IST 2016 | Visual GUI testing | hasan | done |
 
 Entry format: **Citation** · **Finding** (what the source shows, with its numbers) · **What it means for AYNA** (design consequence, linked to a brief item, RQ or ADR) · **Source checked** (what was actually read).
 
@@ -53,9 +53,29 @@ Entry format: **Citation** · **Finding** (what the source shows, with its numbe
 
 ### 1.2 Robust locators
 
-#### [5] ROBULA+ — *to be annotated by hasan*
+#### [5] Leotta, Stocco, Ricca, Tonella — ROBULA+: robust XPath locators
 
-#### [6] Contextual clues — *to be annotated by hasan*
+- **Citation:** M. Leotta, A. Stocco, F. Ricca, P. Tonella, "ROBULA+: An algorithm for generating robust XPath locators for web testing," *Journal of Software: Evolution and Process*, vol. 28, no. 3, pp. 177–204, 2016. DOI 10.1002/smr.1771.
+- **Finding:** ROBULA+ builds a locator top-down: it starts from `//*`, which matches everything, and specialises it with seven transformations (convert the `*` into a tag, add the id, add text, add an attribute, add a set of attributes, add a position, add a level) until exactly one element matches. Two heuristics decide *which* specialisation is tried first. **Prioritisation**: `id` has the highest priority, then the hand-made list `(name, class, title, alt, value)`, then whatever attributes remain in document order. **Black list**: `(src, href, onclick, onload, tabindex, width, height, size, maxlength, style)` are never used, because they encode directory structure, volatile JavaScript, tab order or layout. On 1110 target elements from two releases of eight real web applications, broken locators were: absolute XPath 871 (78%), FirePath id-based relative 557 (50%), ROBULA (the predecessor) 334 (30%), Montoto 282 (25%), Selenium IDE 248 (22%), **ROBULA+ 91 (8%)** — a fragility reduction of 90% against absolute and 63% against Selenium IDE locators. On one application (Collabtive) ROBULA+ broke on none of 125 elements while absolute XPath broke on all 125.
+- **What it means for AYNA:**
+  - The result that matters for #11 is not the XPath itself but the ordering: **a hand-made priority over properties, plus an explicit list of properties never to use, beats both "always use the id" and "always use the path"**. The descriptor's primary/fallback split is the same idea; this paper is the argument for writing the order down instead of leaving it to whoever builds the repository object.
+  - Our black list follows from #6's dumps rather than from HTML: the generated numeric `AutomationId`s of Win32 dialogs (96% of Notepad++'s ids) and `BoundingRectangle` are the AYNA analogues of `tabindex` and `width` — they identify an element in one release and mislead in the next. The task note for #11 should name them.
+  - Qt's dotted `AutomationId` (`QApplication.loginWindow.usernameInput`, learnings 2026-10-25) is a *path* in disguise, so it carries the fragility of an absolute XPath for every ancestor rename. ROBULA+'s answer — prefer the shortest locator that is still unique, climb only as far as necessary — maps onto comparing the leaf of the id first (as `heal/scorer.py` already does) and treating `parentPath` as a weak property.
+  - It is the natural *baseline* for RQ4/H1 next to Similo [7]: Similo compares many properties with weights, ROBULA+ picks one minimal discriminating property set. Our weighted scorer should be measured against both, not only against "AutomationId only".
+  - Gap: web DOM only, and it generates locators rather than matching a changed UI — it has no notion of healing, no score and no explanation. Its robustness is also measured over two releases only, while AYNA's #22 version-drift work covers a longer release history.
+- **Source checked:** full accepted version (authors' PDF, `tsigalko18.github.io/assets/pdf/2016-Leotta-JSEP.pdf`), sections 1, 3.1, 3.4 and 4, Tables I–III (2026-10-31).
+
+#### [6] Yandrapally, Thummalapenta, Sinha, Chandra — Robust test automation using contextual clues
+
+- **Citation:** R. Yandrapally, S. Thummalapenta, S. Sinha, S. Chandra, "Robust test automation using contextual clues," *ISSTA*, pp. 304–314, 2014. DOI 10.1145/2610384.2610390.
+- **Finding:** Instead of storing a locator, the tool (ATA) stores the *contextual clues* a human would use to find a control — the paper calls them **anchors**: the label beside or above the field, nearby text, the enclosing section. A test step is written against those clues ("type into the field labelled *Username*"), and the element is resolved at replay time by computing the clues again on the current page. The authors report that inferring the clues is highly accurate and that the approach is more resilient than locator-based identification both to UI changes and to a change of browser.
+- **What it means for AYNA:**
+  - This is the research behind the `nearestLabel` property of #11 and, with it, behind the whole "logical name" idea: a tester names *Kullanıcı adı*, and the agent resolves it. It is also the argument for computing the label at snapshot time and at healing time **by the same rule** — galip's constraint from the #159 review — because a clue is only stable if the method that derives it is.
+  - On Windows the clue sources are richer than in the DOM: the UIA `LabeledBy` relation (populated by Qt, 12% of KeePassXC's interactive elements in #6, and by nobody else in that set), the preceding `Text` sibling, and the group or tab the control sits in. #6 finding 6 already recommends geometric first with `LabeledBy` as confirmation; this paper is why a label is worth that effort at all.
+  - For the NL dataset (#36, #57): an instruction names what a user sees, so the objects file maps a Turkish description to an element, exactly the anchor idea. Clue-based identification is what makes "codeless" honest rather than a recorded coordinate.
+  - Risk to carry: anchors are text, so they break under localisation and under wording changes — in a Turkish product, every label is translatable. `nearestLabel` must therefore stay a *fallback* property, never a primary one, and the scorer's weight for it should be checked in RQ4.
+  - Gap: web only, and the clue is only as good as the label — toolbar icons with no text (Notepad++'s 32 anonymous buttons, #6 finding 2) have no anchor at all; those are #23's problem.
+- **Source checked:** abstract, ACM metadata and the paper's description in Similo [7] §3.1 (2026-10-31). The full text could not be retrieved: the ACM PDF returns 403 and no author copy is online. Table 3 of the paper gives per-anchor accuracy — read it before citing accuracy figures in the RS.
 
 #### [7] Nass, Alégroth, Feldt, Leotta, Ricca — Similo: similarity-based web element localization
 
@@ -72,9 +92,27 @@ Entry format: **Citation** · **Finding** (what the source shows, with its numbe
 
 ### 1.3 Visual GUI testing
 
-#### [8] Sikuli — *to be annotated by hasan*
+#### [8] Yeh, Chang, Miller — Sikuli: using GUI screenshots for search and automation
 
-#### [9] Alégroth et al. — *to be annotated by hasan*
+- **Citation:** T. Yeh, T.-H. Chang, R. C. Miller, "Sikuli: using GUI screenshots for search and automation," *UIST*, pp. 183–192, 2009. DOI 10.1145/1622176.1622213.
+- **Finding:** Sikuli identifies a control by **what it looks like**: a screenshot of the element is embedded directly in the script (`click(<image>)`) and found on screen by template matching, with no access to the application's internals. The paper has two halves — Sikuli Search, which looks documentation up by a screenshot, and Sikuli Script, which automates a GUI the same way — and reports a web-based user study in which searching by screenshot was easy to learn and faster to specify than keywords.
+- **What it means for AYNA:**
+  - It is the honest statement of the alternative AYNA did *not* take: pixels work on anything, including the Scintilla editor surface and the 32 anonymous toolbar buttons that UIA cannot see at all (#6, finding 2), and they need no accessibility support from the application.
+  - It is also the statement of the cost: an image locator breaks on a theme change, a DPI change or a font change, carries no semantics to explain a failure with, and cannot be compared property by property — which is exactly what C2 promises to show a tester. This is the trade-off D3 (#65, visual fallback or not) has to decide, and Vista [11] is the evidence that a visual layer *on top of* a property-based one pays off, not instead of it.
+  - If D3 says yes, the cheapest version is already in reach: playback stores a screenshot per step (brief item 5), so storing the element's crop and bounds from the last passing run (#54) buys the Sikuli-style fallback without a visual matcher in the hot path.
+  - For the sample app and the pilots, the 125% scaling of the Windows machine is a reminder that a template match is scale-sensitive in a way a UIA property is not — the same reason healing compares location and area in device-independent pixels (PR #166).
+- **Source checked:** abstract and ACM metadata (2026-10-31); the full UIST paper is behind the ACM paywall (403 from `dl.acm.org`). The user-study design and its numbers are not verified here — read the paper before citing them in the RS.
+
+#### [9] Alégroth, Feldt, Kolström — Maintenance of automated test suites in industry
+
+- **Citation:** E. Alégroth, R. Feldt, P. Kolström, "Maintenance of automated test suites in industry: An empirical study on Visual GUI Testing," *Information and Software Technology*, vol. 73, pp. 66–80, 2016. DOI 10.1016/j.infsof.2016.01.012.
+- **Finding:** Interviews and hands-on work at two companies (Siemens and Saab) measured what it costs to keep a Visual GUI Testing suite alive. Thirteen factors are reported to affect maintenance, among them the tester's knowledge and experience and the complexity of the test case. Statistically, **writing new test scripts costs more than maintaining existing ones**, and **frequent small maintenance costs less than infrequent big-bang maintenance**.
+- **What it means for AYNA:**
+  - It corrects the easy assumption behind "self-healing saves the project": maintenance is not the dominant cost, authoring is. So AYNA's value claim has to rest on *both* halves of the brief — the codeless editor and the NL assistant lower the authoring cost, healing and change-impact lower the maintenance cost — and the evaluation should report them separately (RQ5 measures healing; authoring effort belongs with the SUS study, #104).
+  - "Frequent maintenance is cheaper than big-bang" is an argument for the approval gate rather than against it: a proposal queue that a tester clears after every run is exactly frequent small maintenance, while a suite left to rot until a release is the big bang. It is also an argument for change-impact analysis (C3) to run per commit, not per release.
+  - Tester knowledge being a top factor is why the testability guideline (#94) and the Turkish wording of the proposal screen matter as much as the scorer: a proposal a tester cannot judge is a proposal that will be approved blindly, which is the failure mode RQ5/H3 is meant to catch.
+  - Industrial VGT context also tells us what pilot evidence is worth: two apps over a few releases (#22) is a spike, not an industrial claim, and the report should say so.
+- **Source checked:** abstract and publication metadata via the journal listing and the authors' pages (2026-10-31). The full text is paywalled; the thirteen factors and the statistical tests behind the two claims above are not verified here.
 
 ### 1.4 Test repair / self-healing
 
@@ -117,7 +155,18 @@ Entry format: **Citation** · **Finding** (what the source shows, with its numbe
 
 ### 1.5 Flaky tests
 
-#### [12] Luo et al. — *to be annotated by hasan*
+#### [12] Luo, Hariri, Eloussi, Marinov — An empirical analysis of flaky tests
+
+- **Citation:** Q. Luo, F. Hariri, L. Eloussi, D. Marinov, "An empirical analysis of flaky tests," *FSE*, pp. 643–653, 2014. DOI 10.1145/2635868.2635920.
+- **Finding:** The authors searched the commit history of over 150 Apache projects for the keywords "flak" and "intermit", found 1129 candidate commits and inspected 201 of them that fix a flaky test; 161 could be classified. The categories, by number of commits: **Async Wait 74**, Concurrency 32, Test Order Dependency 19, Resource Leak 11, Network 10, Time 5, IO 4, Randomness 4, Floating Point 3, Unordered Collections 1, hard to classify 40. So roughly **45% of the classified flaky tests are a test that did not wait for something to finish**. Further findings: 78% of flaky tests are flaky from the moment they are written; 96% are platform-independent even when they depend on the environment; 85% of Async Wait cases wait for one ordering and not for an external resource; and **54% of Async Wait flaky tests are fixed with a `waitFor`-style call**, which usually removes the flakiness rather than reducing it, while a third use a plain time delay. Test Order Dependency is fixed in 74% of cases by cleaning shared state between runs.
+- **What it means for AYNA:**
+  - This is the measurement behind brief item 4 and RQ2. The dominant cause of flakiness is a missing wait, and the fix that works is an explicit *wait for a condition*, not a sleep — so playback's smart wait (#40) must wait for the element to exist, be visible and be enabled, which is what step schema v0 already specifies, and `timeoutMs` must never degrade into a fixed sleep.
+  - "78% are flaky from the start" sets the RQ2 protocol: a flaky rate measured by rerunning *newly recorded* tests is measuring the right thing, and the comparison that matters is recorded-with-smart-waits against recorded-with-fixed-sleeps on the same scenarios (#69).
+  - The category list is a ready taxonomy for the failure triage of #63. Async Wait maps onto "element not found in time", Test Order Dependency onto tests that depend on data a previous test left behind — which the sample app's reset (#46/#47) must make impossible — and Resource Leak onto the agent not closing windows between runs. FR-35's categories should be readable against this list so our numbers stay comparable.
+  - 96% being platform-independent is mildly good news for a project with one Windows machine and a CI runner (#67): flakiness found on either is likely to be real, not an artefact of the machine.
+  - A caution for RQ5: a self-healing tool that reruns or retries hides exactly these failures. AYNA's healing never retries silently, and a timing failure must stay a failure — otherwise the flaky rate we report is the rate *after* the tool papered over it.
+  - Gap: JUnit test suites of server-side Java projects, not GUI tests; the GUI equivalents (animation, focus, modal dialogs that steal input) are not in the data. Our own #161 measurement is an example the paper has no category for: the same UI Automation walk took 1.6 s normally and 230 s while a modal message box was open.
+- **Source checked:** full paper PDF (`mir.cs.illinois.edu/lamyaa/publications/fse14.pdf`), Table 2 and findings F.1–F.12 with their implications (2026-10-31).
 
 ### Gaps table
 
