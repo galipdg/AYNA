@@ -84,3 +84,27 @@ Append-only. One entry per session, newest at the bottom:
   two macOS members, and that the issue's expected ADR path contradicts the memory-structure
   ADR. Both are written up for the team instead of being quietly worked around.
 - Next step: open the PR for #21, then #161 (the only result that can reopen this ADR).
+
+## 2026-10-31 (second half) — #161, #17 Windows check, #10
+- #161: the #6 outlier is explained. The documented window state walks in 1.79 s; the
+  **modal message box** is what breaks it — 230 s for 85 elements, 2.71 s each against the
+  dump's 2.63 s, with the median element still 1.4 ms and six containers absorbing 170 s.
+  Refuted on the way: pattern probes, WinForms itself, CPU load, an open menu (a tracked
+  menu still pumps). Cache API answered: no (0.6 %). PR #170.
+- Built `eval/spikes/uia_probe.py` (six cost centres, per-element timings) and 21 tests for
+  its pure parts. `kp_state.py` is committed unfinished on purpose: it drives KeePass's
+  six-dialog wizard but has not completed it unattended, and the note and its docstring say
+  so rather than pretending otherwise.
+- #17 Windows check (omer's PR #154): 6 of 7 steps pass — both restart paths, no orphan
+  process, clean shutdown in 1.2 s. `npm test` is 51/52: Windows has no signals, so Node
+  reports a killed child as `signal === null` with a non-zero code, which makes the
+  "killed" branch unreachable and leaks an INFO log line into the user-facing failure
+  message. Result on the issue, root cause in omer's inbox (PR #172), label kept.
+- #10: my five annotations ([5] ROBULA+, [6] contextual clues, [12] Luo, [8] Sikuli,
+  [9] Alégroth) on a branch off omer's, PR #171. Two were read in full and three only as
+  abstracts — each entry says which, because the whole point of "Source checked" is that
+  the RS can trust it.
+- Learned and worth repeating: when a desktop measurement is 100× out, suspect a modal
+  dialog before suspecting the framework (`learnings.md`).
+- Next step: answer reviews on #169/#170, then #11 with the D1 decision and the #161 budget
+  in hand.
