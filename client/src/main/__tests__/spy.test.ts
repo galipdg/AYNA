@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { AgentNotConnectedError, AgentRpcError, AgentTimeoutError } from '../agent.ts'
-import { describeFailure, frameRect, isBounds, listWindows, parseWindows } from '../spy.ts'
+import {
+  describeFailure,
+  frameRect,
+  isBounds,
+  listWindows,
+  parseWindows,
+  PICK_ACCELERATOR,
+  PickHotkey,
+  pickHotkeyLabel,
+} from '../spy.ts'
 
 const notepad = {
   handle: 395942,
@@ -138,5 +147,53 @@ describe('frameRect', () => {
       width: 206,
       height: 36,
     })
+  })
+})
+
+describe('PickHotkey', () => {
+  /** A globalShortcut stand-in; `taken` makes registration fail like a key held elsewhere. */
+  function registry(taken = false) {
+    const log: string[] = []
+    return {
+      log,
+      callbacks: [] as (() => void)[],
+      register(accelerator: string, callback: () => void) {
+        log.push(`register ${accelerator}`)
+        this.callbacks.push(callback)
+        return !taken
+      },
+      unregister(accelerator: string) {
+        log.push(`unregister ${accelerator}`)
+      },
+    }
+  }
+
+  it('registers once and releases once', () => {
+    const shortcuts = registry()
+    let presses = 0
+    const hotkey = new PickHotkey(shortcuts, () => presses++)
+    assert.equal(hotkey.set(true), true)
+    assert.equal(hotkey.set(true), true)
+    shortcuts.callbacks[0]()
+    assert.equal(presses, 1)
+    assert.equal(hotkey.set(false), false)
+    assert.equal(hotkey.set(false), false)
+    assert.deepEqual(shortcuts.log, [
+      `register ${PICK_ACCELERATOR}`,
+      `unregister ${PICK_ACCELERATOR}`,
+    ])
+  })
+
+  it('reports a key held by another program and does not release it', () => {
+    const shortcuts = registry(true)
+    const hotkey = new PickHotkey(shortcuts, () => {})
+    assert.equal(hotkey.set(true), false)
+    assert.equal(hotkey.set(false), false)
+    assert.deepEqual(shortcuts.log, [`register ${PICK_ACCELERATOR}`])
+  })
+
+  it('names the key the way each platform writes it', () => {
+    assert.equal(pickHotkeyLabel('win32'), 'Ctrl+Shift+A')
+    assert.equal(pickHotkeyLabel('darwin'), '⌘⇧A')
   })
 })

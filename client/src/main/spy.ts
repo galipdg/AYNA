@@ -101,3 +101,44 @@ export function frameRect(bounds: Bounds, toDip: (rect: Rect) => Rect, border: n
     height: Math.round(dip.height) + 2 * border,
   }
 }
+
+/** The part of Electron's `globalShortcut` the pick hotkey needs. */
+export interface ShortcutRegistry {
+  register(accelerator: string, callback: () => void): boolean
+  unregister(accelerator: string): void
+}
+
+/** Like TestComplete's Object Spy, so testers coming from it find the same keys. */
+export const PICK_ACCELERATOR = 'CommandOrControl+Shift+A'
+
+export function pickHotkeyLabel(platform: NodeJS.Platform): string {
+  return platform === 'darwin' ? '⌘⇧A' : 'Ctrl+Shift+A'
+}
+
+/**
+ * The Spy's global "pick the element under the cursor" key. Held only while the Spy is
+ * shown: a global shortcut takes the key away from every other program, the one under
+ * test included.
+ */
+export class PickHotkey {
+  private active = false
+  private readonly registry: ShortcutRegistry
+  private readonly onPress: () => void
+
+  constructor(registry: ShortcutRegistry, onPress: () => void) {
+    this.registry = registry
+    this.onPress = onPress
+  }
+
+  /** Registers or releases the key; returns whether it is now held. */
+  set(enabled: boolean): boolean {
+    if (enabled && !this.active) {
+      // False when another program already holds the combination.
+      this.active = this.registry.register(PICK_ACCELERATOR, this.onPress)
+    } else if (!enabled && this.active) {
+      this.registry.unregister(PICK_ACCELERATOR)
+      this.active = false
+    }
+    return this.active
+  }
+}

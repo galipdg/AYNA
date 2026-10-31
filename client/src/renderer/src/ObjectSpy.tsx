@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AgentFailure, WindowInfo } from '../../shared/api.ts'
+import type { AgentFailure, PickHotkeyState, ScreenPoint, WindowInfo } from '../../shared/api.ts'
 import { strings } from './strings.ts'
 
 type List =
@@ -26,6 +26,8 @@ function processLabel(win: WindowInfo): string {
 export default function ObjectSpy() {
   const [list, setList] = useState<List>({ state: 'loading' })
   const [selected, setSelected] = useState<WindowInfo>()
+  const [hotkey, setHotkey] = useState<PickHotkeyState>()
+  const [picked, setPicked] = useState<ScreenPoint>()
 
   // Entering `loading` (first render, Refresh, agent reconnected) fetches the list.
   const loading = list.state === 'loading'
@@ -60,6 +62,18 @@ export default function ObjectSpy() {
     return () => {
       unsubscribe()
       window.ayna.highlight(null)
+    }
+  }, [])
+
+  // The pick key is global, so it is held only while the Spy is on screen.
+  useEffect(() => {
+    let cancelled = false
+    const unsubscribe = window.ayna.onPick(setPicked)
+    window.ayna.setPickHotkey(true).then((state) => !cancelled && setHotkey(state))
+    return () => {
+      cancelled = true
+      unsubscribe()
+      window.ayna.setPickHotkey(false)
     }
   }, [])
 
@@ -115,6 +129,14 @@ export default function ObjectSpy() {
           <dd>{selected.bounds.join(', ')}</dd>
         </dl>
       )}
+      {hotkey && (
+        <p className={hotkey.active ? 'spy-pending' : 'error'}>
+          {hotkey.active
+            ? strings.spyHotkeyHint(hotkey.label)
+            : strings.spyHotkeyTaken(hotkey.label)}
+        </p>
+      )}
+      {picked && <p role="status">{strings.spyPicked(picked.x, picked.y)}</p>}
       <p className="spy-pending">{strings.spyTreePending}</p>
     </section>
   )

@@ -1,6 +1,14 @@
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, ipcMain, session, type IpcMainInvokeEvent } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  screen,
+  session,
+  type IpcMainInvokeEvent,
+} from 'electron'
 import { IPC, type AppInfo } from '../shared/api.ts'
 import { AgentManager, resolveAgentCommand } from './agent.ts'
 import {
@@ -13,7 +21,7 @@ import { createApplication, listApplications } from './apps.ts'
 import { checkServer } from './server.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 import { Highlighter } from './overlay.ts'
-import { isBounds, listWindows } from './spy.ts'
+import { isBounds, listWindows, PickHotkey, pickHotkeyLabel } from './spy.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -44,6 +52,15 @@ const agent = new AgentManager({
   }),
 })
 const highlighter = new Highlighter()
+let mainWindow: BrowserWindow | undefined
+
+// The agent reports and expects physical pixels; Electron's cursor point is in DIPs.
+// `dipToScreenPoint` exists on Windows only; elsewhere there is no UI Automation backend.
+const pickHotkey = new PickHotkey(globalShortcut, () => {
+  const cursor = screen.getCursorScreenPoint()
+  const point = process.platform === 'win32' ? screen.dipToScreenPoint(cursor) : cursor
+  mainWindow?.webContents.send(IPC.pick, { x: point.x, y: point.y })
+})
 
 agent.onStatus((status) => {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -106,6 +123,10 @@ function registerIpc() {
   handle(IPC.highlight, (_event, bounds) =>
     isBounds(bounds) ? highlighter.show(bounds) : highlighter.hide(),
   )
+  handle(IPC.setPickHotkey, (_event, enabled) => ({
+    active: pickHotkey.set(enabled === true),
+    label: pickHotkeyLabel(process.platform),
+  }))
 }
 
 function createMainWindow() {
@@ -119,7 +140,16 @@ function createMainWindow() {
     webPreferences: secureWebPreferences(join(__dirname, '../preload/index.js')),
   })
   window.once('ready-to-show', () => window.show())
-  window.on('closed', () => highlighter.destroy())
+  window.on('closed', () => {
+    highlighter.destroy()
+    pickHotkey.set(false)
+    if (mainWindow === window) mainWindow = undefined
+  })
+  // A reload unmounts the Spy without its cleanup; the new page turns the key on again.
+  window.webContents.on('did-start-navigation', (details) => {
+    if (details.isMainFrame && !details.isSameDocument) pickHotkey.set(false)
+  })
+  mainWindow = window
   window.loadURL(entryUrl)
 }
 

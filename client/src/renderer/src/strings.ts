@@ -77,6 +77,11 @@ export const strings = {
   spyNoTitle: '(no title)',
   spyUnknownProcess: 'unknown process',
   spyTreePending: 'The element tree appears here once the agent can capture windows.',
+  spyHotkeyHint: (label: string) => `Press ${label} with the mouse over an element to pick it.`,
+  spyHotkeyTaken: (label: string) =>
+    `${label} is in use by another program, so picking with the keyboard is off.`,
+  spyPicked: (x: number, y: number) =>
+    `Picked the point ${x}, ${y}. Finding the element under it needs a newer agent.`,
   spyFields: {
     title: 'Title',
     className: 'Class',

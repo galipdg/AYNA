@@ -97,6 +97,18 @@ export type AgentFailure =
 export type WindowsResult =
   { ok: true; windows: WindowInfo[] } | { ok: false; reason: AgentFailure; detail?: string }
 
+/** A screen point in physical pixels, virtual-screen coordinates (like `Bounds`). */
+export interface ScreenPoint {
+  x: number
+  y: number
+}
+
+/** Whether the Spy's pick hotkey is active; `label` is the key combination to show. */
+export interface PickHotkeyState {
+  active: boolean
+  label: string
+}
+
 export interface AynaApi {
   getAppInfo(): Promise<AppInfo>
   getSettings(): Promise<Settings>
@@ -122,6 +134,13 @@ export interface AynaApi {
    * without taking focus or clicks; `null` removes it at once.
    */
   highlight(bounds: Bounds | null): Promise<void>
+  /**
+   * Turns the global pick hotkey on while the Spy is shown, and off again. `active` is false
+   * when another program holds the key combination.
+   */
+  setPickHotkey(enabled: boolean): Promise<PickHotkeyState>
+  /** Calls `listener` with the cursor position each time the pick hotkey is pressed. */
+  onPick(listener: (point: ScreenPoint) => void): () => void
 }
 
 export const IPC = {
@@ -136,6 +155,9 @@ export const IPC = {
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',
   highlight: 'spy:highlight',
+  setPickHotkey: 'spy:set-pick-hotkey',
+  /** Main → renderer event, not a handler. */
+  pick: 'spy:pick',
   /** Main → renderer event, not a handler. */
   agentStatus: 'agent:status',
 } as const
