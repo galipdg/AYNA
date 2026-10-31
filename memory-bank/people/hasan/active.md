@@ -34,3 +34,30 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   `ayna_agent.rpc` imports) and `client/node_modules` is installed, so the #17 check can be
   rerun without the long setup. KeePass 2's demo database is at
   `%USERPROFILE%\OneDrive\Belgeler\Database.kdbx`, password `ayna-demo`.
+
+## Still open from the 2026-10-29 review session (not mine to close)
+
+- **PR #150** — held by me on content: galip needs to fix two sentences in the step-schema
+  v0.2 document (I posted the exact replacement text). It is a `schemas/` freeze document
+  (#52), so it waits for him, not for me.
+- **PR #138** is now empty (0 files) because #143 carried its content to `main`; it should be
+  **closed, not merged**. Side effect: `docs/requirements-workshop.md` is on `main` with §7
+  still the empty template, tracked by #19 — galip must fill it.
+- **Two ADRs still say Proposed although their condition is met:**
+  `2026-10-27-step-schema-v0` (my third approval given on #134) and
+  `2026-10-29-graph-schema-application-links` (I approved on #156; needs galip's, then omer
+  flips it).
+- **Branch `hasan/2209a-application`**: created from `main`, no commits, not created by me.
+  Still worth finding out whose it is before someone builds on it.
+- **Proposed, needs an ADR:** replace the single `learnings.md` with a directory of dated
+  one-fact files, so append-only memory stops causing the merge cascade (`learnings.md`,
+  2026-10-29).
+- **#9 / PR #116 merged** — ask omer whether it satisfies #2's last criterion ("all three
+  members merged one test PR").
+
+The binding sign-offs I gave in that session (NFR-02 scoped to the sample app, NFR-04/05,
+TBD-5's third failure state, TBD-6, RQ1 refused as defined, the CLI exit codes 0/1/2,
+camelCase at every contract boundary, `parentPath` from programmatic ControlType names) are
+recorded in `memory-bank/people/hasan/journal.md` under 2026-10-29 and in the PRs themselves;
+RS 0.6 folded them in (galip's 2026-10-29 inbox note).
+
