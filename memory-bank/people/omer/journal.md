@@ -99,3 +99,8 @@ Append-only. One entry per session, newest at the bottom:
 - Checked against a fresh Compose stack: `users.ts` against the real API, and the built app driven over CDP with screenshots (fixed button wrapping and notice placement).
 - `server/AGENTS.md` who-did-it rule (omer's OK). Pushed over HTTPS; PR #168, reviewers galip + hasan.
 - Next: omer's manual look, reviews, retarget after #160.
+
+## 2026-10-31 (fifth session) · #60
+- Found PR #168 squash-merged into `omer/31-openapi-contract` with no reviews; #60 code would have reached `main` inside #160. Reverted on the #31 branch (`48dfd5a`, tree identical to `9e2f51a`) and pushed, omer's choice.
+- GitHub showed #160 as CONFLICTING; `git merge-tree` with `origin/main` was clean.
+- Next: after #160 merges, new #60 PR to `main` from this branch.
