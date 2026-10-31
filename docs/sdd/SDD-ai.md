@@ -280,7 +280,7 @@ Healing starts only when **no** element matches the object's primary or fallback
 
 - **Input:** the element the object resolved to in the old version (the *target*) and the snapshot of the window now on screen (online, #73), or two version snapshots (offline: RQ4 #76, change impact #81).
 - **Filter:** elements in the same window with a compatible control type. #42 defines the compatibility map; it must keep "retype" changes of #46 reachable.
-- **Acceptance:** the true target is among the candidates in ≥ 95 % of the controlled-change cases (#46), in under 1 s per object (NFR-10, SC-29). Candidate recall is reported separately from scorer accuracy, so that RQ4 does not mix the two.
+- **Acceptance:** the true target is among the candidates in ≥ 95 % of the controlled-change cases (#46), in under 1 s per object, measured from an available snapshot (NFR-10, SC-29); capture time is NFR-02 / #12, and on a slow window it dominates the healing path (278.5 s for one KeePass 2 window in #6). Candidate recall is reported separately from scorer accuracy, so that RQ4 does not mix the two.
 
 ### AI-5.3 Graph-context features (planned, #43)
 
@@ -326,7 +326,7 @@ Similo's HTML Name, HRef, Alt and IsButton have no UIA counterpart, or are cover
 
 ### AI-5.5 Proposal and approval (planned, #73, #74, #75)
 
-- **Payload** (proposed; settled by #73 and #74): run, step, logical name, application version, and the top 3 candidates, each with the snapshot element id, the score, the contributions and the raw similarities. The contributions add up to the score (SC-29).
+- **Payload:** `schemas/healing-proposal.schema.json`, settled by ADR *Healing proposal transport* (#149, accepted) and extended to version 0.2 by ADR *Healing proposal schema 0.2* (proposed). It holds run, step, logical name, application version and snapshot id; the target (server Element id, properties as scored); the scorer id, its weights and the feature versions of the target and the candidates; and the top 3 candidates, each with the snapshot element id, its properties as scored (with `dpi`), the score, the contributions and the raw similarities. Numbers are exact fractions written as strings, so the contributions add up **exactly** to the score (SC-29); a consumer never compares floats for equality.
 - **Storage:** `(HealingProposal)-[:FOR]->(RepoObject)` and `-[:CANDIDATE {score, …}]->(Element)`. Each candidate has its own contributions, and Neo4j cannot store a map property. *Proposed* (raised with omer): keep score and contributions on the `CANDIDATE` relationship, as a JSON string or as two parallel lists. `docs/graph-model.md` currently puts them on the proposal node.
 - **Approve:** the object `RESOLVES_TO {version}` the chosen element, and a `Rule` linked to the proposal is created, with the user and the time (FR-32, FR-40, SC-30). The next run passes without any step being edited (NFR-33).
 - **Reject all:** the step stays failed as "element not found", and the repository and the rule book stay unchanged (SC-31). A repair applied automatically could have passed here; that is the false pass RQ5 counts.
