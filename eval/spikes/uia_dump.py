@@ -68,20 +68,33 @@ def walk(
     children: Callable[[Any], list],
     max_nodes: int = MAX_NODES,
     max_depth: int = MAX_DEPTH,
+    identity: Callable[[Any], Any] | None = None,
 ) -> tuple[list[dict], bool]:
     """Flatten the trees under `roots` in pre-order.
 
     Each element gets its id (position in the list), its parent's id, its depth and its index
     among its siblings, followed by whatever `read` returns. The flag is True when `max_nodes`
     or `max_depth` cut the walk short.
+
+    `identity` keeps an element out of the dump twice. An owned dialog is a top-level window
+    and usually also a child of its owner in the UIA tree (Notepad++'s Find), so it is both a
+    root and a descendant; the first visit wins and the second is skipped, subtree included.
+    Nodes whose identity is None (every element without a window handle) are never skipped.
     """
     elements: list[dict] = []
     truncated = False
+    seen: set[Any] = set()
     stack = [(root, None, 0, i) for i, root in reversed(list(enumerate(roots)))]
     while stack:
         if len(elements) >= max_nodes:
             return elements, True
         node, parent, depth, index = stack.pop()
+        if identity is not None:
+            key = identity(node)
+            if key is not None:
+                if key in seen:
+                    continue
+                seen.add(key)
         element = {"id": len(elements), "parent": parent, "depth": depth, "index": index}
         element.update(read(node))
         elements.append(element)
@@ -165,25 +178,43 @@ def uia_reader(patterns: bool) -> UiaReader:
 def find_windows(process: str | None, title_re: str | None) -> list:
     """Visible top-level windows whose exe name is `process` and whose title matches `title_re`.
 
-    Owned dialogs usually appear under their owner in the UIA tree; if one is top-level
-    instead, the process filter still picks it up as an extra root.
+    The handles come from Win32 `EnumWindows`, not from the UIA tree. KeePass 2's modal "Add
+    Entry" dialog is owned by a child window of the main form; UIA then reports its parent as
+    that window's ToolBar, while the ToolBar's own children do not list it, and the desktop root
+    does not either. A UIA-only search therefore misses the dialog from both ends (#6). Every
+    top-level window the window manager knows about is reachable by handle, so the enumeration
+    starts there and only converts the matches to UIA elements.
+
+    Zero-sized windows are skipped: frameworks keep hidden message-only helpers (WinForms'
+    broadcast window, IME windows) that are "visible" to Win32 but have nothing to walk.
     """
-    from pywinauto import Desktop
+    import win32gui
+    import win32process
     from pywinauto.application import process_module
+    from pywinauto.uia_element_info import UIAElementInfo
 
     found = []
-    for window in Desktop(backend="uia").windows(visible_only=True):  # the default is False
-        info = window.element_info
-        if title_re and not re.search(title_re, info.name or ""):
-            continue
+
+    def collect(handle: int, _: Any) -> bool:
+        if not win32gui.IsWindowVisible(handle):
+            return True
+        left, top, right, bottom = win32gui.GetWindowRect(handle)
+        if right - left <= 0 or bottom - top <= 0:
+            return True
+        if title_re and not re.search(title_re, win32gui.GetWindowText(handle) or ""):
+            return True
         if process:
+            _thread, process_id = win32process.GetWindowThreadProcessId(handle)
             try:
-                exe = process_module(info.process_id)
+                exe = process_module(process_id)
             except Exception:  # access denied (elevated process) or the process just exited
-                continue
+                return True
             if ntpath.basename(exe).lower() != process.lower():
-                continue
-        found.append(info)
+                return True
+        found.append(UIAElementInfo(handle))
+        return True
+
+    win32gui.EnumWindows(collect, None)
     return found
 
 
@@ -224,7 +255,14 @@ def dump_target(target: dict, out_dir: Path, args: argparse.Namespace) -> Path |
         return None
     reader = uia_reader(not args.no_patterns)
     start = time.perf_counter()
-    elements, truncated = walk(windows, reader.read, reader.children, args.max_nodes, args.max_depth)
+    elements, truncated = walk(
+        windows,
+        reader.read,
+        reader.children,
+        args.max_nodes,
+        args.max_depth,
+        identity=lambda info: reader.get(lambda: info.handle),
+    )
     seconds = time.perf_counter() - start
     doc = {
         "format": FORMAT,

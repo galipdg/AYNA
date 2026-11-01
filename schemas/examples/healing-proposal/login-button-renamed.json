@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90",
   "stepIndex": 2,
   "stepId": "b7e4d1c2-5a3f-4e8b-9d61-2c0a7f3e5b14",
@@ -8,19 +8,22 @@
   "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
   "target": {
     "serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f",
+    "featureVersion": "features-v0",
     "properties": {
       "automationId": "QApplication.loginWindow.loginButton",
       "name": "Giriş",
       "controlType": "Button",
       "className": "QPushButton",
       "bounds": [600, 412, 720, 444],
-      "parentPath": "loginWindow/credentialsBox",
+      "dpi": 96,
+      "parentPath": "Window/Group",
       "siblingIndex": 4,
       "windowTitle": "AYNA Trial"
     }
   },
   "scorer": {
     "id": "similo-v0",
+    "featureVersion": "features-v0",
     "weights": {
       "automationId": "3/2",
       "name": "3/2",
@@ -46,7 +49,8 @@
         "controlType": "Button",
         "className": "QPushButton",
         "bounds": [600, 412, 720, 444],
-        "parentPath": "loginWindow/credentialsBox",
+        "dpi": 96,
+        "parentPath": "Window/Group",
         "siblingIndex": 4,
         "windowTitle": "AYNA Trial"
       },
@@ -85,7 +89,8 @@
         "controlType": "Button",
         "className": "QPushButton",
         "bounds": [600, 456, 760, 480],
-        "parentPath": "loginWindow/credentialsBox",
+        "dpi": 96,
+        "parentPath": "Window/Group",
         "siblingIndex": 6,
         "windowTitle": "AYNA Trial"
       },
@@ -124,7 +129,8 @@
         "controlType": "Button",
         "className": "QPushButton",
         "bounds": [730, 412, 850, 444],
-        "parentPath": "loginWindow/credentialsBox",
+        "dpi": 96,
+        "parentPath": "Window/Group",
         "siblingIndex": 5,
         "windowTitle": "AYNA Trial"
       },
