@@ -73,3 +73,10 @@ Append-only. One entry per session, newest at the bottom:
 - galip's six PRs (#143–#146, #150, #151) show as conflicting on GitHub: only `merge=union` inbox files, except #151 (ADR index). Note in galip's inbox and in #155's body (learnings entry).
 - #39: tests and steps API, networknt validator 3.0.8, V0002 + Proposed ADR (HAS_TEST, HAS_OBJECT), Docker context at repo root. 32 server tests green, CI green. PR #156, reviewers galip + hasan.
 - Next: answer reviews on #155 and #156; then #48 (SDD test design) or #25 once #12/#22 move.
+
+## 2026-10-31 · #122 eval CI
+- #160/#155 not merged yet, #12/#22 still open → took #122. hasan had not done his `eval/` part, so omer did both halves (user's choice; hasan told in his inbox, reviewer on the PR).
+- `eval/pyproject.toml` (deps only, `packages = []`; pywinauto win32-only; jsonschema for `nl/check_pairs.py`), `requirements.txt` removed, ruff 0.17 clean with `spikes/` excluded, `eval` CI job on `windows-latest`. `eval/AGENTS.md` and CI changes approved by the user.
+- CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
+- Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
+- Next: after #160/#155 merge, close-out checks; then #60.
