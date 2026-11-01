@@ -187,7 +187,9 @@ def test_the_committed_example_is_what_build_produces(base):
 
 
 def test_the_example_file_is_the_canonical_text(base):
-    assert EXAMPLE.read_text(encoding="utf-8", newline="") == snapshot.dumps(base)
+    # Read as bytes, not with `read_text(newline="")`: that keyword is Python 3.13 only and
+    # the module supports 3.11, which CI runs. Bytes are also what "identical file" means.
+    assert EXAMPLE.read_bytes().decode("utf-8") == snapshot.dumps(base)
 
 
 def test_elements_are_in_pre_order_with_ids_by_position():
@@ -290,7 +292,7 @@ def test_a_tree_that_cannot_be_built_in_one_pass_is_refused(name, nodes, message
 
 def test_load_then_save_gives_the_same_file_back():
     # Acceptance criterion 3 of #12, on the real example rather than on a fixture.
-    text = EXAMPLE.read_text(encoding="utf-8", newline="")
+    text = EXAMPLE.read_bytes().decode("utf-8")
     assert snapshot.dumps(snapshot.loads(text)) == text
 
 
