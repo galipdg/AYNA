@@ -11,6 +11,7 @@ import java.util.Set;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import com.ayna.server.error.FieldError;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
@@ -93,10 +94,6 @@ public class StepSchema {
 
 	JsonNode schemaNode() {
 		return schemaNode;
-	}
-
-	/** `path` is a JSON path into the request body, e.g. `$.steps[2].value`. */
-	public record FieldError(String path, String message) {
 	}
 
 }
