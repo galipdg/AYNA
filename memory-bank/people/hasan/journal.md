@@ -180,3 +180,39 @@ Append-only. One entry per session, newest at the bottom:
   **All of #21's acceptance criteria are now met.**
 - Next step: review omer's #179, which has been sitting in my queue; then the #169 approvals,
   flip the ADR to Accepted and merge #169 before #170.
+
+## 2026-11-01 (fourth session) — #179 review, D1 accepted
+
+- **Reviewed omer's PR #179 (#60, local accounts, roles, user management) and approved it**,
+  including ADR `2026-10-31-accounts-and-tokens` (opaque Bearer tokens, SHA-256 hash in Neo4j,
+  BCrypt passwords, 12 h sessions, never-expiring CI API tokens). I read the whole `auth/`
+  package, `AuthIntegrationTest`, `V0003`, the who-did-it path in `TestService`, `SecurityConfig`
+  against `openapi.yaml`, and the client's session handling; I did **not** run the suites (no
+  Docker/Java here) and said so — CI was 5/5 green on that head. No way found for a tester to
+  reach an admin endpoint and no path that leaks a token to the renderer, a log or disk.
+- **What #179 settles for my #61 CLI runner**, so it is not re-derived: `Authorization: Bearer
+  $AYNA_SERVER_TOKEN` on every call; an API token is a `kind: api` token on an ordinary tester
+  account, never expires, revoked only by `DELETE /api/tokens/{id}`, and `POST /api/auth/logout`
+  deliberately leaves it alone, so a CI run cannot log itself out. 401 = missing/unknown/revoked/
+  expired, 403 = role refused, both RFC 9457; FR-23 maps either to exit 2, so the CLI need not
+  tell them apart for the exit code. A password change ends sessions but not API tokens, so an
+  admin rotating their own password does not break the nightly run. `/api/health` stays public.
+  **The one contract point I added:** 401 and 403 must *not* be retried by the result-delivery
+  backoff — a revoked token answers the same for the rest of the run — so retry only on
+  unreachable/timeout/5xx, then `ayna-undelivered.jsonl` and exit 2.
+- Three minor findings, none blocking: (1) `server/AGENTS.md` claims `AuthIntegrationTest` checks
+  that `@PublicEndpoint` and `SecurityConfig` agree, but the test reads the *generated contract*,
+  so it catches an annotation without a `permitAll()` and misses a `permitAll()` without the
+  annotation — the direction that actually opens a hole; (2) after an admin changes their own
+  password the renderer goes to login but the Electron main process keeps the dead token, so
+  `currentUser()` still answers (self-corrects on the next 401; one-line fix is to fire
+  `logout()` from `onSessionEnded`); (3) `FirstAdmin` throws from an `ApplicationRunner`, so a
+  hand-made "no active admin but the name is taken" state stops the server from booting.
+- **Flipped the D1 ADR to `Accepted`** (7dd2d64) and chased the approvals on #169. Both reviewers
+  had written "I agree with the decision", each conditional on their points being folded in, and
+  they are (a488608, 004a741) — so the status line names that evidence and the dates instead of
+  claiming the click, and the chase comment offers a one-commit revert to `Proposed` if either of
+  them disagrees. Reason for not leaving it at `Proposed`: step schema v0 (#134) reached `main`
+  that way with its condition met and is still wrong there, and a dozen issues cite D1.
+- Next step: the two Approve clicks on #169, then merge #169 **before** #170. Then #180's
+  reviews, then #22 / #23.
