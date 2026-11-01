@@ -23,7 +23,8 @@ ADR `2026-10-31-accounts-and-tokens` (Proposed): opaque Bearer tokens hashed in 
 - [x] Client: session token in the main process memory only, tied to the server URL; login screen after the server check; "Logged in as" + Log out; a 401 anywhere → login screen with "session ended". 40 client tests, lint, typecheck, build green 2026-10-31
 - [x] Client: admin user management screen (`Users.tsx`, `ApiTokens.tsx`, main `users.ts`): list, create, role, password, remove, API tokens; a tester (or a 403) sees "only admins manage users" (SC-03). 51 client tests, lint, typecheck, build green 2026-10-31
 - 2026-10-31 — PR #168 was squash-merged into `omer/31-openapi-contract` with no reviews (10:51 UTC); reverted there in `48dfd5a` (omer's choice), so #160 merges with its own scope only. This branch still holds every #60 commit.
-- Next step: when #160 merges, `git merge origin/main` here, rerun server + client tests, open a **new** PR to `main` (`Closes #60`, reviewers galip + hasan for the ADR); answer reviews; Windows session check.
+- 2026-11-01: #160 merged (squash); `origin/main` merged here against base `acce05c` (`027d59f`); server 54 and client 51 tests green.
+- Next step: open a **new** PR to `main` (`Closes #60`, reviewers galip + hasan for the ADR); answer reviews; Windows session check.
 
 ## Manual checks
 - 2026-10-31 · agent · macOS · built app driven over CDP (`--remote-debugging-port`, throwaway `--user-data-dir`) against a fresh Compose stack: login, user list, add tester, API token (secret shown once), last-admin refusal (409 shown, select reverts), log out, tester login, "Manage users" refused. Pass; screenshots not kept. Also `users.ts` against the real server: every status mapped as expected.
