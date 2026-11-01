@@ -4,6 +4,7 @@
 // Starts the stub server, waits until it listens, then runs `npm run dev` with the fake
 // agent first on PYTHONPATH. Ctrl+C or closing the app stops everything.
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import { delimiter, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -40,6 +41,11 @@ function startStub() {
     stub.on('exit', (code) => fail(`the stub server exited with code ${code}`))
     createInterface({ input: stub.stdout }).once('line', () => done(stub))
   })
+}
+
+// The fake agent reads these on every call; a missing one would only show up in the app.
+for (const file of [values.windows, values.snapshot]) {
+  if (!existsSync(file)) fail(`no such file: ${file} (git restore restores the default)`)
 }
 
 const stub = await startStub()

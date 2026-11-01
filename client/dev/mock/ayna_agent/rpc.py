@@ -157,7 +157,13 @@ def serve(conn):
             request = json.loads(payload)
             if request.get("method") != "ping":
                 log(f"<- {request.get('method')}")
-            send_frame(conn, 0x1, json.dumps(handle_request(request)).encode())
+            try:
+                reply = handle_request(request)
+            except Exception as exc:  # like the real agent: -32603, the connection stays open
+                log(f"{request.get('method')} failed: {exc!r}")
+                message = f"Internal error: {type(exc).__name__}: {exc}"
+                reply = error(request.get("id"), -32603, message)
+            send_frame(conn, 0x1, json.dumps(reply).encode())
 
 
 def serve_safe(conn):
