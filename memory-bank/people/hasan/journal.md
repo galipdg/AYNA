@@ -75,3 +75,24 @@ Append-only. One entry per session, newest at the bottom:
 - `jsonschema` went into agent's `[dev]` extras with the user's approval, so the contract is
   tested next to the component that produces it.
 - PR #175. Next: #12, which emits these descriptors with the #161 budget.
+
+## 2026-11-01 (second part) — reviewed #176 and #173
+- Both were follow-ups to my own earlier reviews, so the job was to check the rules are
+  usable rather than to re-argue them. Approved both.
+- #176 (NL dataset §4.4 quoting, §6.8 check boxes): the rules are what I asked for, and the
+  checker enforces the half a script can. Verified the 12 trial pairs are unaffected (all
+  `origin: team`, and their only CheckBox steps are Verify, which §6.8 exempts). Raised: a
+  team pair tagged `informal` cannot satisfy both §4.4 and "no apostrophes" unless the
+  sentence is phrased so the value takes no suffix (galip's own test shows the pattern);
+  and §6.8's start state is only true if #40/#69 reset the app between pairs — a Click
+  leaves the box toggled and a check box survives a logout.
+- #173 (loopback pinning, `stepLimitReached`): both answers yes. The pinning closes the
+  check-then-resolve gap I meant in #142 §4, and `stepLimitReached` is the signal I asked
+  for in §2.
+- Running both suites on Windows paid for itself twice. `::1` passes the new loopback check
+  and then dies at bind, because `ThreadingHTTPServer.address_family` is AF_INET — newly
+  reachable through a name that resolves to `::1` only. And a closed loopback port times out
+  here instead of being refused, which turns "Ollama is down" into a 504 `timeout` where
+  macOS gives a 503 `server_error`; the client is told to retry on one and to disable the
+  panel on the other. Recorded in `learnings.md`; it is the same trap for #16/#135 and #17.
+- Next step: #170 waits on galip's re-review behind #169, then #12.
