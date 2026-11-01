@@ -3,19 +3,22 @@ package com.ayna.server.apps;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ayna.server.apps.AppDtos.AppResponse;
 import com.ayna.server.apps.AppDtos.CreateAppRequest;
 import com.ayna.server.apps.AppDtos.CreateVersionRequest;
 import com.ayna.server.apps.AppDtos.VersionResponse;
-import com.ayna.server.apps.AppExceptions.InvalidRequestException;
+import com.ayna.server.error.ApiExceptions.InvalidRequestException;
+import com.ayna.server.error.ErrorResponses;
 
 /** Applications under test and their versions (#128). */
 @RestController
@@ -28,7 +31,9 @@ public class AppController {
 		this.service = service;
 	}
 
+	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.CONFLICT })
 	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<AppResponse> createApp(@RequestBody CreateAppRequest request) {
 		AppResponse app = service.createApp(required(request.name(), "name"),
 				required(request.technology(), "technology"));
@@ -40,7 +45,9 @@ public class AppController {
 		return service.listApps();
 	}
 
+	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT })
 	@PostMapping("/{appId}/versions")
+	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<VersionResponse> createVersion(@PathVariable String appId,
 			@RequestBody CreateVersionRequest request) {
 		VersionResponse version = service.createVersion(appId, required(request.version(), "version"));
@@ -48,6 +55,7 @@ public class AppController {
 			.body(version);
 	}
 
+	@ErrorResponses({ HttpStatus.NOT_FOUND })
 	@GetMapping("/{appId}/versions")
 	public List<VersionResponse> listVersions(@PathVariable String appId) {
 		return service.listVersions(appId);
@@ -56,7 +64,7 @@ public class AppController {
 	/** Trims the value; a missing or blank value is a 400. */
 	private static String required(String value, String field) {
 		if (value == null || value.isBlank()) {
-			throw new InvalidRequestException("'" + field + "' must not be blank");
+			throw new InvalidRequestException("$." + field, "'" + field + "' must not be blank");
 		}
 		return value.strip();
 	}

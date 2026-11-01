@@ -59,3 +59,40 @@ Append-only. One entry per session, newest at the bottom:
 - Found that #138 is now empty (#143 carried its content) and that its "fill §7 first" gate was
   bypassed, so the workshop document sits on `main` saying its own contents are not agreed yet.
 - Next step: #161 (reproduce the #6 KeePass 2 state and bisect the 278.5 s walk), then #122.
+
+## 2026-10-31 (third part) — #11 element descriptor v0
+- Wrote the descriptor as a `schemas/` contract plus a UIA-free model, so the rules could be
+  tested on any OS and replayed over the #6 dumps. 53 new tests; agent suite 171 green.
+- The label rule was decided by measurement rather than taste, and the first version was
+  wrong: accepting a label *above* mislabels the trial app's check box and Login button with
+  the password field's label 6 DIP above them. Dropping "above" and adding a 48 DIP ceiling
+  reproduces UIA's own `LabeledBy` 7/7 on KeePassXC. Worth remembering as a method: when a
+  heuristic has a ground truth hiding in the data (here `LabeledBy`), use it.
+- Added `nearestLabelSource` so #43 can tell a changed label from a changed method — the
+  problem galip raised in the #159 review.
+- Found that `healing-proposal.schema.json`'s `scoredElement` refuses unknown keys and has no
+  `dpi`, so a proposal carrying PR #166's `dpi` would be schema-invalid. Told galip.
+- `jsonschema` went into agent's `[dev]` extras with the user's approval, so the contract is
+  tested next to the component that produces it.
+- PR #175. Next: #12, which emits these descriptors with the #161 budget.
+
+## 2026-11-01 (second part) — reviewed #176 and #173
+- Both were follow-ups to my own earlier reviews, so the job was to check the rules are
+  usable rather than to re-argue them. Approved both.
+- #176 (NL dataset §4.4 quoting, §6.8 check boxes): the rules are what I asked for, and the
+  checker enforces the half a script can. Verified the 12 trial pairs are unaffected (all
+  `origin: team`, and their only CheckBox steps are Verify, which §6.8 exempts). Raised: a
+  team pair tagged `informal` cannot satisfy both §4.4 and "no apostrophes" unless the
+  sentence is phrased so the value takes no suffix (galip's own test shows the pattern);
+  and §6.8's start state is only true if #40/#69 reset the app between pairs — a Click
+  leaves the box toggled and a check box survives a logout.
+- #173 (loopback pinning, `stepLimitReached`): both answers yes. The pinning closes the
+  check-then-resolve gap I meant in #142 §4, and `stepLimitReached` is the signal I asked
+  for in §2.
+- Running both suites on Windows paid for itself twice. `::1` passes the new loopback check
+  and then dies at bind, because `ThreadingHTTPServer.address_family` is AF_INET — newly
+  reachable through a name that resolves to `::1` only. And a closed loopback port times out
+  here instead of being refused, which turns "Ollama is down" into a 504 `timeout` where
+  macOS gives a 503 `server_error`; the client is told to retry on one and to disable the
+  panel on the other. Recorded in `learnings.md`; it is the same trap for #16/#135 and #17.
+- Next step: #170 waits on galip's re-review behind #169, then #12.
