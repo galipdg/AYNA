@@ -16,8 +16,8 @@ pytestmark = pytest.mark.windows
 if sys.platform != "win32":  # keep PySide6/pywinauto imports off other platforms
     pytest.skip("windows-only module", allow_module_level=True)
 
-import uia_dump  # noqa: E402
-from app import INVALID_MESSAGE, WELCOME_MESSAGE, WINDOW_TITLE  # noqa: E402
+import uia_dump
+from app import INVALID_MESSAGE, WELCOME_MESSAGE, WINDOW_TITLE
 
 # Qt builds the AutomationId from the whole object chain, so every control is
 # prefixed with the application and window objectName.

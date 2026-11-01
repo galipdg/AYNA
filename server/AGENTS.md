@@ -15,4 +15,5 @@ Java 21 and Docker are required. Run from `server/` unless noted; if `JAVA_HOME`
 ## Rules
 - Graph schema changes only through a new migration + ADR (contract).
 - Validate steps against `schemas/step.schema.json` on every write.
-- REST changes must keep `docs/api/openapi.yaml` generation green.
+- REST errors: throw `error/ApiExceptions` (400 / 404 / 409) and list the statuses on the endpoint with `@ErrorResponses`; one global handler writes RFC 9457 problem details (ADR `2026-10-29-rest-error-problem-details`).
+- REST changes must keep `docs/api/openapi.yaml` generation green: `./mvnw test` regenerates the file (`OpenApiContractIntegrationTest`); commit it with the change, or CI fails. Swagger UI: `localhost:8080/swagger-ui.html`.

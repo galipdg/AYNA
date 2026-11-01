@@ -1,0 +1,125 @@
+{
+  "$comment": "Named test cases for element.schema.json. A case gives either a whole `document` or a single `element`, which the tests wrap in {\"version\": \"0.1\", \"element\": element}. Invalid cases name the JSON Schema keyword (`rule`) that must reject them. Every element below is taken from a real dump: the Qt ones from the trial app (#9), the WinForms and Win32 ones from the #6 dumps.",
+  "valid": [
+    {
+      "name": "Qt input with a label to its left",
+      "element": {
+        "automationId": "QApplication.loginWindow.usernameInput",
+        "name": "Username",
+        "controlType": "Edit",
+        "className": "QLineEdit",
+        "frameworkId": "Qt",
+        "bounds": [920, 476, 1256, 508],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "nearestLabel": "Username",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "name": "Win32 button with a framework-generated id and a window handle",
+      "element": {
+        "automationId": "1001",
+        "name": "Find Next",
+        "controlType": "Button",
+        "className": "Button",
+        "frameworkId": "Win32",
+        "bounds": [1308, 364, 1448, 398],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 9,
+        "windowTitle": "Find",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329546
+      }
+    },
+    {
+      "name": "WinForms element labelled through the parent row",
+      "element": {
+        "name": "User name:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [724, 332, 1188, 358],
+        "dpi": 120,
+        "parentPath": "Window/Pane",
+        "siblingIndex": 4,
+        "nearestLabel": "User name:",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "name": "the toolkit's own answer: LabeledBy",
+      "element": {
+        "controlType": "Edit",
+        "className": "QLineEdit",
+        "bounds": [800, 300, 1100, 330],
+        "nearestLabel": "Kullanıcı adı",
+        "nearestLabelSource": "labeledBy"
+      }
+    },
+    {
+      "name": "an element with nothing but a type, which a dump may still contain",
+      "element": { "controlType": "Pane" }
+    },
+    {
+      "name": "no properties at all",
+      "element": {}
+    }
+  ],
+  "invalid": [
+    {
+      "name": "unknown property",
+      "rule": "additionalProperties",
+      "element": { "controlType": "Button", "runtimeId": "42-1-7" }
+    },
+    {
+      "name": "an empty string is not a value; the property is left out instead",
+      "rule": "minLength",
+      "element": { "name": "" }
+    },
+    {
+      "name": "bounds must be four numbers",
+      "rule": "minItems",
+      "element": { "bounds": [1, 2, 3] }
+    },
+    {
+      "name": "bounds are whole pixels",
+      "rule": "type",
+      "element": { "bounds": [1.5, 2, 3, 4] }
+    },
+    {
+      "name": "siblingIndex is zero-based and never negative",
+      "rule": "minimum",
+      "element": { "siblingIndex": -1 }
+    },
+    {
+      "name": "dpi is a real DPI, not a scaling factor",
+      "rule": "minimum",
+      "element": { "dpi": 0 }
+    },
+    {
+      "name": "nearestLabelSource names one of the three rules",
+      "rule": "enum",
+      "element": { "nearestLabel": "Username", "nearestLabelSource": "guess" }
+    },
+    {
+      "name": "another version of the document is refused",
+      "rule": "const",
+      "document": { "version": "0.2", "element": { "name": "x" } }
+    },
+    {
+      "name": "the document needs its element",
+      "rule": "required",
+      "document": { "version": "0.1" }
+    }
+  ]
+}

@@ -14,10 +14,17 @@
         { "op": "replace", "path": "/stepId", "value": null },
         { "op": "replace", "path": "/target/serverElementId", "value": null }
       ]
+    },
+    {
+      "name": "target stored before 0.2, without dpi or feature version",
+      "patch": [
+        { "op": "remove", "path": "/target/properties/dpi" },
+        { "op": "remove", "path": "/target/featureVersion" }
+      ]
     }
   ],
   "invalid": [
-    { "name": "wrong version", "rule": "const", "patch": [{ "op": "replace", "path": "/version", "value": "0.2" }] },
+    { "name": "0.1 label", "rule": "const", "patch": [{ "op": "replace", "path": "/version", "value": "0.1" }] },
     { "name": "no logical name", "rule": "required", "patch": [{ "op": "remove", "path": "/logicalName" }] },
     { "name": "logical name with three parts", "rule": "pattern", "patch": [{ "op": "replace", "path": "/logicalName", "value": "login.form.loginButton" }] },
     { "name": "run id in upper case", "rule": "pattern", "patch": [{ "op": "replace", "path": "/runId", "value": "3F6C2A9E-8B1D-4E7A-9C55-0D2F4B7A1E90" }] },
@@ -38,7 +45,15 @@
     { "name": "bounds with fractional pixels", "rule": "type", "patch": [{ "op": "replace", "path": "/candidates/0/element/bounds/0", "value": 600.5 }] },
     { "name": "raw UIA field in an element", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/candidates/0/element/frameworkId", "value": "Qt" }] },
     { "name": "candidate without similarities", "rule": "required", "patch": [{ "op": "remove", "path": "/candidates/1/similarities" }] },
-    { "name": "scorer id with spaces", "rule": "pattern", "patch": [{ "op": "replace", "path": "/scorer/id", "value": "Similo v0" }] }
+    { "name": "scorer id with spaces", "rule": "pattern", "patch": [{ "op": "replace", "path": "/scorer/id", "value": "Similo v0" }] },
+    { "name": "dpi with a fraction", "rule": "type", "patch": [{ "op": "replace", "path": "/candidates/0/element/dpi", "value": 120.5 }] },
+    { "name": "dpi as a string", "rule": "type", "patch": [{ "op": "replace", "path": "/target/properties/dpi", "value": "96" }] },
+    { "name": "dpi as a boolean", "rule": "type", "patch": [{ "op": "replace", "path": "/candidates/2/element/dpi", "value": true }] },
+    { "name": "dpi zero", "rule": "minimum", "patch": [{ "op": "replace", "path": "/candidates/1/element/dpi", "value": 0 }] },
+    { "name": "feature version as a number", "rule": "type", "patch": [{ "op": "replace", "path": "/scorer/featureVersion", "value": 0 }] },
+    { "name": "feature version with spaces", "rule": "pattern", "patch": [{ "op": "replace", "path": "/scorer/featureVersion", "value": "Features v0" }] },
+    { "name": "unknown target feature version as null instead of left out", "rule": "type", "patch": [{ "op": "replace", "path": "/target/featureVersion", "value": null }] },
+    { "name": "feature version inside an element", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/candidates/0/element/featureVersion", "value": "features-v0" }] }
   ],
   "arithmetic": [
     { "name": "contributions do not add up to the score", "rule": "sum", "patch": [{ "op": "replace", "path": "/candidates/0/score", "value": "4/5" }] },

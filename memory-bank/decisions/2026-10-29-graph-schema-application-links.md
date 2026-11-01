@@ -1,7 +1,7 @@
 # Graph schema v0.1: tests and repository objects belong to an application
 
 - Date: 2026-10-29
-- Status: Proposed — accepted when Galip and Hasan approve the #39 PR
+- Status: Accepted (Hasan approved the #39 PR #156, Galip on #160, 2026-10-29)
 - Deciders: Ömerfaruk (proposal), Galip, Hasan
 - Issue: #39 (also used by #25)
 

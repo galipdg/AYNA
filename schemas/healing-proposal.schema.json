@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ayna:schema:healing-proposal",
   "title": "AYNA healing proposal",
-  "description": "PROPOSED (#149), not yet agreed or frozen. The top candidates the agent proposes when no element matches a step's target after the smart wait: the step ends as repairProposed and nothing is clicked. The document travels unchanged inside the failing step's result, from the agent (JSON-RPC run.stepResult) or the CLI runner to the server, which stores it for review. Numbers are exact fractions written as strings. See memory-bank/decisions/2026-10-28-healing-proposal-transport.md and docs/agent-rpc.md. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md).",
+  "description": "Version 0.2 is PROPOSED (#149; memory-bank/decisions/2026-10-31-healing-proposal-schema-0-2.md: per-element dpi and feature versions). Version 0.1 was accepted with the transport ADR. The top candidates the agent proposes when no element matches a step's target after the smart wait: the step ends as repairProposed and nothing is clicked. The document travels unchanged inside the failing step's result, from the agent (JSON-RPC run.stepResult) or the CLI runner to the server, which stores it for review. Numbers are exact fractions written as strings. See memory-bank/decisions/2026-10-28-healing-proposal-transport.md, its 0.2 extension and docs/agent-rpc.md. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md).",
   "type": "object",
   "properties": {
     "version": {
       "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change.",
-      "const": "0.1"
+      "const": "0.2"
     },
     "runId": {
       "description": "The server's Run id. A CLI run without a server uses a locally generated UUID.",
@@ -42,6 +42,10 @@
           "description": "The server's Element id (graph Element.id) the target properties came from; null when unknown (no server, or the object has no resolved element).",
           "oneOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }]
         },
+        "featureVersion": {
+          "description": "Feature version of the agent that derived the target's properties when the element was recorded (see scorer.featureVersion). Left out when unknown: an element stored before the server kept it, or a run without a server. When it differs from scorer.featureVersion, the derived properties of the target and of the candidates may not be comparable. Added in 0.2.",
+          "$ref": "#/$defs/versionedId"
+        },
         "properties": {
           "description": "The target's properties exactly as the scorer read them.",
           "$ref": "#/$defs/scoredElement"
@@ -56,9 +60,11 @@
       "properties": {
         "id": {
           "description": "Scorer and version, e.g. similo-v0 (agent/ayna_agent/heal/scorer.py, #49).",
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*$",
-          "maxLength": 50
+          "$ref": "#/$defs/versionedId"
+        },
+        "featureVersion": {
+          "description": "Feature version of the agent that derived the candidates' properties: how nearestLabel, parentPath, siblingIndex, windowTitle and dpi are computed from UI Automation (#11, #43), e.g. features-v0. Bumped whenever one of those derivations changes, so that proposals whose inputs were derived differently are not compared as equals (#103, RQ5). The agent always writes it; a consumer treats a missing one as unknown. Added in 0.2.",
+          "$ref": "#/$defs/versionedId"
         },
         "weights": {
           "description": "Weight of each scored property. A property not listed has weight 0.",
@@ -169,11 +175,16 @@
         "controlType": { "type": "string" },
         "className": { "type": "string" },
         "bounds": {
-          "description": "[left, top, right, bottom] in screen pixels.",
+          "description": "[left, top, right, bottom] in physical pixels, virtual-desktop coordinates, as UI Automation reports them to the per-monitor-v2 DPI aware agent. Never scaled by dpi.",
           "type": "array",
           "items": { "type": "integer" },
           "minItems": 4,
           "maxItems": 4
+        },
+        "dpi": {
+          "description": "DPI of the element's window (GetDpiForWindow); 96 = 100 % scaling. Not a scored property: the scorer compares location and area in device-independent pixels (bounds x 96 / dpi), so that a layout scores the same at every scaling. Left out when unknown; how the scorer treats a dpi known on one side only is its own rule (agent/ayna_agent/heal/scorer.py). Added in 0.2.",
+          "type": "integer",
+          "minimum": 1
         },
         "parentPath": { "type": "string" },
         "siblingIndex": { "type": "integer", "minimum": 0 },
@@ -181,6 +192,12 @@
         "windowTitle": { "type": "string" }
       },
       "additionalProperties": false
+    },
+    "versionedId": {
+      "description": "A component's name and version in one lower-case string, e.g. similo-v0 or features-v0. Compared only for equality.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 50
     },
     "opaqueId": {
       "description": "An id the agent makes (snapshot and snapshot element ids, #12); compare it only for equality.",
