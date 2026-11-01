@@ -1,4 +1,4 @@
-"""Bring KeePass 2 into the window state the #6 dump was taken in (#161).
+r"""Bring KeePass 2 into the window state the #6 dump was taken in (#161).
 
 The #6 dump of `keepass2` was taken with a database open and the **Add Entry** dialog on
 top, set up by hand. Re-measuring the walk (#161) needs that state again and again, so it
@@ -10,14 +10,17 @@ the moment a dialog is replaced (`COMError -2146233083`). So this script never f
 fixed sequence — it looks at what is on screen, does the one thing that moves it forward,
 and looks again:
 
-    startup message box ("the last database is gone")   -> OK
-    new-database notice                                 -> OK  (CommandButton_1)
-    Save As                                             -> Save, keeping the default path
-    Create Master Key                                   -> type the password twice, OK
-    "the master password is weak"                       -> Yes
+    startup message box ("the last database is gone")   -> OK      (Win32)
+    new-database notice                                 -> OK      (CommandButton_1)
+    Save As                                             -> type the demo path, Save
+    Create Master Key                                   -> focus each box, type, OK
+    "the master password is weak"                       -> Yes     (Win32)
     Configure New Database                              -> OK
     emergency sheet                                     -> Skip
-    main window with a database                         -> Ctrl+I
+    main window with a database                         -> Ctrl+S, Ctrl+I
+
+A plain message box (`#32770`) is answered with Win32 messages rather than through UIA: it
+blocks the provider while it is open, so UIA cannot see it (`message_boxes`).
 
 Usage (Windows only; the database is created once and reused afterwards):
 
@@ -26,14 +29,19 @@ Usage (Windows only; the database is created once and reused afterwards):
     python kp_state.py start        # fresh start, nothing opened
     python kp_state.py entry --fresh    # delete the database first and build it again
 
+The database is `C:\ayna-pilots\ayna-demo.kdbx` and `--fresh` deletes that file only; the
+script also kills only the KeePass started from `C:\ayna-pilots\keepass2\`, never another
+copy that happens to be running.
+
 It prints the window handles at the end, which is what `uia_probe.py --handle` wants.
 
-**Known limitation (2026-10-31):** this script has not yet run the whole wizard unattended.
-It reliably gets as far as the master-key dialog; after the Save As dialog closes, the file
-dialog's controls stay in the main form's UIA tree for a while, and a pass can answer the
-wrong dialog. If it stops making progress, confirm the dialog on screen by hand and run it
-again — the state it is trying to reach is the one described above. Fixing this needs a
-check that a control is still the live one before pressing it (#161, Open issues).
+**How long it takes (measured 2026-11-01):** from an existing database the Add Entry state
+is reached in about 16 s. A cold `--fresh` run, which has to build the database, took about
+six minutes — nearly all of it inside one UIA call that blocks right after the
+weak-password box, because KeePass stops pumping messages there (this is the effect #161
+measured: `eval/spikes/uia-walk-cost.md`). That is why `STEP_TIMEOUT` is a budget for the
+whole sequence. If a run does stop making progress, confirm the dialog on screen by hand
+and run it again — the state it is trying to reach is the one described above.
 """
 
 from __future__ import annotations
@@ -44,10 +52,131 @@ import subprocess
 import sys
 import time
 
-EXE = r"C:\ayna-pilots\keepass2\KeePass.exe"
-DB = os.path.expandvars(r"%USERPROFILE%\OneDrive\Belgeler\Database.kdbx")
+PILOT_ROOT = r"C:\ayna-pilots"
+EXE = PILOT_ROOT + r"\keepass2\KeePass.exe"
+EXE_NAME = "KeePass.exe"
+# A demo database inside the pilot folder, never KeePass's own default
+# `Documents\Database.kdbx`: that folder is OneDrive-synced on this machine and may hold a
+# real vault, and `--fresh` deletes whatever this points at (#170 review).
+DB = PILOT_ROOT + r"\ayna-demo.kdbx"
 PW = "ayna-demo"
-STEP_TIMEOUT = 90
+# For the whole sequence, not for one step: eight dialogs at 1.5 s per pass is the cheap
+# part, and a single pass can be held for minutes by the very thing #161 measured — right
+# after the weak-password box KeePass stops pumping and one UIA call blocks. Measured
+# 2026-11-01: 16 s from an existing database, about six minutes for a cold `--fresh` run,
+# which failed at 240 s for exactly this reason.
+STEP_TIMEOUT = 420
+POWERSHELL = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+TASKKILL = r"C:\Windows\System32\taskkill.exe"
+
+
+def pids_from_output(text: str) -> list[int]:
+    """The process ids in PowerShell's output: one per line, anything else ignored."""
+    return [int(line.strip()) for line in text.splitlines() if line.strip().isdigit()]
+
+
+def is_pilot_path(path: str) -> bool:
+    """True only for a path inside `PILOT_ROOT`.
+
+    `--fresh` deletes a file, so it may never point at a place where a person keeps a
+    database of their own.
+    """
+    root = os.path.normcase(os.path.abspath(PILOT_ROOT))
+    target = os.path.normcase(os.path.abspath(path))
+    return target.startswith(root + os.sep)
+
+
+def pilot_pids() -> list[int]:
+    """Running KeePass processes started from `EXE`, found by image path, not by exe name.
+
+    `taskkill /IM KeePass.exe /F` would also kill a KeePass the person at the machine is
+    using (#170 review), so the pilot copy is identified by where it runs from.
+    """
+    query = (f"Get-CimInstance Win32_Process -Filter \"Name='{EXE_NAME}'\" | "
+             f"Where-Object {{ $_.ExecutablePath -eq '{EXE}' }} | "
+             "Select-Object -ExpandProperty ProcessId")
+    done = subprocess.run([POWERSHELL, "-NoProfile", "-NonInteractive", "-Command", query],
+                          capture_output=True, text=True)
+    return pids_from_output(done.stdout)
+
+
+def kill_pilot() -> list[int]:
+    """Force-kill the pilot KeePass only, and report which ids were killed."""
+    pids = pilot_pids()
+    for pid in pids:
+        subprocess.run([TASKKILL, "/PID", str(pid), "/F"], capture_output=True)
+    return pids
+
+
+MESSAGE_BOX_CLASS = "#32770"
+BM_CLICK = 0x00F5
+
+
+def message_boxes() -> list[tuple[int, str, dict[str, int]]]:
+    """The pilot's visible message boxes, found with Win32 only: handle, text, buttons.
+
+    While a modal message box is open KeePass stops pumping messages, and then UIA calls
+    against the process block for minutes — #161 measured a single `FindAll` blocking for
+    72 s and a whole walk at 230 s. So the one window that has to be answered first is
+    exactly the one UIA cannot reach, which is what used to make this script stall at the
+    weak-password box. Win32 enumeration never touches the UIA provider.
+
+    Classic message boxes only, the ones whose text is a `Static` child. KeePass's
+    new-database notice is a *task dialog* — a `DirectUIHWND` child, command links, and an
+    OK button that does nothing — and it is UIA-readable, so it is left to the
+    `CommandButton_1` branch of `advance`; pressing its OK here made the script loop.
+    """
+    import win32gui
+    import win32process
+
+    pids = set(pilot_pids())
+    boxes: list[tuple[int, str, dict[str, int]]] = []
+
+    def collect(handle: int, _: object) -> bool:
+        if not win32gui.IsWindowVisible(handle):
+            return True
+        if win32gui.GetClassName(handle) != MESSAGE_BOX_CLASS:
+            return True
+        if win32process.GetWindowThreadProcessId(handle)[1] not in pids:
+            return True
+        texts: list[str] = []
+        buttons: dict[str, int] = {}
+        task_dialog = False
+
+        def child(control: int, _unused: object) -> bool:
+            nonlocal task_dialog
+            label = win32gui.GetWindowText(control)
+            class_name = win32gui.GetClassName(control)
+            if class_name == "Button":
+                buttons[label.replace("&", "")] = control
+            elif class_name == "Static" and label:
+                texts.append(label)
+            elif class_name == "DirectUIHWND":
+                task_dialog = True
+            return True
+
+        win32gui.EnumChildWindows(handle, child, None)
+        if not task_dialog:
+            boxes.append((handle, " ".join(texts), buttons))
+        return True
+
+    win32gui.EnumWindows(collect, None)
+    return boxes
+
+
+def press_win32(buttons: dict[str, int], *labels: str) -> str | None:
+    """Press the first of `labels` the box offers, by posting `BM_CLICK` to that button.
+
+    Posted, not sent: the reply is not needed and the dialog's own message loop runs it.
+    """
+    import win32gui
+
+    for label in labels:
+        control = buttons.get(label)
+        if control is not None:
+            win32gui.PostMessage(control, BM_CLICK, 0, 0)
+            return label
+    return None
 
 
 def windows() -> list:
@@ -59,7 +188,13 @@ def windows() -> list:
     """
     from uia_dump import find_windows
 
-    return find_windows("KeePass.exe", None)
+    try:
+        return find_windows("KeePass.exe", None)
+    except Exception:
+        # A window closed between the Win32 enumeration and `ElementFromHandle`
+        # (`UIA_E_ELEMENTNOTAVAILABLE`), which is normal while a wizard replaces its
+        # dialogs. The caller treats an empty list as "nothing to do yet" and looks again.
+        return []
 
 
 def connect(handle: int):
@@ -90,6 +225,21 @@ def controls(window, control_type: str) -> dict:
     return found
 
 
+def alive(window) -> bool:
+    """Whether a window is still on screen, asked over Win32 rather than UIA.
+
+    Used after a failed `invoke()`: pressing a button that closes its own dialog makes the
+    call raise *after* it has worked, and re-finding the button then fails for the right
+    reason. Win32 answers this even while the provider is blocked.
+    """
+    import win32gui
+
+    try:
+        return bool(win32gui.IsWindow(window.handle) and win32gui.IsWindowVisible(window.handle))
+    except Exception:
+        return False
+
+
 def press(window, name: str) -> bool:
     """Re-find the button by name or id and press it.
 
@@ -105,6 +255,8 @@ def press(window, name: str) -> bool:
         return True
     except Exception:
         pass
+    if not alive(window):
+        return True      # the press landed and closed the dialog, then invoke() complained
     control = controls(window, "Button").get(name)
     if control is None:
         return False
@@ -116,9 +268,15 @@ def press(window, name: str) -> bool:
 
 
 def type_password(window, repeated: bool = True) -> bool:
-    """KeePass's secure text boxes ignore the value pattern, so click and type.
+    """KeePass's secure text boxes ignore the value pattern, so focus them and type.
 
     The create dialog asks for the password twice, the open dialog once.
+
+    **Focus, not a click.** A `click_input()` on these boxes leaves them unfocused — the
+    keystrokes go nowhere and KeePass then complains about an *empty* master password, which
+    is what made this script stall at the master-key dialog (#170, measured 2026-11-01:
+    the character counter stayed at "0 ch." after a click and read "9 ch." after
+    `set_focus()`). The click stays only as a fallback.
     """
     from pywinauto.keyboard import send_keys
 
@@ -133,13 +291,46 @@ def type_password(window, repeated: bool = True) -> bool:
         return False
     for box in ((first, repeat) if repeated else (first,)):
         try:
-            box.click_input()
+            box.set_focus()
         except Exception:
-            return False
+            try:
+                box.click_input()
+            except Exception:
+                return False
         time.sleep(0.3)
+        send_keys("^a")
         send_keys(PW, pause=0.03)
     time.sleep(0.3)
     return True
+
+
+def save_as(window) -> bool:
+    r"""Replace the file dialog's default name with `DB`, then press Save.
+
+    The dialog opens on KeePass's default `Documents\Database.kdbx`. Accepting it would put
+    the demo database in a synced folder among files that are not ours, and `--fresh`
+    deletes whatever `DB` points at, so the path is written in full.
+    """
+    from pywinauto.keyboard import send_keys
+
+    box = controls(window, "Edit").get("File name:")
+    if box is None:
+        return False
+    try:
+        box.set_focus()
+    except Exception:
+        return False
+    time.sleep(0.3)
+    send_keys("^a")
+    send_keys(DB, pause=0.02, with_spaces=True)
+    time.sleep(0.3)
+    try:
+        typed = box.get_value() or ""      # the box's own text, not its label
+    except Exception:
+        typed = ""
+    if typed and typed.strip().lower() != DB.lower():
+        return False                       # the path did not land, and pressing Save now
+    return press(window, "Save")           # would write to KeePass's default location
 
 
 def advance(want_entry: bool, typed: set) -> str:
@@ -150,6 +341,14 @@ def advance(want_entry: bool, typed: set) -> str:
     and which of the two the window enumeration returns first is not fixed.
     """
     from pywinauto.keyboard import send_keys
+
+    # Before UIA is touched at all: a box that is blocking the provider would make every
+    # call below wait for it (see `message_boxes`). A file dialog is also a `#32770` window
+    # but offers neither button, so it falls through to the UIA branches.
+    for _handle, _text, buttons in message_boxes():
+        pressed = press_win32(buttons, "Yes", "OK")
+        if pressed:
+            return f"message box ({pressed})"
 
     seen = [(info, connect(info.handle)) for info in windows()]
     buttons = [(info, window, controls(window, "Button")) for info, window in seen]
@@ -186,13 +385,18 @@ def advance(want_entry: bool, typed: set) -> str:
             return "database unlocked" if press(window, "OK") else "stuck"
     for _info, window, found in buttons:
         if "File name:" in controls(window, "Edit") and "Save" in found:
-            return "save as" if press(window, "Save") else "stuck"
+            return "save as" if save_as(window) else "stuck"
     for _info, window, found in buttons:
         if "CommandButton_1" in found:                           # new-database notice
             return "new-database notice" if press(window, "CommandButton_1") else "stuck"
 
     main = main_window()
     if main is None:
+        return "waiting"
+    if len(seen) > 1:
+        # A dialog of an earlier stage is still up and none of the branches above could
+        # answer it this pass. Waiting is the only safe answer: sending Ctrl+N to the main
+        # window here starts the wizard a second time and the script loops (#170).
         return "waiting"
     title = main[1]
     window = connect(main[0])
@@ -266,11 +470,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"KeePass 2 not found at {EXE}", file=sys.stderr)
         return 2
 
-    subprocess.run([r"C:\Windows\System32\taskkill.exe", "/IM", "KeePass.exe", "/F"],
-                   capture_output=True)
-    time.sleep(1.5)
-    if args.fresh and os.path.exists(DB):
-        os.remove(DB)
+    killed = kill_pilot()
+    if killed:
+        print("killed pilot KeePass:", ", ".join(str(pid) for pid in killed))
+        time.sleep(1.5)
+    if args.fresh:
+        if not is_pilot_path(DB):
+            print(f"refusing to delete {DB}: it is outside {PILOT_ROOT}", file=sys.stderr)
+            return 2
+        if os.path.exists(DB):
+            os.remove(DB)
 
     subprocess.Popen([EXE])
     time.sleep(4)
