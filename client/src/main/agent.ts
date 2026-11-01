@@ -50,6 +50,28 @@ export function parseListening(line: string): number | null {
   }
 }
 
+// A routine record in the agent's log format (`ayna_agent/rpc.py`: asctime, level, name).
+const ROUTINE_LOG = /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d{3} (DEBUG|INFO|WARNING) /
+
+/**
+ * Why the agent process ended, for the status bar. Windows has no signals: a killed
+ * child reports `signal === null` and a non-zero code (1 for `taskkill /F`, 0xFFFFFFFF
+ * for some `TerminateProcess` callers), so a non-zero code alone does not mean a crash.
+ * The last stderr line is added only when it is not routine logging, e.g. a Python error.
+ */
+export function describeExit(
+  code: number | null,
+  signal: NodeJS.Signals | null,
+  lastStderrLine?: string,
+): string {
+  if (signal) return `the agent was killed (${signal})`
+  // Windows exit codes are unsigned 32-bit; large ones are NTSTATUS values, read in hex.
+  const shown = code !== null && code > 0x7fffffff ? `0x${code.toString(16).toUpperCase()}` : code
+  const exit = `the agent exited with code ${shown}`
+  if (code === 0 || !lastStderrLine || ROUTINE_LOG.test(lastStderrLine)) return exit
+  return `${exit}: ${lastStderrLine}`
+}
+
 /**
  * Kills the agent and everything it started. On Windows a venv's `python.exe` is a
  * launcher whose child is the real interpreter, so only `taskkill /T` stops both
@@ -266,12 +288,7 @@ export class AgentManager {
       if (child.pid === undefined) finish(reason)
     })
     child.on('exit', (code, signal) => {
-      // A Python error ends with its message on stderr; after a kill the tail is just logging.
-      const last = !signal && code !== 0 ? stderrTail.at(-1) : undefined
-      const exit = signal
-        ? `the agent was killed (${signal})`
-        : `the agent exited with code ${code}`
-      finish(reason ?? (last ? `${exit}: ${last}` : exit))
+      finish(reason ?? describeExit(code, signal, stderrTail.at(-1)))
     })
     // Swallow EPIPE when the agent dies while we close its stdin.
     child.stdin?.on('error', () => {})
