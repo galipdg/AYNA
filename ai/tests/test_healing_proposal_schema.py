@@ -1,11 +1,11 @@
-"""Checks schemas/healing-proposal.schema.json (proposed, #149) and its examples.
+"""Checks schemas/healing-proposal.schema.json (version 0.2 proposed, #149) and its examples.
 
 The agent produces the document, the client and the CLI runner forward it, the server
 stores it. These checks live in ai/, like the step schema's, because CI's ai job is
 where the jsonschema library is. Two kinds:
 
-- JSON Schema validation. Skipped when jsonschema is not installed; the ai module gets
-  it with the step schema PR (#134).
+- JSON Schema validation, including that 0.2 only adds optional keys: a 0.1 document
+  is valid once it is relabelled. Skipped when jsonschema is not installed.
 - The arithmetic the schema cannot express, with the standard library only: every
   number is an exact fraction in lowest terms within [0, 1], each contribution equals
   weight * similarity / total weight, the contributions add up exactly to the score,
@@ -190,6 +190,38 @@ def test_invalid_case_is_rejected_by_its_rule(validator, case):
 def test_arithmetic_case_passes_the_schema(validator, case):
     # These are exactly the mistakes the schema cannot see.
     validator.validate(patched(case["patch"]))
+
+
+def as_0_1(proposal: dict) -> dict:
+    """The proposal without the keys 0.2 added, labelled 0.1, as a 0.1 producer wrote it."""
+    document = copy.deepcopy(proposal)
+    document["version"] = "0.1"
+    document["scorer"].pop("featureVersion", None)
+    document["target"].pop("featureVersion", None)
+    elements = [
+        document["target"]["properties"],
+        *(c["element"] for c in document["candidates"]),
+    ]
+    for element in elements:
+        element.pop("dpi", None)
+    return document
+
+
+@pytest.mark.parametrize("path", EXAMPLE_FILES, ids=lambda p: p.name)
+def test_0_1_document_is_valid_once_relabelled(validator, path):
+    # 0.2 adds only optional keys (dpi, the feature versions), so relabelling is the
+    # whole migration. Each release still accepts only its own label.
+    old = as_0_1(load(path))
+    assert "dpi" not in json.dumps(old) and "featureVersion" not in json.dumps(old)
+    assert not validator.is_valid(old)
+    validator.validate({**old, "version": "0.2"})
+
+
+@pytest.mark.parametrize("path", EXAMPLE_FILES, ids=lambda p: p.name)
+def test_example_names_the_feature_version_of_its_candidates(path):
+    # The agent always writes it (#73 compares its output with these examples), even
+    # though the schema keeps it optional so that 0.2 stays a superset of 0.1.
+    assert load(path)["scorer"]["featureVersion"]
 
 
 # --- arithmetic --------------------------------------------------------------------

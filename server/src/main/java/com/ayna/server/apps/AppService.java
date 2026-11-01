@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.ayna.server.apps.AppDtos.AppResponse;
 import com.ayna.server.apps.AppDtos.VersionResponse;
-import com.ayna.server.apps.AppExceptions.AppNotFoundException;
-import com.ayna.server.apps.AppExceptions.DuplicateException;
+import com.ayna.server.error.ApiExceptions.ConflictException;
+import com.ayna.server.error.ApiExceptions.NotFoundException;
 
 /**
  * Creates and lists applications and their versions. Duplicate names are checked in the
@@ -32,7 +32,7 @@ public class AppService {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
 				if (exists(tx, "MATCH (a:Application {name: $name}) RETURN a LIMIT 1", Map.of("name", name))) {
-					throw new DuplicateException("Application already exists: " + name);
+					throw new ConflictException("Application already exists: " + name);
 				}
 				String id = UUID.randomUUID().toString();
 				tx.run("CREATE (:Application {id: $id, name: $name, technology: $technology})",
@@ -60,7 +60,7 @@ public class AppService {
 				requireApp(tx, appId);
 				if (exists(tx, "MATCH (:Application {id: $appId})-[:HAS_VERSION]->(v:AppVersion {version: $version}) "
 						+ "RETURN v LIMIT 1", Map.of("appId", appId, "version", version))) {
-					throw new DuplicateException("Version " + version + " already exists for application " + appId);
+					throw new ConflictException("Version " + version + " already exists for application " + appId);
 				}
 				String id = UUID.randomUUID().toString();
 				tx.run("""
@@ -89,7 +89,7 @@ public class AppService {
 
 	private static void requireApp(TransactionContext tx, String appId) {
 		if (!exists(tx, "MATCH (a:Application {id: $appId}) RETURN a LIMIT 1", Map.of("appId", appId))) {
-			throw new AppNotFoundException(appId);
+			throw new NotFoundException("Application not found: " + appId);
 		}
 	}
 

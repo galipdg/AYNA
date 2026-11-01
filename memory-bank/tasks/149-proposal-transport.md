@@ -1,8 +1,8 @@
 # #149 Healing proposal transport: agent → client/CLI → server
 
 - Issue: https://github.com/galipdg/AYNA/issues/149
-- Owner: galip · Branch: `galip/149-proposal-transport` (stacked on `galip/16-agent-rpc`, PR #135)
-- Started: 2026-10-28 · Last update: 2026-10-28
+- Owner: galip · Branches: `galip/149-proposal-transport` (PR #151, merged); `galip/149-proposal-schema-0-2` (schema 0.2 and the #151 review follow-ups)
+- Started: 2026-10-28 · Last update: 2026-10-31
 
 ## Approach
 A contract decision, so the deliverable is an ADR with status Proposed plus the galip-owned contract text; nothing is implemented until all three approve. ADR: `memory-bank/decisions/2026-10-28-healing-proposal-transport.md`. Agent side: `docs/agent-rpc.md`, section "Proposed (#149)". Payload: `schemas/healing-proposal.schema.json` (version 0.1, proposed) with examples in `schemas/examples/healing-proposal/` and checks in `ai/tests/test_healing_proposal_schema.py`. The REST endpoints are proposed in the ADR only; omer owns the REST contract (#51, #74).
@@ -22,6 +22,14 @@ In one line: the proposal rides inside the failing step's `run.stepResult` notif
 - 2026-10-28 — Example numbers produced by the real scorer (`origin/galip/49-healing-scorer`, `rank(..., k=3)` on a renamed login button), not typed by hand.
 - 2026-10-28 — No change to `agent/ayna_agent/rpc.py`: there is no playback yet to emit notifications, so a hook now would be untested scaffolding. `RPC_VERSION` stays 0.1 until #40/#73 ship the messages.
 - 2026-10-28 — TBD-10 (CLI credentials): recommend an API token for a CI service account in `AYNA_SERVER_TOKEN`; final choice in #60/#61.
+- 2026-10-31 — Schema 0.2 work extends this note instead of a new `149-proposal-schema-0-2.md`: same issue, same contract, and one note per issue keeps the history in one place.
+- 2026-10-31 — New ADR `2026-10-31-healing-proposal-schema-0-2.md` (Proposed) extends the Accepted transport ADR, which is never edited.
+- 2026-10-31 — Feature version as one string `featureVersion` (`"features-v0"`), not `extractorId` + version: one extractor, compared only for equality, same form as `scorer.id`. Placed in `scorer` (candidates, the agent running now) and in `target` (recorded element, when known), because Hasan's case is a target derived by an older agent.
+- 2026-10-31 — Every 0.2 key optional so that 0.2 is a superset of 0.1 (relabelling is the whole migration). The agent's duty to write `scorer.featureVersion` is enforced by #73's contract test against the examples, which carry it. Required was the alternative; reviewers may flip it.
+- 2026-10-31 — Examples get `dpi: 96`, which makes #166's DIP conversion the identity; numbers recomputed with the scorer on `main` and on `origin/galip/49-dpi-location` (PR #166): both reproduce every stored string. The one-sided-`dpi` case is left out of the cases because its numbers depend on the scorer rule both #166 reviews ask to change.
+- 2026-10-31 — Example `parentPath` changed to programmatic ControlType names (`Window/Group`), #166's input contract; all elements share it, so similarity stays 1.
+- 2026-10-31 — No progress notification in v0.2 (Hasan's "say which it is"): the client shows the running step with elapsed time; a progress method can be added later because clients ignore unknown notifications.
+- 2026-10-31 — Recorded omer's 409-on-different-body and outbox-per-server, and per-step `notRun` writes for v1, in the new ADR, so the transport ADR's readers find them next to the schema change.
 
 ## Status
 - [x] Branch, task note, board → In progress
@@ -29,20 +37,26 @@ In one line: the proposal rides inside the failing step's `run.stepResult` notif
 - [x] `docs/agent-rpc.md` "Proposed (#149)" section
 - [x] Schema, examples, tests
 - [x] PR https://github.com/galipdg/AYNA/pull/151 (`Refs #149`, stacked on #135) opened 2026-10-28; reviews requested from HasanBerk18 and omerfaruksaribal; asks in their inboxes. Locally: 56 ai tests pass with jsonschema, 17 pass + 38 skip without; ruff clean
-- [ ] All three approve → ADR Accepted (and its README line) in the same PR
+- [x] All three approved; transport ADR Accepted; PR #151 merged
 - [ ] After approval: comment on #73 and #74 linking the ADR (AC 3); omer names the endpoint in the #74 REST contract (AC 2)
-- Next step: address review comments on the PR.
+- [x] 2026-10-31 schema 0.2 on `galip/149-proposal-schema-0-2`: `dpi`, `scorer.featureVersion`, `target.featureVersion`, `bounds` wording, version `"0.2"`; examples and cases; tests (69 pass); ADR 0.2 (Proposed) + README line; `docs/agent-rpc.md` "Proposed (#149)" review follow-ups; SDD AI-5.2 latency wording (#144 review) and AI-5.5 payload; `schemas/README.md` section
+- [x] PR https://github.com/galipdg/AYNA/pull/174 (`Refs #149`) opened 2026-10-31; reviews requested from HasanBerk18 and omerfaruksaribal; asks in their inboxes
+- [ ] All three approve #174 → ADR 0.2 Accepted (and its README line) in that PR
+- Next step: answer the reviews on the schema 0.2 PR; once accepted, comment on #73 and #74 with both ADR links.
 
 ## Manual checks
 - None: documentation and schema only; nothing runs on Windows.
 
 ## Open issues
-- After approval, galip updates: SDD AI-5.5 and AI-9 rows 7 and 8 (PR #144), RS TBD-6 and TBD-10 and the FR-23 exit code when results cannot be delivered (PR #143), and adds `SCORER_ID = "similo-v0"` to `heal/scorer.py` (#49) when #73 wires it in.
+- After approval, galip updates: SDD AI-5.5 "Storage" and AI-9 rows 7 and 8 (omer's #144 review, point 3; the AI-5.5 payload line is done on the 0.2 branch), RS TBD-6 and TBD-10 and the FR-23 exit code when results cannot be delivered (PR #143), and adds `SCORER_ID = "similo-v0"` to `heal/scorer.py` (#49) when #73 wires it in.
+- #43 (galip): add `FEATURE_VERSION = "features-v0"` in `heal/features.py` and the bump rule of the 0.2 ADR.
+- Hasan's #144 review §4 asks the decision log (#63) to record whether the snapshot was complete (budget, #12); not part of the proposal schema, left to #63/#12.
 - `schemas/AGENTS.md` lists only the three original schemas; after #134 merges, its Layout and Commands lines need `healing-proposal.schema.json` and its test (ask first: it is an AGENTS.md).
 - Several pending proposals for the same object and version (two failed runs before a review): #74 should decide whether approving one closes the others.
 
 ## Handoff
 - The ADR's REST names (`PUT /api/runs/{runId}/results/{stepIndex}`, `/api/healing/proposals/...`) are proposals for omer, not a contract; `docs/api/openapi.yaml` is generated from server code.
 - Regenerate the example numbers with the scorer if #49 changes before merge: `python make_example.py` lived in the session scratchpad; the inputs are the `target` and `element` objects of `login-button-renamed.json`.
+- To check the examples against a scorer: load each example's `target.properties` and candidates' `element`, call `heal.scorer.score(target, element)` and compare `str()` of score, contributions and similarities with the stored strings (done 2026-10-31 for `main` and PR #166).
 
 ## Outcome (fill when the issue closes)

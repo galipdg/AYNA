@@ -2,8 +2,9 @@
 
 The service (`ayna_ai.service`) asks a `Retriever` for the candidate objects
 of one request and lets the generator choose step targets only among them.
-Until vector + graph retrieval exists (#58), `PassThroughRetriever` uses the
-objects the caller sends with the request.
+The AYNA server chooses the candidates (current screen + vector top-k, #58)
+and sends them in the request, so the service never reads the graph (decided
+2026-10-29, SDD section 2.2.2 rule 5); `PassThroughRetriever` uses them.
 """
 
 from __future__ import annotations
@@ -37,11 +38,11 @@ class Retriever(Protocol):
 
 
 class PassThroughRetriever:
-    """Uses the request's own objects (stand-in until #58)."""
+    """Uses the request's own objects, which the server chose (#58)."""
 
     def retrieve(self, query: RetrievalQuery) -> dict[str, str]:
         if not query.objects:
             raise RetrievalInputError(
-                "objects is required: the service has no repository retrieval yet (#58)"
+                "objects is required: the server sends the candidate objects (#58)"
             )
         return dict(query.objects)

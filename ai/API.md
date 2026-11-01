@@ -3,7 +3,7 @@
 Contract between the AYNA server and the AI service (`ai/ayna_ai/service.py`, #71). The server is the only caller: it asks for suggested steps while a user writes a test (NL chat panel, #78). The AI service saves nothing; the server shows the suggestions and saves only what the user accepts.
 
 - Base URL: `AYNA_AI_URL` (`.env.example`: `http://localhost:8090`)
-- JSON in and out, UTF-8. No authentication: the service listens on loopback only (see [Network](#network)).
+- JSON in and out, UTF-8. On loopback without a token there is no authentication; with `AYNA_AI_TOKEN` set (required for `--allow-remote`) every request needs `Authorization: Bearer <token>` (see [Network](#network)).
 - Owner: galip. Changes to this file are contract changes: tell omer (server) in his inbox.
 
 Start it from `ai/` (Ollama running on the same machine):
@@ -16,12 +16,13 @@ python -m ayna_ai.service --port 8090 --model qwen3:8b --model gemma4:e4b-it-qat
 |---|---|---|
 | `--host` | `127.0.0.1` | Listen address. A non-loopback address is refused unless `--allow-remote`. |
 | `--port` | `8090` | |
-| `--allow-remote` | off | Allow e.g. `0.0.0.0` (inside a container, #82). Logged as a warning at start. |
+| `--allow-remote` | off | Allow e.g. `0.0.0.0` (inside a container, #82). Needs `AYNA_AI_TOKEN`. Logged as a warning at start. |
 | `--model` | `qwen3:8b` | Model the service offers; repeatable. The first is the default. |
 | `--model-host` | `http://127.0.0.1:11434` | Ollama URL; must be a loopback address. |
 | `--timeout` | `30` | Seconds per request — retrieval and the model call, a cold model load included. Past it the service answers 504 (see [Timeouts](#timeouts-and-latency)). |
 | `--max-body-bytes` | `65536` | Larger requests get 413. |
 | `--no-warmup` | warm-up on | By default the default model is loaded in the background at start. |
+| `AYNA_AI_TOKEN` (environment) | unset | Bearer token, at least 16 characters. When set, every request must carry it, on loopback too; without it the service refuses `--allow-remote` at start. An environment variable, never a command-line option, so it does not show in the process list. |
 
 The service logs one JSON line per request to stderr (`event: request`, code, status, model, steps, dropped, latency_ms) and one per generation (`event: generate`, tokens, latency). **The instruction text is never logged**: it is test data and may hold passwords.
 
@@ -34,13 +35,13 @@ Request: `Content-Type: application/json` (else 415), body at most 64 KiB, with 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `text` | string, 1–2000 chars, not blank | yes | The user's Turkish instruction. |
-| `app` | string, 1–200 chars | yes | Application under test (name or id). |
-| `version` | string, ≤ 100 chars | no | Application version. |
-| `screen` | string, ≤ 200 chars | no | Screen the user is writing the test for. |
-| `objects` | array of 1–100 `{name, description?}` | yes, until #58 | Candidate repository objects. `name`: logical name as in the step schema (`screen.element`, e.g. `login.loginButton`), unique, not `none.noMatch` (reserved, see below). `description`: short Turkish text, ≤ 200 chars (e.g. the control's label: "Giriş butonu"). |
+| `app` | string, 1–200 chars | yes | The application's id (the server's UUID). |
+| `version` | string, ≤ 100 chars | no | The application version's id. |
+| `screen` | string, ≤ 200 chars | no | The screen prefix of the logical names the user is writing the test for (`login` for `login.*`). |
+| `objects` | array of 1–100 `{name, description?}` | yes | Candidate repository objects, chosen by the server (see [Candidate objects](#candidate-objects-and-retrieval-58)). `name`: logical name as in the step schema (`screen.element`, e.g. `login.loginButton`), unique, not `none.noMatch` (reserved, see below). `description`: short Turkish text, ≤ 200 chars (e.g. the control's label: "Giriş butonu"). |
 | `model` | string | no | One of the models the service offers (see health); default: the first. |
 
-Unknown fields are rejected (400), so a typo cannot be ignored silently. `app`, `version` and `screen` are not used yet; send them anyway — retrieval (#58) will use them, and the request will not change for you.
+Unknown fields are rejected (400), so a typo cannot be ignored silently. `app`, `version` and `screen` say which application, version and screen the candidates belong to. The service queries nothing with them; they describe the request, and the generation does not depend on them.
 
 ```json
 {
@@ -126,6 +127,7 @@ Every error has the same shape; `details` (a list of strings, at most 20) and th
 | HTTP | `status` | When | What the server should do |
 |---|---|---|---|
 | 400 | `bad_request` | Body is not a JSON object, a field is missing or invalid, duplicate object names, an object named `none.noMatch`, a model the service does not offer, no `objects` | Fix the request (a bug on our side); `details` names the field. |
+| 401 | `unauthorized` | `AYNA_AI_TOKEN` is set and the request has no `Authorization: Bearer <token>` header, or a wrong one; `WWW-Authenticate: Bearer`. Checked before the path, so it also answers unknown paths | Send the token from `AYNA_AI_TOKEN` (a configuration error on our side). |
 | 404 | `not_found` | Unknown path | — |
 | 405 | `method_not_allowed` | Wrong method; `Allow` header says which | — |
 | 411 | `length_required` | Neither `Content-Length` nor chunked | — |
@@ -133,7 +135,7 @@ Every error has the same shape; `details` (a list of strings, at most 20) and th
 | 415 | `unsupported_media_type` | `Content-Type` is not `application/json` | — |
 | 422 | `no_valid_steps` | The model answered, but every step it wrote was dropped (or it wrote none). `steps: []`; `dropped` says why for each step | Tell the user the description could not be turned into valid steps, with the reason per dropped step (`code`, table above), and ask them to rephrase. |
 | 422 | `invalid_json`, `truncated`, `invalid_schema` | The model's answer as a whole is unusable: not JSON, cut off at the output limit, or not a step document (`version`, the `steps` list). No `steps`, no `dropped` | Tell the user no suggestion could be made and ask them to rephrase. |
-| 422 | `no_objects` | Retrieval found no candidate objects (after #58) | Tell the user the repository has no objects for this screen. |
+| 422 | `no_objects` | The retriever returned no candidate objects. Not sent while the server chooses the objects: a missing or empty `objects` is a 400 | — |
 | 500 | `internal_error` | A bug in the service | Show a generic error; report it with the service log. |
 | 503 | `server_error` | The model server is down or does not have the model (`details` has its message) | Disable the panel as for health `ready: false`. |
 | 504 | `timeout` | No answer within the service timeout (30 s by default, `--timeout`); `details`: `no answer within 30 s` | Offer a retry; the machine may be busy. |
@@ -181,8 +183,9 @@ Says whether generation can work right now. It never runs the model and asks Oll
 ## Network
 
 - Closed network: the service makes no call except to the Ollama server, which must be on a loopback address; the Ollama client ignores proxy settings and refuses redirects.
-- It listens on `127.0.0.1` by default and refuses a non-loopback `--host` unless started with `--allow-remote` (logged). In a container (#82) use `--host 0.0.0.0 --allow-remote` and publish the port only on the internal network, never on the test machines.
+- It listens on `127.0.0.1` by default and refuses a non-loopback `--host` unless started with `--allow-remote` (logged). In a container (#82) use `--host 0.0.0.0 --allow-remote` and do not publish the port: only the server reaches it, over the Compose network (RS NFR-46).
+- **Whatever listens off loopback needs a token**, as the agent (`AYNA_AGENT_TOKEN`) and the CLI runner (`AYNA_SERVER_TOKEN`) do: `--allow-remote` refuses to start without `AYNA_AI_TOKEN` (≥ 16 characters), and with it every request needs `Authorization: Bearer <token>`, compared in constant time. The server reads the same value from its own environment. On loopback the token is optional; when set, it is checked there too. A model run costs up to 30 s, so an open port would let any container on the network keep the machine busy.
 
-## Until retrieval exists (#58)
+## Candidate objects and retrieval (#58)
 
-The service has no repository access yet: it takes the candidate objects from the request. Send the objects of the current application and screen from the repository (at most 100, logical name + Turkish description). When #58 adds vector + graph retrieval, the service will choose the candidates itself from `app`/`version`/`screen` and `objects` becomes optional; this file will say how the two combine.
+The server chooses the candidate objects and sends them in `objects`; the AI service never reads the graph and holds no database credentials (decided 2026-10-29, SDD §2.2.2 rule 5 and AI-4). Until #58, send the objects of the current application and screen from the repository (at most 100, logical name + Turkish description). With #58 the server merges the current screen's objects with the vector top-k for the instruction, current screen first. For the vectors, #58 adds `POST /ai/embed` (texts → embeddings, planned): the server calls it for the instruction and when a repository object is created or changed, and stores object vectors in Neo4j itself.
