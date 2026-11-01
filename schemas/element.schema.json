@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:schema:element",
+  "title": "AYNA UI element descriptor",
+  "description": "One UI element as the agent captured it: what it is, where it sits in the tree and what is around it. Produced by the agent (#11, #12), stored by the server as an Element node, and read by the healing scorer. The shared contract of agent, server and healing. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md); see memory-bank/decisions/2026-10-31-element-descriptor-v0.md.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change.",
+      "const": "0.1"
+    },
+    "element": { "$ref": "#/$defs/element" }
+  },
+  "required": ["version", "element"],
+  "additionalProperties": false,
+  "$defs": {
+    "element": {
+      "title": "Element descriptor",
+      "description": "A key is left out when the element has no value for it; an empty or whitespace-only string is never stored. Every property here is read from UI Automation at capture time, except parentPath, siblingIndex and nearestLabel, which the agent computes from the tree (the rules are in the ADR, and healing must recompute them the same way, #43).",
+      "type": "object",
+      "properties": {
+        "automationId": {
+          "description": "UIA AutomationId, stored whole and never clipped: Qt builds it from the objectName chain, so it can be hundreds of characters, and clipping turns distinct ids into collisions (#6 finding 3). May be framework-generated (a Win32 control id, a GUID); see the ADR for when it may be a primary property.",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "UIA Name. In Qt this is the accessibleName when one is set, not the visible text (learnings 2026-10-25).",
+          "type": "string",
+          "minLength": 1
+        },
+        "controlType": {
+          "description": "Programmatic UIA control type name, e.g. Button, Edit, ComboBox. Never the localised one: a Turkish Windows reports Düğme for the same control.",
+          "type": "string",
+          "minLength": 1
+        },
+        "className": {
+          "description": "UIA ClassName, e.g. QPushButton, WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1. WinForms class names carry a per-build suffix, so they are a weak property across versions.",
+          "type": "string",
+          "minLength": 1
+        },
+        "frameworkId": {
+          "description": "UIA FrameworkId: WinForm, WPF, Win32, Qt, Chrome… Not used for matching; it says which rules apply to the other properties.",
+          "type": "string",
+          "minLength": 1
+        },
+        "bounds": {
+          "description": "[left, top, right, bottom] in physical pixels, virtual-desktop coordinates, as UI Automation reports them to a per-monitor-v2 DPI aware agent. Compared only in device-independent pixels, together with dpi (PR #166).",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "dpi": {
+          "description": "DPI of the element's window (GetDpiForWindow; 96 = 100 % scaling). Absent means it could not be read, and a reader must then assume the other side's DPI rather than 96, or the same layout scores as a move (#161, PR #166).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "parentPath": {
+          "description": "Programmatic control type names of the ancestors, root first, joined by '/', e.g. Window/Pane/Group. The element's own type is not included. Localised names are never used.",
+          "type": "string",
+          "minLength": 1
+        },
+        "siblingIndex": {
+          "description": "Zero-based position among the parent's children in the raw UIA view, counted in the order the tree reports them.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "nearestLabel": {
+          "description": "Text that names the element: the label a person would read to identify it. How it is chosen is normative and in the ADR, because healing has to derive it by the same rule (#43).",
+          "type": "string",
+          "minLength": 1
+        },
+        "nearestLabelSource": {
+          "description": "Which rule produced nearestLabel. Stored so that a later comparison can tell a changed label from a changed method: labeledBy = the UIA LabeledBy relation, geometric = the nearest label-like sibling by the rule in the ADR, parentRow = the same rule one level up.",
+          "enum": ["labeledBy", "geometric", "parentRow"]
+        },
+        "windowTitle": {
+          "description": "Title of the element's top-level window at capture time.",
+          "type": "string",
+          "minLength": 1
+        },
+        "enabled": {
+          "description": "UIA IsEnabled.",
+          "type": "boolean"
+        },
+        "offscreen": {
+          "description": "UIA IsOffscreen: the element exists but is scrolled out, collapsed or on a hidden tab page.",
+          "type": "boolean"
+        },
+        "helpText": {
+          "description": "UIA HelpText (a tooltip in most frameworks). Captured because capture is expensive to repeat; v0 scoring does not use it.",
+          "type": "string",
+          "minLength": 1
+        },
+        "accessKey": {
+          "description": "UIA AccessKey, e.g. Alt+F. Captured but not scored in v0.",
+          "type": "string",
+          "minLength": 1
+        },
+        "nativeWindowHandle": {
+          "description": "Win32 HWND when the element has one (about a third of WinForms and Win32 elements, none in WPF or Qt). Session-scoped: it identifies the element for the win32 fallback (#23) within one run and must never be used to match across runs.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
