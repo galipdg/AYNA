@@ -4,6 +4,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { AgentState, AgentStatus } from '../../shared/api.ts'
 import {
   AgentManager,
+  describeExit,
   parseListening,
   resolveAgentCommand,
   type AgentManagerOptions,
@@ -53,6 +54,31 @@ describe('resolveAgentCommand', () => {
       resolveAgentCommand({ env: {}, platform: 'linux', appPath: '/x', exists: none }).command,
       'python3',
     )
+  })
+})
+
+describe('describeExit', () => {
+  const info = '2026-10-31 14:02:11,512 INFO websockets.server: connection open'
+
+  it('names the signal on POSIX', () => {
+    assert.equal(describeExit(null, 'SIGKILL', info), 'the agent was killed (SIGKILL)')
+  })
+
+  it('adds the last stderr line when it is an error', () => {
+    const error = 'ModuleNotFoundError: No module named ayna_agent'
+    assert.equal(describeExit(3, null, error), `the agent exited with code 3: ${error}`)
+    const logged = '2026-10-31 14:02:11,512 ERROR ayna_agent.rpc: snapshot failed'
+    assert.equal(describeExit(1, null, logged), `the agent exited with code 1: ${logged}`)
+  })
+
+  it('leaves out routine logging, as after a kill on Windows', () => {
+    assert.equal(describeExit(1, null, info), 'the agent exited with code 1')
+    assert.equal(describeExit(0, null, 'Traceback'), 'the agent exited with code 0')
+  })
+
+  it('shows large Windows exit codes in hex', () => {
+    assert.equal(describeExit(4294967295, null, info), 'the agent exited with code 0xFFFFFFFF')
+    assert.equal(describeExit(0xc000013a, null), 'the agent exited with code 0xC000013A')
   })
 })
 
@@ -157,7 +183,12 @@ describe('AgentManager', () => {
     const restarting = waitFor(agent, 'restarting')
     const again = waitFor(agent, 'connected', seen)
     process.kill(firstPid, 'SIGKILL')
-    assert.equal((await restarting).detail, 'the agent was killed (SIGKILL)')
+    // Windows has no signals: Node's kill is TerminateProcess with exit code 1.
+    const killed =
+      process.platform === 'win32'
+        ? 'the agent exited with code 1'
+        : 'the agent was killed (SIGKILL)'
+    assert.equal((await restarting).detail, killed)
     const status = await again
     assert.deepEqual(seen, ['restarting', 'connected'])
     assert.equal(status.restarts, 1)
