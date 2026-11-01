@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { AgentNotConnectedError, AgentRpcError, AgentTimeoutError } from '../agent.ts'
 import {
@@ -6,10 +8,13 @@ import {
   frameRect,
   isBounds,
   listWindows,
+  parseSnapshot,
   parseWindows,
   PICK_ACCELERATOR,
   PickHotkey,
   pickHotkeyLabel,
+  snapshot,
+  SNAPSHOT_TIMEOUT_MS,
 } from '../spy.ts'
 
 const notepad = {
@@ -67,11 +72,93 @@ describe('describeFailure', () => {
     assert.deepEqual(describeFailure(new AgentRpcError(-32001, 'no backend')), {
       reason: 'uia-unavailable',
     })
+    assert.deepEqual(describeFailure(new AgentRpcError(-32000, 'Window not found')), {
+      reason: 'window-gone',
+    })
+    assert.deepEqual(describeFailure(new AgentRpcError(-32002, 'Snapshot timeout')), {
+      reason: 'snapshot-timeout',
+    })
     assert.deepEqual(describeFailure(new AgentRpcError(-32603, 'Internal error')), {
       reason: 'agent-error',
       detail: 'Internal error',
     })
     assert.deepEqual(describeFailure(new Error('boom')), { reason: 'agent-error', detail: 'boom' })
+  })
+})
+
+// The fake agent's tree: a copy of schemas/examples/snapshot/trial-login.json (#12).
+const trialLogin = JSON.parse(
+  readFileSync(join(import.meta.dirname, '..', '..', '..', 'dev', 'mock', 'snapshot.json'), 'utf8'),
+) as { elements: Record<string, unknown>[] } & Record<string, unknown>
+
+describe('snapshot', () => {
+  it('asks for the window and returns its snapshot', async () => {
+    const calls: unknown[][] = []
+    const result = await snapshot(agentAnswering(trialLogin, calls), 657704)
+    assert.deepEqual(result, { ok: true, snapshot: trialLogin })
+    assert.deepEqual(calls[0], ['snapshot', { handle: 657704 }, SNAPSHOT_TIMEOUT_MS])
+  })
+
+  it('reports a result that is not a snapshot', async () => {
+    assert.deepEqual(await snapshot(agentAnswering({ ...trialLogin, version: '0.2' }), 1), {
+      ok: false,
+      reason: 'bad-response',
+    })
+  })
+
+  it('reports a closed window and a walk over its budget', async () => {
+    assert.deepEqual(await snapshot(agentAnswering(new AgentRpcError(-32000, 'gone')), 1), {
+      ok: false,
+      reason: 'window-gone',
+    })
+    assert.deepEqual(await snapshot(agentAnswering(new AgentRpcError(-32002, 'slow')), 1), {
+      ok: false,
+      reason: 'snapshot-timeout',
+    })
+  })
+})
+
+describe('parseSnapshot', () => {
+  const [root, child] = trialLogin.elements
+
+  it('accepts the schema example', () => {
+    assert.equal(parseSnapshot(trialLogin), trialLogin)
+  })
+
+  it('rejects elements that are not one tree in pre-order', () => {
+    const cases = [
+      [child, root], // child before its parent
+      [root, root], // repeated id
+      [root, { ...root, id: 'other' }], // a second root
+      [], // no root
+    ]
+    for (const elements of cases) {
+      assert.equal(parseSnapshot({ ...trialLogin, elements }), null, JSON.stringify(elements))
+    }
+  })
+
+  it('rejects malformed nodes and the fields the Spy computes with', () => {
+    const cases = [
+      { ...child, id: 7 },
+      { ...child, parentId: undefined },
+      { ...child, element: null },
+      { ...child, element: { bounds: [1, 2, 3] } },
+      { ...child, element: { dpi: '120' } },
+    ]
+    for (const node of cases) {
+      const elements = [root, node]
+      assert.equal(parseSnapshot({ ...trialLogin, elements }), null, JSON.stringify(node))
+    }
+  })
+
+  it('rejects documents without the fields it reads', () => {
+    for (const key of ['version', 'snapshotId', 'capture', 'app', 'window', 'elements']) {
+      const rest = { ...trialLogin }
+      delete rest[key]
+      assert.equal(parseSnapshot(rest), null, key)
+    }
+    assert.equal(parseSnapshot({ ...trialLogin, window: {} }), null)
+    assert.equal(parseSnapshot(null), null)
   })
 })
 

@@ -1,6 +1,8 @@
 // Contract between the preload bridge and the renderer. The renderer only ever
 // sees `window.ayna`, shaped like `AynaApi`; every method maps to one IPC channel.
 
+import type { Snapshot } from './snapshot.ts'
+
 export interface AppInfo {
   name: string
   version: string
@@ -91,11 +93,16 @@ export type AgentFailure =
   | 'not-connected' // no agent running, or it stopped before answering
   | 'uia-unavailable' // the agent has no UI Automation backend (not Windows, or before #12)
   | 'timeout'
+  | 'window-gone' // no window has that handle any more
+  | 'snapshot-timeout' // the agent gave up the walk at its time budget
   | 'bad-response' // the answer does not match `docs/agent-rpc.md`
   | 'agent-error' // any other JSON-RPC error; `detail` has the agent's message
 
 export type WindowsResult =
   { ok: true; windows: WindowInfo[] } | { ok: false; reason: AgentFailure; detail?: string }
+
+export type SnapshotResult =
+  { ok: true; snapshot: Snapshot } | { ok: false; reason: AgentFailure; detail?: string }
 
 /** A screen point in physical pixels, virtual-screen coordinates (like `Bounds`). */
 export interface ScreenPoint {
@@ -129,6 +136,8 @@ export interface AynaApi {
   retryAgent(): Promise<void>
   /** Lists the visible top-level windows through the agent, for the Spy. */
   listWindows(): Promise<WindowsResult>
+  /** Captures the UI Automation tree of the window with `handle` (from `listWindows`). */
+  snapshot(handle: number): Promise<SnapshotResult>
   /**
    * Draws a frame around `bounds` on screen for a few seconds, above every window and
    * without taking focus or clicks; `null` removes it at once.
@@ -154,6 +163,7 @@ export const IPC = {
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',
+  snapshot: 'spy:snapshot',
   highlight: 'spy:highlight',
   setPickHotkey: 'spy:set-pick-hotkey',
   /** Main → renderer event, not a handler. */

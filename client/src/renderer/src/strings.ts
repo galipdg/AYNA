@@ -77,15 +77,25 @@ export const strings = {
   spyEmpty: 'The agent sees no open windows.',
   spyNoTitle: '(no title)',
   spyUnknownProcess: 'unknown process',
-  spyTreePending: 'The element tree appears here once the agent can capture windows.',
+  spyTreeTitle: 'Elements',
+  spyCapturing: 'Capturing the window…',
+  spyCaptureAgain: 'Capture again',
+  /** `app` is the exe name and file version, when the agent could read them. */
+  spyCaptured: (time: string, app: string | undefined, count: number, durationMs: number) =>
+    `Captured at ${time}${app ? ` from ${app}` : ''}: ` +
+    `${count} ${count === 1 ? 'element' : 'elements'} in ${durationMs} ms.`,
+  spyReadErrors: (count: number) =>
+    `${count} ${count === 1 ? 'property' : 'properties'} could not be read, so some values are missing.`,
+  spyUnknownControlType: 'Element',
+  spyExpand: 'Expand',
+  spyCollapse: 'Collapse',
   spyHotkeyHint: (label: string) => `Press ${label} with the mouse over an element to pick it.`,
   spyHotkeyTaken: (label: string) =>
     `${label} is in use by another program, so picking with the keyboard is off.`,
   spyPicked: (x: number, y: number) =>
     `Picked the point ${x}, ${y}. Finding the element under it needs a newer agent.`,
   spyPropertiesTitle: 'Properties',
-  spyWindowOnly:
-    'From the window list only. The other properties appear once the agent can capture windows.',
+  spyWindowOnly: 'From the window list only, because the window could not be captured.',
   spyNotCaptured: 'not captured',
   spyYes: 'yes',
   spyNo: 'no',
@@ -119,6 +129,9 @@ export const strings = {
     'uia-unavailable': () =>
       'UI Automation is not available on this machine. The Spy works on Windows only.',
     timeout: () => 'The agent did not answer in time. Refresh to try again.',
+    'window-gone': () => 'The window has closed. Refresh the list.',
+    'snapshot-timeout': () =>
+      'Capturing the window took too long, so the agent stopped. The application may be busy; capture again.',
     'bad-response': () => 'The agent answered with something unexpected.',
     'agent-error': (detail?: string) =>
       detail ? `The agent reported an error: ${detail}` : 'The agent reported an error.',

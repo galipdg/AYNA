@@ -1,5 +1,6 @@
-// `npm run dev:mock [-- --port 8099 --windows file.json --no-uia]`: the client with a stub
-// server and a fake agent, for checking screens without the real server, Neo4j or Windows.
+// `npm run dev:mock [-- --port 8099 --windows file.json --snapshot file.json --no-uia
+// --slow-snapshots]`: the client with a stub server and a fake agent, for checking screens
+// without the real server, Neo4j or Windows.
 // Starts the stub server, waits until it listens, then runs `npm run dev` with the fake
 // agent first on PYTHONPATH. Ctrl+C or closing the app stops everything.
 import { spawn } from 'node:child_process'
@@ -15,7 +16,9 @@ const { values } = parseArgs({
   options: {
     port: { type: 'string', default: '8099' },
     windows: { type: 'string', default: resolve(here, 'windows.json') },
+    snapshot: { type: 'string', default: resolve(here, 'snapshot.json') },
     'no-uia': { type: 'boolean', default: false },
+    'slow-snapshots': { type: 'boolean', default: false },
   },
 })
 
@@ -53,7 +56,9 @@ const dev = spawn('npm', ['run', 'dev'], {
     AYNA_AGENT_PYTHON: python,
     PYTHONPATH: [here, process.env.PYTHONPATH].filter(Boolean).join(delimiter),
     AYNA_MOCK_WINDOWS: resolve(values.windows),
+    AYNA_MOCK_SNAPSHOT: resolve(values.snapshot),
     AYNA_MOCK_UIA: values['no-uia'] ? 'off' : 'on',
+    AYNA_MOCK_SNAPSHOT_TIMEOUT: values['slow-snapshots'] ? 'on' : 'off',
   },
 })
 

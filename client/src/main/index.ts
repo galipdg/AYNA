@@ -21,7 +21,7 @@ import { createApplication, listApplications } from './apps.ts'
 import { checkServer } from './server.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 import { Highlighter } from './overlay.ts'
-import { isBounds, listWindows, PickHotkey, pickHotkeyLabel } from './spy.ts'
+import { isBounds, listWindows, PickHotkey, pickHotkeyLabel, snapshot } from './spy.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -119,6 +119,7 @@ function registerIpc() {
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
   handle(IPC.listWindows, () => listWindows(agent))
+  handle(IPC.snapshot, (_event, windowHandle) => snapshot(agent, windowHandle))
   // Anything that is not a valid rectangle (null included) removes the frame.
   handle(IPC.highlight, (_event, bounds) =>
     isBounds(bounds) ? highlighter.show(bounds) : highlighter.hide(),

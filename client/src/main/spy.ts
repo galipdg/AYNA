@@ -1,7 +1,14 @@
 // The Spy's calls to the local agent, turned into plain results for the renderer.
 // Free of Electron imports so `node --test` can run it against a stub agent.
 
-import type { AgentFailure, Bounds, WindowInfo, WindowsResult } from '../shared/api.ts'
+import type {
+  AgentFailure,
+  Bounds,
+  SnapshotResult,
+  WindowInfo,
+  WindowsResult,
+} from '../shared/api.ts'
+import { buildTree, type Snapshot, type SnapshotNode } from '../shared/snapshot.ts'
 import { AgentNotConnectedError, AgentRpcError, AgentTimeoutError } from './agent.ts'
 
 /** The part of `AgentManager` the Spy needs. */
@@ -9,11 +16,22 @@ export interface AgentCaller {
   call(method: string, params?: Record<string, unknown>, timeoutMs?: number): Promise<unknown>
 }
 
-/** `-32001` in `docs/agent-rpc.md`: the agent has no UI Automation backend. */
+// Error codes of `docs/agent-rpc.md`.
+/** No top-level window has the handle (any more). */
+export const WINDOW_NOT_FOUND = -32000
+/** The agent has no UI Automation backend. */
 export const UIA_UNAVAILABLE = -32001
+/** The snapshot walk used up its time budget. */
+export const SNAPSHOT_TIMEOUT = -32002
 
 /** Enumerating top-level windows is quick; more than this means the agent is stuck. */
 export const LIST_WINDOWS_TIMEOUT_MS = 10_000
+
+/**
+ * The agent ends a walk at its own budget (5 s by default) and answers -32002; the margin
+ * covers sending a large tree. No answer by then means the agent itself is stuck.
+ */
+export const SNAPSHOT_TIMEOUT_MS = 15_000
 
 export async function listWindows(agent: AgentCaller): Promise<WindowsResult> {
   let result: unknown
@@ -26,12 +44,25 @@ export async function listWindows(agent: AgentCaller): Promise<WindowsResult> {
   return windows ? { ok: true, windows } : { ok: false, reason: 'bad-response' }
 }
 
+export async function snapshot(agent: AgentCaller, handle: unknown): Promise<SnapshotResult> {
+  let result: unknown
+  try {
+    result = await agent.call('snapshot', { handle }, SNAPSHOT_TIMEOUT_MS)
+  } catch (error) {
+    return { ok: false, ...describeFailure(error) }
+  }
+  const parsed = parseSnapshot(result)
+  return parsed ? { ok: true, snapshot: parsed } : { ok: false, reason: 'bad-response' }
+}
+
 /** Maps an error from `AgentManager.call` to a reason the UI has a message for. */
 export function describeFailure(error: unknown): { reason: AgentFailure; detail?: string } {
   if (error instanceof AgentNotConnectedError) return { reason: 'not-connected' }
   if (error instanceof AgentTimeoutError) return { reason: 'timeout' }
   if (error instanceof AgentRpcError) {
     if (error.code === UIA_UNAVAILABLE) return { reason: 'uia-unavailable' }
+    if (error.code === WINDOW_NOT_FOUND) return { reason: 'window-gone' }
+    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout' }
     return { reason: 'agent-error', detail: error.rpcMessage }
   }
   return { reason: 'agent-error', detail: error instanceof Error ? error.message : String(error) }
@@ -63,6 +94,44 @@ export function parseWindows(result: unknown): WindowInfo[] | null {
     })
   }
   return windows
+}
+
+/**
+ * The `snapshot` result, or null if it is not a 0.1 snapshot whose elements form one tree.
+ * Checks what the Spy relies on, not every rule of the schema: the agent's own tests
+ * validate its output against `schemas/snapshot.schema.json`.
+ */
+export function parseSnapshot(result: unknown): Snapshot | null {
+  if (
+    !isRecord(result) ||
+    result.version !== '0.1' ||
+    typeof result.snapshotId !== 'string' ||
+    !isRecord(result.capture) ||
+    typeof result.capture.startedAt !== 'string' ||
+    !Number.isInteger(result.capture.durationMs) ||
+    !Number.isInteger(result.capture.elementCount) ||
+    !isRecord(result.app) ||
+    !isRecord(result.window) ||
+    !Number.isInteger(result.window.handle) ||
+    !Array.isArray(result.elements)
+  ) {
+    return null
+  }
+  const elements: unknown[] = result.elements
+  if (!elements.every(isNode) || !buildTree(elements)) return null
+  return result as unknown as Snapshot
+}
+
+function isNode(value: unknown): value is SnapshotNode {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    (value.parentId === null || typeof value.parentId === 'string') &&
+    isRecord(value.element) &&
+    // The two fields the Spy computes with: the highlight and the scaling.
+    (value.element.bounds === undefined || isBounds(value.element.bounds)) &&
+    (value.element.dpi === undefined || Number.isInteger(value.element.dpi))
+  )
 }
 
 export function isBounds(value: unknown): value is Bounds {

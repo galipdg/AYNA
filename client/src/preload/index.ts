@@ -18,6 +18,7 @@ const api: AynaApi = {
   },
   retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
   listWindows: () => ipcRenderer.invoke(IPC.listWindows),
+  snapshot: (handle) => ipcRenderer.invoke(IPC.snapshot, handle),
   highlight: (bounds) => ipcRenderer.invoke(IPC.highlight, bounds),
   setPickHotkey: (enabled) => ipcRenderer.invoke(IPC.setPickHotkey, enabled),
   onPick: (listener) => {

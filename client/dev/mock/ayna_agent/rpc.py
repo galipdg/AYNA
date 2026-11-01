@@ -3,9 +3,11 @@
 
 The client starts it like the real one (`python -m ayna_agent.rpc --port 0`, token in
 AYNA_AGENT_TOKEN); `npm run dev:mock` puts this folder's parent first on PYTHONPATH.
-Answers `ping` and `listWindows` (windows from AYNA_MOCK_WINDOWS, a JSON file);
-`snapshot` answers -32001. With AYNA_MOCK_UIA=off, `listWindows` answers -32001 too,
-as on a machine without UI Automation. Exits on stdin EOF, like the real agent.
+Answers `ping`, `listWindows` (windows from AYNA_MOCK_WINDOWS, a JSON file) and
+`snapshot` (the document in AYNA_MOCK_SNAPSHOT for every listed window, with that
+window's handle and a fresh id and time). With AYNA_MOCK_UIA=off both answer -32001, as on
+a machine without UI Automation; with AYNA_MOCK_SNAPSHOT_TIMEOUT=on `snapshot` answers
+-32002. Exits on stdin EOF, like the real agent.
 """
 
 import base64
@@ -17,12 +19,18 @@ import socket
 import struct
 import sys
 import threading
+import uuid
+from datetime import datetime
 
 WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 TOKEN = os.environ.get("AYNA_AGENT_TOKEN", "")
 UIA = os.environ.get("AYNA_MOCK_UIA", "on") != "off"
+SNAPSHOT_TIMEOUT = os.environ.get("AYNA_MOCK_SNAPSHOT_TIMEOUT", "off") == "on"
 WINDOWS_FILE = os.environ.get(
     "AYNA_MOCK_WINDOWS", os.path.join(os.path.dirname(__file__), "..", "windows.json")
+)
+SNAPSHOT_FILE = os.environ.get(
+    "AYNA_MOCK_SNAPSHOT", os.path.join(os.path.dirname(__file__), "..", "snapshot.json")
 )
 
 
@@ -36,6 +44,33 @@ def no_uia(rid):
     return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32001, "message": message}}
 
 
+def error(rid, code, message):
+    return {"jsonrpc": "2.0", "id": rid, "error": {"code": code, "message": message}}
+
+
+def load_json(path):
+    with open(path, encoding="utf-8") as file:
+        return json.load(file)  # read per call, so edits show on the Spy's next request
+
+
+def snapshot(rid, params):
+    handle = params.get("handle") if isinstance(params, dict) else None
+    if not isinstance(handle, int) or isinstance(handle, bool) or handle < 1:
+        return error(rid, -32602, "Invalid params: handle must be a positive int")
+    if not UIA:
+        return no_uia(rid)
+    if not any(window["handle"] == handle for window in load_json(WINDOWS_FILE)):
+        return error(rid, -32000, f"Window not found: {handle}")
+    if SNAPSHOT_TIMEOUT:
+        return error(rid, -32002, "Snapshot timeout: walk exceeded 5000 ms (fake agent)")
+    document = load_json(SNAPSHOT_FILE)
+    document["snapshotId"] = str(uuid.uuid4())
+    document["capture"]["startedAt"] = datetime.now().astimezone().isoformat(timespec="seconds")
+    document["window"]["handle"] = handle
+    document["elements"][0]["element"]["nativeWindowHandle"] = handle
+    return {"jsonrpc": "2.0", "id": rid, "result": document}
+
+
 def handle_request(request):
     rid, method = request.get("id"), request.get("method")
     if method == "ping":
@@ -44,11 +79,9 @@ def handle_request(request):
     if method == "listWindows":
         if not UIA:
             return no_uia(rid)
-        with open(WINDOWS_FILE, encoding="utf-8") as file:
-            windows = json.load(file)  # read per call, so edits show on the Spy's Refresh
-        return {"jsonrpc": "2.0", "id": rid, "result": {"windows": windows}}
+        return {"jsonrpc": "2.0", "id": rid, "result": {"windows": load_json(WINDOWS_FILE)}}
     if method == "snapshot":
-        return no_uia(rid)
+        return snapshot(rid, request.get("params"))
     return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": "Method not found"}}
 
 
