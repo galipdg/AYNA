@@ -39,4 +39,4 @@ python -m ayna_ai.generate --input spikes/llm-smoke-inputs.jsonl \
     --out spikes/results/generate-<date>-qwen3-8b.json --log <file>.log.jsonl
 ```
 
-Input lines are `{"id", "text", "expected"?}` (`expected`: the keyword sequence, reported as `keyword_match`); `--objects` is a JSON object mapping logical names to Turkish descriptions. `--format json` drops the schema constraint as a baseline. The client refuses any host that is not a loopback address.
+Input lines are `{"id", "text", "expected"?}` (`expected`: the keyword sequence, reported as `keyword_match`); `--objects` is a JSON object mapping logical names to Turkish descriptions. `--format json` drops the schema constraint as a baseline. The client refuses any host that is not a loopback address; a name such as `localhost` must resolve to loopback addresses only, and the client connects to the checked address. An answer with as many steps as the grammar allows (12) is flagged (`step_limit_reached`, counted in the summary).
