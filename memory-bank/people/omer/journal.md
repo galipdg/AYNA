@@ -74,3 +74,10 @@ Append-only. One entry per session, newest at the bottom:
 - CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
+
+## 2026-10-31/11-01 · #24 resume
+- #24 blocked on #12 (snapshot schema) and #22 (`elementFromPoint`); pushed `937a06f` (pick hotkey) over HTTPS; reminders on #12 (draft schema, or fields in a comment and omer drafts it; answer by 2 Nov) and #22 (RPC contract first).
+- Hotkey manual check on macOS with a scratch stub server + fake agent (`AYNA_AGENT_PYTHON`): all steps pass (omer). Stopped the `ayna` Compose stack (`stop`, data kept).
+- Merged `origin/main` (#6, #11, #122, #149, #166, #172, #177) into the branch; client lint, typecheck, 66 tests green.
+- Found on `main`: hasan's #17 Windows run, 6/7 pass, `agent.test.ts:160` fails (no signals on Windows); #11 element schema unblocks the Spy property panel.
+- Next: fix #17 on Windows semantics, then the #24 property panel against `schemas/element.schema.json`.
