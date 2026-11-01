@@ -11,6 +11,7 @@ Owner: omer. Read `/AGENTS.md` first; this file adds only what is specific to `c
 Run from `client/` (Node >= 22.12):
 - `npm ci` — install (all packages are devDependencies; everything is bundled)
 - `npm run dev` — open the app with hot reload (first downloads the Electron binary via `install-electron`)
+- `npm run dev:mock` — the same against a stub server (`http://127.0.0.1:8099`) and a fake agent, on any OS without the server, Neo4j or Windows; options and window list in `dev/mock/README.md`
 - `npm run build` — `out/` + unpacked app in `release/<platform>-unpacked` (no installer)
 - `npm run lint` — ESLint
 - `npm run typecheck` — `tsc -b` (`tsconfig.node.json` for main/preload/shared, `tsconfig.web.json` for the renderer, which sees no Node types)
