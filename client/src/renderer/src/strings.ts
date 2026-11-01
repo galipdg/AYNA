@@ -4,6 +4,7 @@ import type {
   ConnectionFailure,
   RequestFailure,
 } from '../../shared/api.ts'
+import type { ElementDescriptor, ElementField } from '../../shared/element.ts'
 
 // All UI text in one place, for later translation.
 export const strings = {
@@ -71,7 +72,7 @@ export const strings = {
   agentRetry: 'Start again',
 
   spyTitle: 'Object Spy',
-  spyIntro: 'Choose a window to see where it is on screen.',
+  spyIntro: 'Choose a window to see its properties and where it is on screen.',
   spyRefresh: 'Refresh',
   spyEmpty: 'The agent sees no open windows.',
   spyNoTitle: '(no title)',
@@ -82,13 +83,37 @@ export const strings = {
     `${label} is in use by another program, so picking with the keyboard is off.`,
   spyPicked: (x: number, y: number) =>
     `Picked the point ${x}, ${y}. Finding the element under it needs a newer agent.`,
-  spyFields: {
-    title: 'Title',
-    className: 'Class',
-    process: 'Process',
-    handle: 'Handle',
+  spyPropertiesTitle: 'Properties',
+  spyWindowOnly:
+    'From the window list only. The other properties appear once the agent can capture windows.',
+  spyNotCaptured: 'not captured',
+  spyYes: 'yes',
+  spyNo: 'no',
+  // Labels follow the descriptor's UIA names, which testers know from other spy tools.
+  spyProperties: {
+    automationId: 'AutomationId',
+    name: 'Name',
+    controlType: 'Control type',
+    className: 'Class name',
+    frameworkId: 'Framework',
     bounds: 'Bounds (px)',
-  },
+    dpi: 'DPI',
+    parentPath: 'Parent path',
+    siblingIndex: 'Sibling index',
+    nearestLabel: 'Nearest label',
+    nearestLabelSource: 'Label found by',
+    windowTitle: 'Window title',
+    enabled: 'Enabled',
+    offscreen: 'Off screen',
+    helpText: 'Help text',
+    accessKey: 'Access key',
+    nativeWindowHandle: 'Window handle',
+  } satisfies Record<ElementField, string>,
+  spyLabelSources: {
+    labeledBy: 'LabeledBy relation',
+    geometric: 'nearest label beside it',
+    parentRow: 'nearest label in the parent row',
+  } satisfies Record<NonNullable<ElementDescriptor['nearestLabelSource']>, string>,
   agentErrors: {
     'not-connected': () => 'The agent is not running. Wait for it to connect, then refresh.',
     'uia-unavailable': () =>

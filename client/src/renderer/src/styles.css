@@ -160,3 +160,24 @@ button {
 .spy-pending {
   opacity: 0.75;
 }
+
+.spy-properties h3 {
+  margin: 16px 0 8px;
+  font-size: 1rem;
+}
+
+/* Groups a dt/dd pair (title = descriptor key) without leaving the dl's grid. */
+.spy-properties .property {
+  display: contents;
+}
+
+/* An AutomationId can be hundreds of characters with no spaces. */
+.spy-properties dd {
+  overflow-wrap: anywhere;
+}
+
+.spy-properties dd.not-captured {
+  font-family: inherit;
+  font-style: italic;
+  opacity: 0.6;
+}

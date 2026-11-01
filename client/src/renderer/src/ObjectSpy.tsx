@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AgentFailure, PickHotkeyState, ScreenPoint, WindowInfo } from '../../shared/api.ts'
+import { windowDescriptor } from '../../shared/element.ts'
+import PropertyPanel from './PropertyPanel.tsx'
 import { strings } from './strings.ts'
 
 type List =
@@ -22,7 +24,10 @@ function processLabel(win: WindowInfo): string {
   return `${win.processName ?? strings.spyUnknownProcess} · ${win.processId}`
 }
 
-/** Lists the desktop's top-level windows; choosing one flashes a frame around it on screen. */
+/**
+ * Lists the desktop's top-level windows; choosing one flashes a frame around it on screen
+ * and shows its properties.
+ */
 export default function ObjectSpy() {
   const [list, setList] = useState<List>({ state: 'loading' })
   const [selected, setSelected] = useState<WindowInfo>()
@@ -116,18 +121,7 @@ export default function ObjectSpy() {
         </>
       )}
       {selected && (
-        <dl>
-          <dt>{strings.spyFields.title}</dt>
-          <dd>{selected.title || strings.spyNoTitle}</dd>
-          <dt>{strings.spyFields.className}</dt>
-          <dd>{selected.className}</dd>
-          <dt>{strings.spyFields.process}</dt>
-          <dd>{processLabel(selected)}</dd>
-          <dt>{strings.spyFields.handle}</dt>
-          <dd>{selected.handle}</dd>
-          <dt>{strings.spyFields.bounds}</dt>
-          <dd>{selected.bounds.join(', ')}</dd>
-        </dl>
+        <PropertyPanel element={windowDescriptor(selected)} note={strings.spyWindowOnly} />
       )}
       {hotkey && (
         <p className={hotkey.active ? 'spy-pending' : 'error'}>
