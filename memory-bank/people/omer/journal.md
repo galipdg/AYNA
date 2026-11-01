@@ -61,6 +61,11 @@ Append-only. One entry per session, newest at the bottom:
 - `gh pr review` posts needed explicit user OK (auto-mode classifier).
 - Next: #17.
 
+## 2026-10-29 · #48 SDD test design
+- #148 closed as duplicate of #152; #152 got #148's extra criteria (p50, one command, TBD-9 in RS.md) and #31 as dependency (omer's choice).
+- #48: SDD §6 written on `omer/48-sdd-test-design`, stacked on #45; PR #157 (base `omer/45-sdd-architecture`), reviewers galip + hasan. Proposed RQ1/RQ2 definitions and exact McNemar listed in SDD §9; owners asked in their inboxes.
+- `active.md` lives on #156's branch this time (overwrite file; editing it on several open branches would conflict).
+- Next: reviews of #155, #156, #157; then #25 when #12/#22 move.
 ## 2026-10-29 · reviews, #45 SDD, #39 tests API
 - Reviews: approved #142 (note: `objects` needs per-object `columns` once `column` becomes an enum); comment on #145 (all 12 pairs fail under #150's 0.2 → merge #150 first, then relabel).
 - #45: `docs/sdd/SDD.md` skeleton (IEEE 1016, omer's choice) + sections 1–4; galip's AI block = §5 (answer in his inbox). PR #155, review requested from galip; diagrams checked by omer.

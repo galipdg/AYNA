@@ -8,9 +8,9 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
-| Version | 0.1 — draft of sections 1–4 |
+| Version | 0.2 — draft of sections 1–4 and 6 |
 | Date | 2026-10-31 |
-| Status | Sections 1–4 drafted (#45). Section 5: #50. Section 6: #48. Final PDF: #53, due 7 Dec 2026 |
+| Status | Sections 1–4 (#45) and 6 (#48) drafted. Section 5: #50. Final PDF: #53, due 7 Dec 2026 |
 
 ## Document history
 
@@ -18,6 +18,7 @@
 |---|---|---|---|
 | 0.1 | 2026-10-29 | Ömerfaruk Sarıbal | Skeleton; introduction, architecture, data design and interface design (#45) |
 | 0.1 | 2026-10-31 | Ömerfaruk Sarıbal | Status after #135, #151, #156, #158 merged; retrieval and AI errors settled (#155 review) |
+| 0.2 | 2026-10-31 | Ömerfaruk Sarıbal | Test design (#48) |
 
 ---
 
@@ -404,7 +405,87 @@ _Written by galip (#50) in `docs/sdd/SDD-ai.md` (PR #144), headings AI-1 … AI-
 
 ## 6 Test design
 
-_Test strategy for AYNA itself and the evaluation design for RQ1–RQ5. Filled by #48._
+This section has two parts. §6.1–§6.5 describe how AYNA itself is verified: that each component does what the RS asks. §6.6–§6.7 describe the evaluation: the experiments that answer research questions RQ1–RQ5. The RS gives the verification method for each requirement (its §4, with the codes T test, D demonstration, I inspection, A analysis); this section describes the test levels, environments and experiment designs behind those codes. §5 (AI-7) lists what the AI components provide for the experiments; §6.6 says how the experiments are run.
+
+### 6.1 Principles
+
+- **Every pull request is tested.** Each module's tests and linters run in CI, and a pull request merges only when CI is green (NFR-35). A change is done only when its tests pass and every acceptance criterion of its issue is met.
+- **Test against the real thing where it is cheap.** The server's integration tests use a real Neo4j in Testcontainers, the same image as `docker-compose.yml`; the client's agent manager is tested against a stand-in agent that follows the real contract.
+- **One set of examples per contract, used by every language.** The step schema's named cases (`schemas/examples/step/cases.json`) are checked by the Python tests (`ai/tests/test_step_schema.py`) and by the server's validator (`StepSchemaTest`, PR #156), so the two implementations of JSON Schema cannot drift apart.
+- **What only a person can judge is checked by a person, with a script.** Spy overlay and hotkeys, display scaling and how a screen feels are manual checks with fixed steps and expected results (§6.3).
+- **Experiments are fixed before they are run.** Targets, splits and analyses are written down before the data that tests them exists (§6.7).
+
+### 6.2 Test levels
+
+| Level | What it checks | Tools | Where it runs | Method (RS §4) | Status |
+|---|---|---|---|---|---|
+| Unit | Functions and classes without I/O: step validation, schema derivation, healing scorer, settings, URL checks | pytest (agent, ai), JUnit 5 (server), `node --test` (client main process) | CI on every PR; locally before every commit | T | **Built** in every module |
+| Integration | One component with its real neighbour: server + Neo4j (Testcontainers), client agent manager + stand-in agent (`client/src/main/__tests__/fixtures/fake-agent.ts`), AI generator + stand-in Ollama on 127.0.0.1 | same, plus Testcontainers | CI | T | **Built**: server (#4, #14, #128, #39), client (#17), ai (#37) |
+| Contract | Both sides of an interface agree with the frozen contract: shared schema examples, agent JSON-RPC messages, REST API against the generated OpenAPI document. CI fails on a breaking change | schema examples in `schemas/examples/`; contract tests added at the freeze | CI | T | Step schema **built**; REST, WebSocket, JSON-RPC at #52 |
+| Windows | Anything that needs UI Automation on a real desktop: element under cursor, snapshots, playback, win32 fallback, process handling on Windows | pytest with `@pytest.mark.windows` (skipped on macOS with `-m "not windows"`) | CI `agent` job on `windows-latest`; the weekly Windows session for what the runner cannot show | T | Marker **built** (`agent/pyproject.toml`); tests grow with #12, #22, #26, #40 |
+| System | A whole suite through the CLI runner on the sample app, as a user's CI would run it; a bug-injected build must make it fail | CLI runner + headless agent, JUnit XML | Nightly and on demand on a Windows runner | T | Planned: #61, #66, #67 |
+| Acceptance | The reference scenarios (SC-01 … in `docs/rs/scenarios.md`) built in the editor and replayed without manual fixes (NFR-26) | the product itself | Weekly Windows session; at gates G0, G2 | D | Planned: #28, #62, #70 |
+| Manual check | What a person must see: Spy overlay and hotkeys, 100 % and 150 % display scaling (NFR-20), status bar, screen layout. Measurements so far run at 125 % (hasan's machine), and every result names its scaling, because location similarity depends on it (#49, PR #166) | script in the shape of `AGENTS.md` §10 | macOS for layout; the weekly Windows session for the rest | D | In use (#17, #32); repeated checks move to `docs/manual-checks/` |
+| Non-functional | Timing (NFR-01 – NFR-13), load (NFR-07, NFR-08), closed network (NFR-29, NFR-30), installer (NFR-36), security boundaries (NFR-31, NFR-32) | timing harnesses in `eval/`, load test (#152), air-gapped run (#85), clean-VM install (#84) | Team hardware, a clean offline Windows VM | T, A | Planned per NFR; agent token refusal **built** (#16) |
+
+Security boundaries are tested at the unit and integration levels where they are built: the agent refuses a connection without the session token (#16), the renderer's Content-Security-Policy and navigation rules have unit tests (`client/src/main/__tests__/security.test.ts`), and the AI service's model client refuses non-loopback hosts (PR #142; it still trusts the name `localhost` without resolving it, an open point in `memory-bank/tasks/71-nl-service.md`).
+
+### 6.3 Environments
+
+| Environment | Who | Used for |
+|---|---|---|
+| macOS developer machines | galip, omer | Unit and integration tests of every module except Windows-marked ones; client layout checks |
+| Windows machine (Windows 10 22H2 / 11, TBD-3) | hasan, with the others at the weekly session | Windows-marked tests, pilot apps, display scaling, manual checks, measurements for RQ1, RQ2, RQ5 |
+| GitHub Actions | everyone, automatically | `server` (Ubuntu, Docker for Testcontainers), `client` (Ubuntu), `ai` (Ubuntu), `agent` (Windows) on every push and pull request; the system test on a Windows runner (#67) |
+| Clean offline Windows VM | omer | Installer (#84) and air-gapped end-to-end test (#85): no development tools, network disabled |
+
+**Weekly Windows session.** Galip and Ömerfaruk work on macOS. Work that needs Windows is labelled `needs-windows-test` with its commands and manual check in an issue comment. Once a week the three members run the queue on Hasan's machine and post pass or fail on each issue (ADR *Weekly Windows test session for macOS developers*). A failing check stays labelled and goes to the owner's inbox.
+
+### 6.4 Applications under test
+
+| Application | Purpose | Issue |
+|---|---|---|
+| Trial app (PySide6, one login screen) | First recognition and snapshot tests; the 12 trial NL pairs | **Built**: #9 (`eval/apps/trial/`) |
+| Sample app v1 | The reference scenarios, the 40 NL pairs, RQ2 | #33 (technology chosen in D1, #21) |
+| Controlled-change versions of the sample app | RQ4: rename, move, retype, re-parent, AutomationId removed, one combined; each with a ground-truth map old element → new element | #46 |
+| Bug-injected versions of the sample app | RQ5 and the system test: wrong label, disabled button, wrong saved value, missing validation, wrong navigation; each names the scenario that must fail | #47 |
+| Pilot apps on other UI technologies | RQ1 across technologies: KeePass 2 (WinForms) and HandBrake (WPF), KeePassXC (Qt) as an optional third; Notepad++ (Win32) is not a pilot but the fixture for the win32 fallback (#23). Chosen from the UIA tree dumps (`eval/spikes/uia-dump.md`) | #6 (PR #159), #21 |
+| A HAVELSAN representative app, if shared | Semester-2 pilot | #105 |
+
+### 6.5 Entry and exit criteria
+
+- **Pull request:** CI green; the issue's acceptance criteria ticked, or the unticked ones explained; a manual check recorded in the task note when one applies; one review.
+- **Weekly Windows session:** every `needs-windows-test` issue gets a pass or fail comment.
+- **Gates:**
+
+| Gate | Week | Checked by | Pass when |
+|---|---|---|---|
+| G0 walking skeleton | 3 | Demonstration | Spy picks an element on the sample app and it is saved in Neo4j; the agent replays Click and Type by logical name; D1 is closed; a 7–8B model returns valid JSON for a Turkish prompt on a team laptop (#28) |
+| G1 design baseline | 7 | Inspection | RS and SDD submitted; graph schema, step schema and API contracts frozen with tests in CI (#52, #56) |
+| G2 MVP core | 9 | Demonstration + analysis | ≥ 10 reference scenarios run end to end from editor-built steps (NFR-26); RQ1 measured; an HTML report for each run (#70) |
+| G3 feature freeze | 12 | Test + analysis | First H1 and H2 results; the installer runs on a clean offline VM; only bug fixes afterwards (#88) |
+
+### 6.6 Evaluation design
+
+Each research question has one experiment, owned by the member who owns the component it measures. All experiments use the shared rules in §6.7.
+
+| RQ | Question and hypothesis | Conditions | Measure | Data | Target (semester 1) | Issue · owner |
+|---|---|---|---|---|---|---|
+| **RQ1** | How many standard controls does multi-property identification recognise? | One condition, per app and control type | Recognition rate, reported as two numbers: (a) **stable identification**, the share of controls uniquely identified by AutomationId, Name, ControlType and ClassName alone, which is the number NFR-27's 90 % applies to; (b) **with positional fallback**, the share once `parentPath` and `siblingIndex` are allowed. Reported per app and control type, with no pooled number; each failure is listed with its reason | Pilot apps and the sample app with labelled ground truth; the population is the *interactive* set of `eval/spikes/uia_dump.py stats` (15 control types, excluding elements inside the window's TitleBar) | (a) ≥ 90 % (NFR-27); below 90 % with > 10 % unrecognised opens D3, a visual fallback (#65) | #64 · hasan |
+| **RQ2** | How consistent is replay? | 10 runs of each of ≥ 10 reference scenarios on an unchanged app, reset to its baseline data before each run (#33) | Flaky rate: share of scenarios whose 10 runs do not all give the same per-step pass/fail (durations excluded); root cause per flaky scenario. A lower bound: 10 runs catch a scenario failing 26 % of the time with 95 % probability, one failing 5 % of the time only 40 % (`1 − (1 − p)¹⁰`) | Sample app v1, reference scenarios | < 10 % (NFR-25), at the flakiness 10 runs can detect | #69 · hasan |
+| **RQ3 / H2** | Does repository context improve Turkish NL → steps accuracy? | With and without repository context, same model, decoding and grammar (paired per gold step; the alignment of generated and gold steps is #77's) | Step-level accuracy against gold; secondary: pair-level exact match (every step of the pair right); latency p50 / p95 on team hardware | Held-out split of 30 pairs, frozen before tuning (#57) | ≥ 60 % step accuracy with context | #77 · galip |
+| **RQ4 / H1** | Does weighted multi-property similarity find the moved element more often than single-property lookup? | Weighted similarity vs AutomationId-only lookup, on the same candidates (paired per changed control) | Correct-match accuracy per change type; candidate recall reported separately. An ambiguous result is a miss: an AutomationId lookup that returns several elements (normal on Qt, #159), or a tie at the top score of the weighted scorer; the number of ambiguous results is reported separately | Controlled-change versions with ground truth (#46) | H1 tested offline | #76, #79 · galip |
+| **RQ5 / H3** | Does approval-gated healing give fewer false passes than auto-applied healing? | Gated vs auto-applied, same suite (paired on each test run's verdict, not per step: the gated arm stops at the first "repair proposed", the auto-applied arm goes on) | False passes (a test passes on a version where it must fail) and bugs caught; every false pass explained | Bug-injected versions (#47) | First measurement; H3 fully tested in semester 2 | #86 · hasan; #103 · galip |
+
+**Order of work.** The apps of §6.4 come first (weeks 6–8), then RQ1 and RQ2 (week 9), RQ4 (week 10), RQ3 (week 11) and RQ5 (week 12). The results chapters are #89.
+
+### 6.7 Rules for every experiment
+
+- **Statistics.** Proportions are reported with Wilson 95 % confidence intervals. Paired comparisons (RQ3, RQ4, RQ5) use the exact McNemar test (binomial on the discordant pairs) with α = 0.05, for every sample size, since the held-out split of 30 pairs will rarely give 25 discordant pairs.
+- **Fixed in advance.** The target, the measure and the analysis of each RQ are the ones in this section and the issue; they are not changed after the data is seen. The NL held-out split is frozen and its SHA-256 recorded in the repository before any prompt tuning, and prompts are never tuned on it (#57, `ai/AGENTS.md`).
+- **Reproducible.** Each experiment runs with one command from a clean checkout and writes its raw results (one record per item), the summary, the git commit, the model names and file hashes, and the machine's specification under `eval/` (#76 asks for this explicitly; the other RQ issues follow it).
+- **Deterministic where possible.** The model runs with temperature 0 and a fixed seed; the healing scorer's scores are exact fractions. Timing and flakiness results (RQ2) name the hardware, its load and the display scaling.
+- **Threats to validity are reported with the result.** Small samples (hence the intervals); scenarios and apps written by the team (hence ≥ 20 outsider NL pairs, #57, and pilot apps on other technologies); one Windows machine for timing; the steps of one NL pair are not independent (one misread instruction breaks several), so step-level intervals and tests for RQ3 are optimistic, which is why pair-level exact match is reported too.
 
 ## 7 Design rationale
 
@@ -425,3 +506,8 @@ _Requirement → section table for every FR and NFR of the RS. Filled at #53, on
 | 5 | How live updates are framed on the WebSocket (topics, message shape) | §4.1 | #44, #51 |
 | 6 | `architecture.md` foresees an nginx container; its role (TLS, static files) is not designed | §2.3 | #84 |
 | 7 | `/api/health` has no bound on how long it waits while Neo4j shuts down (`memory-bank/tasks/32-server-settings.md`) | §4.2 | #31 |
+| 8 | RQ1's measure: settled in the #157 review (stable vs positional, interactive population); the labelling procedure for ground truth is not written yet | §6.6 | #64 |
+| 9 | RQ2's flaky definition | §6.6 | Settled: per-step comparison, reset between runs, detection limit stated (#157 review) |
+| 10 | RQ3's "without context" condition needs a definition, because the grammar needs a `target` enum (§5, AI-9 #12) | §6.6 | #77 |
+| 11 | Exact McNemar below 25 discordant pairs (proposed) | §6.7 | Settled: exact test for every sample size (#157 review) |
+| 12 | Whether GitHub's `windows-latest` runner gives UI Automation a usable desktop for the system test | §6.2, §6.3 | #67 |
