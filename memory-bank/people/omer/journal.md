@@ -112,3 +112,10 @@ Append-only. One entry per session, newest at the bottom:
 - Merged at omer's explicit request: #178, #160, #155 (re-synced), #157 (re-synced, retargeted to `main`); `main`'s stray `<<<<<<< HEAD` (from #174) gone with #160.
 - #60: synced with `main` against `acce05c` after #160's squash (recipe in `learnings.md`); server 54 + client 51 tests; new PR #179.
 - Next: property panel manual check; #179 reviews; #17 Windows re-run.
+
+## 2026-11-01 · #24 property panel check, dev:mock, #180 review
+- Property panel manual check on macOS passed (omer): long values wrap, empty title "not captured", lower fields shown. Off-screen window's highlight covers the screen on macOS → open issue for the Windows session (minimized windows at −32000).
+- First tries failed on setup, not code (env var lost, stub not running) → `npm run dev:mock` (`client/dev/mock/`: stdlib stub server + fake agent found via PYTHONPATH, `--port`/`--windows`/`--no-uia`); line in `client/AGENTS.md` (user approved). Pushed `8011c52`.
+- #12 moved: hasan's PR #180 (snapshot schema 0.1 + UIA backend). Reviewed the contract, ran its agent on macOS through `AgentManager` (-32001, clean stop); approved with 5 non-blocking points.
+- #179 still has no human review; #17 waits for the Windows session.
+- Next: #24 element tree on snapshot 0.1.
