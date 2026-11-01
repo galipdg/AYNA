@@ -2,16 +2,13 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-10-31
-- Current issues (all reviews answered 2026-10-31, waiting for a teammate to merge):
-  - #31 + #158: PR #160 (`Closes #31`, `Closes #158`; #163 merged into it). Approved by galip; review points folded in (errorCount cap 50, `urn:ayna:error:` types, JSONPath, idempotent 200, AI errors → problems with `code`); graph schema v0.1 and problem-details ADRs now Accepted on this branch
-  - #45: PR #155, approved by galip; his status/retrieval/AI-error points applied
-  - #48: PR #157 (stacked on #155), approved by hasan + galip; RQ1–RQ5 points applied
-  - #17: draft PR #154, `needs-windows-test`; heartbeat now pings during long calls (agent RPC replies in any order since #135)
-  - #10 (team): draft PR #126, `main` merged in; waits for hasan's entries and the plan-copy answer
-- Next step: when #160/#155 merge, check #31/#158/#45 closed and Done; retarget #157 to `main` if GitHub has not. Then #25 if #12/#22 have moved (both still open 2026-10-31), else #122 (eval pyproject + CI, Week 2, overdue) or #51.
-- Decided 2026-10-31: galip writes #58's server-side retrieval query in `server/`, omer reviews. #25 must not call `/ai/embed` on the write path (FR-28): embed after commit, retry missing vectors (said in the #165 review).
-- Open questions: project licence undecided; Leotta [4] PDF unread; #159 asks for a `workflow_dispatch` Windows job running `uia_dump.py` (CI is mine; not planned yet)
-- Inbox: every item up to 2026-10-29 is handled; delete them once #150, #164 and #165 (which append to it) have merged, so `merge=union` does not bring them back
-- Waiting on: teammates to merge #155/#157/#160; hasan for #10, #12 (blocks #15, #25), #22, #122 input
-- Network: SSH to github.com is flaky; fetch/push over HTTPS with `gh auth git-credential` (see `learnings.md`)
+- Last update: 2026-11-01
+- Current issue: **#24** (Object Spy) on `omer/24-object-spy` (stacked on `omer/17-agent-process-manager`, no PR yet). Window list, highlight overlay, Spy screen and pick hotkey done; hotkey manual check passed on macOS 2026-11-01. Tree waits for the snapshot schema (#12), element-under-cursor for #22; reminders posted on both 2026-11-01 (asked hasan to answer by 2 Nov). Task note: `tasks/24-object-spy.md`
+- Next step:
+  1. **#17 Windows failure** (hasan's run, inbox 2026-10-31 + issue comment): `agent.test.ts:160` fails on Windows and the "failed" message shows the last stderr INFO line, because a killed child has `signal === null` and a non-zero code there (`agent.ts` ≈239–245). Fix on `omer/17-agent-process-manager`, merge it into `omer/24-object-spy`, ask for a re-run at the Windows session.
+  2. #24 property panel: `schemas/element.schema.json` (#11, merged 2026-10-31) defines the descriptor, so the panel can be built before #12; the tree still needs the snapshot schema.
+- Other open work: #60 waits for #160 to merge, then a new PR to `main` (see the #60 branch's `active.md`, 2026-10-31); #31+#158 PR #160, #45 PR #155, #48 PR #157 approved, waiting for a merge; #122 PR #167 merged 2026-11-01 (check closed/Done); #10 draft PR #126.
+- Inbox: new 2026-10-31 items (galip #149 proposal schema 0.2 review; hasan #17 result) not yet handled. Items up to 2026-10-29 handled; delete them once #150 has merged.
+- Merge note: this file differs on #160, the #60 branch and this branch; whichever merges later conflicts here → keep the newest version.
+- Open questions: project licence undecided; Leotta [4] PDF unread
+- Network: SSH to github.com times out; fetch/push over HTTPS with `gh auth git-credential` (see `learnings.md`)

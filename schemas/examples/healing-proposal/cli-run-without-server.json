@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "runId": "0c9e7b52-61d4-4f3a-8e2b-5a7d9c1f3e64",
   "stepIndex": 0,
   "stepId": null,
@@ -14,7 +14,7 @@
       "controlType": "Edit",
       "className": "QLineEdit",
       "bounds": [600, 300, 840, 328],
-      "parentPath": "loginWindow/credentialsBox",
+      "parentPath": "Window/Group",
       "siblingIndex": 1,
       "nearestLabel": "Kullanıcı adı",
       "windowTitle": "AYNA Trial"
@@ -22,6 +22,7 @@
   },
   "scorer": {
     "id": "similo-v0",
+    "featureVersion": "features-v0",
     "weights": {
       "automationId": "3/2",
       "name": "3/2",
@@ -46,7 +47,8 @@
         "controlType": "Edit",
         "className": "QLineEdit",
         "bounds": [600, 306, 840, 334],
-        "parentPath": "loginWindow/credentialsBox",
+        "dpi": 96,
+        "parentPath": "Window/Group",
         "siblingIndex": 1,
         "nearestLabel": "Kullanıcı adınız",
         "windowTitle": "AYNA Trial"

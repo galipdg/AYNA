@@ -86,3 +86,9 @@ Append-only. One entry per session, newest at the bottom:
 - #160: `errors[]` capped at 50 + `errorCount` (new `ApiErrorHandlerTest`, 40/40 server tests), ADR clarified and Accepted, graph v0.1 ADR Accepted. #155/#157: galip's and hasan's review points applied. #154: heartbeat during long calls (52/52 client tests).
 - Approved #164 (RS 0.6) and #165 (AI token, retrieval split). galip owns #58's server query, omer reviews.
 - Next: merges; then #25 if #12/#22 move, else #122 or #51.
+## 2026-10-31 · #122 eval CI
+- #160/#155 not merged yet, #12/#22 still open → took #122. hasan had not done his `eval/` part, so omer did both halves (user's choice; hasan told in his inbox, reviewer on the PR).
+- `eval/pyproject.toml` (deps only, `packages = []`; pywinauto win32-only; jsonschema for `nl/check_pairs.py`), `requirements.txt` removed, ruff 0.17 clean with `spikes/` excluded, `eval` CI job on `windows-latest`. `eval/AGENTS.md` and CI changes approved by the user.
+- CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
+- Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
+- Next: after #160/#155 merge, close-out checks; then #60.
