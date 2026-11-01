@@ -9,11 +9,19 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - Merged today: **#175** (#11 element descriptor v0, three approvals) and **#172** (the #17
   Windows check note into omer's inbox). #11 is closed, so `schemas/element.schema.json` and
   `agent/ayna_agent/model.py` are on `main`.
-- Next step: push `hasan/161-winforms-walk`, answer galip's review on #170 point by point
-  (what changed, what the re-measurement moved), and ask him to re-review. Then **#12**
-  (snapshot export): it emits #11's descriptors under the budget #161 just measured —
-  default property set = 17 plain properties + `LabeledBy`, no pattern probes, 5 000 ms per
-  window as a deadline **on a timer**, `SnapshotTimeout` (-32002) with no partial document.
+- Done 2026-11-01: `hasan/161-winforms-walk` pushed and the #170 review answered point by
+  point (comment on the PR); CI 5/5 green, no conflict. Nothing of mine is unpushed.
+- Next step: **#12** (snapshot export) — nothing blocks it, #11 is on `main`. It emits #11's
+  descriptors under the budget #161 measured: default property set = 17 plain properties +
+  `LabeledBy`, no pattern probes (−23 %), **5 000 ms per window as a deadline on a timer**
+  (a single `FindAll` blocked for 72 s, so between-element checks are not enough),
+  `SnapshotTimeout` (-32002) with no partial document, triaged as RS 0.6 *search
+  incomplete*; every snapshot carries its own duration and element count, and the walk
+  **deduplicates by window handle with owner-first roots** (#170 review — `uia_probe.run`
+  and `uia_dump.walk` both do it; `eval/spikes/uia_probe.py` is the reference). The backend
+  interface #16 waits for: `list_windows()`, `snapshot(handle, timeout_ms)`, raising
+  `WindowNotFound` / `UiaUnavailable` / `SnapshotTimeout`, set up on the `ayna-uia` thread
+  with per-monitor-v2 DPI awareness.
 - Open on my side: **#169** (D1 pilot-apps ADR) has only a comment from galip, no approval
   yet; it blocks #170.
 - Review queue: **empty**. #173 and #176 approved on 2026-11-01 (#174 merged before I got to
