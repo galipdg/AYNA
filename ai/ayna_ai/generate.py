@@ -7,7 +7,9 @@ so the decoder can only emit text that fits it. The answer is then validated
 against the original step schema and the object list, step by step: a step
 that fails is dropped with its reason (`GenerationResult.dropped`) and the
 others are kept. An answer that is not a step document at all, or that keeps
-no step, comes back as a typed failure (`Status`).
+no step, comes back as a typed failure (`Status`). An answer as long as the
+derived schema allows (`max_steps`) is flagged (`step_limit_reached`): the
+instruction may have needed more steps than the decoder could write.
 
 Batch run, from `ai/` (results JSON, one JSON log line per scenario):
 
@@ -434,6 +436,9 @@ class GenerationResult:
     document: dict | None = None  # the kept steps as a step document; None unless ok
     reasons: list[str] | None = None  # one per kept step, if asked for; None unless ok
     dropped: list[DroppedStep] = field(default_factory=list)  # in the model's order
+    # The model wrote as many steps as the grammar allows (kept + dropped ==
+    # the step limit), so later steps of the instruction may be missing.
+    step_limit_reached: bool = False
     output: str | None = None  # raw model text
     errors: list[str] = field(default_factory=list)
     latency_s: float = 0.0  # wall clock of the request, model load included
@@ -472,6 +477,19 @@ class StepGenerator:
             raise ValueError(f"unknown format {self.settings.format!r}")
         self.validator = StepValidator(step_schema)
         self.version = self.validator.schema["properties"]["version"]["const"]
+
+    @property
+    def step_limit(self) -> int | None:
+        """Most steps the decoder can write (`maxItems` of the derived schema).
+
+        None with `format="json"`: nothing limits the number of steps.
+        """
+        if self.settings.format != "schema":
+            return None
+        steps = self.validator.schema["properties"]["steps"]
+        return min(
+            steps.get("maxItems", self.settings.max_steps), self.settings.max_steps
+        )
 
     @property
     def prompt_version(self) -> str:
@@ -556,6 +574,9 @@ class StepGenerator:
         if result.errors:
             result.status = Status.INVALID_SCHEMA
             return result
+        # Exactly at the limit: the grammar may have closed the list early. A
+        # longer list means the server ignored the grammar, so nothing was cut.
+        result.step_limit_reached = len(document["steps"]) == self.step_limit
 
         steps, reasons = [], []
         for index, raw in enumerate(document["steps"]):
@@ -609,6 +630,7 @@ def _log_result(
         "output_tokens": result.output_tokens,
         "steps": len(result.document["steps"]) if result.document else None,
         "dropped": len(result.dropped),
+        "step_limit_reached": result.step_limit_reached,
     }
     log.info(json.dumps(record, ensure_ascii=False))
 
@@ -662,6 +684,7 @@ def summarize(rows: Sequence[dict]) -> dict:
         "latency_max_s": _round(max(latencies, default=None)),
         "output_tokens_median": statistics.median(tokens) if tokens else None,
         "steps_dropped": sum(len(row["dropped"]) for row in rows),
+        "step_limit_reached": sum(row["step_limit_reached"] for row in rows),
     }
     if any("expected" in row for row in rows):
         summary["keyword_match"] = sum(row.get("keyword_match", False) for row in rows)
