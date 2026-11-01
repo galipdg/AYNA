@@ -21,3 +21,4 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-27 | [Agent JSON-RPC v0: handshake token, env-var token, ready line](2026-10-27-agent-rpc-v0.md) | Accepted |
 | 2026-10-28 | [Healing proposal transport: agent → client or CLI runner → server](2026-10-28-healing-proposal-transport.md) | Accepted |
 | 2026-10-29 | [Graph schema v0.1: tests and repository objects belong to an application](2026-10-29-graph-schema-application-links.md) | Proposed (#39) |
+| 2026-10-31 | [Element descriptor v0: properties, priority and the label rule](2026-10-31-element-descriptor-v0.md) | Proposed (#11) |
