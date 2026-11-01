@@ -1,5 +1,5 @@
 {
-  "$comment": "Named test cases for snapshot.schema.json, as JSON Patches (RFC 6902) on `base`. Invalid cases name the JSON Schema keyword (`rule`) that must reject them. Tests: agent/tests/test_snapshot.py.",
+  "$comment": "Named test cases for snapshot.schema.json, as JSON Patches (RFC 6902) on `base`. Invalid cases name the JSON Schema keyword (`rule`) that must reject them. Tests: agent/tests/test_snapshot.py. In `base`, the window and all 14 element descriptors come from a real UI Automation capture of the trial app (#9, #11) and `capture.durationMs` is the measured median of six real snapshots of that window (28-32 ms, 2026-11-01, Windows 11, 125 % scaling); `snapshotId` and `capture.startedAt` are fixed by the test fixture so that the file is reproducible.",
   "base": "trial-login.json",
   "valid": [
     {

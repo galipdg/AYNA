@@ -170,7 +170,7 @@ def built(**overrides) -> dict:
         },
         "app": {"exeName": "python.exe", "fileVersion": "3.13.150.1013"},
         "started_at": datetime.fromisoformat("2026-10-31T17:42:19+03:00"),
-        "duration_ms": 312,
+        "duration_ms": 29,
         "budget_ms": snapshot.DEFAULT_BUDGET_MS,
         "read_errors": 0,
         "snapshot_id": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
@@ -211,7 +211,7 @@ def test_the_root_element_is_the_window_itself():
 def test_the_capture_block_records_what_the_walk_cost():
     capture = built()["capture"]
     assert capture["elementCount"] == 14
-    assert capture["durationMs"] == 312
+    assert capture["durationMs"] == 29
     assert capture["budgetMs"] == snapshot.DEFAULT_BUDGET_MS == 5000
     assert capture["featureVersion"] == snapshot.FEATURE_VERSION
     assert capture["startedAt"] == "2026-10-31T17:42:19+03:00"

@@ -45,3 +45,28 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
 - 2026-10-29 · hasan · #22 · `IUIAutomation::ElementFromPoint` costs **~5 ms** (median 4.7 ms, max 6.0 ms over 5 calls) on a WinForms window, so NFR-01's 300 ms budget for the Spy pick is comfortable and whatever risk that requirement carries is in filling the property panel afterwards, not in the hit test.
 - 2026-10-29 · hasan · #49 · The healing scorer's location similarity has its cut-off in **physical** pixels (`1 - d/100 px`), while a layout shift is a device-independent quantity, so the same movement scores differently per display scaling: a control moved 64 DIP scores 0.36 at 100%, **0.20 at 125%** (this machine, DPI 120), 0.04 at 150% and 0.00 at 200% → divide the distance by `dpi/96` (`GetDpiForWindow`, which `eval/spikes/uia_dump.py` already records per window) before comparing, or an RQ4 number is not comparable between machines.
 - 2026-10-29 · hasan · git · **The `merge=union` conflict flag cascades, so a batch of PRs has to be merged one at a time.** Nine open PRs all appended to `memory-bank/people/hasan/inbox.md`, so GitHub flagged every one of them as conflicting (it ignores the union driver — see omer's 2026-10-29 entry). Merging the first one re-flags the remaining eight, because each still appends to the same trailing region: the fix is not a one-off, it is `git merge origin/main` + push on every remaining branch **after each merge**. Nine PRs cost nine rounds. Verify a re-sync with `git diff --name-only origin/main...<branch>` before and after — if the file set shrinks, that is the stacked-PR cleanup (the base PR's files dropping out), not content loss; if it grows, stop. Chaining the branches into each other collapses it to one round but invalidates reviews that were given on the individual diffs → not worth it. The real fix is to stop appending to one shared file: a directory of dated one-fact files never conflicts (proposed, needs an ADR).
+
+- 2026-11-01 · #12 #16 · **`python -m some.module` makes two copies of that module, and
+  `isinstance` then fails across them.** `ayna_agent/rpc.py` run as `python -m ayna_agent.rpc`
+  is imported as `__main__`; the recognition backend then does
+  `from ayna_agent.rpc import UiaUnavailable`, which imports the file *again* under its real
+  name. The two copies have two different `UiaUnavailable` classes, so the backend's error
+  sailed past the dispatcher's `except UiaUnavailable` and came out as `-32603 Internal error`
+  instead of `-32001`. Nothing in the unit tests sees this: they import `ayna_agent.rpc`
+  normally, and only the subprocess test that actually runs the CLI caught it. Fix, and the
+  pattern for any `__main__` module that others import from:
+  `if __name__ == "__main__": from ayna_agent.rpc import main as _main; sys.exit(_main())`.
+- 2026-11-01 · #12 #161 · **A UIA walk's cost is dominated by how many properties you read,
+  not by the framework.** The same KeePass 2 (WinForms) window that #161 measured at 2.26 s for
+  114 elements with the #6 dump's 17 properties + 10 pattern probes walks in **819 ms** when it
+  reads only the 12 properties the element descriptor stores (7.2 ms per element against 19.8).
+  So a budget derived from the dump's reader is an upper bound for the snapshot's, with a lot of
+  room in it.
+- 2026-11-01 · #12 · **A window that stops pumping messages cannot be escaped from inside the
+  walk, and the timer design works.** Measured against a Qt window whose GUI thread slept 40 s:
+  the very first UIA read blocked, so no between-element clock check could ever fire, and the
+  walk thread was still inside that call. Running the walk on its own daemon thread and having
+  the caller `join(budget + 250 ms)` returned `-32002` after **2251 ms** of a 2 000 ms budget,
+  twice in a row in the same process, and snapshots of that window worked again (58 ms) once it
+  thawed. The cost is one leaked daemon thread per timeout, which is why the backend counts them
+  and logs the count at shutdown.

@@ -83,7 +83,8 @@ class Desktop(Protocol):
 
 
 class UnavailableDesktop:
-    """Stand-in until recognition/ provides a UI Automation backend (#12)."""
+    """A desktop that answers -32001 to everything. Used by the tests, and a deliberate
+    stand-in for a host where `UiaDesktop.setup()` cannot run (#12)."""
 
     def __init__(self, reason: str) -> None:
         self.reason = reason
@@ -370,8 +371,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    # Swapped for the recognition/ backend once it exists (#12, hasan).
-    desktop = UnavailableDesktop("no UI Automation backend yet (#12)")
+    # The recognition backend reads UI Automation and sets this process's DPI awareness in
+    # its setup(); if it cannot run here (not Windows, no pywinauto) the server does not
+    # start, which is the right outcome -- it could only answer -32001 to everything.
+    from ayna_agent.recognition.uia import UiaDesktop
+
+    desktop: Desktop = UiaDesktop()
     try:
         asyncio.run(_serve_forever(desktop, token, args.port))
     except KeyboardInterrupt:
@@ -380,4 +385,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run the module's own `main`, not this `__main__` copy of it. `python -m ayna_agent.rpc`
+    # imports this file as `__main__`, and the recognition backend imports it again as
+    # `ayna_agent.rpc`; the two copies then have two different `UiaUnavailable` classes, so a
+    # backend's error escaped the dispatcher as -32603 instead of -32001 (#12).
+    from ayna_agent.rpc import main as _main
+
+    sys.exit(_main())
