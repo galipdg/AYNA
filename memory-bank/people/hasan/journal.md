@@ -144,3 +144,39 @@ Append-only. One entry per session, newest at the bottom:
   macOS gives a 503 `server_error`; the client is told to retry on one and to disable the
   panel on the other. Recorded in `learnings.md`; it is the same trap for #16/#135 and #17.
 - Next step: #170 waits on galip's re-review behind #169, then #12.
+
+## 2026-11-01 — #21 / PR #169: the D1 ADR review answers
+
+- Issue #21 (PR #169). Both reviews were in when the session started: galip (2026-10-31) and
+  omer (2026-11-01, during the previous session). Both **agree with the decision** and both
+  commented instead of approving on purpose — approval freezes the ADR, so they wanted the
+  corrections pushed first. So "chasing #169" turned out to be work, not a nudge.
+- Addressed all six points in `2026-10-31-pilot-apps-and-sample-app-technology.md`, each
+  verified against the committed #6 dumps rather than taken on trust:
+  - **#161 paragraph rewritten.** The reopening condition did not trigger. Also corrected
+    galip's own figure: his 154 elements in 1.79 s was the pre-deduplication run, the
+    measured state is 114 elements in 1.86-2.26 s over six runs, and the modal-box
+    reproduction (single root, so unaffected) stands at 230.05 s for 85 elements.
+  - **Dropped `#22` instead of re-pointing it.** Checked every open issue: no semester-1 issue
+    upgrades a pilot app, so the version-drift role had nowhere real to point. #46/#47 are
+    versions of our own sample app, and #42 and RQ4 (#76) run on those.
+  - **P1 = HandBrake, P2 = KeePass 2**, confirmed from `keepass2.json` / `handbrake.json`:
+    KeePass 2's single interactive control with neither id nor Name is a usable 160x28 px
+    ComboBox (the toolbar quick-search box); HandBrake's two are a zero-size Button and a
+    menu item.
+  - **#33's uniqueness test scoped** to exclude ListItem/DataItem/TreeItem: Qt gives
+    item-view children no `objectName`, so each of KeePassXC's four `QListWidget` items
+    carries its `List` parent's AutomationId exactly. An unscoped test would have failed on
+    the sample app's own results grid.
+  - The nit (Elements walked vs Interactive) and omer's client clause (#24/#44 see -32002,
+    so "snapshot incomplete" is a UI state).
+- Merged `origin/main` twice (it moved mid-session with #173). The `decisions/README.md`
+  conflict resolved by keeping main's five index lines and adding the D1 line; main's stray
+  `<<<<<<< HEAD` was already gone, removed by #160 as omer said. `active.md` took main's
+  side. PR is now MERGEABLE and CI green on the jobs that reported.
+- With the user's OK, edited issue #21 itself, since both reviewers answered yes: criterion 2
+  reworded to the Windows-verification-machines form and **ticked**, and "Expected output"
+  corrected to `memory-bank/decisions/`. Both carry a dated note naming whose decision it was.
+  **All of #21's acceptance criteria are now met.**
+- Next step: review omer's #179, which has been sitting in my queue; then the #169 approvals,
+  flip the ADR to Accepted and merge #169 before #170.
