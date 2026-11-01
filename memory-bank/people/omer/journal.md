@@ -120,3 +120,9 @@ Append-only. One entry per session, newest at the bottom:
 - #179 still has no human review; #17 waits for the Windows session.
 - Next: #24 element tree on snapshot 0.1.
 - Later: merged #173 at omer's request. Its only conflict was `omer/inbox.md`; GitHub's mergeability ignores `merge=union`, so a real merge commit was pushed to galip's branch (omer approved the exception to "own branch only"), CI 5/5. Conflict notes on #176, #150, #169, #170.
+
+## 2026-11-01 · #24 element tree, #169 approval
+- Element tree on snapshot 0.1 (#180's branch): `snapshot` IPC, `parseSnapshot`, `buildTree` (`src/shared/snapshot.ts`), `ElementTree.tsx`, panel fed by the selected node, `-32000`/`-32002` messages; fake agent answers `snapshot` (`--snapshot`, `--slow-snapshots`). 87 tests; checked over CDP, then omer's manual check passed.
+- omer deleted the whole `windows.json` during the check (my step was unclear): the fake agent dropped the connection on `FileNotFoundError` (an `OSError`). Fixed to answer -32603; `dev:mock` checks its files at start. Pushed `9b14c8a`.
+- Approved #169 at omer's request (all six review points in `a488608`).
+- Next: #24 waits on #180 (merge) and #22 (`elementFromPoint`); #17 Windows re-run.
