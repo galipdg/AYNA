@@ -43,9 +43,9 @@ AutomationId uniqueness as evidence for keeping PySide6.
 - [x] Evidence re-measured: `python eval/apps/trial/uia_dump.py` on Windows 11 (125 % scaling) —
       8/8 app-owned controls have a unique dotted AutomationId, exit 0
 - [x] ADR written, index line added
-- [ ] Acceptance criterion 2 ("pilot apps installed on every member's machine") — needs a team
-      answer, see Open issues
-- [x] PR #169 opened with `Closes #21`, CI 4/4 green
+- [x] Acceptance criterion 2 reworded and ticked in the issue on 2026-11-01, with a dated `<sub>`
+      note naming whose answer it was; see Open issues
+- [x] PR #169 opened with `Closes #21`, CI 5/5 green (all five jobs reported on 2026-11-01)
 - [x] Both reviews in (galip 2026-10-31, omer 2026-11-01): **both agree with the decision** and
       both answered yes to the criterion-2 rewording and to `memory-bank/decisions/`. Neither
       approved yet, deliberately — approval freezes the ADR, so they asked for galip's four
@@ -53,11 +53,19 @@ AutomationId uniqueness as evidence for keeping PySide6.
 - [x] 2026-11-01 — all six review points addressed in the ADR, `origin/main` merged (the
       `decisions/README.md` conflict resolved by keeping main's five index lines and adding the
       D1 line; main's stray `<<<<<<< HEAD` was already gone, removed by #160)
-- [ ] galip's and omer's approval, then the status line flips to Accepted in this PR
-- [ ] Issue text: criterion 2 reworded and ticked, `docs/adr/` path corrected — both answers are
-      yes, waiting only on the user's OK to edit the issue
-- Next step: ask galip and omer to re-review #169 now that the six points are pushed, then flip
-  the ADR to Accepted in the same PR. #169 merges **before** #170, which is stacked on it.
+- [x] Issue text: criterion 2 reworded and ticked, the `docs/adr/` path corrected (2026-11-01,
+      with the user's OK)
+- [x] 2026-11-01 — **ADR flipped to Accepted** in this PR, with the status line naming the
+      evidence: both agreed with the decision in writing in their #169 reviews, on the one
+      condition that their points were folded in, and they are (a488608, 004a741). What is
+      still missing is only the Approve click, which branch protection needs to merge; the
+      chase comment says so and offers to revert if either of them does not consider it decided.
+      Written this way on purpose: an ADR that reaches `main` as `Proposed` with its condition
+      met is the recurring failure here (step schema v0, #134, is still wrong on `main`).
+- [ ] galip's and omer's Approve click on #169, then merge — **before** #170, which is stacked
+      on it and carries `eval/spikes/uia-walk-cost.md`, which the ADR cites.
+- Next step: wait for the two approvals on #169 (chased 2026-11-01), then merge #169, then #170.
+  If either reviewer wants the ADR back at `Proposed`, revert the two-line flip, not the content.
 
 ## Manual checks
 - 2026-10-31 · hasan · trial-app UIA dump re-run for the ADR evidence · pass · evidence: command
@@ -67,15 +75,17 @@ AutomationId uniqueness as evidence for keeping PySide6.
   only before KeePassXC is promoted to pilot 3 (not before D1 is accepted).
 
 ## Open issues
-- **Acceptance criterion 2, "Pilot apps are installed on every member's machine", cannot be met
-  as written.** KeePass 2, HandBrake and KeePassXC are Windows binaries; galip and omer work on
+- **Settled 2026-11-01** (kept for the reasoning, which the next migrated issue will need):
+  acceptance criterion 2, "Pilot apps are installed on every member's machine", could not be met
+  as written. KeePass 2, HandBrake and KeePassXC are Windows binaries; galip and omer work on
   macOS (ADR `2026-10-25-weekly-windows-test-session`). Proposed rewording: installed in
   `C:\ayna-pilots\` on every Windows machine used for verification — hasan's machine and the
   weekly-session machine — with the versions pinned in the ADR; macOS members work from the
   committed dumps. Needs the team's OK on the issue before the criterion is ticked.
-- The issue's "Expected output" path (`docs/adr/ADR-001-pilot-apps.md`) contradicts the memory
-  structure ADR; see Decisions above. Worth fixing in the issue text so the next decision issue
-  does not repeat it.
+- **Settled 2026-11-01**: the issue's "Expected output" path (`docs/adr/ADR-001-pilot-apps.md`)
+  contradicted the memory structure ADR and now names the real file. Both edits carry a dated
+  `<sub>` note, so neither is a silent rewrite. The board text predates the memory-structure ADR,
+  so **do this for every migrated issue whose wording predates an ADR** — it will come up again.
 
 ## Handoff
 The ADR's one reopening condition was #161, and **it did not trigger**. #161 (PR #170) measured

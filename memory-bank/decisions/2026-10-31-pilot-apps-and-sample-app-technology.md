@@ -1,7 +1,9 @@
 # D1: Sample app stays PySide6; pilots are KeePass 2 and HandBrake
 
 - Date: 2026-10-31
-- Status: Proposed (#21)
+- Status: Accepted (Galip agreed with the decision in his #169 review on 2026-10-31 and
+  Ömerfaruk in his on 2026-11-01, both on condition that their review points were folded in;
+  they are, in a488608 and 004a741)
 - Deciders: Galip, Ömerfaruk, Hasan
 - Issues: #21 (this decision) · evidence from #6, #9 and #161 · affects #11, #12, #23, #24, #29,
   #33, #42, #44, #46, #47, #64, #76
