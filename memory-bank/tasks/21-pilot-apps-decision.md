@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/21
 - Owner: hasan (team decision) · Branch: `hasan/21-pilot-apps-adr`
-- Started: 2026-10-31 · Last update: 2026-10-31
+- Started: 2026-10-31 · Last update: 2026-11-01
 
 ## Approach
 D1 is a decision, not code: write the ADR from the measurements that already exist (#6 dumps of
@@ -22,6 +22,21 @@ AutomationId uniqueness as evidence for keeping PySide6.
 - 2026-10-31 — KeePassXC stays the *third* pilot, conditional on switching its auto-lock off
   (galip's lead from the #159 review), rather than being dropped or promoted now. Verifying it
   needs the app in front of a person, so it is a manual check, not a blocker for D1.
+- 2026-11-01 — **P1 = HandBrake, P2 = KeePass 2** (galip's review point 3), decided from the
+  dumps rather than from the order the pilots are listed in: SC-07 needs P2 to have a control
+  with neither an AutomationId nor a Name, and only KeePass 2's is usable (the main toolbar's
+  quick-search ComboBox, 160×28 px). HandBrake's two such controls are a zero-size Button and a
+  menu item, which no scenario can act on.
+- 2026-11-01 — **The version-drift role is removed from the ADR, not re-pointed.** galip's
+  review point 2 was right that #22 is "element under cursor". Checked every open issue: there
+  is no semester-1 issue that upgrades a pilot app. #46 and #47 are controlled-change and
+  bug-injected versions of *our* sample app, and #42 and RQ4 (#76) run on those. KeePass 2's
+  release history stays in the ADR only as a source of realistic change patterns for #46.
+- 2026-11-01 — The #33 uniqueness test is **scoped, not dropped** (galip's review point 4): it
+  excludes ListItem, DataItem and TreeItem, because Qt gives item-view children no `objectName`
+  and they inherit their container's AutomationId. Verified in `keepassxc.json`: each of the
+  four `QListWidget` ListItems carries its List parent's id. Keeping an unscoped test would
+  have made #33 fail on its own results grid.
 
 ## Status
 - [x] Branch, task note, issue set to In progress on the AYNA Project
@@ -30,9 +45,19 @@ AutomationId uniqueness as evidence for keeping PySide6.
 - [x] ADR written, index line added
 - [ ] Acceptance criterion 2 ("pilot apps installed on every member's machine") — needs a team
       answer, see Open issues
-- [ ] PR with `Closes #21`, review from galip and omer, ADR to Accepted
-- Next step: open the PR, ask galip and omer to approve the ADR and to answer the criterion-2
-  wording in the same thread.
+- [x] PR #169 opened with `Closes #21`, CI 4/4 green
+- [x] Both reviews in (galip 2026-10-31, omer 2026-11-01): **both agree with the decision** and
+      both answered yes to the criterion-2 rewording and to `memory-bank/decisions/`. Neither
+      approved yet, deliberately — approval freezes the ADR, so they asked for galip's four
+      points plus the nit and omer's one addition to be pushed first.
+- [x] 2026-11-01 — all six review points addressed in the ADR, `origin/main` merged (the
+      `decisions/README.md` conflict resolved by keeping main's five index lines and adding the
+      D1 line; main's stray `<<<<<<< HEAD` was already gone, removed by #160)
+- [ ] galip's and omer's approval, then the status line flips to Accepted in this PR
+- [ ] Issue text: criterion 2 reworded and ticked, `docs/adr/` path corrected — both answers are
+      yes, waiting only on the user's OK to edit the issue
+- Next step: ask galip and omer to re-review #169 now that the six points are pushed, then flip
+  the ADR to Accepted in the same PR. #169 merges **before** #170, which is stacked on it.
 
 ## Manual checks
 - 2026-10-31 · hasan · trial-app UIA dump re-run for the ADR evidence · pass · evidence: command
@@ -53,8 +78,12 @@ AutomationId uniqueness as evidence for keeping PySide6.
   does not repeat it.
 
 ## Handoff
-The ADR's one reopening condition is #161: if the 278.5 s WinForms walk turns out to be inherent
-to the WinForms UIA bridge rather than to the window state #6 captured, KeePass 2 as a pilot has
-to be re-argued. Everything else in D1 is settled by the #6 tables.
+The ADR's one reopening condition was #161, and **it did not trigger**. #161 (PR #170) measured
+the same two KeePass 2 windows at 114 elements in 1.86–2.26 s over six runs, about 18.5 ms per
+element, and reproduced the 278.5 s outlier only with a **modal message box** open: 230.05 s for
+85 elements, 2.71 s per element against the dump's 2.63 s. WinForms is not inherently unreadable,
+so KeePass 2 stays a pilot and D1 is settled by the #6 tables. The ADR's #161 paragraph now says
+this, and cites `eval/spikes/uia-walk-cost.md`, which reaches `main` with #170 — so #169 must
+merge first and the citation must not become a dead link.
 
 ## Outcome (fill when the issue closes)
