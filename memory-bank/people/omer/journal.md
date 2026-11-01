@@ -104,3 +104,11 @@ Append-only. One entry per session, newest at the bottom:
 - Merged `origin/main` (#6, #11, #122, #149, #166, #172, #177) into the branch; client lint, typecheck, 66 tests green.
 - Found on `main`: hasan's #17 Windows run, 6/7 pass, `agent.test.ts:160` fails (no signals on Windows); #11 element schema unblocks the Spy property panel.
 - Next: fix #17 on Windows semantics, then the #24 property panel against `schemas/element.schema.json`.
+
+## 2026-11-01 · #17 fix, #24 property panel, review round, merges
+- #17: `describeExit()` (no INFO tail after a kill, hex for large Windows codes), restart test platform-aware; WebSocket handshake deadline (hasan's connect-timeout finding, #178). 57 tests; Windows re-run requested on #17.
+- #24: `PropertyPanel.tsx` + `shared/element.ts` on the element descriptor 0.1, test keeps the field list equal to the schema; panel shows the selected window until the tree exists. 77 tests, build green; manual check pending.
+- Reviews: approved #170, #173, #176, #178; commented #169 (wait for galip's points).
+- Merged at omer's explicit request: #178, #160, #155 (re-synced), #157 (re-synced, retargeted to `main`); `main`'s stray `<<<<<<< HEAD` (from #174) gone with #160.
+- #60: synced with `main` against `acce05c` after #160's squash (recipe in `learnings.md`); server 54 + client 51 tests; new PR #179.
+- Next: property panel manual check; #179 reviews; #17 Windows re-run.
