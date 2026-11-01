@@ -119,3 +119,4 @@ Append-only. One entry per session, newest at the bottom:
 - #12 moved: hasan's PR #180 (snapshot schema 0.1 + UIA backend). Reviewed the contract, ran its agent on macOS through `AgentManager` (-32001, clean stop); approved with 5 non-blocking points.
 - #179 still has no human review; #17 waits for the Windows session.
 - Next: #24 element tree on snapshot 0.1.
+- Later: merged #173 at omer's request. Its only conflict was `omer/inbox.md`; GitHub's mergeability ignores `merge=union`, so a real merge commit was pushed to galip's branch (omer approved the exception to "own branch only"), CI 5/5. Conflict notes on #176, #150, #169, #170.
