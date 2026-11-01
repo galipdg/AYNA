@@ -8,8 +8,8 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Requirements Specification in the style of ISO/IEC/IEEE 29148:2018 §9.6 [40] |
-| Version | 0.6 — draft |
-| Date | 2026-10-29 |
+| Version | 0.7 — draft |
+| Date | 2026-10-31 |
 | Status | Draft, reviewed by Ömerfaruk and Hasan (#35, PR #143); their comments are folded in. The use cases are the team's proposal until the advisor agrees them (#19, Appendix E.2). Final PDF: #41, due 23 Nov 2026 |
 
 ## Document history
@@ -19,6 +19,7 @@
 | 0.1 | 2026-10-27 | Galip | Outline (#27) |
 | 0.5 | 2026-10-27 | Galip | Full draft (#35): every section filled; FR and NFR tables of #34 moved in from `docs/rs/scenarios.md`; NFR-37–NFR-44 added; use-case catalogue, traceability and open items. Review by Galip and Ömerfaruk pending |
 | 0.6 | 2026-10-29 | Galip | Review comments of Ömerfaruk and Hasan on PR #143 (#35): FR-30 and FR-23 follow the healing-proposal-transport ADR (the client or CLI runner delivers results; CLI exit codes 0/1/2); API tokens for CI close TBD-10 (FR-23, FR-39, NFR-32); FR-08 keeps steps on rename; FR-35 gets a fifth category, "search incomplete", and FR-29 heals only after a complete search (TBD-5 closed); NFR-02, NFR-04, NFR-05 reworded; the owners' numbers team-confirmed (TBD-4); load test #152 (TBD-9 closed); TBD-6 closed; NFR-45 (result outbox) and NFR-46 (AI service port) added |
+| 0.7 | 2026-10-31 | Galip | NFR-45: a result the server refuses as invalid is set aside and shown, not retried (Ömerfaruk's review of PR #164; ADR healing proposal transport) |
 | 1.0 | planned, 23 Nov 2026 | Galip | Submitted version (#41) |
 
 Approval: each version is approved in a pull request by the three team members; the advisor reviews the draft at the Tuesday meeting. Galip leads the RS (ADR windows-work-to-hasan); the plan still names Hasan (TBD-8).
@@ -619,13 +620,13 @@ AYNA runs in-house for one test unit, so semester 1 sets no uptime percentage. W
 - **AI service down.** Everything except NL generation keeps working (FR-28), and the NL panel says the service is unreachable (FR-27).
 - **Agent crash.** The client restarts it up to 3 times and then shows "failed" (FR-05).
 - **Client crash.** The agent exits when the client's stdin pipe closes, which the OS does when the client quits or crashes, so no agent stays bound to the AUT (`docs/agent-rpc.md`; #17, #135).
-- **Server unreachable during a run.** Playback goes on; the client keeps the finished results in its outbox and sends them when the server is back (NFR-45). The CLI runner keeps undelivered results in a file and exits with 2 (FR-23).
+- **Server unreachable during a run.** Playback goes on; the client keeps the finished results in its outbox and sends them when the server is back; a result the server refuses as invalid is set aside and shown, so it never blocks the ones behind it (NFR-45). The CLI runner keeps undelivered results in a file and exits with 2 (FR-23).
 - **No server in CI.** A suite can still run from a file, without a server (FR-23).
 - **Run history.** Bounded by the retention setting (NFR-28); backups are described in NFR-44.
 
 | ID | Requirement | Priority | Source | Verification |
 |---|---|---|---|---|
-| NFR-45 | When the server cannot be reached, the client shall keep finished step results in a local outbox on disk, each with the server URL it belongs to, send them when that server is reachable again, also after a client restart, and show whether the server is reachable. | Must | UC-09; ADR healing proposal transport; #32, #44 | T + D — #44 |
+| NFR-45 | When the server cannot be reached, the client shall keep finished step results in a local outbox on disk, each with the server URL it belongs to, send them when that server is reachable again, also after a client restart, and show whether the server is reachable; a result the server refuses as invalid shall be set aside and shown to the user, not retried. | Must | UC-09; ADR healing proposal transport; #32, #44 | T + D — #44 |
 
 #### 3.8.3 Security and closed-network operation
 
