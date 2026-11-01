@@ -1,7 +1,7 @@
 """Local pytest configuration for the trial app.
 
-Kept here instead of a repo-wide pytest.ini because `eval/AGENTS.md` has no
-agreed tooling yet; this only affects tests under `eval/apps/trial/`.
+Puts the app folder on `sys.path` and skips `@pytest.mark.windows` tests off
+Windows; this only affects tests under `eval/apps/trial/`.
 """
 
 from __future__ import annotations
