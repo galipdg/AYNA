@@ -16,6 +16,10 @@ Totals alone hide the shape of the problem, so each mode also reports the per-el
 distribution and the slowest elements by name: 2.6 s per element on average is equally
 consistent with every element being slow and with three elements taking a minute each.
 
+Element counts are deduplicated by window handle like `uia_dump.py`'s, so a dialog that is
+also a child of its owner is walked once, and the roots are ordered owner-first so that the
+depths are the real ones.
+
 Usage (Windows only):
 
     python uia_probe.py --process KeePass.exe                 # every visible window
@@ -111,6 +115,21 @@ def slowest_table(mode: dict, limit: int = 10) -> str:
     return "\n".join(lines)
 
 
+def nesting_order(handles: list[int], ancestors: dict[int, set[int]]) -> list[int]:
+    """The same handles, an owner window always before a window nested inside it.
+
+    `ancestors[handle]` is the set of handles above that window in the UIA tree. KeePass's
+    `Add Entry` is both a top-level window and a child of the main form, so whichever of the
+    two is walked first decides the depths the other one's elements get. Walking the owner
+    first makes every depth the real one (#170 review); the walk itself then skips the
+    nested root because its handle has already been seen.
+    """
+    roots = set(handles)
+    indexed = list(enumerate(handles))
+    indexed.sort(key=lambda pair: (len(ancestors.get(pair[1], frozenset()) & roots), pair[0]))
+    return [handle for _, handle in indexed]
+
+
 def selected_modes(value: str | None) -> list[str]:
     if not value:
         return list(MODES)
@@ -189,13 +208,28 @@ class Probe:
 
         Traversal time (asking for the children) is charged to the element whose children
         they are, so `navigate` is the cost of the walk itself with no property read.
+
+        Elements are deduplicated by window handle, exactly as `uia_dump.walk` does: a dialog
+        that is both a top-level window and a child of its owner would otherwise be walked
+        twice, once as a root and once as a descendant, and every count for that subtree
+        would double (#170 review — KeePass's `Add Entry` did). The first visit wins, its
+        subtree included. The handle is read *outside* the timed section, so it costs no mode
+        any time it did not already spend; elements without a handle are never skipped.
         """
         work = self.work_for(mode)
         timings: list[dict] = []
+        seen: set[int] = set()
+        duplicates = 0
         started = time.perf_counter()
         stack = [(root, 0) for root in reversed(roots)]
         while stack and len(timings) < MAX_NODES:
             info, depth = stack.pop()
+            handle = self.safe(lambda i=info: i.handle)     # identity, not measured work
+            if handle:
+                if handle in seen:
+                    duplicates += 1
+                    continue
+                seen.add(handle)
             element_started = time.perf_counter()
             work(info.element)
             children = self.safe(info.children) or []
@@ -215,6 +249,7 @@ class Probe:
             "per_element_ms": percentiles(per_element),
             "slowest": sorted(timings, key=lambda t: -t["ms"])[:20],
             "read_errors": self.errors,
+            "duplicates_skipped": duplicates,
         }
 
     def run_cached(self, roots: list) -> dict:
@@ -246,7 +281,16 @@ class Probe:
         started = time.perf_counter()
         count = 0
         find_s = 0.0
+        seen: set[int] = set()
+        duplicates = 0
         for root in roots:
+            # A nested dialog's whole subtree comes back inside its owner's result, and a flat
+            # FindAll gives no way to skip it element by element, so the nested *root* is
+            # skipped instead — which is why the roots are ordered owner-first (#170 review).
+            handle = self.safe(lambda r=root: r.handle)
+            if handle and handle in seen:
+                duplicates += 1
+                continue
             find_started = time.perf_counter()
             found = self.safe(lambda r=root: r.element.FindAllBuildCache(4, condition, request))
             find_s += time.perf_counter() - find_started
@@ -259,6 +303,9 @@ class Probe:
                                "CachedClassName", "CachedBoundingRectangle", "CachedIsEnabled",
                                "CachedIsOffscreen", "CachedNativeWindowHandle"):
                     self.safe(lambda c=cached, e=el: getattr(e, c))
+                child_handle = self.safe(lambda e=el: e.CachedNativeWindowHandle)
+                if child_handle:
+                    seen.add(child_handle)
         total = time.perf_counter() - started
         return {
             "mode": "cached",
@@ -268,6 +315,7 @@ class Probe:
             "per_element_ms": {},
             "slowest": [],
             "read_errors": self.errors,
+            "duplicates_skipped": duplicates,
         }
 
 
@@ -279,6 +327,33 @@ def build_probe() -> Probe:
            for p in PATTERNS]
     return Probe([(p, pid) for p, pid in ids if pid is not None],
                  dict(iuia.known_control_type_ids))
+
+
+def owner_first(roots: list) -> list:
+    """`roots` with every owner window before the dialogs nested inside it.
+
+    The ancestors of each root are read through the UIA parent chain, which costs a handful
+    of cross-process calls per root; it is only worth doing when there is more than one root
+    and it happens before the clock starts.
+    """
+    ancestors: dict[int, set[int]] = {}
+    for root in roots:
+        chain: set[int] = set()
+        node = root
+        for _ in range(MAX_DEPTH):
+            try:
+                node = node.parent
+            except Exception:
+                break
+            if node is None:
+                break
+            try:
+                chain.add(node.handle)
+            except Exception:
+                break
+        ancestors[root.handle] = chain
+    by_handle = {root.handle: root for root in roots}
+    return [by_handle[h] for h in nesting_order([r.handle for r in roots], ancestors)]
 
 
 def roots_from_args(args: argparse.Namespace) -> list:
@@ -321,6 +396,8 @@ def main(argv: list[str] | None = None) -> int:
     if not roots:
         print("no matching window", file=sys.stderr)
         return 1
+    if len(roots) > 1:
+        roots = owner_first(roots)
 
     windows = [{"handle": r.handle, "title": r.name, "class_name": r.class_name,
                 "dpi": window_dpi(r.handle)} for r in roots]
@@ -346,7 +423,8 @@ def main(argv: list[str] | None = None) -> int:
             measured["run"] = run + 1
             result["modes"].append(measured)
             print(f"    {measured['elements']} elements in {measured['total_s']:.2f} s"
-                  f" ({measured['read_errors']} read errors)")
+                  f" ({measured['read_errors']} read errors,"
+                  f" {measured['duplicates_skipped']} duplicates skipped)")
 
     print()
     print(summary_table(result))

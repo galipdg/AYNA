@@ -1,7 +1,9 @@
 """Tests for the OS-independent parts of uia_probe.py (#161).
 
 The measurement itself needs Windows and a running application; everything that decides
-what is measured and how it is reported is pure and tested here.
+what is measured and how it is reported is pure and tested here. The walk is included: it
+only asks its nodes for `element`, `children()` and `handle`, so fake nodes exercise the
+deduplication that #12 depends on without UI Automation.
 """
 
 from __future__ import annotations
@@ -10,6 +12,8 @@ import unittest
 
 from uia_probe import (
     MODES,
+    Probe,
+    nesting_order,
     percentiles,
     selected_modes,
     share,
@@ -133,6 +137,107 @@ class SlowestTableTest(unittest.TestCase):
                  "class_name": None, "depth": 0}]
         table = slowest_table({"slowest": slow})
         self.assertIn("Pane", table)
+
+
+class NestingOrderTest(unittest.TestCase):
+
+    def test_an_owner_comes_before_the_dialog_nested_in_it(self):
+        self.assertEqual(nesting_order([7, 5], {7: {5}, 5: set()}), [5, 7])
+
+    def test_unrelated_windows_keep_the_given_order(self):
+        self.assertEqual(nesting_order([7, 5], {7: set(), 5: set()}), [7, 5])
+
+    def test_ancestors_that_are_not_roots_do_not_count(self):
+        self.assertEqual(nesting_order([7, 5], {7: {999}, 5: {999}}), [7, 5])
+
+    def test_three_levels_are_ordered_outermost_first(self):
+        order = nesting_order([3, 2, 1], {3: {1, 2}, 2: {1}, 1: set()})
+        self.assertEqual(order, [1, 2, 3])
+
+    def test_a_missing_entry_is_treated_as_no_ancestors(self):
+        self.assertEqual(nesting_order([7, 5], {5: {7}}), [7, 5])
+
+
+class FakeElement:
+    """Answers only the four identity properties `Probe.identity` reads."""
+
+    def __init__(self, name: str) -> None:
+        self.CurrentControlType = 50000
+        self.CurrentName = name
+        self.CurrentAutomationId = ""
+        self.CurrentClassName = ""
+
+
+class FakeInfo:
+    """A node of a fake UIA tree: an element, its children and its window handle (0 = none)."""
+
+    def __init__(self, name: str, handle: int = 0, children: list | None = None) -> None:
+        self.element = FakeElement(name)
+        self.handle = handle
+        self._children = children or []
+
+    def children(self) -> list:
+        return list(self._children)
+
+
+def names(result: dict) -> list[str]:
+    return sorted(el["name"] for el in result["slowest"])
+
+
+class WalkTest(unittest.TestCase):
+    """`navigate` does no property read, so the walk itself is what is under test."""
+
+    def probe(self) -> Probe:
+        return Probe(pattern_ids=[], type_names={})
+
+    def test_every_element_is_walked_once(self):
+        tree = FakeInfo("main", 5, [FakeInfo("button"), FakeInfo("edit")])
+        result = self.probe().run([tree], "navigate")
+        self.assertEqual(result["elements"], 3)
+        self.assertEqual(result["duplicates_skipped"], 0)
+        self.assertEqual(result["read_errors"], 0)
+
+    def test_a_window_that_is_also_a_child_is_walked_once(self):
+        dialog = FakeInfo("dialog", 7, [FakeInfo("ok")])
+        main = FakeInfo("main", 5, [FakeInfo("toolbar"), dialog])
+        result = self.probe().run([main, dialog], "navigate")
+        self.assertEqual(result["elements"], 4)          # not 6: the dialog subtree once
+        self.assertEqual(result["duplicates_skipped"], 1)
+        self.assertEqual(names(result), ["dialog", "main", "ok", "toolbar"])
+
+    def test_the_skipped_duplicate_takes_its_subtree_with_it(self):
+        dialog = FakeInfo("dialog", 7, [FakeInfo("ok"), FakeInfo("cancel")])
+        result = self.probe().run([dialog, dialog], "navigate")
+        self.assertEqual(result["elements"], 3)
+        self.assertEqual(result["duplicates_skipped"], 1)
+
+    def test_elements_without_a_handle_are_never_skipped(self):
+        same = [FakeInfo("row"), FakeInfo("row"), FakeInfo("row")]
+        result = self.probe().run([FakeInfo("list", 9, same)], "navigate")
+        self.assertEqual(result["elements"], 4)
+        self.assertEqual(result["duplicates_skipped"], 0)
+
+    def test_depth_is_the_depth_under_the_root_that_won(self):
+        dialog = FakeInfo("dialog", 7, [FakeInfo("ok")])
+        main = FakeInfo("main", 5, [dialog])
+        result = self.probe().run([main, dialog], "navigate")
+        depth = {el["name"]: el["depth"] for el in result["slowest"]}
+        self.assertEqual(depth["dialog"], 1)             # as the owner's child, not as a root
+        self.assertEqual(depth["ok"], 2)
+
+    def test_a_failing_handle_read_is_counted_but_does_not_drop_the_element(self):
+        class Unreadable(FakeInfo):
+            @property
+            def handle(self):
+                raise OSError("gone")
+
+            @handle.setter
+            def handle(self, value):
+                pass
+
+        result = self.probe().run([Unreadable("ghost")], "navigate")
+        self.assertEqual(result["elements"], 1)
+        self.assertEqual(result["read_errors"], 1)
 
 
 if __name__ == "__main__":
