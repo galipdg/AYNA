@@ -1,0 +1,32 @@
+[project]
+name = "ayna-eval"
+version = "0.0.0"
+description = "AYNA evaluation material: trial and sample apps, measurement scripts, NL dataset"
+requires-python = ">=3.11"
+dependencies = [
+    "PySide6>=6.8",
+    "pywinauto>=0.6.9; sys_platform == 'win32'",
+    # eval/nl/check_pairs.py
+    "jsonschema~=4.26",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff~=0.17.2"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+# Scripts and apps, not an importable package: install only the dependencies.
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["apps/trial/tests"]
+
+[tool.ruff]
+target-version = "py311"
+# The trial app's tests import `app` and `uia_dump` as local modules.
+src = [".", "apps/trial"]
+# Throwaway spike scripts are not held to the module lint rules.
+extend-exclude = ["spikes"]

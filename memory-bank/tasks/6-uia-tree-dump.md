@@ -1,8 +1,8 @@
 # #6 UIA tree dump spike on 3 candidate pilot apps
 
 - Issue: https://github.com/galipdg/AYNA/issues/6
-- Owner: galip · Branch: `galip/6-uia-tree-dump`
-- Started: 2026-10-25 · Last update: 2026-10-25
+- Owner: hasan (handover from galip) · Branch: `hasan/6-uia-dumps`
+- Started: 2026-10-25 · Last update: 2026-10-29 (KeePassXC retake done)
 
 ## Approach
 One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows only) walks the raw UIA view of every visible top-level window of a target process with pywinauto's `uia` backend and writes `eval/spikes/uia-dumps/<id>.json`. `stats` (any OS) reads the dumps and prints the property-richness tables for the note `eval/spikes/uia-dump.md`. Targets are listed in `eval/spikes/uia-targets.json`. Tests use stdlib `unittest` with fake nodes, so everything except the thin UIA reader runs on macOS.
@@ -19,12 +19,31 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 
 ## Status
 - [x] Branch, task note
-- [x] Script, targets file, 24 unit tests passing on macOS (Python 3.11 and 3.15); pywinauto API names checked against the 0.6.9 source on GitHub
-- [x] Note skeleton: method, candidates, expectations written before the run, selection criteria, run instructions
-- [x] PR https://github.com/galipdg/AYNA/pull/119 (tooling, `Refs #6`) opened 2026-10-25, merged `origin/main` in, marked ready; label `needs-windows-test` on #6
-- [ ] Windows session: dumps of at least 3 apps (pending)
-- [ ] Fill Results, Findings and Recommendation in `eval/spikes/uia-dump.md` from `uia_dump.py stats`
-- Next step (galip): get a review on #119 and merge it. After that the rest of #6 is hasan's (inbox handover): Windows check, dumps, results, recommendation, PR with `Closes #6`.
+- [x] Script, targets file, unit tests (26, green on macOS and on Windows); pywinauto API names
+      checked against the 0.6.9 source
+- [x] Note skeleton: method, candidates, expectations written before the run, selection
+      criteria, run instructions
+- [x] PR https://github.com/galipdg/AYNA/pull/119 (tooling, `Refs #6`) merged; handover to hasan
+- [x] 2026-10-27 the four portable apps downloaded to `C:\ayna-pilots\` and brought into their
+      target state on hasan's Windows machine
+- [x] `find_windows` fixed (commit ddc33b7): windows are found by handle, not through the UIA
+      tree, and `walk()` deduplicates by handle
+- [x] Dumps of all four targets committed (ae855ff). `keepassxc.json` in that commit still held
+      the unlock screen; re-taken on the entry form on 2026-10-29 (84 elements, 41 interactive)
+- [x] `eval/spikes/uia-dump.md` filled from the dumps (5ff8fcf): Results (stats table,
+      secondary-property table, window states), nine Findings, a verdict on each pre-run
+      expectation, and the Recommendation
+- [x] Three cross-cutting findings appended to `learnings.md` (Qt ids are not unique, LabeledBy
+      is never set, a WinForms walk is ~140x slower per element than WPF). The first two were
+      measured on the locked KeePassXC screen and are corrected by the 2026-10-29 entries below
+- [x] `keepassxc.json` re-taken on the entry form (human unlocked, agent dumped) and the note
+      revised from it: both stats tables, the windows table, findings 3, 6 and 9, verdict 3 and
+      the recommendation. Three corrections appended to `learnings.md` — the biggest is that
+      **`LabeledBy` is not always empty**: Qt populates it on form rows (5/41), so the earlier
+      "0 of 204" finding was an artifact of dumping the unlock screen
+- [ ] Remove `needs-windows-test` from #6, open the PR with `Closes #6`
+- Next step (hasan): remove the label and open the PR (`Closes #6`), requesting galip's review
+  since he owns the spike's first half.
 
 ## Manual checks
 - 2026-10-25 · pending Windows session · UIA dump of the four targets
@@ -50,12 +69,90 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
     6. Four new files: `handbrake.json`, `keepass2.json`, `keepassxc.json`, `notepadpp.json`.
   - **Report back**: pass/fail per step; the whole console output of step 5 as an issue comment; the four JSON files, committed on `hasan/6-uia-dumps` (see the handover in hasan's inbox); Windows version (`winver`) and display scaling; for a failure, the traceback and a screenshot. If a target is skipped with "no visible window found", check its exe name in Task Manager and dump it as a one-off: `… uia_dump.py dump --id <id> --process <exe> --app "<app>" --technology <tech>`.
 
+- 2026-10-25 · hasan · **pre-session smoke check of the untested `dump` path** · pass
+  - Ran on the real Windows machine before the pilot apps were downloaded, because
+    the note said the pywinauto/COM path had never executed. Used the repo `.venv`
+    (Python 3.13.0, pywinauto 0.6.9 — the pinned version) instead of a throwaway
+    `%TEMP%yna-uia` venv; same pywinauto, one less step.
+  - `pytest eval/spikes/test_uia_dump.py` → **24 passed** on Windows as well
+    (galip had only run them on macOS).
+  - One-off dump against the already-open Notepad:
+    `uia_dump.py dump --id smoke-notepad --process notepad.exe --app Notepad --technology Win32`
+    → exit 0, `50 elements in 0.4 s`, `read_errors: 0`, `truncated: false`,
+    stats table printed. Interactive 16, AutomationId 81% (13/16), Name 100%,
+    AutomationId-or-Name 100%, generated ids 0%.
+  - **No fix was needed**: the COM reads, the walker, the writer and the stats
+    table all work as written. Machine: `Windows-11-10.0.26300-SP0`, DPI 120
+    (125% scaling) — recorded because the dumps store it per window.
+  - The smoke dump was written to a scratch folder, not to
+    `eval/spikes/uia-dumps/`, so it does not pollute the deliverable.
+
+- 2026-10-27 - hasan - **the real run of the four pilot apps** - pass for 3 of 4, keepassxc to redo
+  - Ran on hasan's Windows machine (`Windows-11-10.0.26300-SP0`, DPI 120 = 125% scaling)
+    from the repo `.venv` (Python 3.13.0, pywinauto 0.6.9), not a throwaway `%TEMP%` venv.
+  - The four portable builds were downloaded to `C:\ayna-pilots\` (KeePass 2.61.1,
+    KeePassXC 2.8.0, HandBrake 1.11.2, Notepad++ 8.9.8.1). The .NET 8 Desktop Runtime was
+    already installed (8.0.20), so HandBrake needed nothing extra.
+  - The app states were set by the agent through UIA and keystrokes instead of by hand; what
+    that cost is in `learnings.md` (password fields, foreground focus, shell dialogs).
+  - Deviation from the plan: KeePass 2's database is `Database.kdbx`, not `ayna-demo.kdbx` -
+    the file-name box of the "Create New Database" dialog could not be set through UIA and the
+    default name was kept. It changes a window title, nothing that is measured.
+  - Step 5 result: `Dumped 4 of 4 targets.`, no target truncated, `read_errors: 0` everywhere.
+    Walk times: keepass2 278.5 s, handbrake 2.0 s, keepassxc 0.5 s, notepadpp 1.0 s.
+  - The first run exposed the script bug fixed in ddc33b7 (KeePass's modal dialog was missing).
+  - `keepassxc.json` has to be retaken: KeePassXC locked itself between the state setup and the
+    final run, so it dumped the unlock screen (58 elements) instead of the entry form (84).
+
+- 2026-10-29 - hasan - **KeePassXC retake** - blocked on a human action, not on the code
+  - The agent's attempt to set the state automatically (launch KeePassXC with the database,
+    focus the window, send the master password, Ctrl+N) was refused by the Claude Code
+    permission classifier: a script that types a password into a password manager is not a
+    thing it will run. The refusal is correct, and the state setup is a manual check anyway.
+  - The dump command itself is allowed, so the split is: a human unlocks, the agent dumps.
+  - **Setup**: nothing to install; `C:\ayna-pilots\keepassxc\KeePassXC-2.8.0-x64\` and
+    `C:\Users\pc\Passwords.kdbx` are already on the machine from the 2026-10-27 run.
+  - **Steps**:
+    1. Start `C:\ayna-pilots\keepassxc\KeePassXC-2.8.0-x64\KeePassXC.exe`.
+    2. Enter the master password `ayna-demo` and press Enter.
+    3. Press Ctrl+N (Entries -> New Entry) and leave the form open. Do not minimise the window
+       and do not lock the workstation.
+    4. Tell the agent; it runs
+       `.venv\Scripts\python eval\spikes\uia_dump.py dump --only keepassxc` straight away.
+  - **Expected**: step 4 prints something like `keepassxc: 84 elements in 0.5 s -> ...`, not
+    `(truncated)` or `skipped`, and the dump's `windows` list shows a title *without*
+    `[Locked]`.
+  - **Report back**: the console output of step 4; if the title still says `[Locked]`, the
+    database re-locked and steps 1-4 have to be repeated faster.
+  - **Result: pass (2026-10-29, hasan at the machine, agent ran the dump).** The human did
+    steps 1-3; the agent then ran
+    `.venv\Scripts\python eval\spikes\uia_dump.py dump --only keepassxc` →
+    `keepassxc: 84 elements in 0.5 s`, `read_errors: 0`, `truncated: false`, window title
+    `Passwords - KeePassXC` (no `[Locked]`). The split "a human unlocks, the agent dumps"
+    worked on the first try.
+  - What the new numbers changed in the note: interactive 26 → 41, unique AutomationIds
+    8% → 10%, Name 92% → 88%, `AutomationId or Name` stays 100%, and **`LabeledBy` 0% → 12%
+    (5/41)** — the one result that overturns a published finding (finding 6) and two
+    `learnings.md` entries, both of which had been measured on the form-less unlock screen.
+    Also new: 25 of the 84 ids exceed the 200-character clip, in 5 indistinguishable groups.
+    The pilot recommendation did not change.
+
 ## Open issues
-- `ruff` is still not installed on this Mac and `eval/` has no `pyproject.toml`, so the spike is not linted (same as #7). Line length is kept at ~100.
-- Check the TitleBar rule against the real dumps: if a frame `MenuItem "System"` or the min/max/close buttons sit outside the TitleBar in some framework, the `--by-type` table will show them.
-- Idea, not done: the CI `agent` job already runs on `windows-latest`; a small manual (`workflow_dispatch`) job could run `uia_dump.py dump` against a built-in app and catch pywinauto API mistakes without waiting a week. CI is omer's area, so this would be a request to him.
-- The `dump` path (pywinauto/COM) is untested until the Windows session; only the walker, reader logic (with fakes), writer and stats are unit-tested.
-- Milestone Week 1 is due 2026-10-26, but the dumps can only come from the weekly Windows session. #21 (D1 decision, week 2) depends on this.
+- **New issue worth opening (performance):** a property-complete UIA walk of a WinForms window
+  took 278.5 s for 106 elements against HandBrake's 1.97 s for 149, with `read_errors: 0`.
+  The suspect is the ten pattern probes per element over the WinForms COM bridge, but it was
+  not isolated. #12 (snapshot export) has a 2 s target (NFR-02) and cannot be designed on the
+  WPF number alone. Proposed: "measure UIA read cost per property on WinForms vs WPF" - dump
+  the same window with and without `--no-patterns`, and with the pattern list cut down.
+- The TitleBar rule held: in all four dumps the frame's controls sit inside a `TitleBar` and
+  none of them has an AutomationId, so excluding them does not hide any app control.
+- `eval/` still has no `pyproject.toml` and the spike is not linted (#122 covers it, omer waits
+  on it for the CI job). Line length is kept at ~100.
+- Idea, not done: a `workflow_dispatch` CI job on `windows-latest` running `uia_dump.py dump`
+  against a built-in app would catch pywinauto API mistakes without waiting for a weekly
+  session. CI is omer's area, so this is a request to him.
+- The `dump` path is now exercised on real apps, so it is no longer untested; the state *setup*
+  is the part that stays manual.
 
 ## Handoff
 - To hasan (2026-10-25): he finishes and closes #6; his agent may edit `eval/spikes/` and this note's "Manual checks" and "Outcome".
@@ -63,3 +160,15 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
 - The expectations section in the note is deliberately written before the run; do not rewrite it, mark each one confirmed or refuted.
 
 ## Outcome (fill when the issue closes)
+- Dumps of four apps on four UI technologies, with the property-richness note and a pilot
+  recommendation: **KeePass 2 (WinForms) and HandBrake (WPF)** as the pilots, **KeePassXC (Qt)**
+  as an optional third, **Notepad++ not a pilot** but kept as the fixture for #23.
+- The numbers that decided it: `AutomationId or Name` over interactive elements is 98%
+  (KeePass 2), 96% (HandBrake), 100% (KeePassXC) and 59% (Notepad++) - and all 32 of
+  Notepad++'s unidentifiable elements sit in one toolbar, so the rest of it is at 100% (47/47).
+- What the issue did not ask for but changes other issues: `LabeledBy` is unset in WinForms,
+  WPF and Win32 (0/178) and set by Qt only on form rows (5/41), and there on the row
+  *container* rather than the editable control — so #11 must still find labels geometrically
+  and may use `LabeledBy` only as a confirmation; Qt AutomationIds are present but collide and
+  overflow a 200-character field (#11, #21 must not match on them alone); and the WinForms walk
+  time puts NFR-02 at risk (#12).

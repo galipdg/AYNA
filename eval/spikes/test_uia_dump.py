@@ -69,6 +69,27 @@ class WalkTest(unittest.TestCase):
     def test_leaf_at_max_depth_is_not_truncation(self):
         self.assertFalse(flatten([node("A", node("B"))], max_depth=1)[1])
 
+    def test_identity_keeps_an_owned_dialog_out_of_the_dump_twice(self):
+        # Notepad++'s Find dialog: a top-level window of its own and a child of the main window.
+        dialog = SimpleNamespace(name="Find", kids=[node("Close")], handle=7)
+        main = SimpleNamespace(name="Main", kids=[node("Edit"), dialog], handle=1)
+        elements, truncated = uia_dump.walk(
+            [dialog, main], lambda n: {"name": n.name}, lambda n: n.kids,
+            identity=lambda n: getattr(n, "handle", None),
+        )
+        self.assertEqual([e["name"] for e in elements], ["Find", "Close", "Main", "Edit"])
+        self.assertFalse(truncated)
+
+    def test_identity_none_never_skips(self):
+        # Elements without a window handle share the identity None and must all be kept.
+        kids = [SimpleNamespace(name="B", kids=[], handle=None),
+                SimpleNamespace(name="C", kids=[], handle=None)]
+        elements, _ = uia_dump.walk(
+            [SimpleNamespace(name="A", kids=kids, handle=None)],
+            lambda n: {"name": n.name}, lambda n: n.kids, identity=lambda n: n.handle,
+        )
+        self.assertEqual([e["name"] for e in elements], ["A", "B", "C"])
+
 
 class FakeElement:
     """Raw IUIAutomationElement stand-in."""

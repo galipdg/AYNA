@@ -61,6 +61,11 @@ Append-only. One entry per session, newest at the bottom:
 - `gh pr review` posts needed explicit user OK (auto-mode classifier).
 - Next: #17.
 
+## 2026-10-29 · #48 SDD test design
+- #148 closed as duplicate of #152; #152 got #148's extra criteria (p50, one command, TBD-9 in RS.md) and #31 as dependency (omer's choice).
+- #48: SDD §6 written on `omer/48-sdd-test-design`, stacked on #45; PR #157 (base `omer/45-sdd-architecture`), reviewers galip + hasan. Proposed RQ1/RQ2 definitions and exact McNemar listed in SDD §9; owners asked in their inboxes.
+- `active.md` lives on #156's branch this time (overwrite file; editing it on several open branches would conflict).
+- Next: reviews of #155, #156, #157; then #25 when #12/#22 move.
 ## 2026-10-29 · reviews, #45 SDD, #39 tests API
 - Reviews: approved #142 (note: `objects` needs per-object `columns` once `column` becomes an enum); comment on #145 (all 12 pairs fail under #150's 0.2 → merge #150 first, then relabel).
 - #45: `docs/sdd/SDD.md` skeleton (IEEE 1016, omer's choice) + sections 1–4; galip's AI block = §5 (answer in his inbox). PR #155, review requested from galip; diagrams checked by omer.
@@ -104,3 +109,9 @@ Append-only. One entry per session, newest at the bottom:
 - Found PR #168 squash-merged into `omer/31-openapi-contract` with no reviews; #60 code would have reached `main` inside #160. Reverted on the #31 branch (`48dfd5a`, tree identical to `9e2f51a`) and pushed, omer's choice.
 - GitHub showed #160 as CONFLICTING; `git merge-tree` with `origin/main` was clean.
 - Next: after #160 merges, new #60 PR to `main` from this branch.
+## 2026-10-31 · #122 eval CI
+- #160/#155 not merged yet, #12/#22 still open → took #122. hasan had not done his `eval/` part, so omer did both halves (user's choice; hasan told in his inbox, reviewer on the PR).
+- `eval/pyproject.toml` (deps only, `packages = []`; pywinauto win32-only; jsonschema for `nl/check_pairs.py`), `requirements.txt` removed, ruff 0.17 clean with `spikes/` excluded, `eval` CI job on `windows-latest`. `eval/AGENTS.md` and CI changes approved by the user.
+- CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
+- Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
+- Next: after #160/#155 merge, close-out checks; then #60.
