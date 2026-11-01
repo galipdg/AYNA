@@ -95,7 +95,7 @@ export interface AgentManagerOptions {
   env?: NodeJS.ProcessEnv
   /** Automatic restarts after a crash before the agent counts as failed. */
   maxRestarts?: number
-  /** How long the agent may take to print its port (Python start and imports). */
+  /** How long the agent may take to print its port (Python start and imports), and then to accept the WebSocket. */
   listenTimeoutMs?: number
   /** Heartbeat period; the heartbeat is a JSON-RPC `ping`, answered at once even during a long call. */
   heartbeatMs?: number
@@ -290,9 +290,16 @@ export class AgentManager {
     const socket = new WebSocket(`ws://127.0.0.1:${port}`, init)
     this.socket = socket
     let opened = false
+    // A port nobody accepts on can time out rather than refuse on Windows (learnings
+    // 2026-11-01), so the handshake gets its own deadline instead of waiting for the OS.
+    const ms = this.options.listenTimeoutMs
+    const openTimer = this.launchTimer(ms, () =>
+      fail(`could not open a connection to the agent within ${ms} ms`),
+    )
 
     socket.onopen = () => {
       opened = true
+      clearTimeout(openTimer)
       this.call('ping', undefined, this.options.pingTimeoutMs).then(
         () => generation === this.generation && !this.stopRequested && this.connected(fail),
         (error: Error) => fail(`the agent did not answer ping: ${error.message}`),

@@ -16,6 +16,7 @@ type Mode =
   | 'stop-answering' // answers the first ping only
   | 'ignore-stdin' // does not exit on EOF
   | 'slow-exit' // needs a moment to exit after EOF
+  | 'no-handshake' // accepts the connection but never answers the WebSocket upgrade
 
 const mode = (process.env.FAKE_AGENT_MODE ?? 'ok') as Mode
 const token = process.env.AYNA_AGENT_TOKEN ?? ''
@@ -78,6 +79,7 @@ server.on('upgrade', (request, socket: Socket) => {
     socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n')
     return
   }
+  if (mode === 'no-handshake') return
   const accept = createHash('sha1')
     .update(`${request.headers['sec-websocket-key']}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
     .digest('base64')
