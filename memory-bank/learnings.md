@@ -82,3 +82,4 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
   is what "the same file" actually means. **General point: the only Python on this Windows machine
   is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
   is not evidence that the version floor holds.**
+- 2026-11-02 · galip · A repo under an iCloud-synced `~/Desktop` (macOS "Desktop & Documents" with "Optimize Mac Storage") gets files evicted to "dataless" placeholders, including `.venv` packages and `.git` loose objects and reflogs (`find . -flags +dataless`). Reading one blocks and then fails with `TimeoutError: [Errno 60]`. pytest fails on import; `git push` updates the remote but cannot append the local reflog, so `origin/*` goes stale; Finder sync leaves " 2" duplicates. `brctl download` did not restore them here. Keep the checkout outside iCloud folders. Until then, run the tests from a venv created outside them.

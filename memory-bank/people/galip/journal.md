@@ -86,3 +86,9 @@ Append-only. One entry per session, newest at the bottom:
 - Opened #177 (RS 0.7, NFR-45 dead-letter clause from omer's #164 review).
 - Coordinated with the orchestrator session over `SendMessage`: it took #150, #173, #174, #176, the four reviews and #58; this session took #166 and #177.
 - Moved two identical " 2" duplicate files (iCloud Desktop) to the session scratchpad; two transient `.git` lock errors during fetch, gone on retry.
+
+## 2026-11-02 · open PRs, conflicts and reviews (main-checkout session, with the orchestrator)
+- Split the work over `SendMessage`: the orchestrator took #176 and the issue audit (#16 closed, #35/#36/#37/#71/#149 boxes); this session took #150, the RS, ADR statuses and the reviews.
+- #150: `main` merged (`0f78c4c`), ai 510 and agent 276 tests pass, and hasan's review is re-requested. #181: RS 0.8 (documents table, NFR-32 public endpoints) plus the descriptor and snapshot ADRs flipped to Accepted after galip's decider approvals on #175 and #180.
+- Reviews: #179 APPROVE (accounts ADR approved); #169 APPROVE with one label-precedence sentence to fix; #170 APPROVE.
+- iCloud evicted files in `agent/.venv` and `.git`. Ran the agent tests from a scratchpad venv and recorded it in `learnings.md`.
