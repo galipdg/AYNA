@@ -1,7 +1,7 @@
 # Snapshot schema v0: a flat pre-order tree, one window, and no partial document
 
 - Date: 2026-11-01
-- Status: Proposed (#12)
+- Status: Accepted (Hasan proposed it; Ömerfaruk approved PR #180; Galip approved on #180, 2026-11-02)
 - Deciders: Galip, Ömerfaruk, Hasan
 - Issues: #12 · consumed by #15, #24, #25, #73, #149 · evidence from #6, #9, #161 · extends
   `2026-10-31-element-descriptor-v0`
