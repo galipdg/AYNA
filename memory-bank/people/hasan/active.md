@@ -2,95 +2,117 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-10-29
-- Current issue: none in progress. #6 is done, waiting for galip's review as PR #159.
-- Branch: `hasan/6-uia-dumps` (PR #159 open, `Closes #6`, CLEAN)
-- Next step: **#161** — reproduce the KeePass 2 window state from #6 (database open, Add Entry
-  dialog) and bisect the 278.5 s walk. It is Week 2 and #12 cannot size a snapshot budget without
-  it. Then **#122** (`eval/` pyproject + ruff), which omer's CI job waits on and which also
-  carries the `docs/working-agreement.md` §1 / `docs/README.md` ownership fix.
+- Last update: 2026-11-01 (second session of the day)
+- Current issue: **#12** (window snapshot export) — **done and pushed as PR #180**, `Closes #12`,
+  CI **5/5 green**, no conflict. Waiting on galip's and omer's review; the ADR
+  `2026-11-01-snapshot-schema-v0` is **Proposed** and needs all three of us.
+- All three acceptance criteria met, the first one **measured**: the trial app's login window is
+  14 elements in **28–32 ms** over six runs against the 2 s bound.
+- **#16 is answered too**: `snapshot` works end-to-end through galip's RPC server. I commented on
+  #16 asking him to close it or say what else it needs.
+- Merged into `main` today while I worked: #178 (my review notes), #157, #155, #160. I merged
+  `origin/main` into my branch and resolved one conflict in the ADR index (origin was right: the
+  graph-schema ADR is now Accepted and the REST problem-details ADR is new).
 
-## This session: the review queue, cleared and merged
+## What #12 delivered
 
-**Reviewed 12 PRs.** The 11 in my queue (#135, #138, #141–#146, #150, #151, #157) plus #163
-(omer's problem-details ADR, which arrived mid-session). Also gave two **late** reviews on
-already-merged PRs whose ADRs were stuck: **#134** (step schema v0 — my review was never requested
-and it merged the same day) and **#156** (graph schema v0.1 — merged with *zero* reviews).
+Two commits plus a portability fix, deliberately in that order:
 
-Approved: #141, #142, #144, #145, #146, #151, #163, and #135/#143/#157/#138 after converting my
-comment reviews once I had judged the asks post-merge. **Only #150 is still held**, on content.
+1. **The contract first** — omer had asked on #12 twice and #15, #24, #25 and the G0 demo (#28,
+   9 Nov) were blocked on the *shape*, not the code. `schemas/snapshot.schema.json` 0.1, a real
+   example (`examples/snapshot/trial-login.json`, the trial app's 14 elements, rebuilt by the
+   tests so it cannot drift), 39 named cases, the ADR, the `snapshot` success example in
+   `docs/agent-rpc.md`, and `schemas/README.md` sections for the snapshot **and** the element
+   descriptor (#11 never added one).
+2. **The backend** — `recognition/snapshot.py` (document, canonical text, round trip) and
+   `recognition/uia.py` (`UiaDesktop`: `setup`/`close`, `list_windows`, `snapshot`), wired into
+   `rpc.main()`. 95 new tests; whole agent suite 280, macOS selection 276 + 4 deselected.
 
-**Eight PRs merged** (#141, #142, #143, #144, #145, #146, #135, #151). I did the mechanical side
-with the user's approval: `git merge origin/main` + push on nine of galip's branches to clear
-GitHub's union-driver conflict flag, re-synced after every single merge (nine rounds — see
-`learnings.md`), and resolved three real conflicts: the ADR index twice and `docs/agent-rpc.md`
-once. Every push was a fast-forward; no content of galip's changed except the two ADR status
-lines below.
+Shape decisions, in case they are challenged in review: `elements` is a **flat array in pre-order**
+of `{id, parentId, element}`, one root per snapshot, ids `e<position>` and opaque; the descriptor is
+**duplicated** from `element.schema.json` (a `urn:` `$ref` needs a registry in three languages) with
+a test comparing both property maps including constraints; an incomplete walk is **-32002 with no
+document at all**, no `truncated` flag and no depth or element limit that yields a partial tree.
 
-### Reviews worth remembering, because they were measured rather than argued
+## Measured today, worth not re-deriving
 
-- **Qt grid probe (#150):** answered all four of galip's UIA questions on a real `QTableWidget`
-  and found **two defects in step schema v0.2** — the "ValuePattern first" rule reads `''` for
-  every Qt cell (text is in `Name`), and a `cell` check can never be valid against a list
-  (`column` required, lists have no headers). Also: every descendant of a Qt table carries the
-  table's own AutomationId.
-- **Scorer run (#141):** a *wrong* Win32 toolbar button scores **0.800** against a target with no
-  id and no Name, and the score is not comparable across targets (1.000 / 0.333 / 0.158 for a
-  1 / 3 / 11-property target), so **#73's minimum score must be derived per target, not a
-  constant**. The location cut-off is in physical pixels: the same move scores 0.36 at 100% and
-  0.20 at 125%.
-- **#145:** verified all six objects in `eval/nl/objects/trial.json` live against the running
-  trial app — galip had marked that unverified.
-- **#142:** found the *cause* of the grid behaviour galip flagged to me: the prompt itself says
-  `name` is "the text shown by a label, message, button or **table**".
-- **WinForms cost:** plain property reads 2.79 ms/element, the ten pattern probes 1.56 ms, so
-  finding 7's pattern-probe hypothesis does **not** hold. Corrected it in
-  `eval/spikes/uia-dump.md` and on #143/#138, since I had overstated it in both reviews.
-- **No Ollama on this machine**, so every LLM latency we have is from galip's M2 — where the
-  service's p95 is 25.3 s and its 30 s deadline already fires. Hence #162.
+- Trial app login window: **14 elements, 28–32 ms** (2.04 ms per element), DPI 120.
+- KeePass 2 in the #161 state: main window **114 elements in 819 ms**, `Add Entry` 40 in 363 ms.
+  74 + 40 = 114, so the dedup is confirmed on a real owned dialog. Against #161's 2.26 s for the
+  same window: the difference is the **reader**, not the framework — the snapshot reads only the 12
+  properties the descriptor stores and no pattern probes. So the 5 000 ms budget has far more room
+  than #161 could claim.
+- **The timer design is necessary and it works.** A Qt window whose GUI thread slept 40 s: the
+  *first* UIA read blocked, so no between-element clock check could ever have fired. `-32002` came
+  back after **2 251 ms** of a 2 000 ms budget, twice in the same process, and the window
+  snapshotted normally again (58 ms) after it thawed. One daemon thread leaks per timeout, counted
+  in `UiaDesktop._abandoned` and logged by `close()`.
 
-### Sign-offs I gave (binding; others build on them)
+## Three things I changed that are not mine, all in the owners' inboxes
 
-- **NFR-02** (2 s snapshot): confirmed **only** scoped to the sample app.
-- **NFR-04** (500 ms/step): confirmed if it says what it measures and exempts #150's polling
-  checkpoints. **NFR-05** (10 000 ms): confirmed, with `timeoutMs: 0` documented as legal.
-- **TBD-5:** confirmed **plus a third failure state** — "the search ran out of budget" must not be
-  "element not found", or healing ranks candidates from an incomplete tree. Raised on #143, #138,
-  #144 and #157.
-- **TBD-6:** confirmed. **RQ2** (#69): confirmed with an app reset between runs, per-step
-  comparison, and the 10-run detection limit stated.
-- **RQ1** (#64): **refused as defined** — `parentPath` + `siblingIndex` identify everything, so
-  the metric is vacuous. Gave omer exact replacement wording on #157.
-- **CLI runner exit codes** (#61): 0 all passed and delivered · 1 a test failed or proposed a
-  repair · 2 operational failure even if every test passed.
-- **camelCase at every contract boundary**, snake_case only inside Python modules (#11 is mine to
-  align). **`parentPath`** = programmatic ControlType names joined by `/`, never localised.
+- `rpc.main()` builds `UiaDesktop()` — the one-line swap galip offered on #16.
+- **A real bug in `rpc.py`:** `python -m ayna_agent.rpc` imports the module as `__main__`, so the
+  backend's `from ayna_agent.rpc import UiaUnavailable` loaded it a *second* time and the two
+  copies had two different exception classes — a backend error came out as `-32603` instead of
+  `-32001`. The `__main__` block now delegates to `ayna_agent.rpc.main`. Only the subprocess CLI
+  test could see it.
+- `test_cli_announces_its_port_and_answers` asserted `-32001` from the placeholder backend; it now
+  accepts either the window list or `-32001`.
 
-## Open, not mine
+**One departure galip may reject:** `UiaDesktop.setup()` records why UIA is unavailable instead of
+raising, against his "a failing `setup()` stops the server". `docs/agent-rpc.md` says a host
+without a backend answers `-32001` per call, and a hard failure would stop galip and omer from
+running the client, the Spy or that very test on macOS. Three lines to change back, plus a fallback
+to `UnavailableDesktop` in `main()`.
 
-- **#150** — held by me. Galip needs to fix two sentences; I posted the exact replacement text and
-  will approve the moment it is pushed. It is a `schemas/` freeze document (#52).
-- **#138** — now **empty** (0 files): #143 was stacked on it and carried its content to `main`.
-  It should be **closed, not merged**. Side effect: its own "do not merge until §7 is filled" gate
-  was bypassed, so `docs/requirements-workshop.md` is on `main` with §7 still the empty template
-  saying nothing in §2–§5 is agreed. #19 is open, so it is tracked; galip must fill §7.
-- **Two ADRs still say Proposed although their condition is met:** `2026-10-27-step-schema-v0`
-  (I gave the third approval on #134; galip to flip, and #150 touches the file) and
-  `2026-10-29-graph-schema-application-links` (I approved on #156; needs galip's, then omer
-  flips it). I flipped `agent-rpc-v0` and `healing-proposal-transport` myself, with the user's OK.
-- **Checklist nit:** #141, #142, #145, #146 left the conditional "ADR added" DoD line unticked
-  although every merged PR in the repo ticks it with the reason inline. Told galip on #141.
-- **#159** (mine) waits on galip's review; #6 cannot close without it.
+## Next step
 
-## Open questions
+Nothing of mine is unpushed and no issue is in progress. In order:
 
-- A branch `hasan/2209a-application` appeared mid-session and the main checkout was switched to
-  it. It was created from `main`, has **no commits**, and I did not create it — possibly another
-  session. I left it alone and worked from a worktree. Worth finding out whose it is.
-- #9 / PR #116 merged, so ask omer whether it satisfies #2's last criterion ("all three members
-  merged one test PR").
-- Inbox: omer's #3 CI-skeleton review; omer's two #8 criteria that disagree between the issue and
-  PR #121 — I asked galip on #138 to settle it in §7, since the 27 Oct meeting is the likely
-  answer.
-- Proposed, needs an ADR: replace the single `learnings.md` with a directory of dated one-fact
-  files, so append-only memory stops causing the merge cascade (`learnings.md`, 2026-10-29).
+1. **Answer the #180 review** when it arrives; flip the ADR to Accepted once all three approve.
+2. **#169** (D1 pilot-apps ADR) still has no approval and it **blocks #170** (#161). That is the
+   oldest thing stuck on my side — chase galip and omer for it.
+3. Then propose the next issue from the milestone (`gh issue list --assignee @me --state open`).
+   #22 (Spy backend) and #23 (win32 fallback) now have a working `recognition/` to build on.
+
+## Open issues I raised and did not fix
+
+- **`minLength: 1` cannot say "not only spaces".** Both `snapshot.schema.json` and
+  `element.schema.json` promise a whitespace-only string is never stored and only enforce
+  non-empty. The agent honours it (`model._blank`); a Java or TypeScript producer could write
+  `"   "` and be valid. Named as a *valid* case in `examples/snapshot/cases.json` and raised under
+  "Open, for the deciders" in the ADR. My recommendation: `"pattern": "\\S"` on every string
+  property in **both** schemas, one PR bumping both to 0.2, **after** #15 and #24 land against 0.1.
+- The element-descriptor ADR still says `Proposed (#11)` although #11 closed with three approvals
+  (PR #175). Someone must flip it; I asked galip.
+- `schemas/AGENTS.md` names only the step schema's tests, in `ai/`. The element and snapshot
+  schemas are tested in `agent/`. It needs a line, but it is an `AGENTS.md`, so **ask the user**.
+- **Only Python 3.13 exists on this machine**, while every module declares `>=3.11`. Two tests
+  passed locally and failed in CI because `Path.read_text(newline=...)` is 3.13-only. A green local
+  run is **not** evidence that the version floor holds — see `learnings.md` 2026-11-01.
+- `schemas/README.md` and the ADR refer to `eval/spikes/uia-walk-cost.md`, which is still on
+  `hasan/161-winforms-walk` (PR #170). Written as a forward reference, not a link, so nothing is
+  dead on `main`; make it a link once #170 merges.
+- Unverified: a **second monitor at another scaling**. Every number above is from one 120-DPI
+  display, so `dpi` has only ever been 120 and no snapshot has had negative `bounds`. One check at
+  the weekly Windows session.
+
+## Still open from earlier, unchanged
+
+- Criterion 2 of #21 (pilot apps "installed on every member's machine" cannot hold for two macOS
+  members) — needs the team; wording is in `tasks/21-pilot-apps-decision.md`. And the #21 issue
+  names `docs/adr/ADR-001-pilot-apps.md` while the ADR went to `memory-bank/decisions/`.
+- Galip owes a decision on the one-sided `dpi` fallback in the healing scorer (my #166 review);
+  omer needs `dpi` in the graph model before #25 persists elements.
+- Galip to decide, from my #173 review: whether a model server that is **not running** should keep
+  arriving as a 504 `timeout` on Windows (a closed loopback port times out here instead of being
+  refused). Plus the two one-liners: #173's IPv6 listen address, #176's explicit LF newline.
+- Small follow-up branch, not started: the pre-ADR ownership tables in `docs/working-agreement.md`
+  §1 and `docs/README.md` (galip's #19 note), and the `requirements.txt` mentions in
+  `tasks/8-*.md` / `tasks/9-*.md` (omer's #122 note).
+- A `copilot-swe-agent[bot]` left a literal `<<<<<<< HEAD` in `memory-bank/decisions/README.md`
+  and it reached `main`. Fixed on both sides by now, but **check that file whenever that bot
+  touches a branch of mine**, and ask omer what the bot is for.
+- Review queue: **empty**.
+- Inbox: handled up to 2026-10-31. Do not delete the handled lines yet — PRs #150 and #126 still
+  add lines to that file and `merge=union` would bring deleted ones back.

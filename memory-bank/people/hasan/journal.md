@@ -59,3 +59,80 @@ Append-only. One entry per session, newest at the bottom:
 - Found that #138 is now empty (#143 carried its content) and that its "fill §7 first" gate was
   bypassed, so the workshop document sits on `main` saying its own contents are not agreed yet.
 - Next step: #161 (reproduce the #6 KeePass 2 state and bisect the 278.5 s walk), then #122.
+
+## 2026-10-31 (third part) — #11 element descriptor v0
+- Wrote the descriptor as a `schemas/` contract plus a UIA-free model, so the rules could be
+  tested on any OS and replayed over the #6 dumps. 53 new tests; agent suite 171 green.
+- The label rule was decided by measurement rather than taste, and the first version was
+  wrong: accepting a label *above* mislabels the trial app's check box and Login button with
+  the password field's label 6 DIP above them. Dropping "above" and adding a 48 DIP ceiling
+  reproduces UIA's own `LabeledBy` 7/7 on KeePassXC. Worth remembering as a method: when a
+  heuristic has a ground truth hiding in the data (here `LabeledBy`), use it.
+- Added `nearestLabelSource` so #43 can tell a changed label from a changed method — the
+  problem galip raised in the #159 review.
+- Found that `healing-proposal.schema.json`'s `scoredElement` refuses unknown keys and has no
+  `dpi`, so a proposal carrying PR #166's `dpi` would be schema-invalid. Told galip.
+- `jsonschema` went into agent's `[dev]` extras with the user's approval, so the contract is
+  tested next to the component that produces it.
+- PR #175. Next: #12, which emits these descriptors with the #161 budget.
+
+## 2026-11-01 (second part) — reviewed #176 and #173
+- Both were follow-ups to my own earlier reviews, so the job was to check the rules are
+  usable rather than to re-argue them. Approved both.
+- #176 (NL dataset §4.4 quoting, §6.8 check boxes): the rules are what I asked for, and the
+  checker enforces the half a script can. Verified the 12 trial pairs are unaffected (all
+  `origin: team`, and their only CheckBox steps are Verify, which §6.8 exempts). Raised: a
+  team pair tagged `informal` cannot satisfy both §4.4 and "no apostrophes" unless the
+  sentence is phrased so the value takes no suffix (galip's own test shows the pattern);
+  and §6.8's start state is only true if #40/#69 reset the app between pairs — a Click
+  leaves the box toggled and a check box survives a logout.
+- #173 (loopback pinning, `stepLimitReached`): both answers yes. The pinning closes the
+  check-then-resolve gap I meant in #142 §4, and `stepLimitReached` is the signal I asked
+  for in §2.
+- Running both suites on Windows paid for itself twice. `::1` passes the new loopback check
+  and then dies at bind, because `ThreadingHTTPServer.address_family` is AF_INET — newly
+  reachable through a name that resolves to `::1` only. And a closed loopback port times out
+  here instead of being refused, which turns "Ollama is down" into a 504 `timeout` where
+  macOS gives a 503 `server_error`; the client is told to retry on one and to disable the
+  panel on the other. Recorded in `learnings.md`; it is the same trap for #16/#135 and #17.
+- Next step: #170 waits on galip's re-review behind #169, then #12.
+
+## 2026-11-01 (second session) — #12 window snapshot export
+
+**Issue:** #12. **Branch:** `hasan/12-snapshot-export`. **PR #180**, `Closes #12`, CI 5/5 green.
+
+**The one judgement call:** the handoff said "UIA backend first", but omer had asked on #12 twice
+(31 Oct and again that morning) for the schema and one example, because #15, #24, #25 and the G0
+demo (#28, 9 Nov) were blocked on the *shape*, not the code — with a "say by Monday" on it. I put
+the contract in the first commit so it can be reviewed on its own, and the backend in the second.
+Both landed the same day, so nothing was traded away.
+
+**Delivered:** `schemas/snapshot.schema.json` 0.1 + a real example (rebuilt by the tests from the
+#11 trial-app tree, so it cannot drift) + 39 named cases + ADR `2026-11-01-snapshot-schema-v0`
+(Proposed); `recognition/snapshot.py` and `recognition/uia.py`, wired into `rpc.main()`; the
+`snapshot` success example in `docs/agent-rpc.md`; `schemas/README.md` sections for the snapshot
+and for the element descriptor (#11 never added one). 95 new tests, agent suite 280 green.
+
+**Measured on this machine, not assumed:** trial app 14 elements in **28–32 ms** (criterion 1
+wanted under 2 s); KeePass 2's main window **114 elements in 819 ms** against #161's 2.26 s for
+the same window — the difference is the reader (12 properties, no pattern probes), not the
+framework; and a Qt window whose GUI thread slept 40 s returned `-32002` after **2 251 ms** of a
+2 000 ms budget, which is the proof the timer design was needed at all, since the *first* UIA read
+blocked and no between-element check could have fired. #16 also answered end-to-end over JSON-RPC.
+
+**Three real bugs found, two of them mine:**
+1. `python -m ayna_agent.rpc` loads the module twice (`__main__` + `ayna_agent.rpc`), so the two
+   copies had two different `UiaUnavailable` classes and a backend error came out as `-32603`
+   instead of `-32001`. Only the subprocess CLI test could see it.
+2. Wiring the backend into `main()` made the server refuse to start where UIA cannot run, which
+   would have stopped galip and omer from running anything on macOS. `setup()` now records the
+   reason, which is what `docs/agent-rpc.md` specified all along.
+3. `Path.read_text(newline=...)` is Python 3.13 only; CI runs 3.11.9. Green locally, red in CI.
+   **Only 3.13 exists on this machine, so nothing local can ever verify the 3.11 floor.**
+
+**Raised, not fixed:** `minLength: 1` cannot express "not only whitespace", so both this schema and
+`element.schema.json` promise something they do not enforce. Named as a *valid* case in the cases
+file so the gap is visible, and put to the deciders in the ADR.
+
+**Next step:** answer the #180 review, then chase **#169** — it still has no approval and it blocks
+#170 (#161), which is the oldest thing stuck on my side.

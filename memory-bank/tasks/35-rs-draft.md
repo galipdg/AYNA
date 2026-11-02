@@ -46,7 +46,9 @@ Consistency was checked with a one-off script in the session scratch area (not c
 - [x] PR https://github.com/galipdg/AYNA/pull/143 opened (`Closes #35`, stacked on #137, #140, #138), reviews requested from omerfaruksaribal (required) and HasanBerk18 (FYI)
 - [x] Reviewed by Ömerfaruk (approved) and Hasan (approved) on PR #143
 - [x] Review comments resolved on `galip/35-rs-review-followups` (2026-10-29): consistency check rerun, 0 errors; 40 FR, 46 NFR (44 Must), 16 UC, 36 SC, 11 TBD (TBD-5, 6, 9, 10 closed)
-- Next step: merge the follow-up PR; then tick criterion 2 on #35 (it closed with #143 before the comments were resolved). After the advisor meeting, apply #19 §7's answers (Q1–Q8) to §1.3.3, §3.1, Appendix B and E.2, and rerun the check.
+- [x] Follow-up PR #164 merged 2026-10-31 (omer approved).
+- [x] RS 0.7 (2026-10-31, branch `galip/35-rs-nfr45-dead-letter`): NFR-45 sets aside a result the server refuses as invalid (omer's #164 review: RS-level, because the user sees it). Consistency check: 0 errors.
+- Next step: tick criterion 2 on #35 (it closed with #143 before the comments were resolved); REST API row → v0 when #160 merges. After the advisor meeting, apply #19 §7's answers (Q1–Q8) to §1.3.3, §3.1, Appendix B and E.2, and rerun the check.
 
 ## Manual checks
 - none (documentation only)

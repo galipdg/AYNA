@@ -41,7 +41,7 @@ Change-impact analysis (C3, #81) is a graph query in the server and belongs with
 
 Every AI part follows these rules.
 
-1. **Closed network** (NFR-29, NFR-30). The model server runs on the same host as the AI service. `OllamaClient` (`ai/ayna_ai/ollama.py`) accepts only a loopback URL (127.0.0.0/8, `::1`, `localhost`), ignores proxy environment variables and refuses redirects, so a request cannot leave the machine. The model weights and the embedding model are bundled into the AI service image, and nothing is downloaded at start (#82).
+1. **Closed network** (NFR-29, NFR-30). The model server runs on the same host as the AI service. `OllamaClient` (`ai/ayna_ai/ollama.py`) accepts only a loopback URL (127.0.0.0/8, `::1`, or a name such as `localhost` only if every address it resolves to is loopback; it then connects to the checked address, never to the name), ignores proxy environment variables and refuses redirects, so a request cannot leave the machine. The service's own listen address follows the same rule. The model weights and the embedding model are bundled into the AI service image, and nothing is downloaded at start (#82).
 2. **Language models only at authoring time** (ADR; FR-28, NFR-22). Only the server calls the AI service, and only while a test is being written. The agent and the CLI runner never call a model. Systems that let a model choose actions at run time are not repeatable, so they report the best of three runs ([15], [40]); a regression test has to replay the same way every time. With the AI service stopped, everything except step generation works (SC-28).
 3. **A person approves everything AI produces.** Generated steps are suggestions until the author accepts them, and nothing is saved before that (FR-27). Healing candidates are proposals until a reviewer approves one (ADR; FR-30–FR-32). No AI output changes a test or the repository on its own.
 4. **Grounded in the repository.** A step targets a repository object by logical name only (step schema `target`, FR-10). Generation can only choose among the objects it was given, and a validator drops anything else (FR-26).
@@ -81,7 +81,7 @@ The dotted edges are planned. The AI service has no edge to Neo4j: the server ch
 The JSON shape is fixed in `ai/API.md` (built, #71, PR #146); the part the client sees goes into the REST contract (#31, frozen in #52).
 
 - **In** (built, #71): `POST /ai/generate-steps` with the Turkish description (`text`), the application (`app`), its `version` and the current window (`screen`), and the candidate `objects` the server chose (≤ 100, logical name + Turkish description; AI-4). The server adds the user. The NL panel sends it through the server (#78).
-- **Out** (built, #71): `steps`, the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` plus a short Turkish `reason`; `dropped`, every step the model wrote that cannot be suggested, as `{index, code, reason, step}`; the `status`, the `model`, `schemaVersion`, `promptVersion` and `latencyMs`. HTTP 200 always carries at least one step.
+- **Out** (built, #71): `steps`, the suggested steps, each a valid `#/$defs/step` of `schemas/step.schema.json` plus a short Turkish `reason`; `dropped`, every step the model wrote that cannot be suggested, as `{index, code, reason, step}`; `stepLimitReached`, true when the model wrote as many steps as the grammar allows (12), so later steps may be missing; the `status`, the `model`, `schemaVersion`, `promptVersion` and `latencyMs`. HTTP 200 always carries at least one step.
 - **In the library** (#37, #71): `StepGenerator.generate(text, objects, timeout_s=None)` takes the text and a map `logical name → Turkish description` and returns a `GenerationResult`: the status, the kept steps as a step document `{"version": "0.1", "steps": [...]}` when the status is `ok`, one reason per kept step, the dropped steps, the raw output, the errors, the latency and the token counts.
 
 ### Stages
@@ -147,7 +147,7 @@ When the server cannot reach the AI service at all, the NL panel is disabled wit
 
 | Limit | Value | Why |
 |---|---|---|
-| Steps per request | 1–12 | Bounds the output |
+| Steps per request | 1–12 | Bounds the output; an answer of exactly 12 is flagged (`stepLimitReached`), so the cap never shortens it silently |
 | Free strings (`value`, `expected`) | ≤ 200 characters (the contract allows 1000) | Stops a runaway string early (#7 finding 1) |
 | Output tokens (`num_predict`) | 512; 768 in the service | About 25–40 tokens per step, so 12 steps fit; a reason adds about 15–25 per step |
 | Context (`num_ctx`) | 4096 tokens | Prompt plus object list plus answer |
@@ -184,7 +184,7 @@ The #37 runs shared the machine with other jobs (load average about 6), and so d
 
 ### Logging and input safety
 
-Each generation logs one JSON line: `ts`, `event: generate`, `scenario`, `model`, `status`, `latency_ms`, `load_ms`, `prompt_tokens`, `output_tokens`, `steps`, `dropped`; the service adds one `event: request` line per HTTP request. The lines hold no user text, so service logs carry no test content (tested). The batch CLI (`python -m ayna_ai.generate`) writes the full results, with the environment (platform, Ollama version), for evaluation.
+Each generation logs one JSON line: `ts`, `event: generate`, `scenario`, `model`, `status`, `latency_ms`, `load_ms`, `prompt_tokens`, `output_tokens`, `steps`, `dropped`, `step_limit_reached`; the service adds one `event: request` line per HTTP request. The lines hold no user text, so service logs carry no test content (tested). The batch CLI (`python -m ayna_ai.generate`) writes the full results, with the environment (platform, Ollama version), for evaluation.
 
 The user's text is untrusted input to the model. The model has no tools, and its output can only be a step document over objects that already exist, which a person then reviews. A hostile description can therefore at worst produce wrong suggestions.
 
@@ -280,7 +280,7 @@ Healing starts only when **no** element matches the object's primary or fallback
 
 - **Input:** the element the object resolved to in the old version (the *target*) and the snapshot of the window now on screen (online, #73), or two version snapshots (offline: RQ4 #76, change impact #81).
 - **Filter:** elements in the same window with a compatible control type. #42 defines the compatibility map; it must keep "retype" changes of #46 reachable.
-- **Acceptance:** the true target is among the candidates in ≥ 95 % of the controlled-change cases (#46), in under 1 s per object (NFR-10, SC-29). Candidate recall is reported separately from scorer accuracy, so that RQ4 does not mix the two.
+- **Acceptance:** the true target is among the candidates in ≥ 95 % of the controlled-change cases (#46), in under 1 s per object, measured from an available snapshot (NFR-10, SC-29); capture time is NFR-02 / #12, and on a slow window it dominates the healing path (278.5 s for one KeePass 2 window in #6). Candidate recall is reported separately from scorer accuracy, so that RQ4 does not mix the two.
 
 ### AI-5.3 Graph-context features (planned, #43)
 
@@ -307,7 +307,7 @@ S lies in [0, 1], so scores are comparable across targets (Similo's own score is
 | `className` | Class | 0.5 | Normalised Levenshtein |
 | `parentPath` | XPath (absolute) | 0.5 | Normalised Levenshtein |
 | `siblingIndex` | XPath (id-relative) | 0.5 | Equal |
-| location | Location | 0.5 | 1 − d / 100 px, 0 beyond 100 px (top-left corners) |
+| location | Location | 0.5 | 1 − d / 100 DIP, 0 beyond 100 DIP (top-left corners; physical px × 96 / dpi of each element's window) |
 | area | Area | 0.5 | min / max |
 | shape | Shape (width / height) | 0.5 | min / max |
 | `windowTitle` | none (AYNA addition) | 0.5 | Normalised Levenshtein |
@@ -326,7 +326,7 @@ Similo's HTML Name, HRef, Alt and IsButton have no UIA counterpart, or are cover
 
 ### AI-5.5 Proposal and approval (planned, #73, #74, #75)
 
-- **Payload** (proposed; settled by #73 and #74): run, step, logical name, application version, and the top 3 candidates, each with the snapshot element id, the score, the contributions and the raw similarities. The contributions add up to the score (SC-29).
+- **Payload:** `schemas/healing-proposal.schema.json`, settled by ADR *Healing proposal transport* (#149, accepted) and extended to version 0.2 by ADR *Healing proposal schema 0.2* (proposed). It holds run, step, logical name, application version and snapshot id; the target (server Element id, properties as scored); the scorer id, its weights and the feature versions of the target and the candidates; and the top 3 candidates, each with the snapshot element id, its properties as scored (with `dpi`), the score, the contributions and the raw similarities. Numbers are exact fractions written as strings, so the contributions add up **exactly** to the score (SC-29); a consumer never compares floats for equality.
 - **Storage:** `(HealingProposal)-[:FOR]->(RepoObject)` and `-[:CANDIDATE {score, …}]->(Element)`. Each candidate has its own contributions, and Neo4j cannot store a map property. *Proposed* (raised with omer): keep score and contributions on the `CANDIDATE` relationship, as a JSON string or as two parallel lists. `docs/graph-model.md` currently puts them on the proposal node.
 - **Approve:** the object `RESOLVES_TO {version}` the chosen element, and a `Rule` linked to the proposal is created, with the user and the time (FR-32, FR-40, SC-30). The next run passes without any step being edited (NFR-33).
 - **Reject all:** the step stays failed as "element not found", and the repository and the rule book stay unchanged (SC-31). A repair applied automatically could have passed here; that is the false pass RQ5 counts.
@@ -399,7 +399,7 @@ How the design supports each measurement. #48 (test design) describes how the ex
 | 8 | Contributions on the `CANDIDATE` relationship instead of the proposal node; `docs/graph-model.md` to update | omer | #74 |
 | 9 | Element keys camelCase (graph, scorer) vs snake_case (descriptor) | hasan, galip | #11, #43 |
 | 10 | Minimum score for a proposal, and its calibration | hasan, galip | #73, #103 |
-| 11 | Bounds are raw pixels; location, area and shape need DPI normalisation if the versions of a pair are captured at different scales | galip | #42, #46 |
+| 11 | **Closed 2026-10-29.** Location and area are compared in device-independent pixels from each element's `dpi`; shape needs none (hasan's #141 review) | galip | #49 follow-up; #43 supplies `dpi` |
 | 12 | Definition of RQ3's "without context" condition | galip | #77 |
 | 13 | Rule semantics beyond "approved mapping"; placement of the decision model (AI-6.3) | galip | #103 |
 | 14 | Constrained decoding not tried on llama.cpp | galip | #72, #80 |
