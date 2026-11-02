@@ -43,7 +43,7 @@ Credentials: `admin` / `admin` shows `Welcome, admin!`; anything else shows
 
 ```powershell
 python -m venv .venv
-.venv/Scripts/python.exe -m pip install -r eval/apps/trial/requirements.txt
+.venv/Scripts/python.exe -m pip install -e "eval[dev]"
 ```
 
 ## Run the app

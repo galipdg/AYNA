@@ -2,7 +2,7 @@
 
 How the Electron client talks to the automation agent on the same machine. Part of the agent JSON-RPC contract (see `memory-bank/project/architecture.md`), frozen at G1 (week 7). Code: `agent/ayna_agent/rpc.py` (#16).
 
-Everything up to [Trying it by hand](#trying-it-by-hand) is v0.1, as built. The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-v02-draft), is a draft for v0.2 that is not implemented and may still change until its ADR is accepted.
+Everything up to [Trying it by hand](#trying-it-by-hand) is v0.1, as built. The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-v02-draft), is a draft for v0.2 that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
 
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over one WebSocket on `127.0.0.1`.
 - Only the client's main process connects. The renderer goes through the preload API, as for everything else.
@@ -92,16 +92,47 @@ Captures one window's UIA subtree.
 | Param | Type | Meaning |
 |---|---|---|
 | `handle` | positive integer, required | A `handle` from `listWindows`. |
-| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default applies (set with #12). When the budget runs out, the agent stops the walk and answers `-32002`. v0.1 returns no partial document. |
+| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default of **5 000 ms** applies (#12, measured in #161). When the budget runs out, the agent stops the walk and answers `-32002`. v0.1 returns no partial document. |
 
-Unknown params are refused with `-32602`. New optional ones (e.g. a depth or element limit from #12) are a minor `rpcVersion` bump.
+Unknown params are refused with `-32602`. New optional ones are a minor `rpcVersion` bump. There is deliberately no depth or element limit: an incomplete walk has exactly one outcome, `-32002`, because a partial tree is the one input healing must never rank candidates from (RS 0.6 FR-29/FR-35, "search incomplete"; ADR snapshot schema v0).
 
-The result is one snapshot document as defined by `schemas/snapshot.schema.json` (#12). A success example will be added here together with that schema. Until then:
+The result is one snapshot document as defined by `schemas/snapshot.schema.json` (#12): the window it came from, what the walk cost, and every element as a flat pre-order list of `{id, parentId, element}`, a parent always before its children, so one pass builds the tree. `element` is the descriptor of `schemas/element.schema.json`. Element ids are opaque and scoped to the document; a healing proposal's `candidates[].elementId` resolves against them, and its `snapshotAt` is `capture.startedAt`.
+
+Shortened — the trial app's login window has 14 elements; the whole document is
+[`schemas/examples/snapshot/trial-login.json`](../schemas/examples/snapshot/trial-login.json):
 
 ```json
-→ {"jsonrpc": "2.0", "id": 3, "method": "snapshot", "params": {"handle": 395942}}
-← {"jsonrpc": "2.0", "id": 3, "error": {"code": -32001, "message": "UI Automation unavailable: no UI Automation backend yet (#12)"}}
+→ {"jsonrpc": "2.0", "id": 3, "method": "snapshot", "params": {"handle": 657704}}
+← {"jsonrpc": "2.0", "id": 3, "result": {
+    "version": "0.1",
+    "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
+    "capture": {"startedAt": "2026-10-31T17:42:19+03:00", "durationMs": 312, "budgetMs": 5000,
+                "elementCount": 14, "readErrors": 0, "agentVersion": "0.0.0",
+                "featureVersion": "features-v0"},
+    "app": {"exeName": "python.exe", "fileVersion": "3.13.150.1013"},
+    "window": {"handle": 657704, "title": "AYNA Trial - Login", "className": "LoginWindow",
+               "bounds": [560, 210, 1010, 415], "dpi": 120},
+    "elements": [
+      {"id": "e0", "parentId": null,
+       "element": {"automationId": "QApplication.loginWindow", "name": "AYNA Trial - Login",
+                   "controlType": "Window", "className": "LoginWindow", "frameworkId": "Qt",
+                   "bounds": [560, 210, 1010, 415], "dpi": 120, "siblingIndex": 0,
+                   "windowTitle": "AYNA Trial - Login", "enabled": true, "offscreen": false,
+                   "nativeWindowHandle": 657704}},
+      {"id": "e8", "parentId": "e0",
+       "element": {"automationId": "QApplication.loginWindow.usernameInput", "name": "Username",
+                   "controlType": "Edit", "className": "QLineEdit", "frameworkId": "Qt",
+                   "bounds": [648, 223, 995, 255],
+                   "dpi": 120, "parentPath": "Window", "siblingIndex": 2,
+                   "nearestLabel": "Username", "nearestLabelSource": "geometric",
+                   "windowTitle": "AYNA Trial - Login", "enabled": true, "offscreen": false}},
+      {"…": "eleven more, e1–e7 and e9–e13"}
+    ]}}
 ```
+
+The agent writes the document in a canonical form — fixed key order, two-space indent, LF, UTF-8
+unescaped — so that reading a saved snapshot and writing it again gives the same file back
+(`agent/ayna_agent/recognition/snapshot.py`).
 
 A window that has closed since `listWindows`:
 
@@ -163,15 +194,18 @@ On Windows `cmd.exe`, set the variable first with `set AYNA_AGENT_TOKEN=...`.
 
 ## Proposed (#149): step results and healing proposals (v0.2 draft)
 
-> **Proposed, not implemented.** Decision: `memory-bank/decisions/2026-10-28-healing-proposal-transport.md`, status Proposed until Galip, Ömerfaruk and Hasan approve it. Playback (#40, #73) implements it. Until then `ping` answers `rpcVersion` `"0.1"`; with these messages it answers `"0.2"` (an addition).
+> **Agreed, not implemented.** Decision: `memory-bank/decisions/2026-10-28-healing-proposal-transport.md` (Accepted), extended by `memory-bank/decisions/2026-10-31-healing-proposal-schema-0-2.md` (**Proposed** until Galip, Ömerfaruk and Hasan approve it: proposal schema 0.2 and the review follow-ups below). Playback (#40, #73) implements it. Until then `ping` answers `rpcVersion` `"0.1"`; with these messages it answers `"0.2"` (an addition).
 
 When no element matches a step's target after the wait, the step ends as "repair proposed" with the top 3 candidate elements and the reasons for their scores (#73). This section says how that result reaches the client, which forwards it to the server unchanged. The CLI runner (#61) builds the same document without JSON-RPC and writes it to the same server endpoint.
 
 ### Notifications from the agent
 
-- During a run the agent sends JSON-RPC **notifications**: objects with `jsonrpc`, `method` and `params` and no `id`. The client tells them apart from replies by the missing `id`.
+- During a run the agent sends JSON-RPC **notifications**: objects with `jsonrpc`, `method` and `params`.
+- Notifications carry no `id` (JSON-RPC 2.0 notifications), so they answer no request. Replies come in any order (see [Messages](#messages)), so the client recognises a notification by the missing `id` and routes it by `method`, never by its position among replies.
 - The client never answers a notification, not even with an error, and ignores a notification method it does not know, so that later minor versions can add some.
 - All notifications of a run go to the connection that sent the run request, in the order the agent sends them.
+- Nothing acknowledges a notification, and the agent never sends one again. A result lost between the client receiving it and writing it to the outbox (a client crash) is gone for good; that is why such a run is finished as `aborted`, which makes the gap visible instead of silent.
+- While a failing step's candidates are collected the agent sends nothing, possibly for minutes (the snapshot walk; 278.5 s for one KeePass 2 window in #6). v0.2 has no progress message: the client shows the step after the last result as running, with its elapsed time (#44).
 
 ### The run request (defined by #40)
 
@@ -181,7 +215,7 @@ Playback's request belongs to #40. For healing it must carry these params, which
 |---|---|---|
 | `runId` | UUID string | The Run the client created on the server before starting (#44, #51). |
 | `appVersionId` | UUID string | The AppVersion under test. |
-| `targets` (name for #40 to settle) | object | Per logical name, the element the object resolved to before: `serverElementId` (graph `Element.id`) and `properties`, with the keys of `agent/ayna_agent/heal/scorer.py`. Candidates are compared against it. |
+| `targets` (name for #40 to settle) | object | Per logical name, the element the object resolved to before: `serverElementId` (graph `Element.id`), `featureVersion` (the feature version it was recorded with; left out when the server does not know it) and `properties`, with the keys of `agent/ayna_agent/heal/scorer.py`, `dpi` included when recorded. Candidates are compared against it. |
 
 Illustrative, with the request name used in the step schema ADR (`steps` shortened):
 
@@ -193,9 +227,10 @@ Illustrative, with the request name used in the step schema ADR (`steps` shorten
     "targets": {
       "login.loginButton": {
         "serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f",
+        "featureVersion": "features-v0",
         "properties": {"automationId": "QApplication.loginWindow.loginButton", "name": "Giriş",
                        "controlType": "Button", "className": "QPushButton", "bounds": [600, 412, 720, 444],
-                       "parentPath": "loginWindow/credentialsBox", "siblingIndex": 4, "windowTitle": "AYNA Trial"}
+                       "dpi": 96, "parentPath": "Window/Group", "siblingIndex": 4, "windowTitle": "AYNA Trial"}
       }
     }
   }}
@@ -208,13 +243,15 @@ One notification per step of the run, in step order, when the step has finished 
 | Field | Type | Meaning |
 |---|---|---|
 | `runId` | UUID string | From the run request. |
-| `stepIndex` | integer ≥ 0 | The step's position in the run, from 0. With `runId`, the key of the result. |
+| `stepIndex` | integer ≥ 0 | The step's position in the run, from 0. With `runId`, the key of the result. Deliberately unlike the 1-based row numbers a tester sees (`row.index`, PR #150): a screen adds 1 to show it. |
 | `stepId` | UUID string or null | The step's server id; `null` for a step that was never saved. |
 | `status` | string | `passed`, `failed`, `repairProposed` or `notRun`. |
 | `snapshot` | object | Only with `repairProposed`: the snapshot document (`schemas/snapshot.schema.json`, #12) of the window the candidates came from, captured when the wait ended. |
 | `healingProposal` | object | Only with `repairProposed`: a document per `schemas/healing-proposal.schema.json` (below). |
 
 #40 (duration, message), #54 (screenshot) and #63 (failure category) add their own fields to this message.
+
+**Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`; the names are #54's and #40's to settle), so the approval screen can say how much older the image is than the geometry. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image itself travels as #54 and #51 decide; the proposal carries none.
 
 - `status` is `repairProposed` exactly when no element matched the target after the wait (TBD-5) and at least one candidate is left after playback's minimum score (#73). Then `snapshot` and `healingProposal` are both present, `healingProposal.snapshotId` is the snapshot's id, and the proposal's `runId`, `stepIndex` and `stepId` equal the result's.
 - No element matched and no candidate is left: `failed`, without a proposal.
@@ -236,15 +273,15 @@ The login button was renamed (`loginButton` → `signInButton`, "Giriş" → "Ot
     "stepId": "b7e4d1c2-5a3f-4e8b-9d61-2c0a7f3e5b14", "status": "repairProposed",
     "snapshot": {"…": "the snapshot document 5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b (#12)"},
     "healingProposal": {
-      "version": "0.1",
+      "version": "0.2",
       "runId": "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90", "stepIndex": 2,
       "stepId": "b7e4d1c2-5a3f-4e8b-9d61-2c0a7f3e5b14",
       "logicalName": "login.loginButton",
       "appVersionId": "9a1d7c3e-2f4b-4c8a-b6e5-7d0f1a2b3c4d",
       "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
-      "target": {"serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f",
+      "target": {"serverElementId": "c2d4e6f8-0a1b-4c3d-8e5f-7a9b1c3d5e7f", "featureVersion": "features-v0",
                  "properties": {"automationId": "QApplication.loginWindow.loginButton", "name": "Giriş", "…": "…"}},
-      "scorer": {"id": "similo-v0",
+      "scorer": {"id": "similo-v0", "featureVersion": "features-v0",
                  "weights": {"automationId": "3/2", "name": "3/2", "controlType": "3/2", "nearestLabel": "3/2",
                              "className": "1/2", "parentPath": "1/2", "siblingIndex": "1/2", "location": "1/2",
                              "area": "1/2", "shape": "1/2", "windowTitle": "1/2"}},
@@ -276,26 +313,28 @@ The remaining step:
 
 ### The healing proposal
 
-Schema: `schemas/healing-proposal.schema.json` (version `0.1`, proposed). Examples, including a CLI run without a server: `schemas/examples/healing-proposal/`.
+Schema: `schemas/healing-proposal.schema.json`, version `0.2` (proposed; ADR `2026-10-31-healing-proposal-schema-0-2`). It adds per-element `dpi` and the feature versions to 0.1, all optional, so a 0.1 document is valid once relabelled. Examples, including a CLI run without a server: `schemas/examples/healing-proposal/`.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `version` | string | `"0.1"`. |
+| `version` | string | `"0.2"`. |
 | `runId`, `stepIndex`, `stepId` | | As in the step result. |
 | `logicalName` | string | The repository object that was not found. |
 | `appVersionId` | UUID string or null | The AppVersion under test; approving a candidate makes the object resolve to it for this version. `null` only without a server. |
 | `snapshotId` | string | Id of the snapshot sent with the result. |
-| `target` | object | `serverElementId` (UUID or null) and `properties`: what the candidates were compared against, exactly as scored. |
-| `scorer` | object | `id` (`"similo-v0"`) and `weights` per property. |
+| `target` | object | `serverElementId` (UUID or null), `featureVersion` (optional: the feature version the target was recorded with, left out when unknown) and `properties`: what the candidates were compared against, exactly as scored. |
+| `scorer` | object | `id` (`"similo-v0"`), `featureVersion` (`"features-v0"`: how the agent derived the candidates' `nearestLabel`, `parentPath`, `siblingIndex`, `windowTitle` and `dpi`; the agent always writes it) and `weights` per property. |
 | `candidatesScored` | integer | How many candidates were ranked. |
 | `candidates` | array of 1–3 | By score descending, then `elementId` ascending. Each has `rank` (1 = best), `elementId` (the element's id inside the snapshot, not a server id), `element` (its properties as scored), `score`, `contributions` and `similarities` (per compared property). |
+
+Element properties (`target.properties`, each candidate's `element`) are the scorer's keys. `bounds` are physical pixels in virtual-desktop coordinates; `dpi` (optional integer, 96 = 100 %) is the DPI of the element's window, which the scorer uses to compare location and area in device-independent pixels. `dpi` is not a scored property, so it never appears in `weights`, `contributions` or `similarities`. A replay or comparison of stored proposals (#103, RQ5) groups them by `scorer.id` and `scorer.featureVersion`, and treats a proposal whose `target.featureVersion` differs from `scorer.featureVersion` as not comparable.
 
 **Numbers are exact fractions written as strings**, as Python's `str(Fraction)` writes them: `"0"`, `"1"` or `"p/q"` in lowest terms; never floats. Scores, contributions and similarities lie in [0, 1]; weights may be larger. For each candidate, `contributions[p] = weights[p] × similarities[p] / Σ weights` over the compared properties, and the contributions add up exactly to `score`; the compared properties are the same for every candidate. Convert to a double only to draw.
 
 ### What the client does with a result
 
-1. Show it live.
-2. Append its `params`, unchanged, to a durable outbox.
-3. One forwarder writes the outbox in order to the server, with `params` as the body of `PUT /api/runs/{runId}/results/{stepIndex}` (proposed in the ADR; the REST contract is #51's and #74's). The ADR lists the retry rules for an unreachable server, a client closed mid-run and a rejected document.
+1. Append its `params`, unchanged, to a durable outbox, with the server URL the item is for. Append **before** showing: a result the client shows but has not stored is lost in a crash.
+2. Show it live.
+3. One forwarder writes the outbox in order, only to that server, with `params` as the body of `PUT /api/runs/{runId}/results/{stepIndex}` (proposed in the ADRs; the REST contract is #51's and #74's). An identical repeat answers 200; another body for the same key answers 409 and goes to the dead-letter file. The transport ADR lists the retry rules for an unreachable server, a client closed mid-run and a rejected document.
 
 The client does not need to read the proposal to forward it. There are no new error codes: notifications get no reply.

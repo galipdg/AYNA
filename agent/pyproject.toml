@@ -3,10 +3,15 @@ name = "ayna-agent"
 version = "0.0.0"
 description = "AYNA automation agent (pywinauto) and headless CLI runner"
 requires-python = ">=3.11"
-dependencies = ["websockets~=17.3"]
+dependencies = [
+    "websockets~=17.3",
+    # The UI Automation backend (#12). Pure Python, so it installs anywhere; it pulls
+    # comtypes and pywin32 only on Windows, where the real reading happens.
+    "pywinauto>=0.6.9",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff~=0.17.2"]
+dev = ["pytest>=8", "ruff~=0.17.2", "jsonschema~=4.26"]
 
 [build-system]
 requires = ["setuptools>=68"]

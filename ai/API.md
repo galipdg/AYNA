@@ -14,11 +14,11 @@ python -m ayna_ai.service --port 8090 --model qwen3:8b --model gemma4:e4b-it-qat
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--host` | `127.0.0.1` | Listen address. A non-loopback address is refused unless `--allow-remote`. |
+| `--host` | `127.0.0.1` | Listen address. A non-loopback address is refused unless `--allow-remote`. A name such as `localhost` counts as loopback only if every address it resolves to is loopback; the service then listens on that address (IPv4 first). |
 | `--port` | `8090` | |
 | `--allow-remote` | off | Allow e.g. `0.0.0.0` (inside a container, #82). Needs `AYNA_AI_TOKEN`. Logged as a warning at start. |
 | `--model` | `qwen3:8b` | Model the service offers; repeatable. The first is the default. |
-| `--model-host` | `http://127.0.0.1:11434` | Ollama URL; must be a loopback address. |
+| `--model-host` | `http://127.0.0.1:11434` | Ollama URL; must be a loopback address. A name (e.g. `http://localhost:11434`) is resolved once at start: every address must be loopback, and the service connects to that address (IPv4 first), never to the name again. |
 | `--timeout` | `30` | Seconds per request — retrieval and the model call, a cold model load included. Past it the service answers 504 (see [Timeouts](#timeouts-and-latency)). |
 | `--max-body-bytes` | `65536` | Larger requests get 413. |
 | `--no-warmup` | warm-up on | By default the default model is loaded in the background at start. |
@@ -71,6 +71,7 @@ Response **200** — at least one suggested step; here the model wrote three and
     {"index": 1, "code": "no_match", "reason": "no repository object matches",
      "step": {"keyword": "Click", "target": "none.noMatch", "reason": "Beni hatırla kutusunu işaretle"}}
   ],
+  "stepLimitReached": false,
   "schemaVersion": "0.2",
   "promptVersion": "3+reason",
   "latencyMs": 6721
@@ -93,7 +94,8 @@ Response **200** — at least one suggested step; here the model wrote three and
   | `invalid_step` | Any other step-schema error (e.g. Click with a `value`), or no reason | "Geçersiz adım" |
 
   With the grammar the model can only produce `no_match`; the other codes appear when a model server ignores the grammar, and the tests cover them.
-- There are 1–12 model steps. The model is asked to keep the order of the instruction and add nothing, but it can still miss or misread a step (qwen3 drops the first click of "Kaydet'e bastıktan sonra …"), which is why the user reviews every suggestion.
+- There are 1–12 model steps: the grammar lets the model write at most 12. The model is asked to keep the order of the instruction and add nothing, but it can still miss or misread a step (qwen3 drops the first click of "Kaydet'e bastıktan sonra …"), which is why the user reviews every suggestion.
+- `stepLimitReached`: `true` when the model wrote exactly 12 steps (`len(steps) + len(dropped)`, so dropped steps count). The grammar then closed the list, so an instruction that needed more steps is cut after the 12th, and nothing else in the answer shows it. The steps that are there are as valid as ever; show them, with a notice such as "Açıklama en fazla 12 adıma çevrilebiliyor; sonraki adımlar eksik olabilir. Açıklamayı bölerek tekrar deneyin." `false` when the model ended the list itself. Sent with every response that has `dropped` (200 and 422 `no_valid_steps`).
 - `latencyMs`: time spent in the service, model included.
 
 **Reserved object name `none.noMatch`.** The model's target list always offers `none.noMatch`, so it can say "no object fits" instead of picking a wrong object (forced choice). A step with this target is always dropped (`no_match`). A request whose `objects` contain an object of that name is refused with 400; the repository should not allow the name.
@@ -118,6 +120,7 @@ Every error has the same shape; `details` (a list of strings, at most 20) and th
     {"index": 1, "code": "unknown_target", "reason": "'login.forgotPasswordLink' is not in the object repository",
      "step": {"keyword": "Click", "target": "login.forgotPasswordLink", "reason": "Şifremi unuttum bağlantısına"}}
   ],
+  "stepLimitReached": false,
   "schemaVersion": "0.2",
   "promptVersion": "3+reason",
   "latencyMs": 7012
@@ -133,8 +136,8 @@ Every error has the same shape; `details` (a list of strings, at most 20) and th
 | 411 | `length_required` | Neither `Content-Length` nor chunked | — |
 | 413 | `too_large` | Body over the limit (64 KiB) | Send fewer objects. |
 | 415 | `unsupported_media_type` | `Content-Type` is not `application/json` | — |
-| 422 | `no_valid_steps` | The model answered, but every step it wrote was dropped (or it wrote none). `steps: []`; `dropped` says why for each step | Tell the user the description could not be turned into valid steps, with the reason per dropped step (`code`, table above), and ask them to rephrase. |
-| 422 | `invalid_json`, `truncated`, `invalid_schema` | The model's answer as a whole is unusable: not JSON, cut off at the output limit, or not a step document (`version`, the `steps` list). No `steps`, no `dropped` | Tell the user no suggestion could be made and ask them to rephrase. |
+| 422 | `no_valid_steps` | The model answered, but every step it wrote was dropped (or it wrote none). `steps: []`; `dropped` says why for each step; `stepLimitReached` as for 200 | Tell the user the description could not be turned into valid steps, with the reason per dropped step (`code`, table above), and ask them to rephrase. |
+| 422 | `invalid_json`, `truncated`, `invalid_schema` | The model's answer as a whole is unusable: not JSON, cut off at the output limit (`num_predict`, not the 12-step limit), or not a step document (`version`, the `steps` list). No `steps`, no `dropped`, no `stepLimitReached` | Tell the user no suggestion could be made and ask them to rephrase. |
 | 422 | `no_objects` | The retriever returned no candidate objects. Not sent while the server chooses the objects: a missing or empty `objects` is a 400 | — |
 | 500 | `internal_error` | A bug in the service | Show a generic error; report it with the service log. |
 | 503 | `server_error` | The model server is down or does not have the model (`details` has its message) | Disable the panel as for health `ready: false`. |
@@ -165,6 +168,7 @@ Says whether generation can work right now. It never runs the model and asks Oll
 - HTTP 200 whenever the service process answers; `ready` carries the answer.
 - `status`: `ok` (ready) · `model_server_down` (Ollama does not answer; `error` holds the reason) · `model_missing` (Ollama answers but the default model is not pulled).
 - `models[].available`: pulled on the model server, so a request may name it.
+- `modelServer.url`: the Ollama URL with the checked loopback address (`http://localhost:11434` shows as `http://127.0.0.1:11434`; see [Network](#network)).
 - For #78: disable the panel with a clear message when the health call fails (connection refused or no answer within a few seconds: the AI service is not running) or `ready` is false; `status` tells which message to show. A later 503 from generate-steps means the same.
 
 ## Timeouts and latency
@@ -183,6 +187,7 @@ Says whether generation can work right now. It never runs the model and asks Oll
 ## Network
 
 - Closed network: the service makes no call except to the Ollama server, which must be on a loopback address; the Ollama client ignores proxy settings and refuses redirects.
+- **A host name is never trusted as such** (#142 review): a hosts file or DNS entry can map any name, `localhost` included, off the machine. For `--host` and `--model-host` a name is resolved once at start, every address it resolves to must be loopback (127.0.0.0/8, `::1`), and the service then binds or connects to that checked address (IPv4 first), not to the name. A name that does not resolve, or resolves to any other address, is refused at start with that address in the message. Health's `modelServer.url` shows the checked address. The literal addresses, `127.0.0.1` and `[::1]`, are never looked up.
 - It listens on `127.0.0.1` by default and refuses a non-loopback `--host` unless started with `--allow-remote` (logged). In a container (#82) use `--host 0.0.0.0 --allow-remote` and do not publish the port: only the server reaches it, over the Compose network (RS NFR-46).
 - **Whatever listens off loopback needs a token**, as the agent (`AYNA_AGENT_TOKEN`) and the CLI runner (`AYNA_SERVER_TOKEN`) do: `--allow-remote` refuses to start without `AYNA_AI_TOKEN` (≥ 16 characters), and with it every request needs `Authorization: Bearer <token>`, compared in constant time. The server reads the same value from its own environment. On loopback the token is optional; when set, it is checked there too. A model run costs up to 30 s, so an open port would let any container on the network keep the machine busy.
 
