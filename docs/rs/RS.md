@@ -8,8 +8,8 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Requirements Specification in the style of ISO/IEC/IEEE 29148:2018 §9.6 [40] |
-| Version | 0.7 — draft |
-| Date | 2026-10-31 |
+| Version | 0.8 — draft |
+| Date | 2026-11-02 |
 | Status | Draft, reviewed by Ömerfaruk and Hasan (#35, PR #143); their comments are folded in. The use cases are the team's proposal until the advisor agrees them (#19, Appendix E.2). Final PDF: #41, due 23 Nov 2026 |
 
 ## Document history
@@ -20,6 +20,7 @@
 | 0.5 | 2026-10-27 | Galip | Full draft (#35): every section filled; FR and NFR tables of #34 moved in from `docs/rs/scenarios.md`; NFR-37–NFR-44 added; use-case catalogue, traceability and open items. Review by Galip and Ömerfaruk pending |
 | 0.6 | 2026-10-29 | Galip | Review comments of Ömerfaruk and Hasan on PR #143 (#35): FR-30 and FR-23 follow the healing-proposal-transport ADR (the client or CLI runner delivers results; CLI exit codes 0/1/2); API tokens for CI close TBD-10 (FR-23, FR-39, NFR-32); FR-08 keeps steps on rename; FR-35 gets a fifth category, "search incomplete", and FR-29 heals only after a complete search (TBD-5 closed); NFR-02, NFR-04, NFR-05 reworded; the owners' numbers team-confirmed (TBD-4); load test #152 (TBD-9 closed); TBD-6 closed; NFR-45 (result outbox) and NFR-46 (AI service port) added |
 | 0.7 | 2026-10-31 | Galip | NFR-45: a result the server refuses as invalid is set aside and shown, not retried (Ömerfaruk's review of PR #164; ADR healing proposal transport) |
+| 0.8 | 2026-11-02 | Galip | §2.2 project documents brought up to date: REST API v0 generated (#160, Ömerfaruk's #31 note), element, snapshot and healing-proposal schemas merged, SDD sections merged |
 | 1.0 | planned, 23 Nov 2026 | Galip | Submitted version (#41) |
 
 Approval: each version is approved in a pull request by the three team members; the advisor reviews the draft at the Tuesday meeting. Galip leads the RS (ADR windows-work-to-hasan); the plan still names Hasan (TBD-8).
@@ -265,22 +266,23 @@ Numbers follow the plan's reference list ("AYNA – 14-Week Project Plan", [1]�
 
 ### 2.2 Project documents
 
-| Document | Path | Issue | Status on 2026-10-27 |
+| Document | Path | Issue | Status on 2026-11-02 |
 |---|---|---|---|
 | Project brief | [`memory-bank/project/brief.md`](../../memory-bank/project/brief.md) | — | merged |
 | Architecture | [`memory-bank/project/architecture.md`](../../memory-bank/project/architecture.md) | — | merged |
 | Decisions (ADRs) | [`memory-bank/decisions/README.md`](../../memory-bank/decisions/README.md) | — | merged |
 | Glossary | [`memory-bank/project/glossary.md`](../../memory-bank/project/glossary.md) | — | merged |
-| Requirements workshop notes | [`docs/requirements-workshop.md`](../requirements-workshop.md) | #19 | PR #138; draft awaiting the advisor |
-| Reference scenarios (Appendix C) | [`docs/rs/scenarios.md`](scenarios.md) | #34 | PR #140 |
+| Requirements workshop notes | [`docs/requirements-workshop.md`](../requirements-workshop.md) | #19 | merged; §7 awaits the advisor |
+| Reference scenarios (Appendix C) | [`docs/rs/scenarios.md`](scenarios.md) | #34 | merged |
 | Tool comparison matrix | [`docs/tool-matrix.md`](../tool-matrix.md) | #18 | merged |
-| Literature review | `docs/literature.md` | #10, #20 | PR #126 (part 1), PR #139 (part 2) |
+| Literature review | `docs/literature.md` | #10, #20 | PR #126 (draft; section 2 from #139 is in it) |
 | Graph model | [`docs/graph-model.md`](../graph-model.md) | #14 | merged |
-| Step schema | `schemas/step.schema.json` | #13 | PR #134 |
-| Element and snapshot schemas | `schemas/element.schema.json`, `schemas/snapshot.schema.json` | #11, #12 | planned |
-| Agent JSON-RPC contract | `docs/agent-rpc.md` | #16 | PR #135 |
-| REST API (generated) | `docs/api/openapi.yaml` | #31, #52 | planned |
-| Software Design Document | `docs/sdd/` | #45, #53 | planned |
+| Step schema | [`schemas/step.schema.json`](../../schemas/step.schema.json) | #13, #147 | 0.1 merged (#134); 0.2 in PR #150 |
+| Element and snapshot schemas | [`schemas/element.schema.json`](../../schemas/element.schema.json), [`schemas/snapshot.schema.json`](../../schemas/snapshot.schema.json) | #11, #12 | 0.1 merged (#175, #180) |
+| Healing proposal schema | [`schemas/healing-proposal.schema.json`](../../schemas/healing-proposal.schema.json) | #149 | 0.2 merged (#174) |
+| Agent JSON-RPC contract | [`docs/agent-rpc.md`](../agent-rpc.md) | #16 | 0.1 merged (#135); 0.2 draft in the same file |
+| REST API (generated) | [`docs/api/openapi.yaml`](../api/openapi.yaml) | #31, #52 | v0 merged (#160); frozen as v1 at #52 |
+| Software Design Document | [`docs/sdd/SDD.md`](../sdd/SDD.md), [`docs/sdd/SDD-ai.md`](../sdd/SDD-ai.md) | #45, #48, #50, #53 | §1–4 and §6 merged (#155, #157); AI sections (#144) join as §5 at #53 |
 
 ## 3 Requirements
 
