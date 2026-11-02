@@ -13,7 +13,7 @@ schemas it checks what a schema cannot:
   team pair at least once with no letter or digit glued to it (no suffix
   dropped from a bare value; quote it or use an apostrophe);
 - a pair that clicks a check box states the assumed start state in `notes`
-  (Click toggles);
+  (Click toggles), one phrase naming each box when it clicks several;
 - the scenario-type rules (checkpoint: only Verify; wait: has a Wait);
 - the variants of one scenario share app, type and gold steps, and a scenario
   never sits on both sides of the held-out split;
@@ -61,7 +61,8 @@ PROPERTY_CONTROLS = {
 }
 ITEM_CONTROLS = {"ComboBox", "List"}
 # A Click toggles a check box, so the pair must say what it toggled from
-# (guideline 6.8): "start state: unchecked", optionally naming the box.
+# (guideline 6.8): "start state: unchecked"; a pair that clicks several boxes
+# gives one phrase per box, naming it: "start state: form.aCheck unchecked".
 START_STATE = re.compile(r"\bstart state\b[^;\n]*?\b(?:un)?checked\b", re.IGNORECASE)
 
 
@@ -254,6 +255,28 @@ def _stands_alone(literal: str, text: str) -> bool:
     return False
 
 
+def _boxes_without_start_state(boxes: Sequence[str], notes: str) -> list[str]:
+    """The clicked check boxes whose start state `notes` does not give (6.8).
+
+    One box needs a start-state phrase. Several boxes need one phrase per box
+    that names that box, and no other, by its logical name, so that each state
+    is tied to one box.
+    """
+    phrases = START_STATE.findall(notes)
+    if len(boxes) == 1:
+        return [] if phrases else list(boxes)
+
+    def named(phrase: str) -> set[str]:
+        return {
+            box
+            for box in boxes
+            if re.search(rf"(?<![\w.]){re.escape(box)}(?![\w.])", phrase)
+        }
+
+    stated = [named(phrase) for phrase in phrases]
+    return [box for box in boxes if {box} not in stated]
+
+
 def _check_pair(pair: Pair, report: Report) -> None:
     record, where = pair.record, pair.where
     app = record["app"]
@@ -298,6 +321,7 @@ def _check_pair(pair: Pair, report: Report) -> None:
             f"appVersion {record['appVersion']!r} != objects/{app}.json "
             f"{objects['appVersion']!r}",
         )
+    boxes: dict[str, str] = {}  # clicked check box -> step of its first Click
     for i, step in enumerate(steps):
         at = f"gold.steps[{i}]"
         obj = objects["objects"].get(step["target"])
@@ -312,17 +336,8 @@ def _check_pair(pair: Pair, report: Report) -> None:
         allowed = KEYWORD_CONTROLS.get(keyword)
         if allowed and control not in allowed:
             report.add(where, "control-type", f"{at}: {keyword} on a {control}")
-        if (
-            keyword == "Click"
-            and control == "CheckBox"
-            and not START_STATE.search(record.get("notes", ""))
-        ):
-            report.add(
-                where,
-                "start-state",
-                f"{at}: Click toggles {step['target']}; give the assumed start "
-                "state in notes, e.g. 'start state: unchecked' (6.8)",
-            )
+        if keyword == "Click" and control == "CheckBox":
+            boxes.setdefault(step["target"], at)
         if keyword == "Verify":
             prop = step["checkpoint"]["property"]
             allowed = PROPERTY_CONTROLS.get(prop)
@@ -336,6 +351,14 @@ def _check_pair(pair: Pair, report: Report) -> None:
                 "unknown-item",
                 f"{at}: {step['value']!r} is not an item of {step['target']}",
             )
+    for box in _boxes_without_start_state(list(boxes), record.get("notes", "")):
+        example = "start state: " + ("" if len(boxes) == 1 else f"{box} ") + "unchecked"
+        report.add(
+            where,
+            "start-state",
+            f"{boxes[box]}: Click toggles {box}; give its assumed start state in "
+            f"notes, e.g. '{example}', one phrase per box when there are several (6.8)",
+        )
 
 
 def _check_unique(pairs: Sequence[Pair], report: Report) -> None:
