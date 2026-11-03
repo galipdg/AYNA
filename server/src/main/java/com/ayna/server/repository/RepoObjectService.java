@@ -24,7 +24,10 @@ import com.ayna.server.error.ApiExceptions.NotFoundException;
 import com.ayna.server.error.FieldError;
 import com.ayna.server.repository.RepoObjectDtos.CreateRepoObjectRequest;
 import com.ayna.server.repository.RepoObjectDtos.RepoObjectResponse;
+import com.ayna.server.repository.RepoObjectDtos.RepoObjectSummary;
 import com.ayna.server.repository.RepoObjectDtos.Resolution;
+import com.ayna.server.repository.RepoObjectDtos.TestRef;
+import com.ayna.server.repository.RepoObjectDtos.UpdateRepoObjectRequest;
 import com.ayna.server.snapshots.SnapshotSchema;
 import com.ayna.server.tests.StepSchema;
 
@@ -34,7 +37,8 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * The object repository (#25): `(Application)-[:HAS_OBJECT]->(RepoObject)`, linked to the
- * picked Element of an imported snapshot by `RESOLVES_TO {version}`. A logical name is unique
+ * picked Element of an imported snapshot by `RESOLVES_TO {version}`; steps point at an object
+ * by `TARGETS`, so a rename keeps them working (FR-08). A logical name is unique
  * per application (FR-07); the check runs in the write transaction with no constraint behind
  * it, as for test names. `primary` and `fallback` are stored as JSON strings, since Neo4j
  * properties cannot hold maps (as `Step.checkpoint`).
@@ -65,11 +69,15 @@ public class RepoObjectService {
 	/** Property name → schema of its value, in the descriptor's order. */
 	private final Map<String, JsonNode> identifying = new LinkedHashMap<>();
 
+	/** Every descriptor property, in the descriptor's order: the order of `element` in a response. */
+	private final List<String> descriptor = new ArrayList<>();
+
 	public RepoObjectService(Driver driver, ObjectMapper mapper, StepSchema steps, SnapshotSchema snapshots) {
 		this.driver = driver;
 		this.mapper = mapper;
 		this.logicalName = Pattern.compile(steps.logicalNamePattern());
 		for (Map.Entry<String, JsonNode> property : snapshots.elementProperties().properties()) {
+			descriptor.add(property.getKey());
 			if (!NEVER_MATCH.contains(property.getKey())) {
 				identifying.put(property.getKey(), property.getValue());
 			}
@@ -84,9 +92,7 @@ public class RepoObjectService {
 		String snapshotElementId = required(request.snapshotElementId(), "snapshotElementId", errors);
 		Map<String, Object> primary = propertySet(request.primary(), "primary", Set.of(), errors);
 		Map<String, Object> fallback = propertySet(request.fallback(), "fallback", primary.keySet(), errors);
-		if (request.primary() == null || request.primary().isEmpty()) {
-			errors.add(new FieldError("$.primary", "At least one primary property is needed to find the element"));
-		}
+		requirePrimary(request.primary(), errors);
 		if (!errors.isEmpty()) {
 			throw new InvalidRequestException("The repository object is not valid", errors);
 		}
@@ -121,6 +127,138 @@ public class RepoObjectService {
 		}
 	}
 
+	/** The application's objects by name, each with how many tests use it (FR-08). */
+	public List<RepoObjectSummary> list(String appId) {
+		try (Session session = driver.session()) {
+			return session.executeRead(tx -> {
+				if (!tx.run("MATCH (a:Application {id: $id}) RETURN a LIMIT 1", Map.of("id", appId)).hasNext()) {
+					throw new NotFoundException("Application not found: " + appId);
+				}
+				return tx.run("""
+						MATCH (:Application {id: $appId})-[:HAS_OBJECT]->(o:RepoObject)
+						CALL (o) {
+						  OPTIONAL MATCH (o)-[:RESOLVES_TO]->(e:Element)
+						  OPTIONAL MATCH (w:Window {snapshotId: e.snapshotId})
+						  RETURN e ORDER BY w.capturedAt DESC LIMIT 1
+						}
+						RETURN o.id AS id, o.name AS name, o.primary AS primary, o.fallback AS fallback,
+						  e.controlType AS controlType, e.nearestLabel AS nearestLabel,
+						  COUNT { MATCH (o)<-[:TARGETS]-(:Step)<-[:HAS_STEP]-(t:TestCase) RETURN DISTINCT t } AS testCount,
+						  COLLECT { MATCH (o)-[r:RESOLVES_TO]->(x:Element)
+						    RETURN {versionId: r.version, elementId: x.id, snapshotId: x.snapshotId,
+						      snapshotElementId: x.snapshotElementId} AS resolution
+						    ORDER BY resolution.versionId } AS resolvesTo
+						ORDER BY name""", Map.of("appId", appId))
+					.list(r -> new RepoObjectSummary(r.get("id").asString(), r.get("name").asString(),
+							mapper.readValue(r.get("primary").asString(), PROPERTY_SET),
+							mapper.readValue(r.get("fallback").asString(), PROPERTY_SET), text(r.get("controlType")),
+							text(r.get("nearestLabel")), r.get("testCount").asInt(),
+							r.get("resolvesTo").asList(RepoObjectService::resolution)));
+			});
+		}
+	}
+
+	public RepoObjectResponse get(String id) {
+		try (Session session = driver.session()) {
+			return session.executeRead(tx -> {
+				appOf(tx, id);
+				return response(tx, id);
+			});
+		}
+	}
+
+	/**
+	 * Renames the object and/or replaces its property sets; `userId` is the account that changes
+	 * it (FR-40). The same checks as {@link #create}; 409 when another object of the application
+	 * has the name. A request that changes nothing writes nothing.
+	 */
+	public RepoObjectResponse update(String id, UpdateRepoObjectRequest request, String userId) {
+		List<FieldError> errors = new ArrayList<>();
+		String name = request.name() == null ? null : logicalName(request.name(), errors);
+		Map<String, Object> primary = null;
+		Map<String, Object> fallback = null;
+		if ((request.primary() == null) != (request.fallback() == null)) {
+			String missing = request.primary() == null ? "primary" : "fallback";
+			errors.add(new FieldError("$." + missing,
+					"'primary' and 'fallback' are replaced together; send both (an empty fallback is {})"));
+		}
+		else if (request.primary() != null) {
+			primary = propertySet(request.primary(), "primary", Set.of(), errors);
+			fallback = propertySet(request.fallback(), "fallback", primary.keySet(), errors);
+			requirePrimary(request.primary(), errors);
+		}
+		if (!errors.isEmpty()) {
+			throw new InvalidRequestException("The repository object is not valid", errors);
+		}
+
+		Map<String, Object> changes = new LinkedHashMap<>();
+		if (name != null) {
+			changes.put("name", name);
+		}
+		if (primary != null) {
+			changes.put("primary", mapper.writeValueAsString(primary));
+			changes.put("fallback", mapper.writeValueAsString(fallback));
+		}
+		try (Session session = driver.session()) {
+			return session.executeWrite(tx -> {
+				String appId = appOf(tx, id);
+				if (changes.isEmpty()) {
+					return response(tx, id);
+				}
+				if (name != null) {
+					var existing = tx.run("""
+							MATCH (:Application {id: $appId})-[:HAS_OBJECT]->(o:RepoObject {name: $name})
+							WHERE o.id <> $id
+							RETURN o.id AS id LIMIT 1""", Map.of("appId", appId, "name", name, "id", id));
+					if (existing.hasNext()) {
+						throw new ConflictException("The logical name " + name + " is already used by repository object "
+								+ existing.next().get("id").asString() + " in this application");
+					}
+				}
+				tx.run("""
+						MATCH (o:RepoObject {id: $id})
+						SET o += $changes, o.updatedBy = $userId, o.updatedAt = datetime()""",
+						Map.of("id", id, "changes", changes, "userId", userId))
+					.consume();
+				return response(tx, id);
+			});
+		}
+	}
+
+	/**
+	 * Deletes the object and its `RESOLVES_TO` links; the captured Elements stay. 409 while a
+	 * step targets it, naming the tests (FR-09): deleting it would break them.
+	 */
+	public void delete(String id) {
+		try (Session session = driver.session()) {
+			session.executeWriteWithoutResult(tx -> {
+				appOf(tx, id);
+				List<TestRef> usedBy = usedBy(tx, id);
+				if (!usedBy.isEmpty()) {
+					String name = tx.run("MATCH (o:RepoObject {id: $id}) RETURN o.name AS name", Map.of("id", id))
+						.single()
+						.get("name")
+						.asString();
+					throw new ConflictException(name + " is used by " + usedBy.size()
+							+ (usedBy.size() == 1 ? " test: " : " tests: ")
+							+ String.join(", ", usedBy.stream().map(TestRef::name).toList())
+							+ ". Change those steps first");
+				}
+				tx.run("MATCH (o:RepoObject {id: $id}) DETACH DELETE o", Map.of("id", id)).consume();
+			});
+		}
+	}
+
+	/** The id of the object's application; 404 when there is no such object. */
+	private static String appOf(TransactionContext tx, String id) {
+		var r = tx.run("MATCH (a:Application)-[:HAS_OBJECT]->(:RepoObject {id: $id}) RETURN a.id AS appId",
+				Map.of("id", id));
+		if (!r.hasNext()) {
+			throw new NotFoundException("Repository object not found: " + id);
+		}
+		return r.next().get("appId").asString();
+	}
+
 	/** The picked Element and its version; the snapshot must have been imported into this application (#15). */
 	private static Record element(TransactionContext tx, String appId, String snapshotId, String snapshotElementId) {
 		Record r = tx.run("""
@@ -149,18 +287,62 @@ public class RepoObjectService {
 				  o.createdBy AS createdBy, c.username AS createdByName, o.createdAt AS createdAt,
 				  o.updatedBy AS updatedBy, u.username AS updatedByName, o.updatedAt AS updatedAt""", Map.of("id", id))
 			.single();
-		List<Resolution> resolvesTo = tx.run("""
-				MATCH (:RepoObject {id: $id})-[r:RESOLVES_TO]->(e:Element)
-				RETURN r.version AS versionId, e.id AS elementId, e.snapshotId AS snapshotId,
-				  e.snapshotElementId AS snapshotElementId
-				ORDER BY versionId""", Map.of("id", id))
-			.list(row -> new Resolution(row.get("versionId").asString(), row.get("elementId").asString(),
-					row.get("snapshotId").asString(), row.get("snapshotElementId").asString()));
 		return new RepoObjectResponse(id, r.get("appId").asString(), r.get("name").asString(),
 				mapper.readValue(r.get("primary").asString(), PROPERTY_SET),
-				mapper.readValue(r.get("fallback").asString(), PROPERTY_SET), resolvesTo,
-				userRef(r.get("createdBy"), r.get("createdByName")), instant(r.get("createdAt")),
+				mapper.readValue(r.get("fallback").asString(), PROPERTY_SET), resolutions(tx, id), usedBy(tx, id),
+				latestElement(tx, id), userRef(r.get("createdBy"), r.get("createdByName")), instant(r.get("createdAt")),
 				userRef(r.get("updatedBy"), r.get("updatedByName")), instant(r.get("updatedAt")));
+	}
+
+	private static List<Resolution> resolutions(TransactionContext tx, String id) {
+		return tx.run("""
+				MATCH (:RepoObject {id: $id})-[r:RESOLVES_TO]->(e:Element)
+				RETURN {versionId: r.version, elementId: e.id, snapshotId: e.snapshotId,
+				  snapshotElementId: e.snapshotElementId} AS resolution
+				ORDER BY resolution.versionId""", Map.of("id", id))
+			.list(row -> resolution(row.get("resolution")));
+	}
+
+	private static Resolution resolution(Value row) {
+		return new Resolution(row.get("versionId").asString(), row.get("elementId").asString(),
+				row.get("snapshotId").asString(), row.get("snapshotElementId").asString());
+	}
+
+	private static List<TestRef> usedBy(TransactionContext tx, String id) {
+		return tx.run("""
+				MATCH (:RepoObject {id: $id})<-[:TARGETS]-(:Step)<-[:HAS_STEP]-(t:TestCase)
+				RETURN DISTINCT t.id AS id, t.name AS name
+				ORDER BY name""", Map.of("id", id))
+			.list(row -> new TestRef(row.get("id").asString(), row.get("name").asString()));
+	}
+
+	/** The descriptor of the Element the object resolves to in the most recent capture; empty if none. */
+	private Map<String, Object> latestElement(TransactionContext tx, String id) {
+		var rows = tx.run("""
+				MATCH (:RepoObject {id: $id})-[:RESOLVES_TO]->(e:Element)
+				OPTIONAL MATCH (w:Window {snapshotId: e.snapshotId})
+				RETURN properties(e) AS props
+				ORDER BY w.capturedAt DESC LIMIT 1""", Map.of("id", id)).list();
+		Map<String, Object> element = new LinkedHashMap<>();
+		if (!rows.isEmpty()) {
+			Map<String, Object> props = rows.get(0).get("props").asMap();
+			for (String property : descriptor) {
+				if (props.containsKey(property)) {
+					element.put(property, props.get(property));
+				}
+			}
+		}
+		return element;
+	}
+
+	private static String text(Value value) {
+		return value.isNull() ? null : value.asString();
+	}
+
+	private static void requirePrimary(Map<String, Object> primary, List<FieldError> errors) {
+		if (primary == null || primary.isEmpty()) {
+			errors.add(new FieldError("$.primary", "At least one primary property is needed to find the element"));
+		}
 	}
 
 	/** Trims the name; it must have the step schema's `screen.element` form and not be reserved (SC-11). */

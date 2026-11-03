@@ -21,13 +21,38 @@ final class RepoObjectDtos {
 			Map<String, Object> fallback) {
 	}
 
+	/**
+	 * Renames the object or replaces how it is found. A missing field keeps its value;
+	 * `primary` and `fallback` are replaced together (both or neither), so the two sets never
+	 * share a property.
+	 */
+	record UpdateRepoObjectRequest(String name, Map<String, Object> primary, Map<String, Object> fallback) {
+	}
+
 	/** Where the object is found in one application version: the Element's server id and its snapshot ids. */
 	record Resolution(String appVersionId, String elementId, String snapshotId, String snapshotElementId) {
 	}
 
+	/** A test with a step that targets the object. */
+	record TestRef(String id, String name) {
+	}
+
+	/**
+	 * `usedBy`: the tests whose steps target the object, by name. `element`: the descriptor of
+	 * the Element it resolves to in the most recent capture (descriptor property → value, in the
+	 * descriptor's order), the values the editor starts from.
+	 */
 	record RepoObjectResponse(String id, String appId, String name, Map<String, Object> primary,
-			Map<String, Object> fallback, List<Resolution> resolvesTo, UserRef createdBy, Instant createdAt,
-			UserRef updatedBy, Instant updatedAt) {
+			Map<String, Object> fallback, List<Resolution> resolvesTo, List<TestRef> usedBy,
+			Map<String, Object> element, UserRef createdBy, Instant createdAt, UserRef updatedBy, Instant updatedAt) {
+	}
+
+	/**
+	 * One row of the repository list: `testCount` tests use the object (FR-08); `controlType`
+	 * and `nearestLabel` come from the most recent capture, for search and display.
+	 */
+	record RepoObjectSummary(String id, String name, Map<String, Object> primary, Map<String, Object> fallback,
+			String controlType, String nearestLabel, int testCount, List<Resolution> resolvesTo) {
 	}
 
 }
