@@ -151,3 +151,10 @@ Append-only. One entry per session, newest at the bottom:
 - #24: snapshot types checked against the merged schema with `satisfies Record<keyof T, true>` key lists; no field name had moved. 108 client tests.
 - Learnings: a shared schema the server reads needs 3 entries (pom, Dockerfile, .dockerignore); the compose Neo4j volume keeps migrations from other branches.
 - Next: #25 (design proposed in `active.md`, waiting for omer's OK).
+
+## 2026-11-03 · #25 object repository, UI redesign issues
+- #25 server: `POST /api/apps/{appId}/repo-objects`; primary/fallback as JSON strings; allowed keys read from the snapshot schema minus never-match fields; name pattern from the step schema, `none.noMatch` refused; duplicate → 409 naming the object. 76 server tests.
+- #25 client: merged #24 in; snapshot import then create; property suggestion (`suggestUses`) until the element is unique in the capture. After omer's first manual check the form was hard to use → version bar at the top of the Spy, form = name + "How AYNA finds it" summary + "Advanced settings". 124 client tests; both manual checks passed.
+- omer: the whole client UI is still hard to read and to present, and should beat TestComplete's dated UI → opened #183 (design + shell, expanded), #184 (three-panel Spy), #185 (Turkish/English; galip's inbox for RS TBD-2).
+- PRs #186 (#24, "Part of") and #187 (#25) opened on main.
+- Next: #183, wireframes first, omer's OK before code.
