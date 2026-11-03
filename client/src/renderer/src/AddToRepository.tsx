@@ -15,7 +15,7 @@ import {
   type PropertyUse,
 } from '../../shared/repository.ts'
 import type { Snapshot, TreeNode } from '../../shared/snapshot.ts'
-import { strings } from './strings.ts'
+import { controlTypeLabel, strings } from './strings.ts'
 
 interface Row {
   field: IdentifyingField
@@ -47,6 +47,17 @@ function propertySet(rows: Row[], use: PropertyUse): PropertySet | string {
     }
   }
   return set as PropertySet
+}
+
+/** The summary's words: plain labels where the glossary has one, plain control types. */
+function summaryLabel(field: IdentifyingField): string {
+  return field in strings.spyPlain
+    ? strings.spyPlain[field as keyof typeof strings.spyPlain]
+    : strings.spyProperties[field]
+}
+
+function summaryValue(row: Row): string {
+  return row.field === 'controlType' ? controlTypeLabel(row.value) : row.value
 }
 
 function failureText(result: Extract<AddToRepositoryResult, { ok: false }>): string[] {
@@ -136,124 +147,133 @@ export default function AddToRepository({
   return (
     <section className="spy-repo" aria-label={strings.repoTitle}>
       <header className="panel-header">
-        <h2>{strings.repoTitle}</h2>
+        <div>
+          <button type="button" className="btn-quiet" onClick={onCancel} disabled={saving}>
+            ← {strings.spyBack}
+          </button>
+          <h2>{strings.repoTitle}</h2>
+        </div>
       </header>
-      <form className="form" onSubmit={save}>
-        <label htmlFor="repo-name">{strings.repoNameLabel}</label>
-        <input
-          id="repo-name"
-          value={name}
-          placeholder={strings.repoNamePlaceholder}
-          onChange={(event) => setName(event.target.value)}
-          aria-describedby="repo-name-hint"
-          autoFocus
-        />
-        <p id="repo-name-hint" className="hint">
-          {strings.repoNameHint}
-        </p>
+      <form className="repo-form" onSubmit={save}>
+        <div className="panel-scroll form">
+          <label htmlFor="repo-name">{strings.repoNameLabel}</label>
+          <input
+            id="repo-name"
+            value={name}
+            placeholder={strings.repoNamePlaceholder}
+            onChange={(event) => setName(event.target.value)}
+            aria-describedby="repo-name-hint"
+            autoFocus
+          />
+          <p id="repo-name-hint" className="hint">
+            {strings.repoNameHint}
+          </p>
 
-        <h4>{strings.repoFoundBy}</h4>
-        <div className="repo-summary">
-          {findBy.length === 0 ? (
-            <p className="field-error">{strings.repoNoPrimary}</p>
-          ) : (
-            <dl>
-              {findBy.map((row) => (
-                <div key={row.field}>
-                  <dt>{strings.spyProperties[row.field]}</dt>
-                  <dd>{row.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {matches !== undefined && findBy.length > 0 && (
-            <p className={matches === 1 ? 'tone-success' : 'field-error'} role="status">
-              {strings.repoMatches(matches)}
-            </p>
-          )}
-          {backup.length > 0 && (
-            <p className="hint">
-              {strings.repoBackup(backup.map((row) => strings.spyProperties[row.field]))}
-            </p>
-          )}
-        </div>
+          <h4>{strings.repoFoundBy}</h4>
+          <div className="repo-summary">
+            {findBy.length === 0 ? (
+              <p className="field-error">{strings.repoNoPrimary}</p>
+            ) : (
+              <dl>
+                {findBy.map((row) => (
+                  <div key={row.field}>
+                    <dt>{summaryLabel(row.field)}</dt>
+                    <dd>{summaryValue(row)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {matches !== undefined && findBy.length > 0 && (
+              <p className={matches === 1 ? 'tone-success' : 'field-error'} role="status">
+                {strings.repoMatches(matches)}
+              </p>
+            )}
+            {backup.length > 0 && (
+              <p className="hint">
+                {strings.repoBackup(backup.map((row) => summaryLabel(row.field)))}
+              </p>
+            )}
+          </div>
 
-        <details
-          className="advanced"
-          open={advanced}
-          onToggle={(event) => setAdvanced(event.currentTarget.open)}
-        >
-          <summary>{strings.repoAdvanced}</summary>
-          <p className="hint">{strings.repoAdvancedHint}</p>
-          <table className="repo-properties">
-            <thead>
-              <tr>
-                <th scope="col">{strings.repoPropertyHeader}</th>
-                <th scope="col">{strings.repoValueHeader}</th>
-                <th scope="col">{strings.repoUseHeader}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const label = strings.spyProperties[row.field]
-                return (
-                  <tr key={row.field}>
-                    <th scope="row" title={row.field}>
-                      {label}
-                    </th>
-                    <td>
-                      <input
-                        aria-label={`${label}: ${strings.repoValueHeader}`}
-                        value={row.value}
-                        inputMode={row.field === 'siblingIndex' ? 'numeric' : undefined}
-                        onChange={(event) => change(row.field, { value: event.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <select
-                        aria-label={`${label}: ${strings.repoUseHeader}`}
-                        value={row.use}
-                        onChange={(event) =>
-                          change(row.field, { use: event.target.value as PropertyUse })
-                        }
-                      >
-                        {(['primary', 'fallback', 'unused'] as const).map((use) => (
-                          <option key={use} value={use}>
-                            {strings.repoUses[use]}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </details>
-
-        {problems.length > 0 && (
-          <ul className="message message-danger" role="alert">
-            {problems.map((problem) => (
-              <li key={problem}>{problem}</li>
-            ))}
-          </ul>
-        )}
-        <p className={version ? 'hint' : 'field-error'}>
-          {version ? strings.repoSavedUnder(app.name, version.version) : strings.repoNoVersion}
-        </p>
-        <div className="form-actions">
-          <button type="button" onClick={onCancel} disabled={saving}>
-            {strings.repoCancel}
-          </button>
-          <button
-            type="submit"
-            className="btn-main"
-            disabled={saving || !version}
-            title={version ? undefined : strings.repoNoVersion}
+          <details
+            className="advanced"
+            open={advanced}
+            onToggle={(event) => setAdvanced(event.currentTarget.open)}
           >
-            {saving ? strings.repoSaving : strings.repoSave}
-          </button>
+            <summary>{strings.repoAdvanced}</summary>
+            <p className="hint">{strings.repoAdvancedHint}</p>
+            <table className="repo-properties">
+              <thead>
+                <tr>
+                  <th scope="col">{strings.repoPropertyHeader}</th>
+                  <th scope="col">{strings.repoValueHeader}</th>
+                  <th scope="col">{strings.repoUseHeader}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const label = strings.spyProperties[row.field]
+                  return (
+                    <tr key={row.field}>
+                      <th scope="row" title={row.field}>
+                        {label}
+                      </th>
+                      <td>
+                        <input
+                          aria-label={`${label}: ${strings.repoValueHeader}`}
+                          value={row.value}
+                          inputMode={row.field === 'siblingIndex' ? 'numeric' : undefined}
+                          onChange={(event) => change(row.field, { value: event.target.value })}
+                        />
+                      </td>
+                      <td>
+                        <select
+                          aria-label={`${label}: ${strings.repoUseHeader}`}
+                          value={row.use}
+                          onChange={(event) =>
+                            change(row.field, { use: event.target.value as PropertyUse })
+                          }
+                        >
+                          {(['primary', 'fallback', 'unused'] as const).map((use) => (
+                            <option key={use} value={use}>
+                              {strings.repoUses[use]}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </details>
+
+          {problems.length > 0 && (
+            <ul className="message message-danger" role="alert">
+              {problems.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          )}
         </div>
+        <footer className="panel-footer">
+          <p className={version ? 'hint' : 'field-error'}>
+            {version ? strings.repoSavedUnder(app.name, version.version) : strings.repoNoVersion}
+          </p>
+          <div className="form-actions">
+            <button type="button" onClick={onCancel} disabled={saving}>
+              {strings.repoCancel}
+            </button>
+            <button
+              type="submit"
+              className="btn-main"
+              disabled={saving || !version}
+              title={version ? undefined : strings.repoNoVersion}
+            >
+              {saving ? strings.repoSaving : strings.repoSave}
+            </button>
+          </div>
+        </footer>
       </form>
     </section>
   )
