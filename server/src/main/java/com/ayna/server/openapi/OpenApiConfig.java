@@ -35,13 +35,13 @@ import com.ayna.server.error.ErrorResponses;
 class OpenApiConfig {
 
 	/**
-	 * Step documents and test files travel as `JsonNode`, so the contract shows a plain object
-	 * instead of Jackson's getters; the step schema in `schemas/` stays the real contract.
+	 * Step documents, test files and snapshots travel as `JsonNode`, so the contract shows a plain
+	 * object instead of Jackson's getters; the schemas in `schemas/` stay the real contract.
 	 */
 	static {
 		SpringDocUtils.getConfig()
 			.replaceWithSchema(JsonNode.class, new ObjectSchema()
-				.description("JSON document; steps are validated against schemas/step.schema.json"));
+				.description("JSON document, validated against its schema in schemas/ (steps: step.schema.json, snapshots: snapshot.schema.json)"));
 	}
 
 	@Bean

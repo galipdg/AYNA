@@ -71,7 +71,7 @@
 	</dependencies>
 
 	<build>
-		<!-- The step schema is the shared contract in ../schemas; the server validates against that file, not a copy (#39). -->
+		<!-- The step and snapshot schemas are shared contracts in ../schemas; the server validates against those files, not copies (#39, #15). -->
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
@@ -81,6 +81,7 @@
 				<targetPath>schemas</targetPath>
 				<includes>
 					<include>step.schema.json</include>
+					<include>snapshot.schema.json</include>
 				</includes>
 			</resource>
 		</resources>

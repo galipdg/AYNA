@@ -81,3 +81,5 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
   is what "the same file" actually means. **General point: the only Python on this Windows machine
   is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
   is not evidence that the version floor holds.**
+- 2026-11-03 · omer · #15 · **A shared schema the server reads must be listed in three places**: `server/pom.xml` (resources include), `server/Dockerfile` (COPY) and `server/Dockerfile.dockerignore` (`!schemas/...`). `./mvnw test` passes with only the pom entry; the Docker image then fails at startup because the bean cannot read the file. Build the image (`docker build -f server/Dockerfile .`) after adding one.
+- 2026-11-03 · omer · #15 · **The compose Neo4j volume remembers migrations from other branches.** After running a branch that adds `V0003`, starting the server from a branch without it fails with "More migrations have been applied to the database than locally resolved". Not a bug in the branch: test against a throwaway Neo4j (`docker run --rm neo4j:5.26-community` on its own network) instead of wiping the shared volume.
