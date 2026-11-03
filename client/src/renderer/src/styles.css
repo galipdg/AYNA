@@ -86,7 +86,6 @@ body {
   padding: 6px 8px;
 }
 
-.server-form .actions,
 .connected {
   display: flex;
   align-items: center;
@@ -140,8 +139,7 @@ button {
   padding: 6px 8px;
 }
 
-.card > .actions,
-.app-form .actions {
+.actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -248,4 +246,56 @@ button {
 .spy-tree .automation-id {
   font-family: ui-monospace, Consolas, monospace;
   opacity: 0.75;
+}
+
+.muted {
+  opacity: 0.75;
+}
+
+.user-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.user-row button {
+  white-space: nowrap;
+}
+
+.app-form select,
+.user-row select {
+  font: inherit;
+  padding: 4px 8px;
+}
+
+.tokens {
+  margin: 8px 0 0 16px;
+  padding-left: 16px;
+  border-left: 2px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.secret input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-family: ui-monospace, Consolas, monospace;
+  padding: 6px 8px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

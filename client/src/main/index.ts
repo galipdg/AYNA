@@ -9,7 +9,7 @@ import {
   session,
   type IpcMainInvokeEvent,
 } from 'electron'
-import { IPC, type AppInfo } from '../shared/api.ts'
+import { IPC, type AppInfo, type Role } from '../shared/api.ts'
 import { AgentManager, resolveAgentCommand } from './agent.ts'
 import {
   isAllowedNavigation,
@@ -18,7 +18,17 @@ import {
   secureWebPreferences,
 } from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
+import { login, logout, type Session } from './auth.ts'
 import { checkServer } from './server.ts'
+import {
+  createToken,
+  createUser,
+  listTokens,
+  listUsers,
+  removeUser,
+  revokeToken,
+  updateUser,
+} from './users.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 import { Highlighter } from './overlay.ts'
 import { isBounds, listWindows, PickHotkey, pickHotkeyLabel, snapshot } from './spy.ts'
@@ -83,6 +93,21 @@ function handle(
 
 function registerIpc() {
   const settingsFile = join(app.getPath('userData'), SETTINGS_FILE)
+  // In memory only: closing the client logs out. Tied to the server it came from.
+  let session: (Session & { serverUrl: string }) | null = null
+
+  /** The saved server and the session token for it, if any. */
+  async function server() {
+    const { serverUrl } = await loadSettings(settingsFile)
+    const token = session && session.serverUrl === serverUrl ? session.token : null
+    return { serverUrl, token }
+  }
+
+  /** A 401 means the session is gone on the server; forget it here too. */
+  function track<T extends { ok: boolean; reason?: string }>(result: T): T {
+    if (!result.ok && result.reason === 'unauthorized') session = null
+    return result
+  }
 
   handle(IPC.getAppInfo, (): AppInfo => ({
     name: app.getName(),
@@ -105,12 +130,12 @@ function registerIpc() {
     return result
   })
   handle(IPC.listApplications, async () => {
-    const { serverUrl } = await loadSettings(settingsFile)
-    return listApplications(serverUrl)
+    const { serverUrl, token } = await server()
+    return track(await listApplications(serverUrl, { token }))
   })
-  handle(IPC.createApplication, async (_event, name, technology) => {
-    const { serverUrl } = await loadSettings(settingsFile)
-    return createApplication(serverUrl, String(name), String(technology))
+  handle(IPC.createApplication, async (_event, name: unknown, technology: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await createApplication(serverUrl, String(name), String(technology), { token }))
   })
   handle(IPC.chooseApplication, async (_event, id) => {
     const settings = await loadSettings(settingsFile)
@@ -128,6 +153,60 @@ function registerIpc() {
     active: pickHotkey.set(enabled === true),
     label: pickHotkeyLabel(process.platform),
   }))
+  handle(IPC.login, async (_event, username: unknown, password: unknown) => {
+    const { serverUrl } = await server()
+    const answer = await login(serverUrl, String(username), String(password))
+    if (!answer.ok) return answer
+    session = { ...answer.session, serverUrl: serverUrl! }
+    return { ok: true, user: answer.session.user }
+  })
+  handle(IPC.logout, async () => {
+    const { serverUrl, token } = await server()
+    session = null
+    if (token) await logout(serverUrl, token)
+  })
+  handle(IPC.currentUser, async () => {
+    const { token } = await server()
+    return token ? session!.user : null
+  })
+  // User management: the server decides who is an admin; the client only passes the call on.
+  handle(IPC.listUsers, async () => {
+    const { serverUrl, token } = await server()
+    return track(await listUsers(serverUrl, { token }))
+  })
+  handle(IPC.createUser, async (_event, username: unknown, password: unknown, role: unknown) => {
+    const { serverUrl, token } = await server()
+    const name = String(username)
+    return track(
+      await createUser(serverUrl, name, String(password), String(role) as Role, { token }),
+    )
+  })
+  handle(IPC.updateUser, async (_event, id: unknown, change: unknown) => {
+    const { serverUrl, token } = await server()
+    const { role, password } = (change ?? {}) as { role?: Role; password?: string }
+    const result = track(await updateUser(serverUrl, String(id), { role, password }, { token }))
+    // An admin who made themselves a tester: the client's menus follow the new role.
+    if (result.ok && session?.user.id === result.user.id) {
+      session.user = { ...session.user, role: result.user.role }
+    }
+    return result
+  })
+  handle(IPC.removeUser, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await removeUser(serverUrl, String(id), { token }))
+  })
+  handle(IPC.listTokens, async (_event, userId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listTokens(serverUrl, String(userId), { token }))
+  })
+  handle(IPC.createToken, async (_event, userId: unknown, name: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await createToken(serverUrl, String(userId), String(name), { token }))
+  })
+  handle(IPC.revokeToken, async (_event, tokenId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await revokeToken(serverUrl, String(tokenId), { token }))
+  })
 }
 
 function createMainWindow() {
