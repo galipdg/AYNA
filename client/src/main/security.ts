@@ -56,6 +56,14 @@ export function isAllowedNavigation(url: string, entryUrl: string): boolean {
   }
 }
 
+/**
+ * Whether an IPC call comes from the app's own page. Every `ipcMain.handle` checks it, so
+ * a frame that is not the entry page (should one ever load) cannot use the bridge.
+ */
+export function isTrustedSender(frameUrl: string | undefined, entryUrl: string): boolean {
+  return frameUrl !== undefined && isAllowedNavigation(frameUrl, entryUrl)
+}
+
 /** webPreferences for every AYNA window; `preload` is the preload script's absolute path. */
 export function secureWebPreferences(preload: string) {
   return {
