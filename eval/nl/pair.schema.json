@@ -65,7 +65,7 @@
       }
     },
     "notes": {
-      "description": "Free text for reviewers: labelling choices, doubts.",
+      "description": "Free text for reviewers: labelling choices, doubts. Required with a Click on a check box, to give the assumed start state (guideline section 6.8).",
       "type": "string"
     }
   },

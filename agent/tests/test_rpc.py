@@ -496,8 +496,13 @@ def test_cli_announces_its_port_and_answers():
 
         ping, windows = asyncio.run(asyncio.wait_for(client(), timeout=10))
         assert ping["result"]["agentVersion"] == __version__
-        # No UIA backend is wired in yet (#12).
-        assert windows["error"]["code"] == UIA_UNAVAILABLE
+        # The CLI wires in the real recognition backend (#12). On a Windows desktop it
+        # answers with the window list; anywhere else it answers -32001 per call, which is
+        # what `docs/agent-rpc.md` promises and why the server still starts there.
+        if "error" in windows:
+            assert windows["error"]["code"] == UIA_UNAVAILABLE
+        else:
+            assert isinstance(windows["result"]["windows"], list)
     finally:
         process.kill()
         process.wait(timeout=10)
