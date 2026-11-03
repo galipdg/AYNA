@@ -22,7 +22,8 @@
 - [x] import endpoint, `SnapshotIntegrationTest` (6); `./mvnw test` 56/56 green 2026-11-03; `openapi.yaml` regenerated
 - [x] `server/Dockerfile` + `.dockerignore` copy `snapshot.schema.json`; image built and checked against a throwaway Neo4j: 201 → 200 → 400
 - [x] pushed; PR #182 open (`Closes #15`) on 2026-11-03, review requested from hasan (schema reading) and galip (`importInto` for #51/#74)
-- Next step: wait for #182 CI + reviews; answer review points on this branch
+- [x] 2026-11-03: merged `origin/main` (#179, accounts). Import now follows the #60 rule: `createdBy`/`createdAt` on Window, `UserRef createdBy` + `createdAt` in the response; `importInto(..., userId)`. `openapi.yaml` regenerated (conflict resolved by regenerating); `./mvnw test` 70/70
+- Next step: wait for #182 reviews (hasan, galip); answer review points on this branch
 
 ## Manual checks
 - None needed: covered by the integration test; the Docker image was checked by hand on 2026-11-03 (omer's agent, curl).
@@ -33,7 +34,7 @@
 - Clients that need the tree back (#24 Spy from the server, #25) will need a GET; not in #15's scope.
 
 ## Handoff
-- Response: `{windowId, snapshotId, appVersionId, name, className, elementCount}`; `name`/`className` may be absent when the agent could not read them.
+- Response: `{windowId, snapshotId, appVersionId, name, className, elementCount, createdBy, createdAt}` (the first importer; a repeat import returns the same); `name`/`className` may be absent when the agent could not read them.
 - Adding another shared schema to the server needs three edits: `pom.xml` resources, `server/Dockerfile` COPY and `server/Dockerfile.dockerignore`.
 
 ## Outcome (fill when the issue closes)

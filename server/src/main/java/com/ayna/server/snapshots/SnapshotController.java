@@ -5,12 +5,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ayna.server.auth.AynaPrincipal;
 import com.ayna.server.error.ErrorResponses;
 import com.ayna.server.snapshots.SnapshotDtos.ImportResult;
 import com.ayna.server.snapshots.SnapshotDtos.SnapshotResponse;
@@ -38,8 +40,8 @@ public class SnapshotController {
 	@PostMapping("/api/apps/{appId}/versions/{versionId}/snapshots")
 	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<SnapshotResponse> importSnapshot(@PathVariable String appId, @PathVariable String versionId,
-			@RequestBody JsonNode document) {
-		ImportResult result = service.importSnapshot(appId, versionId, document);
+			@RequestBody JsonNode document, @AuthenticationPrincipal AynaPrincipal me) {
+		ImportResult result = service.importSnapshot(appId, versionId, document, me.userId());
 		return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK).body(result.snapshot());
 	}
 

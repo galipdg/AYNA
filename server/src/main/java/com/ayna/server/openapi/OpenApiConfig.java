@@ -6,6 +6,7 @@ import java.util.List;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
@@ -15,6 +16,8 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
@@ -23,13 +26,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.JsonNode;
 
+import com.ayna.server.auth.PublicEndpoint;
 import com.ayna.server.error.ErrorResponses;
 
 /**
  * Header of the generated REST contract (#31). The server URL is fixed to the request's
  * origin, so `docs/api/openapi.yaml` does not depend on the host or port it was generated on.
  * Error responses (#158) are shared components; an endpoint lists the ones it can return with
- * {@link ErrorResponses}.
+ * {@link ErrorResponses}. Every endpoint needs a Bearer token and can answer 401 unless it is
+ * a {@link PublicEndpoint} (#60).
  */
 @Configuration(proxyBeanMethods = false)
 class OpenApiConfig {
@@ -44,6 +49,8 @@ class OpenApiConfig {
 				.description("JSON document, validated against its schema in schemas/ (steps: step.schema.json, snapshots: snapshot.schema.json)"));
 	}
 
+	static final String BEARER_AUTH = "bearerAuth";
+
 	@Bean
 	OpenAPI aynaOpenApi() {
 		return new OpenAPI()
@@ -51,9 +58,17 @@ class OpenApiConfig {
 				.version("v0")
 				.description("REST API between the AYNA client and server. Generated from the code; do not edit by hand."))
 			.servers(List.of(new Server().url("/")))
-			.components(new Components().addSchemas("FieldError", fieldErrorSchema())
+			.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
+			.components(new Components()
+				.addSecuritySchemes(BEARER_AUTH, new SecurityScheme().type(SecurityScheme.Type.HTTP)
+					.scheme("bearer")
+					.description("Session token from POST /api/auth/login, or a CI API token (AYNA_SERVER_TOKEN)"))
+				.addSchemas("FieldError", fieldErrorSchema())
 				.addSchemas("Problem", problemSchema())
 				.addResponses(responseName(HttpStatus.BAD_REQUEST), problem("The request body or a field in it is invalid"))
+				.addResponses(responseName(HttpStatus.UNAUTHORIZED),
+						problem("No valid session or API token; on login, a wrong user name or password"))
+				.addResponses(responseName(HttpStatus.FORBIDDEN), problem("The account's role may not do this"))
 				.addResponses(responseName(HttpStatus.NOT_FOUND), problem("An id in the path names nothing"))
 				.addResponses(responseName(HttpStatus.CONFLICT), problem("A name is already taken")));
 	}
@@ -62,15 +77,25 @@ class OpenApiConfig {
 	@Bean
 	OperationCustomizer errorResponses() {
 		return (operation, handlerMethod) -> {
+			if (handlerMethod.hasMethodAnnotation(PublicEndpoint.class)) {
+				operation.setSecurity(List.of());
+			}
+			else {
+				addResponse(operation, HttpStatus.UNAUTHORIZED);
+			}
 			ErrorResponses errors = handlerMethod.getMethodAnnotation(ErrorResponses.class);
 			if (errors != null) {
 				for (HttpStatus status : errors.value()) {
-					operation.getResponses()
-						.addApiResponse(String.valueOf(status.value()), new ApiResponse().$ref(responseName(status)));
+					addResponse(operation, status);
 				}
 			}
 			return operation;
 		};
+	}
+
+	private static void addResponse(Operation operation, HttpStatus status) {
+		operation.getResponses()
+			.addApiResponse(String.valueOf(status.value()), new ApiResponse().$ref(responseName(status)));
 	}
 
 	/** `NOT_FOUND` → `NotFound`, the component name of the status's response. */

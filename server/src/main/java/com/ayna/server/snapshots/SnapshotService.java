@@ -1,5 +1,6 @@
 package com.ayna.server.snapshots;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionContext;
 import org.springframework.stereotype.Service;
 
+import com.ayna.server.auth.UserRef;
 import com.ayna.server.error.ApiExceptions.ConflictException;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
@@ -45,7 +47,7 @@ public class SnapshotService {
 		this.schema = schema;
 	}
 
-	public ImportResult importSnapshot(String appId, String versionId, JsonNode document) {
+	public ImportResult importSnapshot(String appId, String versionId, JsonNode document, String userId) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
 				if (!tx.run("MATCH (a:Application {id: $id}) RETURN a LIMIT 1", Map.of("id", appId)).hasNext()) {
@@ -55,7 +57,7 @@ public class SnapshotService {
 						Map.of("appId", appId, "versionId", versionId)).hasNext()) {
 					throw new NotFoundException("Version " + versionId + " not found in application " + appId);
 				}
-				return importInto(tx, versionId, document);
+				return importInto(tx, versionId, document, userId);
 			});
 		}
 	}
@@ -63,8 +65,9 @@ public class SnapshotService {
 	/**
 	 * Validates and imports `document` inside the caller's transaction; the step-result write of
 	 * a `repairProposed` result (#51) uses this, so its snapshot and proposal commit together.
+	 * `userId` is the acting user, stored as the Window's `createdBy` (FR-40).
 	 */
-	public ImportResult importInto(TransactionContext tx, String versionId, JsonNode document) {
+	public ImportResult importInto(TransactionContext tx, String versionId, JsonNode document, String userId) {
 		if (!document.isObject()) {
 			throw new InvalidRequestException("$", "Expected a snapshot document {version, snapshotId, ...}");
 		}
@@ -77,20 +80,14 @@ public class SnapshotService {
 		}
 
 		String snapshotId = document.get("snapshotId").asString();
-		var existing = tx.run("""
-				MATCH (v:AppVersion)-[:HAS_WINDOW]->(w:Window {snapshotId: $snapshotId})
-				RETURN v.id AS versionId, w.id AS windowId, w.name AS name, w.className AS className
-				LIMIT 1""", Map.of("snapshotId", snapshotId));
+		var existing = tx.run("MATCH (v:AppVersion)-[:HAS_WINDOW]->(:Window {snapshotId: $snapshotId}) RETURN v.id AS versionId",
+				Map.of("snapshotId", snapshotId));
 		if (existing.hasNext()) {
-			Record row = existing.next();
-			if (!row.get("versionId").asString().equals(versionId)) {
-				throw new ConflictException("Snapshot " + snapshotId + " was already imported into version "
-						+ row.get("versionId").asString());
+			String importedInto = existing.next().get("versionId").asString();
+			if (!importedInto.equals(versionId)) {
+				throw new ConflictException("Snapshot " + snapshotId + " was already imported into version " + importedInto);
 			}
-			int count = tx.run("MATCH (e:Element {snapshotId: $snapshotId}) RETURN count(e) AS n",
-					Map.of("snapshotId", snapshotId)).single().get("n").asInt();
-			return new ImportResult(new SnapshotResponse(row.get("windowId").asString(), snapshotId, versionId,
-					row.get("name").asString(null), row.get("className").asString(null), count), false);
+			return new ImportResult(response(tx, snapshotId), false);
 		}
 
 		Map<String, Object> window = window(document);
@@ -113,11 +110,11 @@ public class SnapshotService {
 		String rootId = (String) elements.get(0).get("id");
 
 		Map<String, Object> params = Map.of("versionId", versionId, "window", window, "elements", elements,
-				"links", links, "rootId", rootId);
+				"links", links, "rootId", rootId, "userId", userId);
 		tx.run("""
 				MATCH (v:AppVersion {id: $versionId})
 				CREATE (v)-[:HAS_WINDOW]->(w:Window)
-				SET w = $window
+				SET w = $window, w.createdBy = $userId, w.createdAt = datetime()
 				WITH w
 				UNWIND $elements AS props
 				CREATE (e:Element)
@@ -129,8 +126,23 @@ public class SnapshotService {
 				UNWIND $links AS link
 				MATCH (parent:Element {id: link.parent}), (child:Element {id: link.child})
 				CREATE (parent)-[:CONTAINS]->(child)""", params).consume();
-		return new ImportResult(new SnapshotResponse((String) window.get("id"), snapshotId, versionId,
-				(String) window.get("name"), (String) window.get("className"), entries.size()), true);
+		return new ImportResult(response(tx, snapshotId), true);
+	}
+
+	private static SnapshotResponse response(TransactionContext tx, String snapshotId) {
+		Record r = tx.run("""
+				MATCH (v:AppVersion)-[:HAS_WINDOW]->(w:Window {snapshotId: $snapshotId})
+				OPTIONAL MATCH (u:User {id: w.createdBy})
+				RETURN w.id AS windowId, v.id AS versionId, w.name AS name, w.className AS className,
+				  COUNT { MATCH (e:Element {snapshotId: $snapshotId}) } AS elementCount,
+				  w.createdBy AS createdBy, u.username AS createdByName, w.createdAt AS createdAt""",
+				Map.of("snapshotId", snapshotId)).single();
+		UserRef createdBy = r.get("createdBy").isNull() ? null
+				: new UserRef(r.get("createdBy").asString(), r.get("createdByName").asString(null));
+		Instant createdAt = r.get("createdAt").isNull() ? null : r.get("createdAt").asZonedDateTime().toInstant();
+		return new SnapshotResponse(r.get("windowId").asString(), snapshotId, r.get("versionId").asString(),
+				r.get("name").asString(null), r.get("className").asString(null), r.get("elementCount").asInt(), createdBy,
+				createdAt);
 	}
 
 	/**

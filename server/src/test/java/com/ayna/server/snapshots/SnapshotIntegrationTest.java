@@ -23,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
 
 import tools.jackson.databind.JsonNode;
@@ -32,7 +33,7 @@ import tools.jackson.databind.node.ObjectNode;
 /** Snapshot import against a real Neo4j started by Testcontainers (needs Docker). */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({ TestcontainersConfiguration.class, SignedIn.class })
 class SnapshotIntegrationTest {
 
 	static final String TRIAL_SNAPSHOT_ID = "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b";
@@ -67,7 +68,9 @@ class SnapshotIntegrationTest {
 			.andExpect(jsonPath("$.appVersionId").value(versionId))
 			.andExpect(jsonPath("$.name").value("AYNA Trial - Login"))
 			.andExpect(jsonPath("$.className").value("LoginWindow"))
-			.andExpect(jsonPath("$.elementCount").value(14));
+			.andExpect(jsonPath("$.elementCount").value(14))
+			.andExpect(jsonPath("$.createdBy.id").value(SignedIn.TESTER.userId()))
+			.andExpect(jsonPath("$.createdAt").isString());
 
 		assertThat(count("MATCH (:AppVersion {id: $v})-[:HAS_WINDOW]->(w:Window) RETURN count(w) AS n")).isEqualTo(1);
 		assertThat(count("MATCH (e:Element {snapshotId: $s}) RETURN count(e) AS n")).isEqualTo(14);
@@ -112,6 +115,8 @@ class SnapshotIntegrationTest {
 			.containsEntry("featureVersion", "features-v0")
 			.containsEntry("exeName", "python.exe")
 			.containsEntry("fileVersion", "3.13.150.1013")
+			.containsEntry("createdBy", SignedIn.TESTER.userId())
+			.containsKey("createdAt")
 			.doesNotContainKeys("handle", "processId");
 		assertThat(window.get("capturedAt")).isInstanceOf(ZonedDateTime.class);
 		assertThat(((ZonedDateTime) window.get("capturedAt")).toOffsetDateTime().toString())
