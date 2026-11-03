@@ -21,7 +21,8 @@
 - [x] schema validation + tree rules, `SnapshotSchemaTest` (10, incl. every case in `schemas/examples/snapshot/cases.json`)
 - [x] import endpoint, `SnapshotIntegrationTest` (6); `./mvnw test` 56/56 green 2026-11-03; `openapi.yaml` regenerated
 - [x] `server/Dockerfile` + `.dockerignore` copy `snapshot.schema.json`; image built and checked against a throwaway Neo4j: 201 → 200 → 400
-- Next step: commit, then ask the user to push and open the PR (`Closes #15`)
+- [x] pushed; PR #182 open (`Closes #15`) on 2026-11-03, review requested from hasan (schema reading) and galip (`importInto` for #51/#74)
+- Next step: wait for #182 CI + reviews; answer review points on this branch
 
 ## Manual checks
 - None needed: covered by the integration test; the Docker image was checked by hand on 2026-11-03 (omer's agent, curl).
