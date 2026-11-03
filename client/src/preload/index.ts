@@ -15,6 +15,10 @@ const api: AynaApi = {
   listVersions: (appId) => ipcRenderer.invoke(IPC.listVersions, appId),
   createVersion: (appId, version) => ipcRenderer.invoke(IPC.createVersion, appId, version),
   addToRepository: (object) => ipcRenderer.invoke(IPC.addToRepository, object),
+  listRepoObjects: (appId) => ipcRenderer.invoke(IPC.listRepoObjects, appId),
+  getRepoObject: (id) => ipcRenderer.invoke(IPC.getRepoObject, id),
+  updateRepoObject: (id, change) => ipcRenderer.invoke(IPC.updateRepoObject, id, change),
+  deleteRepoObject: (id) => ipcRenderer.invoke(IPC.deleteRepoObject, id),
   getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
   onAgentStatus: (listener) => {
     const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)

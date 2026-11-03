@@ -1,5 +1,5 @@
-// Calls to the server's versions (#128), snapshot import (#15) and object repository (#25)
-// APIs. Kept free of Electron imports so plain `node --test` can use it.
+// Calls to the server's versions (#128), snapshot import (#15) and object repository (#25,
+// #30) APIs. Kept free of Electron imports so plain `node --test` can use it.
 
 import type {
   AddToRepositoryResult,
@@ -7,7 +7,14 @@ import type {
   CreateVersionResult,
   FieldProblem,
   NewRepoObject,
+  RepoDeleteResult,
   RepoObject,
+  RepoObjectChange,
+  RepoObjectDetails,
+  RepoObjectError,
+  RepoObjectResult,
+  RepoObjectSummary,
+  RepoObjectsResult,
   VersionsResult,
 } from '../shared/api.ts'
 import { APPS_PATH, request, type Answer, type Options } from './apps.ts'
@@ -82,6 +89,86 @@ export async function addToRepository(
   return reason ? { ok: false, reason, ...problem(created) } : { ok: false, reason: 'bad-response' }
 }
 
+export async function listRepoObjects(
+  baseUrl: string | null,
+  appId: string,
+  options: Options = {},
+): Promise<RepoObjectsResult> {
+  const answer = await request(
+    baseUrl,
+    `${appPath(appId)}/repo-objects`,
+    { method: 'GET' },
+    options,
+  )
+  if (!answer.ok) return answer
+  if (answer.status === 200 && Array.isArray(answer.body) && answer.body.every(isSummary)) {
+    return { ok: true, objects: answer.body.map(summary) }
+  }
+  return failure(answer)
+}
+
+export async function getRepoObject(
+  baseUrl: string | null,
+  id: string,
+  options: Options = {},
+): Promise<RepoObjectResult> {
+  const answer = await request(baseUrl, objectPath(id), { method: 'GET' }, options)
+  return answer.ok ? details(answer) : answer
+}
+
+export async function updateRepoObject(
+  baseUrl: string | null,
+  id: string,
+  change: RepoObjectChange,
+  options: Options = {},
+): Promise<RepoObjectResult> {
+  const answer = await request(baseUrl, objectPath(id), json(change, 'PATCH'), options)
+  return answer.ok ? details(answer) : answer
+}
+
+export async function deleteRepoObject(
+  baseUrl: string | null,
+  id: string,
+  options: Options = {},
+): Promise<RepoDeleteResult> {
+  const answer = await request(baseUrl, objectPath(id), { method: 'DELETE' }, options)
+  if (!answer.ok) return answer
+  return answer.status === 204 ? { ok: true } : failure(answer)
+}
+
+/** A 200 with an object body, or the failure its status means. */
+function details(answer: Extract<Answer, { ok: true }>): RepoObjectResult {
+  if (answer.status === 200 && isDetails(answer.body)) {
+    const { id, name, primary, fallback, resolvesTo, usedBy, element } = answer.body
+    const object: RepoObjectDetails = {
+      id,
+      name,
+      primary,
+      fallback,
+      versionIds: versionIds(resolvesTo),
+      usedBy: usedBy.map(({ id: testId, name: testName }) => ({ id: testId, name: testName })),
+      element,
+    }
+    return { ok: true, object }
+  }
+  return failure(answer)
+}
+
+function failure(answer: Extract<Answer, { ok: true }>): RepoObjectError {
+  const reason = ({ 400: 'invalid', 404: 'not-found' } as const)[answer.status as 400 | 404]
+  if (reason) return { ok: false, reason, ...problem(answer) }
+  if (answer.status === 409) {
+    // DELETE answers 409 only for an object in use; PATCH only for a taken name.
+    const detail = problem(answer).detail ?? ''
+    return {
+      ok: false,
+      reason: / is used by \d+ tests?: /.test(detail) ? 'in-use' : 'duplicate',
+      ...problem(answer),
+    }
+  }
+  return { ok: false, reason: 'bad-response' }
+}
+
 /** `detail` and the field `errors` of a problem-details body (RFC 9457), when present. */
 function problem(answer: Extract<Answer, { ok: true }>): {
   detail?: string
@@ -99,9 +186,9 @@ function problem(answer: Extract<Answer, { ok: true }>): {
   return result
 }
 
-function json(body: unknown): RequestInit {
+function json(body: unknown, method = 'POST'): RequestInit {
   return {
-    method: 'POST',
+    method,
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   }
@@ -109,6 +196,10 @@ function json(body: unknown): RequestInit {
 
 function appPath(appId: string) {
   return `${APPS_PATH}/${encodeURIComponent(appId)}`
+}
+
+function objectPath(id: string) {
+  return `/api/repo-objects/${encodeURIComponent(id)}`
 }
 
 function versionsPath(appId: string) {
@@ -140,4 +231,80 @@ function isFieldProblem(value: unknown): value is FieldProblem {
   if (typeof value !== 'object' || value === null) return false
   const f = value as Record<string, unknown>
   return typeof f.path === 'string' && typeof f.message === 'string'
+}
+
+interface ServerResolution {
+  appVersionId: string
+}
+
+function isResolutions(value: unknown): value is ServerResolution[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (r) =>
+        typeof r === 'object' &&
+        r !== null &&
+        typeof (r as Record<string, unknown>).appVersionId === 'string',
+    )
+  )
+}
+
+/** Each version once, in the server's order. */
+function versionIds(resolvesTo: ServerResolution[]): string[] {
+  return [...new Set(resolvesTo.map((r) => r.appVersionId))]
+}
+
+function isSummary(value: unknown): value is RepoObject & {
+  controlType?: string | null
+  nearestLabel?: string | null
+  testCount: number
+  resolvesTo: ServerResolution[]
+} {
+  if (!isRepoObject(value)) return false
+  const o = value as unknown as Record<string, unknown>
+  return Number.isInteger(o.testCount) && isResolutions(o.resolvesTo)
+}
+
+function summary(row: {
+  id: string
+  name: string
+  primary: RepoObject['primary']
+  fallback: RepoObject['fallback']
+  controlType?: string | null
+  nearestLabel?: string | null
+  testCount: number
+  resolvesTo: ServerResolution[]
+}): RepoObjectSummary {
+  const { id, name, primary, fallback, controlType, nearestLabel, testCount, resolvesTo } = row
+  return {
+    id,
+    name,
+    primary,
+    fallback,
+    ...(controlType ? { controlType } : {}),
+    ...(nearestLabel ? { nearestLabel } : {}),
+    testCount,
+    versionIds: versionIds(resolvesTo),
+  }
+}
+
+function isDetails(value: unknown): value is RepoObject & {
+  resolvesTo: ServerResolution[]
+  usedBy: { id: string; name: string }[]
+  element: RepoObjectDetails['element']
+} {
+  if (!isRepoObject(value)) return false
+  const o = value as unknown as Record<string, unknown>
+  return (
+    isResolutions(o.resolvesTo) &&
+    Array.isArray(o.usedBy) &&
+    o.usedBy.every(
+      (t) =>
+        typeof t === 'object' &&
+        t !== null &&
+        typeof (t as Record<string, unknown>).id === 'string' &&
+        typeof (t as Record<string, unknown>).name === 'string',
+    ) &&
+    isPropertySet(o.element)
+  )
 }

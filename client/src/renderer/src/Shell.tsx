@@ -7,6 +7,7 @@ import LanguageMenu from './Language.tsx'
 import Menu from './Menu.tsx'
 import ObjectSpy from './ObjectSpy.tsx'
 import Page from './Page.tsx'
+import Repository from './Repository.tsx'
 import SettingsPage from './SettingsPage.tsx'
 import { strings } from './strings.ts'
 import Users from './Users.tsx'
@@ -18,7 +19,7 @@ type LaterPlace = keyof typeof strings.laterPlaces
 /** Navigation in task order (docs/ui/wireframes.md §0); `issue` = built later by that issue. */
 const PLACES: { place: Place; icon: IconName; issue?: number }[] = [
   { place: 'spy', icon: 'spy' },
-  { place: 'repository', icon: 'repository', issue: 30 },
+  { place: 'repository', icon: 'repository' },
   { place: 'tests', icon: 'tests', issue: 38 },
   { place: 'runs', icon: 'runs', issue: 68 },
   { place: 'repairs', icon: 'repairs', issue: 75 },
@@ -137,6 +138,14 @@ export default function Shell(props: Props) {
 
       <main className="work">
         {place === 'spy' && <ObjectSpy app={app} version={version} />}
+        {place === 'repository' && (
+          <Repository
+            key={app.id}
+            app={app}
+            onOpenSpy={() => setPlace('spy')}
+            onSessionEnded={onSessionEnded}
+          />
+        )}
         {later && <Later place={place as LaterPlace} issue={later} />}
         {place === 'users' && (
           <Users user={user} onSessionEnded={onSessionEnded} onUserChanged={props.onUserChanged} />

@@ -19,13 +19,16 @@ Server (`server/.../repository/`), next to #25's `POST /api/apps/{appId}/repo-ob
 - 2026-11-03 — PATCH replaces `primary` and `fallback` together (one without the other → 400): checking a new primary against an old fallback would let the two sets overlap. A PATCH that changes nothing writes nothing (`updatedAt` stays).
 - 2026-11-03 — "Latest" element = the RESOLVES_TO Element whose Window has the newest `capturedAt` (AppVersion has no order besides its version string).
 - 2026-11-03 — Delete removes only the RepoObject and its links; the Elements stay with their snapshot.
+- 2026-11-03 — Edit in the repository has no capture, so it shows no "N elements match" count (the Spy's form has one); the rows start from the object's own values, then the last captured element's.
+- 2026-11-03 — "Used by" lists test names as plain text: the Tests screen (#38) is not built, so there is nothing to open yet.
+- 2026-11-03 — The client tells a DELETE 409 (in use) from a PATCH 409 (name taken) by the server message; known server texts (`objectInUse`, `objectGone`) are mapped in both languages.
 
 ## Status
 - [x] server: list, get, patch, delete + 7 integration tests; `./mvnw test` 83/83 on 2026-11-03; `openapi.yaml` regenerated
-- [ ] client: main/IPC/preload, Repository screen, Shell place enabled, tr/en texts
-- [ ] Spy add form: "already saved as" warning
+- [x] client: main/IPC/preload, `Repository.tsx`, Shell place enabled, tr/en texts; the Find by / Backup editor moved to `PropertySetEditor.tsx` (shared with Add to repository); lint, typecheck, format, `npm test` 156/156, build green on 2026-11-03
+- [x] Spy add form: "already saved as" warning (`objectsMatching` in `shared/repository.ts`)
 - [ ] manual check on macOS
-- Next step: client main/IPC/preload for list, get, update, delete.
+- Next step: smoke-run the screen against the real server, then omer's manual check.
 
 ## Manual checks
 

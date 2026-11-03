@@ -63,6 +63,23 @@ export function isGeneratedId(id: string): boolean {
   return GENERATED_ID.test(text) || GENERATED_ID.test(leaf) || QT_FALLBACK_LEAF.test(leaf)
 }
 
+/**
+ * The saved objects whose every Find by property has `element`'s value: the element is
+ * probably saved already. Each capture makes new element ids, so ids cannot tell.
+ */
+export function objectsMatching<T extends { primary: PropertySet }>(
+  objects: readonly T[],
+  element: Partial<ElementDescriptor>,
+): T[] {
+  return objects.filter(({ primary }) => {
+    const entries = Object.entries(primary)
+    return (
+      entries.length > 0 &&
+      entries.every(([field, value]) => element[field as IdentifyingField] === value)
+    )
+  })
+}
+
 /** How many elements of the snapshot have every property of `set`. */
 export function matchCount(set: PropertySet, elements: readonly SnapshotNode[]): number {
   const entries = Object.entries(set)

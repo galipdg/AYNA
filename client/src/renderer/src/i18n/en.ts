@@ -4,6 +4,7 @@ import type {
   AgentState,
   ConnectionFailure,
   LoginResult,
+  RepoObjectError,
   RequestFailure,
   Role,
   UsersError,
@@ -41,8 +42,6 @@ export const en = {
   laterIssue: (issue: number) => `This screen comes in a later version (#${issue}).`,
   // What each place will do, shown until its issue is built.
   laterPlaces: {
-    repository:
-      'Search, rename and edit the saved elements of the application, and see which tests use each one.',
     tests:
       'Build tests step by step without code: choose an action and an element, add checks, import and export.',
     runs: 'See every run with its result, filter them, and open or download the report.',
@@ -313,6 +312,8 @@ export const en = {
   repoSaving: 'Saving…',
   repoCancel: 'Cancel',
   repoSaved: (name: string) => `Saved ${name} in the object repository.`,
+  repoAlreadySaved: (names: string[]) =>
+    `This element looks saved already, as ${names.join(', ')}. You can still save it under another name.`,
   repoErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
@@ -325,6 +326,51 @@ export const en = {
     'snapshot-conflict':
       'This capture is already stored under another version. Capture the window again to store it under this one.',
   } satisfies Record<Extract<AddToRepositoryResult, { ok: false }>['reason'], string>,
+
+  // The Repository screen (#30, docs/ui/wireframes.md §5).
+  repoViewHelp: (app: string) => `Elements of ${app} that tests use by name.`,
+  repoViewOpenSpy: 'Open Object Spy',
+  repoViewSearch: 'Search saved elements',
+  repoViewCount: (elements: number) =>
+    elements === 1 ? '1 element' : `${count(elements)} elements`,
+  repoViewTests: (tests: number) => (tests === 1 ? '1 test' : `${count(tests)} tests`),
+  repoViewNoMatch: (query: string) => `No saved element matches "${query}".`,
+  repoViewEmpty: 'No saved elements yet. Pick an element in the Object Spy and add it here.',
+  repoViewChoose: 'Choose a saved element to see its details.',
+  repoViewReload: 'Reload',
+  repoViewRename: 'Rename',
+  repoViewRenameLabel: 'New name',
+  repoViewRenameHint: 'Tests that use this element keep working under the new name.',
+  repoViewRenamed: (name: string) => `Renamed to ${name}. Tests that use it keep working.`,
+  repoViewEdit: 'Edit',
+  repoViewEditHint:
+    'Values start from the last capture of the element. AYNA looks for it with the "Find by" properties, then tries the "Backup" ones.',
+  repoViewUpdated: (name: string) => `Saved how AYNA finds ${name}.`,
+  repoViewUsedBy: (tests: number) =>
+    tests === 0
+      ? 'Not used by any test yet'
+      : tests === 1
+        ? 'Used by 1 test'
+        : `Used by ${count(tests)} tests`,
+  repoViewSeenIn: 'Seen in versions',
+  repoViewSeen: 'found in this version',
+  repoViewNotSeen: 'not captured in this version',
+  repoViewCaptured: 'Element as last captured',
+  repoViewRemove: 'Remove',
+  repoViewRemoveConfirm: (name: string) =>
+    `Remove ${name} from the repository? This cannot be undone.`,
+  repoViewRemoved: (name: string) => `Removed ${name} from the repository.`,
+  repoViewErrors: {
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer in time.',
+    unauthorized: 'Your session has ended. Log in again.',
+    'bad-response': 'The server answered with something unexpected.',
+    'not-found': 'This element is no longer in the repository. Reload the list.',
+    invalid: 'The server did not accept the change.',
+    duplicate: 'This name is already used in this application.',
+    'in-use': 'Tests still use this element. Change those steps first.',
+  } satisfies Record<RepoObjectError['reason'], string>,
   versionLabel: 'Application version',
   versionNone:
     'Which version of the application are you testing? Add it, and saved elements are stored under it.',
@@ -427,6 +473,9 @@ export const en = {
       `The element name ${name} is already used in this application. Choose another name.`,
     primaryNeeded: 'Choose at least one property to find the element by.',
     objectInvalid: 'The server did not accept the element.',
+    objectInUse: (name: string, tests: string, names: string) =>
+      `${name} is used by ${tests === '1' ? '1 test' : `${tests} tests`}: ${names}. Change those steps first.`,
+    objectGone: 'This element is no longer in the repository. Reload the list.',
   },
 }
 

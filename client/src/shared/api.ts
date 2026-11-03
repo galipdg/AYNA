@@ -1,6 +1,7 @@
 // Contract between the preload bridge and the renderer. The renderer only ever
 // sees `window.ayna`, shaped like `AynaApi`; every method maps to one IPC channel.
 
+import type { ElementDescriptor } from './element.ts'
 import type { Language } from './language.ts'
 import type { PropertySet } from './repository.ts'
 import type { Snapshot } from './snapshot.ts'
@@ -105,6 +106,38 @@ export interface RepoObject {
   fallback: PropertySet
 }
 
+/** One row of the repository list (#30). */
+export interface RepoObjectSummary extends RepoObject {
+  /** From the most recent capture of the element; for search and display. */
+  controlType?: string
+  nearestLabel?: string
+  /** How many tests have a step on this object (FR-08). */
+  testCount: number
+  /** The application versions the object is found in. */
+  versionIds: string[]
+}
+
+/** A test that uses a repository object. */
+export interface TestRef {
+  id: string
+  name: string
+}
+
+/** One repository object with everything the details panel shows (#30). */
+export interface RepoObjectDetails extends RepoObject {
+  versionIds: string[]
+  usedBy: TestRef[]
+  /** The element as last captured, in the descriptor's order; the editor starts from it. */
+  element: Partial<ElementDescriptor>
+}
+
+/** A rename, new property sets (both together), or both. */
+export interface RepoObjectChange {
+  name?: string
+  primary?: PropertySet
+  fallback?: PropertySet
+}
+
 /** One field the server refused, e.g. `$.name` (problem details `errors`). */
 export interface FieldProblem {
   path: string
@@ -124,6 +157,22 @@ export type AddToRepositoryResult =
       detail?: string
       fields?: FieldProblem[]
     }
+
+export interface RepoObjectError {
+  ok: false
+  reason:
+    | RequestFailure
+    | 'not-found' // the object (or application) is gone
+    | 'invalid' // `fields` says which
+    | 'duplicate' // the new name is taken in this application
+    | 'in-use' // tests still use the object; `detail` names them
+  detail?: string
+  fields?: FieldProblem[]
+}
+
+export type RepoObjectsResult = { ok: true; objects: RepoObjectSummary[] } | RepoObjectError
+export type RepoObjectResult = { ok: true; object: RepoObjectDetails } | RepoObjectError
+export type RepoDeleteResult = { ok: true } | RepoObjectError
 
 /** Why a user-management request failed; `detail` is the server's own message, when it sent one. */
 export interface UsersError {
@@ -242,6 +291,13 @@ export interface AynaApi {
   createVersion(appId: string, version: string): Promise<CreateVersionResult>
   /** Imports the capture under the version (once), then stores the object linked to the element. */
   addToRepository(object: NewRepoObject): Promise<AddToRepositoryResult>
+  /** The application's repository objects by name, with their test counts. */
+  listRepoObjects(appId: string): Promise<RepoObjectsResult>
+  getRepoObject(id: string): Promise<RepoObjectResult>
+  /** Renames the object or replaces how it is found; steps keep working (FR-08). */
+  updateRepoObject(id: string, change: RepoObjectChange): Promise<RepoObjectResult>
+  /** Refused with `in-use` while tests use the object (FR-09). */
+  deleteRepoObject(id: string): Promise<RepoDeleteResult>
   getAgentStatus(): Promise<AgentStatus>
   /** Calls `listener` on every agent status change; returns a function that unsubscribes. */
   onAgentStatus(listener: (status: AgentStatus) => void): () => void
@@ -294,6 +350,10 @@ export const IPC = {
   listVersions: 'versions:list',
   createVersion: 'versions:create',
   addToRepository: 'repository:add',
+  listRepoObjects: 'repository:list',
+  getRepoObject: 'repository:get',
+  updateRepoObject: 'repository:update',
+  deleteRepoObject: 'repository:delete',
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',
