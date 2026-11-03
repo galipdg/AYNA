@@ -24,7 +24,7 @@ Rules in ADR `2026-11-03-client-ui-language`. No library: `i18n/en.ts` defines `
 - [x] ADR (Proposed), docs/ui wireframes + style guide lines
 - [x] client/AGENTS.md rule updated (omer's OK 2026-11-03)
 - [ ] RS NFR-17 / TBD-2 by galip (inbox note on `omer/25-repo-objects`)
-- [x] Pushed, PR opened (base main, stacked on #189)
+- [x] Pushed, PR #190 opened (base main, stacked on #189); CI 5/5 green on 2026-11-03 (run 41658132027)
 - Next step: omer reads both languages on every screen; galip/hasan review the Turkish wording and the ADR on the PR.
 
 ## Manual checks
