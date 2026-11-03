@@ -39,7 +39,7 @@ graph LR
 | AppVersion | `version` | unique `id` |
 | Window | `snapshotId`, `name` (window title), `className`, `capturedAt` (datetime), `featureVersion`, `exeName`, `fileVersion`; `createdBy`, `createdAt` (who imported it); written by the snapshot import (#15) | unique `id` |
 | Element | the element descriptor's properties as the snapshot carries them (`schemas/snapshot.schema.json#/$defs/element`; `bounds` as an int list), plus `snapshotId` and `snapshotElementId` (the agent's id inside the snapshot, so `(snapshotId, snapshotElementId)` finds a healing candidate) | unique `id` · index `snapshotId` · index `automationId` |
-| RepoObject | `name` (logical name, unique per application), primary + fallback properties, embedding | unique `id` · index `name` |
+| RepoObject | `name` (logical name, `screen.element`, unique per application); `primary` and `fallback` as JSON strings (descriptor property → value, best first; only identifying properties, ADR element descriptor v0 §3); `createdBy`, `createdAt`, `updatedBy`, `updatedAt`; written by the repository API (#25); embedding (#58) | unique `id` · index `name` |
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
 | Run | `status`, `startedAt`, `duration` | unique `id` · index `startedAt` |

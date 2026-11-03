@@ -38,6 +38,11 @@ public class SnapshotSchema {
 		return file.version();
 	}
 
+	/** The element descriptor's properties (`$defs/element/properties`): property name → schema of its value. */
+	public JsonNode elementProperties() {
+		return file.node().path("$defs").path("element").path("properties");
+	}
+
 	/** One entry per violation; empty when the document is valid. Tree rules run only on a schema-valid document. */
 	public List<FieldError> validate(JsonNode document) {
 		List<FieldError> errors = file.validate(document);

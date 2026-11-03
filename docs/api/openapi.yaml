@@ -48,6 +48,38 @@ paths:
           $ref: "#/components/responses/Conflict"
       tags:
       - app-controller
+  /api/apps/{appId}/repo-objects:
+    post:
+      operationId: createRepoObject
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRepoObjectRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoObjectResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - repo-object-controller
   /api/apps/{appId}/tests:
     get:
       operationId: listTests
@@ -646,6 +678,21 @@ components:
           type: string
         technology:
           type: string
+    CreateRepoObjectRequest:
+      type: object
+      properties:
+        fallback:
+          type: object
+          additionalProperties: {}
+        name:
+          type: string
+        primary:
+          type: object
+          additionalProperties: {}
+        snapshotElementId:
+          type: string
+        snapshotId:
+          type: string
     CreateTestRequest:
       type: object
       properties:
@@ -750,6 +797,46 @@ components:
       type: object
       properties:
         name:
+          type: string
+    RepoObjectResponse:
+      type: object
+      properties:
+        appId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/UserRef"
+        fallback:
+          type: object
+          additionalProperties: {}
+        id:
+          type: string
+        name:
+          type: string
+        primary:
+          type: object
+          additionalProperties: {}
+        resolvesTo:
+          type: array
+          items:
+            $ref: "#/components/schemas/Resolution"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/UserRef"
+    Resolution:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        elementId:
+          type: string
+        snapshotElementId:
+          type: string
+        snapshotId:
           type: string
     SnapshotResponse:
       type: object
