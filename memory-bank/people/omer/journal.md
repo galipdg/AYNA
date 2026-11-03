@@ -158,3 +158,9 @@ Append-only. One entry per session, newest at the bottom:
 - omer: the whole client UI is still hard to read and to present, and should beat TestComplete's dated UI → opened #183 (design + shell, expanded), #184 (three-panel Spy), #185 (Turkish/English; galip's inbox for RS TBD-2).
 - PRs #186 (#24, "Part of") and #187 (#25) opened on main.
 - Next: #183, wireframes first, omer's OK before code.
+
+## 2026-11-03 (seventh session) · #183 UI design + shell, #184 three-panel Spy
+- #183: `docs/ui/` (README with 6 review questions, style guide with colour tokens checked ≥ 4.5:1, flows F1–F8, wireframes 0–14). omer could not judge ASCII wireframes → the shell was built before the team review (top bar: app, version, agent, language, user; navigation with "Later" places; gate cards before login; Users and Settings as places). Version moved from the Spy to the top bar.
+- #184: Spy as windows | tree | properties; virtualized tree with search and keyboard (`shared/tree.ts`, 11 tests); plain property groups + Advanced; add form in the right panel. 3031-element tree: 25 rows in the DOM. Checked under the production CSP. 135 client tests, build green.
+- Seen by the agent over CDP (dark theme only); omer had the window open meanwhile.
+- Next: omer's feedback on the shell and Spy; then team review of `docs/ui/` + running client; Windows check of #184 (not posted yet).

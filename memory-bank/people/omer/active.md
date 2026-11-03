@@ -2,8 +2,10 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-03 (sixth session)
-- Current issue: **#183** (client UI design, app shell and plain-language UI), not started: no branch or task note yet. Why: in #25's manual checks omer found the client hard to use and to present to the advisor, even after the form was simplified; the G0 demo (#28) is this week. First step: wireframes of every RS §3.5.1 screen + flows + a short style guide in `docs/ui/`, shown to omer (and the team) **before** any shell code. Then #184 (Spy as a three-panel workspace: windows | tree | properties + add to repository), then #185 (Turkish/English, Week 4).
+- Last update: 2026-11-03 (seventh session)
+- Current issues: **#183** (client UI design + shell) on `omer/183-ui-design` (stacked on #25) and **#184** (three-panel Spy) on `omer/184-spy-workspace` (stacked on #183). Both built and committed locally, nothing pushed. Task notes: `tasks/183-ui-design.md`, `tasks/184-spy-workspace.md`.
+- Next step: omer's feedback on the running client (light theme, Users, Settings, menus not yet looked at); then ask galip and hasan to review `docs/ui/` + the running client (README questions 1–6); then post #184's Windows check (in its task note) on the issue with `needs-windows-test`, after asking. #185 (Turkish/English, Week 4) after that.
+- How to see it: server from `docker compose up`; in `client/`: `AYNA_AGENT_PYTHON=python3 PYTHONPATH=$PWD/dev/mock AYNA_MOCK_WINDOWS=$PWD/dev/mock/windows.json AYNA_MOCK_SNAPSHOT=$PWD/dev/mock/snapshot.json AYNA_MOCK_UIA=on npx electron-vite dev` (the mock stub server has no login).
 - #25 done on `omer/25-repo-objects`: PR #187 (base main, carries #15, #17, #24). Server `POST /api/apps/{appId}/repo-objects`, client version bar + simplified form; both manual checks passed. Windows check with a real pilot app still pending (weekly session).
 - Waiting:
   1. #15: PR #182 waits for review (hasan: schema reading; galip: `importInto` for #51/#74).
