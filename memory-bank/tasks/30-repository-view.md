@@ -27,10 +27,12 @@ Server (`server/.../repository/`), next to #25's `POST /api/apps/{appId}/repo-ob
 - [x] server: list, get, patch, delete + 7 integration tests; `./mvnw test` 83/83 on 2026-11-03; `openapi.yaml` regenerated
 - [x] client: main/IPC/preload, `Repository.tsx`, Shell place enabled, tr/en texts; the Find by / Backup editor moved to `PropertySetEditor.tsx` (shared with Add to repository); lint, typecheck, format, `npm test` 156/156, build green on 2026-11-03
 - [x] Spy add form: "already saved as" warning (`objectsMatching` in `shared/repository.ts`)
-- [ ] manual check on macOS
-- Next step: smoke-run the screen against the real server, then omer's manual check.
+- [x] agent smoke run on macOS against the real server (below)
+- [ ] omer's manual check on macOS; Windows look at the weekly session
+- Next step: omer runs the manual check (in the chat of 2026-11-03); then ask about push and the PR (base main, stacked on #190).
 
 ## Manual checks
+- 2026-11-03 · agent · macOS, `docker compose up --build` + `electron-vite dev` with the fake agent, driven over CDP; seeded app "Repo View Check" (versions 1.0, 1.1; trial-login capture under 1.1; 3 objects; 2 tests on login.userNameInput) · list grouped by screen with test counts; details (used by, find by, seen in 1.0 – / 1.1 ✓); remove of a used object refused naming both tests; rename to a taken name refused, to a free one kept the steps (GET test shows the new target); edit moved nearestLabel to Find by; remove of an unused object; search by plain type, by label, no match; English texts; Spy add form warns "looks saved already as login.kullaniciAdiInput" · pass · evidence: screenshots in the session only
 
 ## Open issues
 - Delete uses `DETACH DELETE`: a HealingProposal `FOR` the object (#74) would lose its link. None exist yet; #74 should decide (refuse, or delete the proposals too).
