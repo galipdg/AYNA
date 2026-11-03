@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/24
 - Owner: omer · Branch: `omer/24-object-spy` (stacked on `omer/17-agent-process-manager`, PR #154, until it merges; do **not** merge this PR into that branch, see `learnings.md` 2026-10-31)
-- Started: 2026-10-31 · Last update: 2026-11-01
+- Started: 2026-10-31 · Last update: 2026-11-03
 
 ## Approach
 Build the parts that need no snapshot format first: window list over `listWindows`, the on-screen highlight overlay, the screen layout and the hotkey plumbing. The element tree and property panel wait for `schemas/snapshot.schema.json` (#12, hasan); element under the cursor waits for #22. Main process: `src/main/spy.ts` (agent calls → plain results, geometry; no Electron imports, unit-tested) and `src/main/overlay.ts` (`Highlighter`, Electron).
@@ -32,7 +32,9 @@ Build the parts that need no snapshot format first: window list over `listWindow
 - [x] Pushed `937a06f` over HTTPS 2026-10-31; reminded hasan on #12 (schema draft, or fields in a comment and omer drafts the file; answer asked by 2 Nov) and #22 (`elementFromPoint` contract in `docs/agent-rpc.md` first)
 - [x] `npm run dev:mock` (2026-11-01, `client/dev/mock/`): stub server + fake agent in one command, so manual checks no longer depend on scratch files and env vars
 - [x] Snapshot schema: hasan's PR #180 (`schemas/snapshot.schema.json` 0.1, ADR `2026-11-01-snapshot-schema-v0`, Proposed). omer approved 2026-11-01; galip's approval pending. Flat pre-order `{id, parentId, element}` list, `element` = the 0.1 descriptor, so the panel needs no change. Its agent answers -32001 on macOS (checked through `AgentManager`).
-- Next step: after #180 merges, add a test that parses `schemas/examples/snapshot/trial-login.json` too and re-check field names; when #22 adds `elementFromPoint` to agent RPC, call it from the pick handler and select the node in the tree.
+- [x] 2026-11-03: #180 merged (schema ADR Accepted, names final). `snapshot.test.ts` now checks the `Snapshot`/`SnapshotCapture`/`SnapshotWindow`/`SnapshotNode`/`app` types against `schemas/snapshot.schema.json` (key lists with `satisfies Record<keyof T, true>`, so drift fails typecheck and the test), and `parseSnapshot` accepts `trial-login.json` and every valid case of `cases.json`. No field name had moved. 108 tests, lint, typecheck green
+- [x] 2026-11-03: merged `omer/17-agent-process-manager` (with `origin/main`, #179 accounts) into this branch; login/users and Spy side by side, all handlers through `handle()`. 105 tests, lint, typecheck, build green before the test above
+- Next step: when #22 adds `elementFromPoint` to agent RPC, call it from the pick handler and select the node in the tree. Until then, #25 (server side: add a snapshot element to the repository) can start on top of #15
 
 ## Manual checks
 - 2026-10-31 · agent · macOS · built app over CDP with a scratch stub server (health + apps, no auth: the running Compose server is the #60 build and needs a login this branch lacks) and a scratch fake agent answering `listWindows`: list shows both windows ("(no title)", "unknown process" for null), selecting shows details and opens the overlay at 646×486 for a 640×480 window (border 3 px each side), visible then hidden after 3 s; `-32001` variant shows "UI Automation is not available…"; quitting leaves no Electron or agent process. Pass; screenshots in the session scratchpad only (not kept). The overlay itself could not be photographed (no screen-recording permission for the terminal).
@@ -51,7 +53,7 @@ Build the parts that need no snapshot format first: window list over `listWindow
 - `listWindows` answers `-32001` until #12 lands, so on any machine today the Spy shows "UI Automation not available".
 - Large trees: the tree renders only open nodes, but a window with thousands of children under one parent renders them all when opened. Measure on a pilot app at the Windows session before adding virtualisation.
 - The tree toggles (▸/▾) are small targets; revisit with the layout (window list / tree / panel side by side) once real trees are seen.
-- When #60 lands on `main`, `App.tsx`, `api.ts`, `preload/index.ts` and `main/index.ts` will conflict with this branch (login screen, session); resolve at merge.
+- 2026-11-03: the #60 conflicts are resolved (see Status).
 
 ## Handoff
 - `AgentManager.call` errors are now typed; `describeFailure` in `spy.ts` turns them into `AgentFailure` reasons.
