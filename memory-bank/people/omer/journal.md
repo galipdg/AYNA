@@ -144,3 +144,10 @@ Append-only. One entry per session, newest at the bottom:
 - omer deleted the whole `windows.json` during the check (my step was unclear): the fake agent dropped the connection on `FileNotFoundError` (an `OSError`). Fixed to answer -32603; `dev:mock` checks its files at start. Pushed `9b14c8a`.
 - Approved #169 at omer's request (all six review points in `a488608`).
 - Next: #24 waits on #180 (merge) and #22 (`elementFromPoint`); #17 Windows re-run.
+
+## 2026-11-03 · #15 snapshot import, branch upkeep after #179
+- #15: `POST /api/apps/{appId}/versions/{versionId}/snapshots`. One Window and one Element per entry (root `e0` included, 14 for the trial app). Tree rules are checked on top of the schema. A repeat import returns 200 with no write; the same id under another version → 409. `importInto(tx, …)` is kept public for #51. The shared schema loader moved to `schema/SchemaFile`. Dockerfile and its ignore file now copy `snapshot.schema.json`; the image was checked on a throwaway Neo4j. PR #182, CI 5/5.
+- #179 merged on main → merged into #15 (Window `createdBy`/`createdAt`, as the #60 rule requires; `openapi.yaml` regenerated), into #17 (auth handlers routed through `handle()`) and into #24 via #17 (Spy and login side by side; one CSS rule had been split by the merge). All pushed.
+- #24: snapshot types checked against the merged schema with `satisfies Record<keyof T, true>` key lists; no field name had moved. 108 client tests.
+- Learnings: a shared schema the server reads needs 3 entries (pom, Dockerfile, .dockerignore); the compose Neo4j volume keeps migrations from other branches.
+- Next: #25 (design proposed in `active.md`, waiting for omer's OK).
