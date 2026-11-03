@@ -32,5 +32,5 @@ Answer in the PR or at the review; the answers go into the task note.
 2. **Where the NL panel lives.** Proposed: a panel on the right side of the test editor that the user opens with "Describe in Turkish" (#78). Alternative: its own screen.
 3. **Live run status.** Proposed: inside the test editor (each step row gets its status, a run bar on top), not a separate screen, so the user sees the steps they just wrote. Run history keeps finished runs.
 4. **Theme.** Proposed: follow the operating system's light or dark setting, with no switch in semester 1. Enough?
-5. **Window size.** Designed for 1280 × 720 (a laptop at 150 % scaling) and up; minimum 1024 × 640. Enough for the pilot machines?
+5. **Window size.** Designed for 1280 × 720 (a laptop at 150 % scaling) and up; minimum 960 × 600. Enough for the pilot machines?
 6. **Words.** Check the glossary in [style-guide.md](style-guide.md#plain-language-glossary). Especially "Repair suggestion" for healing proposal and "Element name" for logical name. The Turkish column is a first draft for #185 (galip, hasan: please correct).

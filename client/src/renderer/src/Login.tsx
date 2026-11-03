@@ -7,12 +7,13 @@ interface Props {
   /** The previous session ended (expired, logged out elsewhere, account changed). */
   ended?: boolean
   onLoggedIn(user: CurrentUser): void
+  onChangeServer(): void
 }
 
 type Failure = Extract<LoginResult, { ok: false }>['reason']
 
 /** User name and password for the saved server (#60); the password is cleared after a failure. */
-export default function Login({ url, ended, onLoggedIn }: Props) {
+export default function Login({ url, ended, onLoggedIn, onChangeServer }: Props) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [failure, setFailure] = useState<Failure>()
@@ -35,11 +36,25 @@ export default function Login({ url, ended, onLoggedIn }: Props) {
   }
 
   return (
-    <section className="card">
+    <section className="card gate-card">
       <h2>{strings.loginTitle}</h2>
-      <p>{strings.loginIntro(url)}</p>
-      {ended && !failure && <p className="error">{strings.sessionEnded}</p>}
-      <form className="server-form" onSubmit={submit}>
+      <p className="hint">
+        {strings.loginIntro(url)}{' '}
+        <button type="button" className="btn-quiet" onClick={onChangeServer} disabled={busy}>
+          {strings.changeServer}
+        </button>
+      </p>
+      {ended && !failure && (
+        <p className="message message-warning" role="status">
+          {strings.sessionEnded}
+        </p>
+      )}
+      {failure && (
+        <p id="login-error" className="message message-danger" role="alert">
+          {strings.loginErrors[failure]}
+        </p>
+      )}
+      <form className="form" onSubmit={submit}>
         <label htmlFor="login-username">{strings.usernameLabel}</label>
         <input
           id="login-username"
@@ -62,17 +77,16 @@ export default function Login({ url, ended, onLoggedIn }: Props) {
           aria-invalid={failure ? true : undefined}
           aria-describedby={failure ? 'login-error' : undefined}
         />
-        <div className="actions">
-          <button type="submit" disabled={busy || !username.trim() || !password}>
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn-main"
+            disabled={busy || !username.trim() || !password}
+          >
             {busy ? strings.loggingIn : strings.logIn}
           </button>
         </div>
       </form>
-      {failure && (
-        <p id="login-error" className="error" role="alert">
-          {strings.loginErrors[failure]}
-        </p>
-      )}
     </section>
   )
 }

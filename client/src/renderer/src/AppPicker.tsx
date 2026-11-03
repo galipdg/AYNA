@@ -107,29 +107,29 @@ export default function AppPicker({
   }
 
   return (
-    <section className="card">
+    <section className="card gate-card">
       <h2>{strings.appsTitle}</h2>
-      <p>{strings.appsIntro}</p>
+      <p className="hint">{strings.appsIntro}</p>
       {missing && (
-        <p className="error" role="alert">
+        <p className="message message-warning" role="alert">
           {strings.appsMissing}
         </p>
       )}
 
-      {list.state === 'loading' && <p>{strings.loading}</p>}
+      {list.state === 'loading' && <p className="hint">{strings.loading}</p>}
       {list.state === 'failed' && (
-        <div className="actions">
-          <p className="error" role="alert">
-            {strings.requestErrors[list.reason]}
-          </p>
-          <button type="button" onClick={retry}>
+        <p className="message message-danger" role="alert">
+          {strings.requestErrors[list.reason]}{' '}
+          <button type="button" className="btn-quiet" onClick={retry}>
             {strings.appsRetry}
           </button>
-        </div>
+        </p>
       )}
-      {list.state === 'loaded' && list.apps.length === 0 && <p>{strings.appsEmpty}</p>}
+      {list.state === 'loaded' && list.apps.length === 0 && (
+        <p className="hint">{strings.appsEmpty}</p>
+      )}
       {list.state === 'loaded' && list.apps.length > 0 && (
-        <ul className="app-list">
+        <ul className="choice-list framed">
           {list.apps.map((app) => (
             <li key={app.id}>
               <button
@@ -140,7 +140,7 @@ export default function AppPicker({
                 disabled={busy}
               >
                 <span>{app.name}</span>
-                <span className="technology">{app.technology}</span>
+                <span className="hint">{app.technology}</span>
               </button>
             </li>
           ))}
@@ -148,46 +148,52 @@ export default function AppPicker({
       )}
 
       <h3>{strings.newAppTitle}</h3>
-      <form className="app-form" onSubmit={create}>
-        <label htmlFor="app-name">{strings.appNameLabel}</label>
-        <input
-          id="app-name"
-          type="text"
-          placeholder={strings.appNamePlaceholder}
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          disabled={busy}
-        />
-        <label htmlFor="app-technology">{strings.appTechnologyLabel}</label>
-        <input
-          id="app-technology"
-          type="text"
-          placeholder={strings.appTechnologyPlaceholder}
-          value={technology}
-          onChange={(event) => setTechnology(event.target.value)}
-          disabled={busy}
-        />
-        <div className="actions">
-          <button type="submit" disabled={busy || !name.trim() || !technology.trim()}>
-            {busy ? strings.creatingApp : strings.createApp}
-          </button>
+      <form className="form" onSubmit={create}>
+        <div className="field-pair">
+          <div className="field">
+            <label htmlFor="app-name">{strings.appNameLabel}</label>
+            <input
+              id="app-name"
+              type="text"
+              placeholder={strings.appNamePlaceholder}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              disabled={busy}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="app-technology">{strings.appTechnologyLabel}</label>
+            <input
+              id="app-technology"
+              type="text"
+              placeholder={strings.appTechnologyPlaceholder}
+              value={technology}
+              onChange={(event) => setTechnology(event.target.value)}
+              disabled={busy}
+            />
+          </div>
+        </div>
+        {createFailure && (
+          <p className="field-error" role="alert">
+            {strings.requestErrors[createFailure]}
+          </p>
+        )}
+        {chooseFailed && (
+          <p className="field-error" role="alert">
+            {strings.chooseFailed}
+          </p>
+        )}
+        <div className="form-actions">
           {onCancel && (
             <button type="button" onClick={onCancel} disabled={busy}>
               {strings.cancel}
             </button>
           )}
+          <button type="submit" disabled={busy || !name.trim() || !technology.trim()}>
+            {busy ? strings.creatingApp : strings.createApp}
+          </button>
         </div>
       </form>
-      {createFailure && (
-        <p className="error" role="alert">
-          {strings.requestErrors[createFailure]}
-        </p>
-      )}
-      {chooseFailed && (
-        <p className="error" role="alert">
-          {strings.chooseFailed}
-        </p>
-      )}
     </section>
   )
 }

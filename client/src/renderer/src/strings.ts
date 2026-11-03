@@ -14,14 +14,64 @@ import type { NameProblem, PropertyUse } from '../../shared/repository.ts'
 // All UI text in one place, for later translation.
 export const strings = {
   appName: 'AYNA',
-  tagline: 'Codeless UI test automation for Windows desktop apps',
+  tagline: 'Codeless UI testing for Windows applications',
   loading: 'Loading…',
   bridgeError: 'Could not reach the main process.',
-  versionsTitle: 'Runtime',
+  versionsTitle: 'About AYNA',
 
-  serverTitle: 'Server connection',
-  serverIntro: 'Enter the address of the AYNA server on your network.',
-  serverUrlLabel: 'Server URL',
+  nav: {
+    spy: 'Object Spy',
+    repository: 'Repository',
+    tests: 'Tests',
+    runs: 'Runs',
+    repairs: 'Repairs',
+    changes: 'Changes',
+    users: 'Users',
+    settings: 'Settings',
+  },
+  navLabel: 'Places',
+  later: 'Later',
+  laterTitle: 'Not built yet',
+  laterIssue: (issue: number) => `This screen comes in a later version (#${issue}).`,
+  // What each place will do, shown until its issue is built.
+  laterPlaces: {
+    repository:
+      'Search, rename and edit the saved elements of the application, and see which tests use each one.',
+    tests:
+      'Build tests step by step without code: choose an action and an element, add checks, import and export.',
+    runs: 'See every run with its result, filter them, and open or download the report.',
+    repairs:
+      'When AYNA cannot find an element during a run, it suggests similar ones here. You choose one, or none.',
+    changes:
+      'Compare two versions of the application and see which saved elements and tests the new build affects.',
+  },
+  pageHelp: {
+    spy: 'Find the elements of the application and save them for tests.',
+    users: 'Accounts that can log in to this server.',
+    settings: 'This computer’s connection to AYNA.',
+  },
+
+  topApplication: 'Application',
+  topApplications: 'Applications',
+  topManageApps: 'Add or change application…',
+  topVersion: (version: string) => `Version ${version}`,
+  topVersionTitle: 'Version you are testing',
+  topVersionHint: 'Captures and saved elements are stored under this version.',
+  topVersionNone: 'Add the version you are testing',
+  topLanguage: 'English',
+  topLanguageHint: 'Turkish comes in a later version (#185).',
+  topLoggedIn: (username: string, role: string, url: string) =>
+    `Logged in as ${username} (${role}) to ${url}`,
+
+  settingsServer: 'Server',
+  settingsLanguage: 'Language',
+  settingsAgent: 'Agent',
+  settingsAgentHint: 'The AYNA program on this computer that reads and drives the application.',
+  settingsConnected: (url: string) => `${url} · connected`,
+
+  serverTitle: 'Connect to the AYNA server',
+  serverIntro: 'Ask your administrator if you do not know the address.',
+  serverUrlLabel: 'Server address',
   serverUrlPlaceholder: 'http://ayna-server:8080',
   connect: 'Connect',
   connecting: 'Connecting…',
@@ -40,8 +90,8 @@ export const strings = {
       `The AYNA server at ${url} is running but cannot reach its database.`,
   } satisfies Record<ConnectionFailure, (url?: string) => string>,
 
-  appsTitle: 'Application under test',
-  appsIntro: 'Choose the application you want to test on this machine.',
+  appsTitle: 'Which application do you test on this computer?',
+  appsIntro: 'You can change it later in the top bar.',
   appsEmpty: 'There are no applications on this server yet. Add the first one below.',
   appsMissing: 'The application chosen before no longer exists on this server. Choose another.',
   appsRetry: 'Try again',
@@ -68,11 +118,11 @@ export const strings = {
 
   agentLabel: 'Agent',
   agentStates: {
-    starting: 'starting…',
-    connected: 'connected',
-    restarting: 'restarting…',
-    failed: 'failed',
-    stopped: 'stopped',
+    starting: 'Agent starting…',
+    connected: 'Agent ready',
+    restarting: 'Agent restarting…',
+    failed: 'Agent not running',
+    stopped: 'Agent stopped',
   } satisfies Record<AgentState, string>,
   agentAttempt: (restarts: number, max: number) => `attempt ${restarts} of ${max}`,
   agentRetry: 'Start again',
@@ -80,6 +130,7 @@ export const strings = {
   spyTitle: 'Object Spy',
   spyIntro: 'Choose a window to see its properties and where it is on screen.',
   spyRefresh: 'Refresh',
+  spyWindowsTitle: 'Windows',
   spyEmpty: 'The agent sees no open windows.',
   spyNoTitle: '(no title)',
   spyUnknownProcess: 'unknown process',
@@ -144,8 +195,8 @@ export const strings = {
   } satisfies Record<AgentFailure, (detail?: string) => string>,
 
   repoAdd: 'Add to repository',
-  repoTitle: 'Add to the object repository',
-  repoNameLabel: 'Name',
+  repoTitle: 'Add to repository',
+  repoNameLabel: 'Element name',
   repoNamePlaceholder: 'login.userNameInput',
   repoNameHint:
     'Tests use this name for the element. Write the screen, a dot, then the element: login.userNameInput, login.okButton.',
@@ -154,7 +205,8 @@ export const strings = {
     form: 'Write the name as screen.element: two words joined by a dot, each starting with a small letter, e.g. login.userNameInput.',
     reserved: '"none.noMatch" is reserved for the AI service. Choose another name.',
   } satisfies Record<NameProblem, string>,
-  repoNoVersion: 'Choose the application version at the top of the Spy first.',
+  repoNoVersion: 'Add the version you are testing in the top bar first.',
+  repoSavedUnder: (app: string, version: string) => `Saved under ${app} · Version ${version}`,
   repoFoundBy: 'How AYNA finds it',
   repoBackup: (labels: string[]) =>
     `If the application changes, it also tries: ${labels.join(', ')}.`,
@@ -235,7 +287,6 @@ export const strings = {
   usersTitle: 'Users',
   usersIntro: 'Accounts that can log in to this server. Only admins manage them.',
   usersAdminOnly: 'Only admins manage users. Ask an admin to change your account.',
-  usersBack: 'Back',
   usersRetry: 'Try again',
   you: '(you)',
   roles: { admin: 'Admin', tester: 'Tester' } satisfies Record<Role, string>,

@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react'
-import type { AppInfo, Application, ConnectionError, CurrentUser } from '../../shared/api.ts'
-import AgentStatusBar from './AgentStatusBar.tsx'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import type { Application, ConnectionError, CurrentUser } from '../../shared/api.ts'
 import AppPicker from './AppPicker.tsx'
-import ObjectSpy from './ObjectSpy.tsx'
 import Login from './Login.tsx'
 import ServerSettings from './ServerSettings.tsx'
-import Users from './Users.tsx'
+import Shell from './Shell.tsx'
 import { strings } from './strings.ts'
 
 type View =
@@ -21,9 +19,6 @@ type View =
       previous?: View
     }
   | { phase: 'ready'; url: string; user: CurrentUser; app: Application }
-  | { phase: 'users'; url: string; user: CurrentUser; previous: SignedIn }
-
-type SignedIn = Extract<View, { phase: 'picker' | 'ready' }>
 
 /**
  * After connecting: the login screen without a session (#60), then the saved application
@@ -43,13 +38,8 @@ async function viewForServer(url: string): Promise<View> {
 }
 
 export default function App() {
-  const [info, setInfo] = useState<AppInfo | null>(null)
   const [error, setError] = useState(false)
   const [view, setView] = useState<View>({ phase: 'loading' })
-
-  useEffect(() => {
-    window.ayna.getAppInfo().then(setInfo, () => setError(true))
-  }, [])
 
   // First run shows the settings screen; later runs check the saved server first.
   useEffect(() => {
@@ -81,14 +71,52 @@ export default function App() {
     setView({ phase: 'login', url })
   }
 
-  return (
-    <main className="app">
-      <h1>{strings.appName}</h1>
-      <p className="tagline">{strings.tagline}</p>
-      <AgentStatusBar />
+  // Stable, because the top bar's menus re-fetch when their callbacks change.
+  const sessionEnded = useCallback(
+    () =>
+      setView((current) =>
+        'url' in current && current.url !== undefined
+          ? { phase: 'login', url: current.url, ended: true }
+          : current,
+      ),
+    [],
+  )
 
+  if (view.phase === 'ready') {
+    return (
+      <Shell
+        url={view.url}
+        user={view.user}
+        app={view.app}
+        onAppChosen={(app) => setView({ ...view, app })}
+        onManageApps={() =>
+          setView({
+            phase: 'picker',
+            url: view.url,
+            user: view.user,
+            selectedId: view.app.id,
+            previous: view,
+          })
+        }
+        onChangeServer={() => setView({ phase: 'settings', url: view.url, previous: view })}
+        onUserChanged={(user) => setView({ ...view, user })}
+        onSessionEnded={sessionEnded}
+        onLogOut={() => logOut(view.url)}
+      />
+    )
+  }
+
+  return (
+    <Gate>
+      {error && (
+        <p className="message message-danger" role="alert">
+          {strings.bridgeError}
+        </p>
+      )}
       {view.phase === 'loading' && !error && (
-        <p>{view.url ? strings.checkingSaved(view.url) : strings.loading}</p>
+        <p className="hint gate-loading">
+          {view.url ? strings.checkingSaved(view.url) : strings.loading}
+        </p>
       )}
       {view.phase === 'settings' && (
         <ServerSettings
@@ -98,49 +126,12 @@ export default function App() {
           onCancel={view.previous ? () => setView(view.previous!) : undefined}
         />
       )}
-      {(view.phase === 'login' ||
-        view.phase === 'picker' ||
-        view.phase === 'ready' ||
-        view.phase === 'users') && (
-        <section className="card connected">
-          <p className="ok">{strings.connectedTo(view.url)}</p>
-          <button
-            type="button"
-            onClick={() => setView({ phase: 'settings', url: view.url, previous: view })}
-          >
-            {strings.changeServer}
-          </button>
-        </section>
-      )}
       {view.phase === 'login' && (
-        <Login url={view.url} ended={view.ended} onLoggedIn={() => connected(view.url)} />
-      )}
-      {(view.phase === 'picker' || view.phase === 'ready' || view.phase === 'users') && (
-        <section className="card connected">
-          <p>{strings.signedInAs(view.user.username, view.user.role)}</p>
-          <span className="actions">
-            {view.phase !== 'users' && (
-              <button
-                type="button"
-                onClick={() =>
-                  setView({ phase: 'users', url: view.url, user: view.user, previous: view })
-                }
-              >
-                {strings.manageUsers}
-              </button>
-            )}
-            <button type="button" onClick={() => logOut(view.url)}>
-              {strings.logOut}
-            </button>
-          </span>
-        </section>
-      )}
-      {view.phase === 'users' && (
-        <Users
-          user={view.user}
-          onSessionEnded={() => setView({ phase: 'login', url: view.url, ended: true })}
-          onUserChanged={(user) => setView({ ...view, user, previous: { ...view.previous, user } })}
-          onClose={() => setView(view.previous)}
+        <Login
+          url={view.url}
+          ended={view.ended}
+          onLoggedIn={() => connected(view.url)}
+          onChangeServer={() => setView({ phase: 'settings', url: view.url, previous: view })}
         />
       )}
       {view.phase === 'picker' && (
@@ -148,52 +139,23 @@ export default function App() {
           selectedId={view.selectedId}
           missing={view.missing}
           onChosen={(app) => setView({ phase: 'ready', url: view.url, user: view.user, app })}
-          onSessionEnded={() => setView({ phase: 'login', url: view.url, ended: true })}
+          onSessionEnded={sessionEnded}
           onCancel={view.previous ? () => setView(view.previous!) : undefined}
         />
       )}
-      {view.phase === 'ready' && (
-        <section className="card connected">
-          <p>{strings.testingApp(view.app.name, view.app.technology)}</p>
-          <button
-            type="button"
-            onClick={() =>
-              setView({
-                phase: 'picker',
-                url: view.url,
-                user: view.user,
-                selectedId: view.app.id,
-                previous: view,
-              })
-            }
-          >
-            {strings.changeApplication}
-          </button>
-        </section>
-      )}
-      {view.phase === 'ready' && <ObjectSpy appId={view.app.id} />}
+    </Gate>
+  )
+}
 
-      <section className="card">
-        <h2>{strings.versionsTitle}</h2>
-        {error && <p className="error">{strings.bridgeError}</p>}
-        {!error && !info && <p>{strings.loading}</p>}
-        {info && (
-          <dl>
-            <dt>App</dt>
-            <dd>
-              {info.name} {info.version}
-            </dd>
-            <dt>Electron</dt>
-            <dd>{info.electron}</dd>
-            <dt>Chromium</dt>
-            <dd>{info.chrome}</dd>
-            <dt>Node</dt>
-            <dd>{info.node}</dd>
-            <dt>Platform</dt>
-            <dd>{info.platform}</dd>
-          </dl>
-        )}
-      </section>
+/** Before the shell (server, login, first application): one centred card under the name. */
+function Gate({ children }: { children: ReactNode }) {
+  return (
+    <main className="gate">
+      <div className="gate-brand">
+        <span className="brand">AYNA</span>
+        <p className="hint">{strings.tagline}</p>
+      </div>
+      {children}
     </main>
   )
 }

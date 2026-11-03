@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { Account, CurrentUser, Role, UsersError } from '../../shared/api.ts'
 import ApiTokens from './ApiTokens.tsx'
+import Page from './Page.tsx'
 import { strings, usersErrorText as errorText } from './strings.ts'
 
 interface Props {
@@ -9,7 +10,6 @@ interface Props {
   onSessionEnded(): void
   /** The admin changed their own role; the rest of the client follows it. */
   onUserChanged(user: CurrentUser): void
-  onClose(): void
 }
 
 type List =
@@ -23,27 +23,21 @@ const ROLES: Role[] = ['admin', 'tester']
 
 /** Admin-only account management (#60, FR-39); a tester sees why they cannot use it (SC-03). */
 export default function Users(props: Props) {
-  if (props.user.role !== 'admin') return <AdminOnly onClose={props.onClose} />
+  if (props.user.role !== 'admin') return <AdminOnly />
   return <UserManagement {...props} />
 }
 
-function AdminOnly({ onClose }: { onClose(): void }) {
+function AdminOnly() {
   return (
-    <section className="card">
-      <h2>{strings.usersTitle}</h2>
-      <p className="error" role="alert">
+    <Page title={strings.usersTitle}>
+      <p className="message message-warning" role="alert">
         {strings.usersAdminOnly}
       </p>
-      <div className="actions">
-        <button type="button" onClick={onClose}>
-          {strings.usersBack}
-        </button>
-      </div>
-    </section>
+    </Page>
   )
 }
 
-function UserManagement({ user: me, onSessionEnded, onUserChanged, onClose }: Props) {
+function UserManagement({ user: me, onSessionEnded, onUserChanged }: Props) {
   const [list, setList] = useState<List>({ state: 'loading' })
   const [notice, setNotice] = useState<Notice>()
   const [busy, setBusy] = useState(false)
@@ -154,55 +148,53 @@ function UserManagement({ user: me, onSessionEnded, onUserChanged, onClose }: Pr
     )
   }
 
-  if (forbidden) return <AdminOnly onClose={onClose} />
+  if (forbidden) return <AdminOnly />
 
   return (
-    <section className="card">
-      <h2>{strings.usersTitle}</h2>
-      <p>{strings.usersIntro}</p>
+    <Page title={strings.usersTitle} help={strings.usersIntro}>
       {/* Above the list, so the answer stays in view however long the list is. */}
       {notice && (
-        <p className={notice.kind} role={notice.kind === 'error' ? 'alert' : 'status'}>
+        <p
+          className={`message ${notice.kind === 'ok' ? 'message-success' : 'message-danger'}`}
+          role={notice.kind === 'error' ? 'alert' : 'status'}
+        >
           {notice.text}
         </p>
       )}
 
-      {list.state === 'loading' && <p>{strings.loading}</p>}
-      {list.state === 'failed' && (
-        <div className="actions">
-          <p className="error" role="alert">
-            {errorText(list.error)}
-          </p>
-          <button type="button" onClick={reload}>
-            {strings.usersRetry}
-          </button>
-        </div>
-      )}
-      {list.state === 'loaded' && (
-        <ul className="user-list">
-          {list.users.map((account) => (
-            <UserRow
-              key={account.id}
-              account={account}
-              isMe={account.id === me.id}
-              busy={busy}
-              onRole={(role) => setRole(account, role)}
-              onPassword={(password) => setPassword(account, password)}
-              onRemove={() => remove(account)}
-              onSessionEnded={onSessionEnded}
-            />
-          ))}
-        </ul>
-      )}
-
-      <NewUser busy={busy} onCreate={create} />
-
-      <div className="actions">
-        <button type="button" onClick={onClose} disabled={busy}>
-          {strings.usersBack}
-        </button>
+      <div className="users">
+        <section className="panel">
+          {list.state === 'loading' && <p className="hint">{strings.loading}</p>}
+          {list.state === 'failed' && (
+            <p className="message message-danger" role="alert">
+              {errorText(list.error)}{' '}
+              <button type="button" className="btn-quiet" onClick={reload}>
+                {strings.usersRetry}
+              </button>
+            </p>
+          )}
+          {list.state === 'loaded' && (
+            <ul className="user-list">
+              {list.users.map((account) => (
+                <UserRow
+                  key={account.id}
+                  account={account}
+                  isMe={account.id === me.id}
+                  busy={busy}
+                  onRole={(role) => setRole(account, role)}
+                  onPassword={(password) => setPassword(account, password)}
+                  onRemove={() => remove(account)}
+                  onSessionEnded={onSessionEnded}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className="panel">
+          <NewUser busy={busy} onCreate={create} />
+        </section>
       </div>
-    </section>
+    </Page>
   )
 }
 
@@ -238,7 +230,7 @@ function UserRow({ account, isMe, busy, onRole, onPassword, onRemove, onSessionE
       <div className="user-row">
         <span>
           <strong>{account.username}</strong> {isMe && strings.you}{' '}
-          <span className="muted">{strings.createdOn(account.createdAt.slice(0, 10))}</span>
+          <span className="hint">{strings.createdOn(account.createdAt.slice(0, 10))}</span>
         </span>
         <span className="actions">
           <label htmlFor={roleId} className="visually-hidden">
@@ -262,14 +254,19 @@ function UserRow({ account, isMe, busy, onRole, onPassword, onRemove, onSessionE
           <button type="button" onClick={() => toggle('tokens')} disabled={busy}>
             {strings.tokens}
           </button>
-          <button type="button" onClick={() => toggle('remove')} disabled={busy}>
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={() => toggle('remove')}
+            disabled={busy}
+          >
             {strings.removeUser}
           </button>
         </span>
       </div>
 
       {open === 'password' && (
-        <form className="app-form" onSubmit={savePassword}>
+        <form className="form row-form" onSubmit={savePassword}>
           <label htmlFor={passwordId}>{strings.newPasswordLabel(account.username)}</label>
           <input
             id={passwordId}
@@ -291,9 +288,9 @@ function UserRow({ account, isMe, busy, onRole, onPassword, onRemove, onSessionE
         </form>
       )}
       {open === 'remove' && (
-        <div className="actions">
+        <div className="message message-danger row-form">
           <p>{strings.confirmRemove(account.username)}</p>
-          <button type="button" onClick={onRemove} disabled={busy}>
+          <button type="button" className="btn-danger" onClick={onRemove} disabled={busy}>
             {strings.confirmRemoveButton}
           </button>
           <button type="button" onClick={() => setOpen('none')} disabled={busy}>
@@ -334,9 +331,10 @@ function NewUser({
 
   return (
     <>
-      <h3>{strings.newUserTitle}</h3>
-      <p className="muted">{strings.newUserHint}</p>
-      <form className="app-form" onSubmit={submit}>
+      <header className="panel-header">
+        <h2>{strings.newUserTitle}</h2>
+      </header>
+      <form className="form" onSubmit={submit}>
         <label htmlFor="new-username">{strings.usernameLabel}</label>
         <input
           id="new-username"
@@ -369,8 +367,13 @@ function NewUser({
             </option>
           ))}
         </select>
-        <div className="actions">
-          <button type="submit" disabled={busy || !username.trim() || !password}>
+        <p className="hint">{strings.newUserHint}</p>
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="btn-main"
+            disabled={busy || !username.trim() || !password}
+          >
             {strings.createUser}
           </button>
         </div>

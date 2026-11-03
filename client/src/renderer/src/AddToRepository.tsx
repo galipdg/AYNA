@@ -1,5 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import type { AddToRepositoryResult, RepoObject } from '../../shared/api.ts'
+import type {
+  AddToRepositoryResult,
+  AppVersion,
+  Application,
+  RepoObject,
+} from '../../shared/api.ts'
 import {
   IDENTIFYING_FIELDS,
   logicalNameProblem,
@@ -57,20 +62,20 @@ function failureText(result: Extract<AddToRepositoryResult, { ok: false }>): str
  * Stores the chosen element of a capture in the application's object repository (FR-06).
  * Most of the time only a name is needed: the properties AYNA finds the element by are
  * suggested from the capture and shown as a short summary; "Advanced settings" lets the
- * user edit them. The version comes from the Spy's version bar.
+ * user edit them. The version comes from the top bar.
  */
 export default function AddToRepository({
-  appId,
+  app,
   snapshot,
   node,
-  versionId,
+  version,
   onSaved,
   onCancel,
 }: {
-  appId: string
+  app: Application
   snapshot: Snapshot
   node: TreeNode
-  versionId?: string
+  version?: AppVersion
   onSaved: (object: RepoObject) => void
   onCancel: () => void
 }) {
@@ -104,13 +109,14 @@ export default function AddToRepository({
     setProblems(found)
     // Property problems are fixed in the advanced settings, so open them.
     if (propertyProblems.length) setAdvanced(true)
+    const versionId = version?.id
     if (found.length || !versionId || typeof primary === 'string' || typeof fallback === 'string') {
       return
     }
     setSaving(true)
     try {
       const result = await window.ayna.addToRepository({
-        appId,
+        appId: app.id,
         versionId,
         snapshot,
         snapshotElementId: node.id,
@@ -129,8 +135,10 @@ export default function AddToRepository({
 
   return (
     <section className="spy-repo" aria-label={strings.repoTitle}>
-      <h3>{strings.repoTitle}</h3>
-      <form className="app-form" onSubmit={save}>
+      <header className="panel-header">
+        <h2>{strings.repoTitle}</h2>
+      </header>
+      <form className="form" onSubmit={save}>
         <label htmlFor="repo-name">{strings.repoNameLabel}</label>
         <input
           id="repo-name"
@@ -140,14 +148,14 @@ export default function AddToRepository({
           aria-describedby="repo-name-hint"
           autoFocus
         />
-        <p id="repo-name-hint" className="spy-pending">
+        <p id="repo-name-hint" className="hint">
           {strings.repoNameHint}
         </p>
 
         <h4>{strings.repoFoundBy}</h4>
         <div className="repo-summary">
           {findBy.length === 0 ? (
-            <p className="error">{strings.repoNoPrimary}</p>
+            <p className="field-error">{strings.repoNoPrimary}</p>
           ) : (
             <dl>
               {findBy.map((row) => (
@@ -159,24 +167,24 @@ export default function AddToRepository({
             </dl>
           )}
           {matches !== undefined && findBy.length > 0 && (
-            <p className={matches === 1 ? 'ok' : 'error'} role="status">
+            <p className={matches === 1 ? 'tone-success' : 'field-error'} role="status">
               {strings.repoMatches(matches)}
             </p>
           )}
           {backup.length > 0 && (
-            <p className="spy-pending">
+            <p className="hint">
               {strings.repoBackup(backup.map((row) => strings.spyProperties[row.field]))}
             </p>
           )}
         </div>
 
         <details
-          className="repo-advanced"
+          className="advanced"
           open={advanced}
           onToggle={(event) => setAdvanced(event.currentTarget.open)}
         >
           <summary>{strings.repoAdvanced}</summary>
-          <p className="spy-pending">{strings.repoAdvancedHint}</p>
+          <p className="hint">{strings.repoAdvancedHint}</p>
           <table className="repo-properties">
             <thead>
               <tr>
@@ -223,20 +231,27 @@ export default function AddToRepository({
           </table>
         </details>
 
-        {!versionId && <p className="error">{strings.repoNoVersion}</p>}
         {problems.length > 0 && (
-          <ul className="error" role="alert">
+          <ul className="message message-danger" role="alert">
             {problems.map((problem) => (
               <li key={problem}>{problem}</li>
             ))}
           </ul>
         )}
-        <div className="actions">
-          <button type="submit" disabled={saving || !versionId}>
-            {saving ? strings.repoSaving : strings.repoSave}
-          </button>
+        <p className={version ? 'hint' : 'field-error'}>
+          {version ? strings.repoSavedUnder(app.name, version.version) : strings.repoNoVersion}
+        </p>
+        <div className="form-actions">
           <button type="button" onClick={onCancel} disabled={saving}>
             {strings.repoCancel}
+          </button>
+          <button
+            type="submit"
+            className="btn-main"
+            disabled={saving || !version}
+            title={version ? undefined : strings.repoNoVersion}
+          >
+            {saving ? strings.repoSaving : strings.repoSave}
           </button>
         </div>
       </form>
