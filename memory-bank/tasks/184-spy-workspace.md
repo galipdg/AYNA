@@ -18,11 +18,11 @@
 - [x] Three panels, window search, tree search, keyboard (arrows, Home/End), plain groups + Advanced, add form in the right panel
 - [x] Large capture: 3031 elements (generated over the mock snapshot, restored after) → 25 of 1112 rows in the DOM, expand ≈ 8 ms, search ≈ 19 ms (macOS, dev build)
 - [ ] omer looks at it; Windows session with a pilot app
-- Next step: omer's feedback; then post the Windows check on #184 (label `needs-windows-test`) after asking
+- Next step: omer's feedback; push `omer/183-ui-design` and `omer/184-spy-workspace` (after asking) before the Windows session
 
 ## Manual checks
 - 2026-11-03 · agent · macOS dark, real server :8080 + fake agent, driven over CDP · three panels, search, add form, 3031-element tree, production CSP · pass after two fixes (form rows stretched; selection hidden by a search) · evidence: screenshots in the session only
-- Weekly Windows session · pending. Setup: server + client on Windows, a pilot app open. Steps: (1) choose the pilot window → tree fills the middle, window properties on the right; (2) search a control by its text → matches underlined, ancestors open; (3) choose a control → right panel shows its groups, panels do not move; (4) Advanced → every UIA field; (5) Add to repository → form in the right panel, Save → "Saved …" message; (6) a window with thousands of elements (e.g. a grid) → scrolling and search stay smooth; (7) ⌘/Ctrl+Shift+A over a control (needs #22) → it is chosen and scrolled into view. Report: pass/fail per step, screenshot, Windows version, scaling.
+- Weekly Windows session · pending; posted on #184 2026-11-03 (issuecomment-6606325026, label `needs-windows-test`); the branch must be pushed before the session. Setup: server + client on Windows, a pilot app open. Steps: (1) choose the pilot window → tree fills the middle, window properties on the right; (2) search a control by its text → matches underlined, ancestors open; (3) choose a control → right panel shows its groups, panels do not move; (4) Advanced → every UIA field; (5) Add to repository → form in the right panel, Save → "Saved …" message; (6) a window with thousands of elements (e.g. a grid) → scrolling and search stay smooth; (7) ⌘/Ctrl+Shift+A over a control (needs #22) → it is chosen and scrolled into view. Report: pass/fail per step, screenshot, Windows version, scaling.
 
 ## Open issues
 - "AutomationId" still shows in the add form's "How AYNA finds it" summary when it is a Find-by property; no plain word for it in the glossary yet (ask at the #183 review).
