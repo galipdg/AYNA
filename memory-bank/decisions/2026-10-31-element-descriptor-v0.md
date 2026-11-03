@@ -1,7 +1,7 @@
 # Element descriptor v0: the properties, the priority, and how a label is found
 
 - Date: 2026-10-31
-- Status: Proposed (#11)
+- Status: Accepted (Hasan proposed it; Ömerfaruk approved PR #175; Galip approved on #175, 2026-11-02)
 - Deciders: Galip, Ömerfaruk, Hasan
 - Issues: #11 · consumed by #12, #25, #43, #49, #73 · evidence from #6, #9, #161
 

@@ -1,4 +1,11 @@
-import type { AgentState, ConnectionFailure, RequestFailure } from '../../shared/api.ts'
+import type {
+  AgentState,
+  ConnectionFailure,
+  LoginResult,
+  RequestFailure,
+  Role,
+  UsersError,
+} from '../../shared/api.ts'
 
 // All UI text in one place, for later translation.
 export const strings = {
@@ -47,6 +54,7 @@ export const strings = {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
     timeout: 'The server did not answer within 5 seconds.',
+    unauthorized: 'Your session has ended. Log in again.',
     'bad-response': 'The server answered with something unexpected.',
     duplicate: 'An application with this name already exists. Choose it from the list.',
     invalid: 'Enter both a name and a technology.',
@@ -64,4 +72,76 @@ export const strings = {
   } satisfies Record<AgentState, string>,
   agentAttempt: (restarts: number, max: number) => `attempt ${restarts} of ${max}`,
   agentRetry: 'Start again',
+
+  loginTitle: 'Log in',
+  loginIntro: (url: string) => `Log in to the AYNA server at ${url}.`,
+  usernameLabel: 'User name',
+  passwordLabel: 'Password',
+  logIn: 'Log in',
+  loggingIn: 'Logging in…',
+  logOut: 'Log out',
+  sessionEnded: 'Your session has ended. Log in again.',
+  signedInAs: (username: string, role: string) => `Logged in as ${username} (${role})`,
+  loginErrors: {
+    'wrong-credentials': 'Wrong user name or password.',
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer within 5 seconds.',
+    unauthorized: 'Wrong user name or password.',
+    'bad-response': 'The server answered with something unexpected.',
+  } satisfies Record<Extract<LoginResult, { ok: false }>['reason'], string>,
+
+  manageUsers: 'Manage users',
+  usersTitle: 'Users',
+  usersIntro: 'Accounts that can log in to this server. Only admins manage them.',
+  usersAdminOnly: 'Only admins manage users. Ask an admin to change your account.',
+  usersBack: 'Back',
+  usersRetry: 'Try again',
+  you: '(you)',
+  roles: { admin: 'Admin', tester: 'Tester' } satisfies Record<Role, string>,
+  roleLabel: 'Role',
+  createdOn: (date: string) => `since ${date}`,
+  newUserTitle: 'New user',
+  newUserHint: 'User names use a-z, digits, ".", "_" or "-". Passwords need at least 8 characters.',
+  createUser: 'Add user',
+  userCreated: (username: string) => `Added ${username}.`,
+  roleChanged: (username: string, role: string) => `${username} is now ${role}.`,
+  setPassword: 'Set password',
+  newPasswordLabel: (username: string) => `New password for ${username}`,
+  savePassword: 'Save password',
+  passwordChanged: (username: string) =>
+    `Password of ${username} changed. Their open sessions have ended.`,
+  removeUser: 'Remove',
+  confirmRemove: (username: string) =>
+    `Remove ${username}? They can no longer log in; their name stays on what they did.`,
+  confirmRemoveButton: 'Yes, remove',
+  userRemoved: (username: string) => `Removed ${username}.`,
+  tokens: 'API tokens',
+  tokensTitle: (username: string) => `API tokens of ${username}`,
+  tokensIntro: 'For a CI service that runs tests without logging in (Authorization: Bearer).',
+  tokensEmpty: 'No API tokens yet.',
+  tokenNameLabel: 'Token name',
+  tokenNamePlaceholder: 'jenkins',
+  createToken: 'Create token',
+  // The permission handler denies clipboard access, so the admin selects and copies by hand.
+  tokenSecret: (name: string) =>
+    `Token "${name}": select and copy it now; it will not be shown again.`,
+  revokeToken: 'Revoke',
+  hide: 'Hide',
+  usersErrors: {
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer within 5 seconds.',
+    unauthorized: 'Your session has ended. Log in again.',
+    'bad-response': 'The server answered with something unexpected.',
+    forbidden: 'Only admins manage users.',
+    'not-found': 'This account or token no longer exists. Reload the list.',
+    invalid: 'The server did not accept these values.',
+    conflict: 'The server refused the change.',
+  } satisfies Record<UsersError['reason'], string>,
 } as const
+
+/** The server's own message when it sent one (e.g. which field is wrong), else ours. */
+export function usersErrorText(error: UsersError): string {
+  return error.detail ?? strings.usersErrors[error.reason]
+}

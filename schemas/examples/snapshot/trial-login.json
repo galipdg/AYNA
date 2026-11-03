@@ -1,0 +1,340 @@
+{
+  "version": "0.1",
+  "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
+  "capture": {
+    "startedAt": "2026-10-31T17:42:19+03:00",
+    "durationMs": 29,
+    "budgetMs": 5000,
+    "elementCount": 14,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "python.exe",
+    "fileVersion": "3.13.150.1013"
+  },
+  "window": {
+    "handle": 657704,
+    "title": "AYNA Trial - Login",
+    "className": "LoginWindow",
+    "bounds": [
+      560,
+      210,
+      1010,
+      415
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "automationId": "QApplication.loginWindow",
+        "name": "AYNA Trial - Login",
+        "controlType": "Window",
+        "className": "LoginWindow",
+        "frameworkId": "Qt",
+        "bounds": [
+          560,
+          210,
+          1010,
+          415
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 657704
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          580,
+          175,
+          1010,
+          210
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e1",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          560,
+          181,
+          588,
+          209
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e2",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          560,
+          181,
+          588,
+          209
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e1",
+      "element": {
+        "name": "Minimize",
+        "controlType": "Button",
+        "bounds": [
+          832,
+          173,
+          892,
+          210
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e1",
+      "element": {
+        "name": "Maximize",
+        "controlType": "Button",
+        "bounds": [
+          892,
+          173,
+          951,
+          210
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 2,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e1",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          951,
+          173,
+          1011,
+          210
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 3,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.usernameLabel",
+        "name": "Username",
+        "controlType": "Text",
+        "className": "QLabel",
+        "frameworkId": "Qt",
+        "bounds": [
+          573,
+          223,
+          640,
+          255
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.usernameInput",
+        "name": "Username",
+        "controlType": "Edit",
+        "className": "QLineEdit",
+        "frameworkId": "Qt",
+        "bounds": [
+          648,
+          223,
+          995,
+          255
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "nearestLabel": "Username",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.passwordLabel",
+        "name": "Password",
+        "controlType": "Text",
+        "className": "QLabel",
+        "frameworkId": "Qt",
+        "bounds": [
+          573,
+          263,
+          635,
+          295
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 3,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.passwordInput",
+        "name": "Password",
+        "controlType": "Edit",
+        "className": "QLineEdit",
+        "frameworkId": "Qt",
+        "bounds": [
+          648,
+          263,
+          995,
+          295
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 4,
+        "nearestLabel": "Password",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.rememberMeCheckBox",
+        "name": "Remember me",
+        "controlType": "CheckBox",
+        "className": "QCheckBox",
+        "frameworkId": "Qt",
+        "bounds": [
+          573,
+          303,
+          995,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 5,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.loginButton",
+        "name": "Login",
+        "controlType": "Button",
+        "className": "QPushButton",
+        "frameworkId": "Qt",
+        "bounds": [
+          573,
+          341,
+          995,
+          373
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 6,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e0",
+      "element": {
+        "automationId": "QApplication.loginWindow.statusLabel",
+        "controlType": "Text",
+        "className": "QLabel",
+        "frameworkId": "Qt",
+        "bounds": [
+          573,
+          381,
+          995,
+          401
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 7,
+        "windowTitle": "AYNA Trial - Login",
+        "enabled": true,
+        "offscreen": false
+      }
+    }
+  ]
+}

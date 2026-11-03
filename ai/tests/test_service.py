@@ -23,7 +23,6 @@ from ayna_ai.service import (
     ServiceConfig,
     StepService,
     create_server,
-    is_loopback_host,
     main,
 )
 from ayna_ai.validate import NO_MATCH, DroppedStep, load_step_schema
@@ -164,6 +163,7 @@ def test_generates_steps_with_a_reason_each(fake_ollama, start_service, request_
     assert body["status"] == "ok"
     assert body["steps"] == STEPS
     assert body["dropped"] == []
+    assert body["stepLimitReached"] is False
     assert (body["model"], body["schemaVersion"]) == ("qwen3:8b", "0.1")
     assert body["promptVersion"] == PROMPT_VERSION + "+reason"
     assert isinstance(body["latencyMs"], int) and body["latencyMs"] >= 0
@@ -458,6 +458,66 @@ def test_only_no_match_steps_give_no_valid_steps(
     assert [(d["code"], d["reason"]) for d in body["dropped"]] == [
         ("no_match", "no repository object matches")
     ]
+    assert body["stepLimitReached"] is False
+
+
+# --- step limit (#142/#146 review: a cap must not shorten an answer silently) --
+
+STEP_LIMIT = 12
+NO_MATCH_STEP = {"keyword": "Click", "target": NO_MATCH, "reason": "'onayla'"}
+
+
+def test_an_answer_at_the_step_limit_says_so(fake_ollama, start_service, request_body):
+    answer = [STEPS[i % 2] for i in range(STEP_LIMIT)]
+    model_answers(fake_ollama, document(answer))
+    code, body = start_service().generate(request_body)
+
+    assert (code, body["status"]) == (200, "ok")
+    assert body["steps"] == answer and body["dropped"] == []
+    assert body["stepLimitReached"] is True
+    # The flag follows the grammar the model was given.
+    (chat,) = chats(fake_ollama)
+    assert chat["format"]["properties"]["steps"]["maxItems"] == STEP_LIMIT
+
+
+def test_dropped_steps_count_toward_the_step_limit(
+    fake_ollama, start_service, request_body
+):
+    answer = [STEPS[i % 2] for i in range(STEP_LIMIT - 1)] + [NO_MATCH_STEP]
+    model_answers(fake_ollama, document(answer))
+    code, body = start_service().generate(request_body)
+    assert (code, len(body["steps"]), len(body["dropped"])) == (200, 11, 1)
+    assert body["stepLimitReached"] is True
+
+
+def test_a_422_with_every_step_dropped_at_the_limit_says_so(
+    fake_ollama, start_service, request_body
+):
+    model_answers(fake_ollama, document([NO_MATCH_STEP] * STEP_LIMIT))
+    code, body = start_service().generate(request_body)
+    assert (code, body["status"], body["steps"]) == (422, "no_valid_steps", [])
+    assert len(body["dropped"]) == STEP_LIMIT
+    assert body["stepLimitReached"] is True
+
+
+@pytest.mark.parametrize("count", [STEP_LIMIT - 1, STEP_LIMIT + 1])
+def test_an_answer_off_the_limit_is_not_flagged(
+    fake_ollama, start_service, request_body, count
+):
+    """Over the limit only if the model server ignored the grammar: nothing was cut."""
+    answer = [STEPS[i % 2] for i in range(count)]
+    model_answers(fake_ollama, document(answer))
+    code, body = start_service().generate(request_body)
+    assert (code, len(body["steps"]), body["stepLimitReached"]) == (200, count, False)
+
+
+def test_an_unusable_answer_has_no_step_limit_field(
+    fake_ollama, start_service, request_body
+):
+    model_answers(fake_ollama, '{"version": "0.1", "steps": [')
+    code, body = start_service().generate(request_body)
+    assert (code, body["status"]) == (422, "invalid_json")
+    assert "stepLimitReached" not in body and "dropped" not in body
 
 
 def test_the_reserved_name_is_refused_as_an_object(
@@ -904,29 +964,51 @@ def test_pass_through_retriever():
 # --- binding ------------------------------------------------------------------
 
 
+def capture_bind(monkeypatch) -> list:
+    """Replace ServiceServer: record (address, token) instead of binding."""
+    bound = []
+    monkeypatch.setattr(
+        service_module,
+        "ServiceServer",
+        lambda address, service, token: bound.append((address, token)),
+    )
+    return bound
+
+
 @pytest.mark.parametrize(
-    ("host", "loopback"),
+    ("host", "address"),
     [
-        ("127.0.0.1", True),
-        ("127.0.0.2", True),
-        ("::1", True),
-        ("localhost", True),
-        ("0.0.0.0", False),
-        ("", False),
-        ("::", False),
-        ("192.168.1.20", False),
-        ("localhost.example.com", False),
+        ("127.0.0.1", "127.0.0.1"),
+        ("127.0.0.2", "127.0.0.2"),
+        ("::1", "::1"),
+        ("localhost", "127.0.0.1"),
     ],
 )
-def test_is_loopback_host(host, loopback):
-    assert is_loopback_host(host) is loopback
+def test_a_loopback_host_binds_its_checked_address(
+    fake_ollama, resolver, monkeypatch, host, address
+):
+    resolver["localhost"] = ["::1", "127.0.0.1"]
+    bound = capture_bind(monkeypatch)
+    service = StepService(ServiceConfig(model_host=fake_ollama.url))
+    create_server(service, host, 8090)
+    assert bound == [((address, 8090), None)]
 
 
-@pytest.mark.parametrize("host", ["0.0.0.0", "192.168.1.20", ""])
-def test_a_non_loopback_bind_is_refused(fake_ollama, host):
+@pytest.mark.parametrize(
+    "host", ["0.0.0.0", "192.168.1.20", "", "::", "localhost.example.com"]
+)
+def test_a_non_loopback_bind_is_refused(fake_ollama, resolver, host):
     service = StepService(ServiceConfig(model_host=fake_ollama.url))
     with pytest.raises(ValueError, match="--allow-remote"):
         create_server(service, host, 0)
+
+
+def test_localhost_that_resolves_off_the_machine_is_not_loopback(fake_ollama, resolver):
+    """#142/#146 review: the name `localhost` alone is not trusted."""
+    resolver["localhost"] = ["127.0.0.1", "10.0.0.5"]
+    service = StepService(ServiceConfig(model_host=fake_ollama.url))
+    with pytest.raises(ValueError, match="10.0.0.5.*--allow-remote"):
+        create_server(service, "localhost", 0)
 
 
 def test_the_cli_refuses_a_non_loopback_host(capsys):
@@ -943,13 +1025,29 @@ def test_the_cli_refuses_a_remote_model_server(capsys):
     assert "closed network" in capsys.readouterr().err
 
 
+def test_the_cli_refuses_a_model_host_name_that_resolves_off_the_machine(
+    resolver, capsys
+):
+    resolver["localhost"] = ["10.0.0.5"]
+    with pytest.raises(SystemExit) as caught:
+        main(["--model-host", "http://localhost:11434", "--no-warmup"])
+    assert caught.value.code == 2
+    err = capsys.readouterr().err
+    assert "closed network" in err and "10.0.0.5" in err
+
+
+def test_health_shows_the_checked_model_server_address(fake_ollama, resolver):
+    port = fake_ollama.url.rsplit(":", 1)[1]
+    model_answers(fake_ollama)
+    service = StepService(ServiceConfig(model_host=f"http://localhost:{port}"))
+    assert service.health()["modelServer"] == {
+        "url": fake_ollama.url,
+        "reachable": True,
+    }
+
+
 def test_allow_remote_binds_and_logs_a_warning(fake_ollama, monkeypatch, caplog):
-    bound = []
-    monkeypatch.setattr(
-        service_module,
-        "ServiceServer",
-        lambda address, service, token: bound.append((address, token)),
-    )
+    bound = capture_bind(monkeypatch)
     service = StepService(ServiceConfig(model_host=fake_ollama.url))
     with caplog.at_level(logging.WARNING, logger="ayna_ai.service"):
         create_server(service, "0.0.0.0", 8090, allow_remote=True, token=TOKEN)

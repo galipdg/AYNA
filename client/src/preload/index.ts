@@ -17,6 +17,17 @@ const api: AynaApi = {
     return () => ipcRenderer.removeListener(IPC.agentStatus, forward)
   },
   retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
+  login: (username, password) => ipcRenderer.invoke(IPC.login, username, password),
+  logout: () => ipcRenderer.invoke(IPC.logout),
+  currentUser: () => ipcRenderer.invoke(IPC.currentUser),
+  listUsers: () => ipcRenderer.invoke(IPC.listUsers),
+  createUser: (username, password, role) =>
+    ipcRenderer.invoke(IPC.createUser, username, password, role),
+  updateUser: (id, change) => ipcRenderer.invoke(IPC.updateUser, id, change),
+  removeUser: (id) => ipcRenderer.invoke(IPC.removeUser, id),
+  listTokens: (userId) => ipcRenderer.invoke(IPC.listTokens, userId),
+  createToken: (userId, name) => ipcRenderer.invoke(IPC.createToken, userId, name),
+  revokeToken: (tokenId) => ipcRenderer.invoke(IPC.revokeToken, tokenId),
 }
 
 // Only these functions cross the bridge; ipcRenderer itself never reaches the renderer.

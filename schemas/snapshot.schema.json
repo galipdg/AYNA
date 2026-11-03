@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:schema:snapshot",
+  "title": "AYNA window snapshot",
+  "description": "One window's whole UI Automation subtree as the agent captured it at one moment (#12): the application and window it came from, what the walk cost, and every element with its place in the tree. Produced by the agent's recognition backend, returned by the snapshot JSON-RPC method (docs/agent-rpc.md), imported by the server as Window and Element nodes under an AppVersion (#15), shown by the Spy's tree and property panel (#24, #25), and sent with a healing proposal as the tree its candidates came from (#149, #73). A snapshot is only ever produced for a walk that covered the whole window: an incomplete walk is the error -32002, never a document (FR-35, search incomplete). Changing this schema needs an ADR and all three owners' approval (schemas/AGENTS.md); see memory-bank/decisions/2026-11-01-snapshot-schema-v0.md.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change.",
+      "const": "0.1"
+    },
+    "snapshotId": {
+      "description": "Id of this capture, made by the agent. The server imports a snapshot id once: importing the same document again leaves the graph unchanged (FR-04), and a healing proposal names it to say which tree its candidates came from (#149).",
+      "$ref": "#/$defs/opaqueId"
+    },
+    "capture": {
+      "$ref": "#/$defs/capture"
+    },
+    "app": {
+      "$ref": "#/$defs/app"
+    },
+    "window": {
+      "$ref": "#/$defs/window"
+    },
+    "elements": {
+      "description": "Every element of the window, the window's own root element first, in pre-order: a parent always comes before its children, so one pass builds the tree. Deduplicated by window handle, so a dialog that is both a top-level window and a child of its owner appears once (#6, #161). The order and the ids are normative, because a load then save round trip has to give the same file back.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    }
+  },
+  "required": [
+    "version",
+    "snapshotId",
+    "capture",
+    "app",
+    "window",
+    "elements"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "capture": {
+      "title": "What the walk cost",
+      "description": "Recorded with every snapshot so that a slow or odd capture is attributable afterwards instead of being a single number nobody can decompose (#161: a WinForms window that normally walks in 2.3 s took 278.5 s while the application was not pumping messages).",
+      "type": "object",
+      "properties": {
+        "startedAt": {
+          "description": "When the walk started, ISO 8601 with a UTC offset. The healing proposal's snapshotAt is this value; a screenshot taken before the walk (#54) is older by at most durationMs.",
+          "type": "string",
+          "format": "date-time",
+          "minLength": 20
+        },
+        "durationMs": {
+          "description": "How long the walk took, in milliseconds, measured around the walk only.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "budgetMs": {
+          "description": "The deadline that applied to this walk, in milliseconds: the timeoutMs of the request, or the agent's default. A walk that passes it ends as -32002 with no document, so in a stored snapshot durationMs is always below it.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "elementCount": {
+          "description": "Number of elements in elements. Written out so that a log line or a list of snapshots can report the size without carrying the tree; a reader may check it against the array's length.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "readErrors": {
+          "description": "How many single property reads failed (an element that vanished mid-walk, a provider that does not implement a property). Every property is read on its own, so a failure costs only that value; a high count means the tree is thin, not that the walk failed.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "agentVersion": {
+          "description": "Version of the agent that captured it, as ping reports it.",
+          "type": "string",
+          "minLength": 1
+        },
+        "featureVersion": {
+          "description": "How the agent derived the computed properties - parentPath, siblingIndex, nearestLabel and dpi (#11, #43), e.g. features-v0. Healing recomputes them from a stored snapshot, so a snapshot derived by another rule set is not comparable; bumped whenever one of those derivations changes (ADR healing proposal schema 0.2).",
+          "$ref": "#/$defs/versionedId"
+        }
+      },
+      "required": [
+        "startedAt",
+        "durationMs",
+        "budgetMs",
+        "elementCount",
+        "featureVersion"
+      ],
+      "additionalProperties": false
+    },
+    "app": {
+      "title": "The application the window belongs to",
+      "description": "What the agent could read about the running process, not what a person called it: the server's Application name and AppVersion are chosen in the client when the snapshot is imported (#15), because one exe serves many named applications and a file version is not the version a tester writes on a release. The full exe path is deliberately left out: it names the user.",
+      "type": "object",
+      "properties": {
+        "exeName": {
+          "description": "Exe file name without its path, e.g. KeePass.exe. Absent when it could not be read (an elevated process).",
+          "type": "string",
+          "minLength": 1
+        },
+        "fileVersion": {
+          "description": "The exe's file version resource as a.b.c.d, e.g. 2.61.1.0. Absent when the exe carries no version resource, which is common for PyInstaller and portable builds.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "window": {
+      "title": "The window that was captured",
+      "description": "The window-manager identity of the root, with the fields listWindows returns for it (docs/agent-rpc.md). Its UI Automation properties are elements[0].element.",
+      "type": "object",
+      "properties": {
+        "handle": {
+          "description": "Native window handle (HWND) the snapshot was asked for. Session-scoped: a new handle every run, so it identifies the window within one session and must never be used to match across runs.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "description": "The window's UIA Name at capture time. Qt apps that set an accessibleName show that instead of the title.",
+          "type": "string",
+          "minLength": 1
+        },
+        "className": {
+          "description": "UIA ClassName of the window. For Qt it is the Python or C++ class name, the most stable handle for a window.",
+          "type": "string",
+          "minLength": 1
+        },
+        "processId": {
+          "description": "Owning process id. Session-scoped, like handle.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "bounds": {
+          "description": "[left, top, right, bottom] in physical pixels, virtual-desktop coordinates; negative on a monitor left of or above the primary one.",
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "dpi": {
+          "description": "DPI the window renders at (GetDpiForWindow; 96 = 100 % scaling). 96 on a scaled display means the application is not DPI aware.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "handle"
+      ],
+      "additionalProperties": false
+    },
+    "node": {
+      "title": "One element in its place in the tree",
+      "description": "The tree links the snapshot adds around an element descriptor. The descriptor itself is exactly element.schema.json#/$defs/element, duplicated here so that this file validates on its own in Java, TypeScript and Python; agent/tests/test_snapshot.py keeps the two in lockstep.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Id of this element inside this snapshot, unique in elements. A healing proposal's candidate names it (#149). Opaque: compare it only for equality, never parse or order it.",
+          "$ref": "#/$defs/opaqueId"
+        },
+        "parentId": {
+          "description": "The id of this element's parent, or null for the window's root element. Exactly one element of a snapshot has null.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/opaqueId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "element": {
+          "$ref": "#/$defs/element"
+        }
+      },
+      "required": [
+        "id",
+        "parentId",
+        "element"
+      ],
+      "additionalProperties": false
+    },
+    "element": {
+      "title": "Element descriptor",
+      "description": "One UI element as element.schema.json defines it (#11), which is normative for every property below. A key is left out when the element has no value for it; an empty or whitespace-only string is never stored.",
+      "type": "object",
+      "properties": {
+        "automationId": {
+          "description": "UIA AutomationId, stored whole and never clipped. May be framework-generated. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "UIA Name. In Qt the accessibleName when one is set, not the visible text. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "controlType": {
+          "description": "Programmatic UIA control type name, e.g. Button, Edit. Never the localised one. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "className": {
+          "description": "UIA ClassName, e.g. QPushButton. WinForms class names carry a per-build suffix. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "frameworkId": {
+          "description": "UIA FrameworkId: WinForm, WPF, Win32, Qt. Not used for matching. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "bounds": {
+          "description": "[left, top, right, bottom] in physical pixels, virtual-desktop coordinates. Normative meaning: element.schema.json.",
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "dpi": {
+          "description": "DPI of the element's window (GetDpiForWindow; 96 = 100 % scaling). Normative meaning: element.schema.json.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "parentPath": {
+          "description": "Programmatic control types of the ancestors, root first, joined by '/'. Computed. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "siblingIndex": {
+          "description": "Zero-based position among the parent's children in the raw UIA view. Computed. Normative meaning: element.schema.json.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "nearestLabel": {
+          "description": "The text that names the element. Computed; the rule is normative (#11 ADR). Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "nearestLabelSource": {
+          "description": "Which rule produced nearestLabel. Normative meaning: element.schema.json.",
+          "enum": [
+            "labeledBy",
+            "geometric",
+            "parentRow"
+          ]
+        },
+        "windowTitle": {
+          "description": "Title of the element's top-level window at capture time. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "enabled": {
+          "description": "UIA IsEnabled. Normative meaning: element.schema.json.",
+          "type": "boolean"
+        },
+        "offscreen": {
+          "description": "UIA IsOffscreen: scrolled out, collapsed or on a hidden tab page. Normative meaning: element.schema.json.",
+          "type": "boolean"
+        },
+        "helpText": {
+          "description": "UIA HelpText. Captured but not scored in v0. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "accessKey": {
+          "description": "UIA AccessKey, e.g. Alt+F. Captured but not scored in v0. Normative meaning: element.schema.json.",
+          "type": "string",
+          "minLength": 1
+        },
+        "nativeWindowHandle": {
+          "description": "Win32 HWND when the element has one. Session-scoped: never matched across runs. Normative meaning: element.schema.json.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "opaqueId": {
+      "description": "An id the agent makes (snapshot and snapshot element ids); as in healing-proposal.schema.json#/$defs/opaqueId. Compare it only for equality.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "versionedId": {
+      "description": "A component's name and version in one lower-case string, e.g. features-v0; as in healing-proposal.schema.json#/$defs/versionedId. Compared only for equality.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 50
+    }
+  }
+}

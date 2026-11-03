@@ -91,6 +91,24 @@ Append-only. One entry per session, newest at the bottom:
 - #160: `errors[]` capped at 50 + `errorCount` (new `ApiErrorHandlerTest`, 40/40 server tests), ADR clarified and Accepted, graph v0.1 ADR Accepted. #155/#157: galip's and hasan's review points applied. #154: heartbeat during long calls (52/52 client tests).
 - Approved #164 (RS 0.6) and #165 (AI token, retrieval split). galip owns #58's server query, omer reviews.
 - Next: merges; then #25 if #12/#22 move, else #122 or #51.
+
+## 2026-10-31 · #166 review, #60 accounts
+- Pushed the #122 session note. #160/#155 still unmerged, nothing new from hasan on #167.
+- Reviewed #166 (comment): one-sided `dpi` makes the same control score location 0 (ran it), `healing-proposal.schema.json` rejects `dpi`, graph must store the target's `dpi` (#25/#74).
+- #60 (omer's choices: opaque Bearer tokens in Neo4j, `spring-boot-starter-security`, first admin from env vars, runs/approvals criterion moved to #44/#74). ADR Proposed. Server: `auth/`, V0003, users/tokens API, createdBy/updatedBy on tests, OpenAPI regenerated, graph-model v0.2; 54 tests + Compose smoke test. Client: login screen, token in main memory, 401 → login; 40 tests, build green.
+- Next: user management screen, manual check, PR.
+
+## 2026-10-31 · #60 user management, PR
+- Nothing new on `main`; no PRs waiting for my review.
+- Client: Manage users screen (`Users.tsx`, `ApiTokens.tsx`, main `users.ts`): list/add/role/password/remove + API tokens; tester or 403 → "only admins manage users". Server `detail` shown as is. 51 tests, lint, typecheck, build green.
+- Checked against a fresh Compose stack: `users.ts` against the real API, and the built app driven over CDP with screenshots (fixed button wrapping and notice placement).
+- `server/AGENTS.md` who-did-it rule (omer's OK). Pushed over HTTPS; PR #168, reviewers galip + hasan.
+- Next: omer's manual look, reviews, retarget after #160.
+
+## 2026-10-31 (fifth session) · #60
+- Found PR #168 squash-merged into `omer/31-openapi-contract` with no reviews; #60 code would have reached `main` inside #160. Reverted on the #31 branch (`48dfd5a`, tree identical to `9e2f51a`) and pushed, omer's choice.
+- GitHub showed #160 as CONFLICTING; `git merge-tree` with `origin/main` was clean.
+- Next: after #160 merges, new #60 PR to `main` from this branch.
 ## 2026-10-31 · #122 eval CI
 - #160/#155 not merged yet, #12/#22 still open → took #122. hasan had not done his `eval/` part, so omer did both halves (user's choice; hasan told in his inbox, reviewer on the PR).
 - `eval/pyproject.toml` (deps only, `packages = []`; pywinauto win32-only; jsonschema for `nl/check_pairs.py`), `requirements.txt` removed, ruff 0.17 clean with `spikes/` excluded, `eval` CI job on `windows-latest`. `eval/AGENTS.md` and CI changes approved by the user.
