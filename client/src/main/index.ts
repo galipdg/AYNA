@@ -10,6 +10,7 @@ import {
   type IpcMainInvokeEvent,
 } from 'electron'
 import { IPC, type AppInfo, type NewRepoObject, type Role } from '../shared/api.ts'
+import { isLanguage, languageFor } from '../shared/language.ts'
 import { AgentManager, resolveAgentCommand } from './agent.ts'
 import {
   isAllowedNavigation,
@@ -119,6 +120,15 @@ function registerIpc() {
     platform: process.platform,
   }))
   handle(IPC.getSettings, () => loadSettings(settingsFile))
+  handle(IPC.getLanguage, async () => {
+    const { language } = await loadSettings(settingsFile)
+    return language ?? languageFor(app.getPreferredSystemLanguages())
+  })
+  handle(IPC.setLanguage, async (_event, language: unknown) => {
+    if (!isLanguage(language)) throw new Error(`not a UI language: ${String(language)}`)
+    const settings = await loadSettings(settingsFile)
+    await saveSettings(settingsFile, { ...settings, language })
+  })
   // The check runs here, not in the renderer: the renderer's CSP allows no remote
   // connections, and Node's fetch is not subject to the session's request filter.
   handle(IPC.checkServer, (_event, url) => checkServer(String(url)))

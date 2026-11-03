@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import type { Account, CurrentUser, Role, UsersError } from '../../shared/api.ts'
 import ApiTokens from './ApiTokens.tsx'
 import Page from './Page.tsx'
-import { strings, usersErrorText as errorText } from './strings.ts'
+import { formatDate, strings, usersErrorText as errorText } from './strings.ts'
 
 interface Props {
   user: CurrentUser
@@ -230,7 +230,7 @@ function UserRow({ account, isMe, busy, onRole, onPassword, onRemove, onSessionE
       <div className="user-row">
         <span>
           <strong>{account.username}</strong> {isMe && strings.you}{' '}
-          <span className="hint">{strings.createdOn(account.createdAt.slice(0, 10))}</span>
+          <span className="hint">{strings.createdOn(formatDate(account.createdAt))}</span>
         </span>
         <span className="actions">
           <label htmlFor={roleId} className="visually-hidden">

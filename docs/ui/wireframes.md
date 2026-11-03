@@ -52,7 +52,7 @@ Legend: `[ Button ]` main action · `[ Button ]` secondary (the text says which)
 - **Version menu** `Version 1.2 ▾` — the versions of this application, newest first, and **Add version…** (a small inline field inside the menu: "Version, e.g. 1.3" + `[ Add ]`). This is the only place where the version is chosen; every screen uses it.
   - No version yet: the button reads `+ Add the version you are testing` with `--warning` outline, and screens that need a version say so and point here.
 - **Agent pill** — `● Agent ready` / `◌ Agent starting…` / `↻ Agent restarting (2 of 3)` / `✕ Agent not running`. Click: a small panel with the state, the last error in plain words, and `[ Start again ]` when it has failed (FR-05, #17).
-- **Language** `EN ▾` — English / Türkçe (#185; until then shows English only, disabled with a tooltip "Turkish comes in a later version").
+- **Language** `TR ▾` — Türkçe / English, each named in its own language (#185). The switch applies at once and is kept across restarts; the same menu sits in the top-right corner of the screens before login. First run: the system language if Turkish or English, else Turkish.
 - **User menu** `omer ▾` — "Logged in as omer (Admin) to http://ayna-server:8080", **Log out**.
 
 **Navigation**
@@ -453,7 +453,7 @@ Admins only. Testers do not see the place.
 │ Settings                                                                                       │
 ├────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Server        http://ayna-server:8080 · connected                    [ Change server ]         │
-│ Language      English ▾                                              (#185)                    │
+│ Language      [ Türkçe ] [ English ]                                 (#185)                    │
 │ Pick hotkey   Ctrl+Shift+A                                                                     │
 │ Agent         ● Ready · Python 3.12 · agent 0.1                      [ Restart agent ]         │
 │                                                                                                │

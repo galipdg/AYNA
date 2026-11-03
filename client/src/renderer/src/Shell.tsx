@@ -3,6 +3,7 @@ import type { AppVersion, Application, CurrentUser } from '../../shared/api.ts'
 import AgentStatusBar from './AgentStatusBar.tsx'
 import AppMenu from './AppMenu.tsx'
 import Icon, { type IconName } from './Icons.tsx'
+import LanguageMenu from './Language.tsx'
 import Menu from './Menu.tsx'
 import ObjectSpy from './ObjectSpy.tsx'
 import Page from './Page.tsx'
@@ -102,9 +103,7 @@ export default function Shell(props: Props) {
         />
         <span className="topbar-gap" />
         <AgentStatusBar />
-        <button type="button" className="menu-button" disabled title={strings.topLanguageHint}>
-          {strings.topLanguage}
-        </button>
+        <LanguageMenu />
         <Menu
           title={user.username}
           align="end"

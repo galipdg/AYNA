@@ -57,7 +57,12 @@ export default function ElementTree({
   const viewport = useRef<HTMLDivElement>(null)
 
   const parents = useMemo(() => parentMap(root), [root])
-  const search = useMemo(() => searchTree(root, query, controlTypeLabel), [root, query])
+  // The control types of the current language: a language change searches again.
+  const types = strings.controlTypes
+  const search = useMemo(
+    () => searchTree(root, query, (type) => types[type] ?? type),
+    [root, query, types],
+  )
   // The chosen element stays in the tree during a search, even when it does not match.
   const shown = useMemo(
     () =>

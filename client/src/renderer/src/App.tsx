@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Application, ConnectionError, CurrentUser } from '../../shared/api.ts'
+import type { Language } from '../../shared/language.ts'
 import AppPicker from './AppPicker.tsx'
+import LanguageMenu, { LanguageContext } from './Language.tsx'
 import Login from './Login.tsx'
 import ServerSettings from './ServerSettings.tsx'
 import Shell from './Shell.tsx'
-import { strings } from './strings.ts'
+import { setStringsLanguage, strings } from './strings.ts'
 
 type View =
   | { phase: 'loading'; url?: string }
@@ -37,9 +39,20 @@ async function viewForServer(url: string): Promise<View> {
   return app ? { phase: 'ready', url, user, app } : { phase: 'picker', url, user, missing: true }
 }
 
-export default function App() {
+export default function App({ initialLanguage }: { initialLanguage: Language }) {
+  const [language, setLanguage] = useState(initialLanguage)
+  const [languageSaveFailed, setLanguageSaveFailed] = useState(false)
   const [error, setError] = useState(false)
   const [view, setView] = useState<View>({ phase: 'loading' })
+
+  // Switching the texts before the state change makes the re-render below show the new ones.
+  const chooseLanguage = useCallback((next: Language) => {
+    setStringsLanguage(next)
+    document.documentElement.lang = next
+    setLanguage(next)
+    setLanguageSaveFailed(false)
+    window.ayna.setLanguage(next).catch(() => setLanguageSaveFailed(true))
+  }, [])
 
   // First run shows the settings screen; later runs check the saved server first.
   useEffect(() => {
@@ -82,8 +95,9 @@ export default function App() {
     [],
   )
 
-  if (view.phase === 'ready') {
-    return (
+  const languageState = { language, choose: chooseLanguage, saveFailed: languageSaveFailed }
+  const content =
+    view.phase === 'ready' ? (
       <Shell
         url={view.url}
         user={view.user}
@@ -103,54 +117,56 @@ export default function App() {
         onSessionEnded={sessionEnded}
         onLogOut={() => logOut(view.url)}
       />
+    ) : (
+      <Gate>
+        {error && (
+          <p className="message message-danger" role="alert">
+            {strings.bridgeError}
+          </p>
+        )}
+        {view.phase === 'loading' && !error && (
+          <p className="hint gate-loading">
+            {view.url ? strings.checkingSaved(view.url) : strings.loading}
+          </p>
+        )}
+        {view.phase === 'settings' && (
+          <ServerSettings
+            initialUrl={view.url}
+            initialFailure={view.failure}
+            onConnected={connected}
+            onCancel={view.previous ? () => setView(view.previous!) : undefined}
+          />
+        )}
+        {view.phase === 'login' && (
+          <Login
+            url={view.url}
+            ended={view.ended}
+            onLoggedIn={() => connected(view.url)}
+            onChangeServer={() => setView({ phase: 'settings', url: view.url, previous: view })}
+          />
+        )}
+        {view.phase === 'picker' && (
+          <AppPicker
+            selectedId={view.selectedId}
+            missing={view.missing}
+            onChosen={(app) => setView({ phase: 'ready', url: view.url, user: view.user, app })}
+            onSessionEnded={sessionEnded}
+            onCancel={view.previous ? () => setView(view.previous!) : undefined}
+          />
+        )}
+      </Gate>
     )
-  }
-
-  return (
-    <Gate>
-      {error && (
-        <p className="message message-danger" role="alert">
-          {strings.bridgeError}
-        </p>
-      )}
-      {view.phase === 'loading' && !error && (
-        <p className="hint gate-loading">
-          {view.url ? strings.checkingSaved(view.url) : strings.loading}
-        </p>
-      )}
-      {view.phase === 'settings' && (
-        <ServerSettings
-          initialUrl={view.url}
-          initialFailure={view.failure}
-          onConnected={connected}
-          onCancel={view.previous ? () => setView(view.previous!) : undefined}
-        />
-      )}
-      {view.phase === 'login' && (
-        <Login
-          url={view.url}
-          ended={view.ended}
-          onLoggedIn={() => connected(view.url)}
-          onChangeServer={() => setView({ phase: 'settings', url: view.url, previous: view })}
-        />
-      )}
-      {view.phase === 'picker' && (
-        <AppPicker
-          selectedId={view.selectedId}
-          missing={view.missing}
-          onChosen={(app) => setView({ phase: 'ready', url: view.url, user: view.user, app })}
-          onSessionEnded={sessionEnded}
-          onCancel={view.previous ? () => setView(view.previous!) : undefined}
-        />
-      )}
-    </Gate>
-  )
+  return <LanguageContext value={languageState}>{content}</LanguageContext>
 }
 
 /** Before the shell (server, login, first application): one centred card under the name. */
 function Gate({ children }: { children: ReactNode }) {
   return (
     <main className="gate">
+      {/* The language can be chosen before connecting, on the very first screen. */}
+      <div className="gate-language">
+        <LanguageMenu />
+      </div>
       <div className="gate-brand">
         <span className="brand">AYNA</span>
         <p className="hint">{strings.tagline}</p>

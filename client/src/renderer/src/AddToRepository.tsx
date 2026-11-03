@@ -15,7 +15,7 @@ import {
   type PropertyUse,
 } from '../../shared/repository.ts'
 import type { Snapshot, TreeNode } from '../../shared/snapshot.ts'
-import { controlTypeLabel, strings } from './strings.ts'
+import { controlTypeLabel, serverText, strings } from './strings.ts'
 
 interface Row {
   field: IdentifyingField
@@ -65,8 +65,10 @@ function failureText(result: Extract<AddToRepositoryResult, { ok: false }>): str
   const main =
     result.reason === 'snapshot-conflict'
       ? strings.repoErrors[result.reason]
-      : (result.detail ?? strings.repoErrors[result.reason])
-  return [main, ...(result.fields ?? []).map((field) => field.message)]
+      : result.detail
+        ? serverText(result.detail)
+        : strings.repoErrors[result.reason]
+  return [main, ...(result.fields ?? []).map((field) => serverText(field.message))]
 }
 
 /**

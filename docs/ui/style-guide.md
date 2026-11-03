@@ -159,11 +159,11 @@ A navigation item whose screen is not built yet is shown in `--text-muted` with 
 4. Say "you" for the user and "AYNA" for the system. No "please", no "successfully", no exclamation marks.
 5. Numbers carry units ("12 elements in 340 ms", "waits up to 10 s").
 6. User data (test names, values, Turkish text) is shown exactly as typed, never translated, upper-cased or trimmed (NFR-16).
-7. Keep every string in `strings.ts` so #185 can translate it.
+7. Every text lives in both `i18n/en.ts` and `i18n/tr.ts` (#185); `i18n.test.ts` fails when one is missing. Dates and numbers go through the current language (`formatDate`, `formatTime`, the dictionaries' `count`); coordinates, ids and px stay plain.
 
 ### Plain-language glossary
 
-The UI word is what the user sees. The internal term may appear only under Advanced or in a tooltip. Turkish is a first draft for #185.
+The UI word is what the user sees. The internal term may appear only under Advanced or in a tooltip. The Turkish column is what the client shows since #185 (galip, hasan: please correct).
 
 | Internal term | UI word (English) | UI word (Turkish draft) | Tooltip when needed |
 |---|---|---|---|

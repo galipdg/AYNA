@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { Account, ApiToken, UsersError } from '../../shared/api.ts'
-import { strings, usersErrorText as errorText } from './strings.ts'
+import { formatDate, strings, usersErrorText as errorText } from './strings.ts'
 
 interface Props {
   account: Account
@@ -76,7 +76,7 @@ export default function ApiTokens({ account, onSessionEnded, onClose }: Props) {
             <li key={token.id} className="user-row">
               <span>
                 {token.name}{' '}
-                <span className="hint">{strings.createdOn(token.createdAt.slice(0, 10))}</span>
+                <span className="hint">{strings.createdOn(formatDate(token.createdAt))}</span>
               </span>
               <button
                 type="button"
