@@ -10,6 +10,9 @@ const api: AynaApi = {
   createApplication: (name, technology) =>
     ipcRenderer.invoke(IPC.createApplication, name, technology),
   chooseApplication: (id) => ipcRenderer.invoke(IPC.chooseApplication, id),
+  listVersions: (appId) => ipcRenderer.invoke(IPC.listVersions, appId),
+  createVersion: (appId, version) => ipcRenderer.invoke(IPC.createVersion, appId, version),
+  addToRepository: (object) => ipcRenderer.invoke(IPC.addToRepository, object),
   getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
   onAgentStatus: (listener) => {
     const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)

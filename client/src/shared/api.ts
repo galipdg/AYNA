@@ -1,6 +1,7 @@
 // Contract between the preload bridge and the renderer. The renderer only ever
 // sees `window.ayna`, shaped like `AynaApi`; every method maps to one IPC channel.
 
+import type { PropertySet } from './repository.ts'
 import type { Snapshot } from './snapshot.ts'
 
 export interface AppInfo {
@@ -25,6 +26,12 @@ export interface Application {
   id: string
   name: string
   technology: string
+}
+
+/** A version of an application under test (`/api/apps/{appId}/versions`). */
+export interface AppVersion {
+  id: string
+  version: string
 }
 
 export type Role = 'admin' | 'tester'
@@ -65,6 +72,55 @@ export type ApplicationsResult =
 
 export type CreateApplicationResult =
   { ok: true; app: Application } | { ok: false; reason: RequestFailure | 'duplicate' | 'invalid' }
+
+export type VersionsResult =
+  { ok: true; versions: AppVersion[] } | { ok: false; reason: RequestFailure }
+
+export type CreateVersionResult =
+  | { ok: true; version: AppVersion }
+  | { ok: false; reason: RequestFailure | 'duplicate' | 'invalid' | 'not-found'; detail?: string }
+
+/** A picked element to store in the application's object repository (#25). */
+export interface NewRepoObject {
+  appId: string
+  /** The version the capture belongs to; the snapshot is imported under it first. */
+  versionId: string
+  snapshot: Snapshot
+  /** The picked element's id inside `snapshot`. */
+  snapshotElementId: string
+  /** Logical name, `screen.element`. */
+  name: string
+  primary: PropertySet
+  fallback: PropertySet
+}
+
+/** A stored repository object, as the server returns it. */
+export interface RepoObject {
+  id: string
+  name: string
+  primary: PropertySet
+  fallback: PropertySet
+}
+
+/** One field the server refused, e.g. `$.name` (problem details `errors`). */
+export interface FieldProblem {
+  path: string
+  message: string
+}
+
+export type AddToRepositoryResult =
+  | { ok: true; object: RepoObject }
+  | {
+      ok: false
+      reason:
+        | RequestFailure
+        | 'duplicate' // the logical name is taken in this application
+        | 'invalid' // `fields` says which
+        | 'not-found' // the application or version is gone
+        | 'snapshot-conflict' // this capture is already stored under another version
+      detail?: string
+      fields?: FieldProblem[]
+    }
 
 /** Why a user-management request failed; `detail` is the server's own message, when it sent one. */
 export interface UsersError {
@@ -174,6 +230,11 @@ export interface AynaApi {
   createApplication(name: string, technology: string): Promise<CreateApplicationResult>
   /** Saves `id` as this machine's chosen application. */
   chooseApplication(id: string): Promise<void>
+  /** Versions of the application, as the server orders them. */
+  listVersions(appId: string): Promise<VersionsResult>
+  createVersion(appId: string, version: string): Promise<CreateVersionResult>
+  /** Imports the capture under the version (once), then stores the object linked to the element. */
+  addToRepository(object: NewRepoObject): Promise<AddToRepositoryResult>
   getAgentStatus(): Promise<AgentStatus>
   /** Calls `listener` on every agent status change; returns a function that unsubscribes. */
   onAgentStatus(listener: (status: AgentStatus) => void): () => void
@@ -221,6 +282,9 @@ export const IPC = {
   listApplications: 'apps:list',
   createApplication: 'apps:create',
   chooseApplication: 'apps:choose',
+  listVersions: 'versions:list',
+  createVersion: 'versions:create',
+  addToRepository: 'repository:add',
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',

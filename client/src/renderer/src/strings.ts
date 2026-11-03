@@ -1,4 +1,5 @@
 import type {
+  AddToRepositoryResult,
   AgentFailure,
   AgentState,
   ConnectionFailure,
@@ -8,6 +9,7 @@ import type {
   UsersError,
 } from '../../shared/api.ts'
 import type { ElementDescriptor, ElementField } from '../../shared/element.ts'
+import type { NameProblem, PropertyUse } from '../../shared/repository.ts'
 
 // All UI text in one place, for later translation.
 export const strings = {
@@ -140,6 +142,70 @@ export const strings = {
     'agent-error': (detail?: string) =>
       detail ? `The agent reported an error: ${detail}` : 'The agent reported an error.',
   } satisfies Record<AgentFailure, (detail?: string) => string>,
+
+  repoAdd: 'Add to repository',
+  repoTitle: 'Add to the object repository',
+  repoNameLabel: 'Logical name',
+  repoNamePlaceholder: 'login.userNameInput',
+  repoNameHint:
+    'Tests refer to the element by this name: screen.element, e.g. login.userNameInput.',
+  repoNameProblems: {
+    blank: 'Enter a logical name.',
+    form: 'Use the form screen.element: two parts joined by a dot, each starting with a small letter, e.g. login.userNameInput.',
+    reserved: '"none.noMatch" is reserved for the AI service. Choose another name.',
+  } satisfies Record<NameProblem, string>,
+  repoVersionLabel: 'Application version',
+  repoVersionHint: 'The capture is stored under this version, and the object is found in it.',
+  repoNoVersions: 'This application has no versions yet. Add the version you are testing.',
+  repoNewVersionLabel: 'New version',
+  repoNewVersionPlaceholder: '1.0',
+  repoAddVersion: 'Add version',
+  repoPropertiesTitle: 'Properties used to find the element',
+  repoPropertiesHint:
+    'The agent looks for the primary properties first, then the fallback ones. Values can be edited.',
+  repoPropertyHeader: 'Property',
+  repoValueHeader: 'Value',
+  repoUseHeader: 'Use as',
+  repoUses: {
+    primary: 'Primary',
+    fallback: 'Fallback',
+    unused: 'Not used',
+  } satisfies Record<PropertyUse, string>,
+  repoNoPrimary: 'Choose at least one primary property.',
+  repoEmptyValue: (property: string) => `${property} needs a value, or set it to "Not used".`,
+  repoNotInteger: (property: string) => `${property} must be a whole number of 0 or more.`,
+  repoMatches: (count: number) =>
+    count === 1
+      ? 'The primary properties find only this element in the capture.'
+      : count === 0
+        ? 'The primary properties find no element in the capture. Check the edited values.'
+        : `The primary properties find ${count} elements in the capture. Add a property so that only this one matches.`,
+  repoSave: 'Save',
+  repoSaving: 'Saving…',
+  repoCancel: 'Cancel',
+  repoSaved: (name: string) => `Saved ${name} in the object repository.`,
+  repoErrors: {
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer in time.',
+    unauthorized: 'Your session has ended. Log in again.',
+    'bad-response': 'The server answered with something unexpected.',
+    duplicate: 'This logical name is already used in this application.',
+    invalid: 'The server did not accept the object.',
+    'not-found': 'The application or version no longer exists on the server.',
+    'snapshot-conflict':
+      'This capture is already stored under another version. Capture the window again to store it under this one.',
+  } satisfies Record<Extract<AddToRepositoryResult, { ok: false }>['reason'], string>,
+  versionErrors: {
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer within 5 seconds.',
+    unauthorized: 'Your session has ended. Log in again.',
+    'bad-response': 'The server answered with something unexpected.',
+    duplicate: 'This version already exists. Choose it from the list.',
+    invalid: 'Enter a version.',
+    'not-found': 'The application no longer exists on the server.',
+  } satisfies Record<RequestFailure | 'duplicate' | 'invalid' | 'not-found', string>,
 
   loginTitle: 'Log in',
   loginIntro: (url: string) => `Log in to the AYNA server at ${url}.`,

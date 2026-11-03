@@ -171,7 +171,7 @@ export default function App() {
           </button>
         </section>
       )}
-      {view.phase === 'ready' && <ObjectSpy />}
+      {view.phase === 'ready' && <ObjectSpy appId={view.app.id} />}
 
       <section className="card">
         <h2>{strings.versionsTitle}</h2>

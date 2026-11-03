@@ -299,3 +299,30 @@ button {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.spy-repo h4 {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+}
+
+.repo-properties {
+  border-collapse: collapse;
+}
+
+.repo-properties th,
+.repo-properties td {
+  padding: 2px 8px 2px 0;
+  text-align: left;
+}
+
+.repo-properties input,
+.repo-properties select {
+  font: inherit;
+  padding: 2px 6px;
+}
+
+.repo-properties input {
+  width: 100%;
+  min-width: 16em;
+  box-sizing: border-box;
+}

@@ -9,7 +9,7 @@ import {
   session,
   type IpcMainInvokeEvent,
 } from 'electron'
-import { IPC, type AppInfo, type Role } from '../shared/api.ts'
+import { IPC, type AppInfo, type NewRepoObject, type Role } from '../shared/api.ts'
 import { AgentManager, resolveAgentCommand } from './agent.ts'
 import {
   isAllowedNavigation,
@@ -19,6 +19,7 @@ import {
 } from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
 import { login, logout, type Session } from './auth.ts'
+import { addToRepository, createVersion, listVersions } from './repository.ts'
 import { checkServer } from './server.ts'
 import {
   createToken,
@@ -140,6 +141,19 @@ function registerIpc() {
   handle(IPC.chooseApplication, async (_event, id) => {
     const settings = await loadSettings(settingsFile)
     await saveSettings(settingsFile, { ...settings, applicationId: String(id) })
+  })
+  handle(IPC.listVersions, async (_event, appId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listVersions(serverUrl, String(appId), { token }))
+  })
+  handle(IPC.createVersion, async (_event, appId: unknown, version: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await createVersion(serverUrl, String(appId), String(version), { token }))
+  })
+  // The server validates the whole object; the main process only forwards it.
+  handle(IPC.addToRepository, async (_event, object: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await addToRepository(serverUrl, object as NewRepoObject, { token }))
   })
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
