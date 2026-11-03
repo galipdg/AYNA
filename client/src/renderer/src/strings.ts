@@ -145,41 +145,39 @@ export const strings = {
 
   repoAdd: 'Add to repository',
   repoTitle: 'Add to the object repository',
-  repoNameLabel: 'Logical name',
+  repoNameLabel: 'Name',
   repoNamePlaceholder: 'login.userNameInput',
   repoNameHint:
-    'Tests refer to the element by this name: screen.element, e.g. login.userNameInput.',
+    'Tests use this name for the element. Write the screen, a dot, then the element: login.userNameInput, login.okButton.',
   repoNameProblems: {
-    blank: 'Enter a logical name.',
-    form: 'Use the form screen.element: two parts joined by a dot, each starting with a small letter, e.g. login.userNameInput.',
+    blank: 'Enter a name.',
+    form: 'Write the name as screen.element: two words joined by a dot, each starting with a small letter, e.g. login.userNameInput.',
     reserved: '"none.noMatch" is reserved for the AI service. Choose another name.',
   } satisfies Record<NameProblem, string>,
-  repoVersionLabel: 'Application version',
-  repoVersionHint: 'The capture is stored under this version, and the object is found in it.',
-  repoNoVersions: 'This application has no versions yet. Add the version you are testing.',
-  repoNewVersionLabel: 'New version',
-  repoNewVersionPlaceholder: '1.0',
-  repoAddVersion: 'Add version',
-  repoPropertiesTitle: 'Properties used to find the element',
-  repoPropertiesHint:
-    'The agent looks for the primary properties first, then the fallback ones. Values can be edited.',
+  repoNoVersion: 'Choose the application version at the top of the Spy first.',
+  repoFoundBy: 'How AYNA finds it',
+  repoBackup: (labels: string[]) =>
+    `If the application changes, it also tries: ${labels.join(', ')}.`,
+  repoAdvanced: 'Advanced settings',
+  repoAdvancedHint:
+    'AYNA looks for the element with the "Find by" properties. If they stop matching after the application changes, it tries the "Backup" ones. Values can be edited.',
   repoPropertyHeader: 'Property',
   repoValueHeader: 'Value',
-  repoUseHeader: 'Use as',
+  repoUseHeader: 'Use',
   repoUses: {
-    primary: 'Primary',
-    fallback: 'Fallback',
-    unused: 'Not used',
+    primary: 'Find by',
+    fallback: 'Backup',
+    unused: "Don't use",
   } satisfies Record<PropertyUse, string>,
-  repoNoPrimary: 'Choose at least one primary property.',
-  repoEmptyValue: (property: string) => `${property} needs a value, or set it to "Not used".`,
+  repoNoPrimary: 'Choose at least one property to find the element by, under Advanced settings.',
+  repoEmptyValue: (property: string) => `${property} needs a value, or set it to "Don't use".`,
   repoNotInteger: (property: string) => `${property} must be a whole number of 0 or more.`,
   repoMatches: (count: number) =>
     count === 1
-      ? 'The primary properties find only this element in the capture.'
+      ? 'Only this element matches.'
       : count === 0
-        ? 'The primary properties find no element in the capture. Check the edited values.'
-        : `The primary properties find ${count} elements in the capture. Add a property so that only this one matches.`,
+        ? 'No element in the capture matches. Check the values under Advanced settings.'
+        : `${count} elements in the capture match. Under Advanced settings, set one more property to "Find by".`,
   repoSave: 'Save',
   repoSaving: 'Saving…',
   repoCancel: 'Cancel',
@@ -196,6 +194,14 @@ export const strings = {
     'snapshot-conflict':
       'This capture is already stored under another version. Capture the window again to store it under this one.',
   } satisfies Record<Extract<AddToRepositoryResult, { ok: false }>['reason'], string>,
+  versionLabel: 'Application version',
+  versionNone:
+    'Which version of the application are you testing? Add it, and saved elements are stored under it.',
+  versionNew: 'New version',
+  versionNewLabel: 'New version',
+  versionPlaceholder: 'e.g. 1.0',
+  versionAdd: 'Add',
+  versionRetry: 'Try again',
   versionErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',

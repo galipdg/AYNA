@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import type { AddToRepositoryResult, AppVersion, RepoObject } from '../../shared/api.ts'
+import { useState, type FormEvent } from 'react'
+import type { AddToRepositoryResult, RepoObject } from '../../shared/api.ts'
 import {
   IDENTIFYING_FIELDS,
   logicalNameProblem,
@@ -11,11 +11,6 @@ import {
 } from '../../shared/repository.ts'
 import type { Snapshot, TreeNode } from '../../shared/snapshot.ts'
 import { strings } from './strings.ts'
-
-type Versions =
-  | { state: 'loading' }
-  | { state: 'loaded'; versions: AppVersion[] }
-  | { state: 'failed'; message: string }
 
 interface Row {
   field: IdentifyingField
@@ -59,69 +54,31 @@ function failureText(result: Extract<AddToRepositoryResult, { ok: false }>): str
 }
 
 /**
- * Stores the chosen element of a capture in the application's object repository: a logical
- * name, the version the capture belongs to, and the primary and fallback properties,
- * suggested from the element and editable before saving (FR-06).
+ * Stores the chosen element of a capture in the application's object repository (FR-06).
+ * Most of the time only a name is needed: the properties AYNA finds the element by are
+ * suggested from the capture and shown as a short summary; "Advanced settings" lets the
+ * user edit them. The version comes from the Spy's version bar.
  */
 export default function AddToRepository({
   appId,
   snapshot,
   node,
   versionId,
-  onVersionChosen,
   onSaved,
   onCancel,
 }: {
   appId: string
   snapshot: Snapshot
   node: TreeNode
-  /** The version chosen last time, kept by the Spy while it is open. */
   versionId?: string
-  onVersionChosen: (versionId: string) => void
   onSaved: (object: RepoObject) => void
   onCancel: () => void
 }) {
   const [name, setName] = useState('')
   const [rows, setRows] = useState<Row[]>(() => initialRows(node, snapshot))
-  const [versions, setVersions] = useState<Versions>({ state: 'loading' })
-  const [newVersion, setNewVersion] = useState('')
-  const [versionError, setVersionError] = useState<string>()
+  const [advanced, setAdvanced] = useState(false)
   const [saving, setSaving] = useState(false)
   const [problems, setProblems] = useState<string[]>([])
-
-  const loadingVersions = versions.state === 'loading'
-  useEffect(() => {
-    if (!loadingVersions) return
-    let cancelled = false
-    window.ayna.listVersions(appId).then(
-      (result) => {
-        if (cancelled) return
-        if (!result.ok) {
-          return setVersions({ state: 'failed', message: strings.versionErrors[result.reason] })
-        }
-        setVersions({ state: 'loaded', versions: result.versions })
-        // Keep the last choice if it still exists; otherwise the newest-listed version.
-        const kept = result.versions.find((version) => version.id === versionId)
-        const fallback = result.versions.at(-1)
-        if (!kept && fallback) onVersionChosen(fallback.id)
-      },
-      () => !cancelled && setVersions({ state: 'failed', message: strings.bridgeError }),
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [loadingVersions, appId, versionId, onVersionChosen])
-
-  async function addVersion() {
-    setVersionError(undefined)
-    const version = newVersion.trim()
-    if (!version) return setVersionError(strings.versionErrors.invalid)
-    const result = await window.ayna.createVersion(appId, version)
-    if (!result.ok) return setVersionError(result.detail ?? strings.versionErrors[result.reason])
-    setNewVersion('')
-    onVersionChosen(result.version.id)
-    setVersions({ state: 'loading' })
-  }
 
   function change(field: IdentifyingField, update: Partial<Row>) {
     setRows((current) => current.map((row) => (row.field === field ? { ...row, ...update } : row)))
@@ -129,20 +86,25 @@ export default function AddToRepository({
 
   const primary = propertySet(rows, 'primary')
   const matches = typeof primary === 'string' ? undefined : matchCount(primary, snapshot.elements)
+  const findBy = rows.filter((row) => row.use === 'primary')
+  const backup = rows.filter((row) => row.use === 'fallback')
 
   async function save(event: FormEvent) {
     event.preventDefault()
     const fallback = propertySet(rows, 'fallback')
     const nameProblem = logicalNameProblem(name)
-    const found = [
-      nameProblem && strings.repoNameProblems[nameProblem],
+    const propertyProblems = [
       typeof primary === 'string' && primary,
       typeof primary !== 'string' && Object.keys(primary).length === 0 && strings.repoNoPrimary,
       typeof fallback === 'string' && fallback,
     ].filter((problem): problem is string => !!problem)
-    if (!versionId) found.push(strings.repoNoVersions)
+    const found = nameProblem
+      ? [strings.repoNameProblems[nameProblem], ...propertyProblems]
+      : propertyProblems
     setProblems(found)
-    if (found.length || typeof primary === 'string' || typeof fallback === 'string' || !versionId) {
+    // Property problems are fixed in the advanced settings, so open them.
+    if (propertyProblems.length) setAdvanced(true)
+    if (found.length || !versionId || typeof primary === 'string' || typeof fallback === 'string') {
       return
     }
     setSaving(true)
@@ -182,103 +144,86 @@ export default function AddToRepository({
           {strings.repoNameHint}
         </p>
 
-        <label htmlFor="repo-version">{strings.repoVersionLabel}</label>
-        {versions.state === 'loading' && <p>{strings.loading}</p>}
-        {versions.state === 'failed' && (
-          <p className="error" role="alert">
-            {versions.message}
-          </p>
-        )}
-        {versions.state === 'loaded' && versions.versions.length === 0 && (
-          <p className="spy-pending">{strings.repoNoVersions}</p>
-        )}
-        {versions.state === 'loaded' && versions.versions.length > 0 && (
-          <select
-            id="repo-version"
-            value={versionId ?? ''}
-            onChange={(event) => onVersionChosen(event.target.value)}
-            aria-describedby="repo-version-hint"
-          >
-            {versions.versions.map((version) => (
-              <option key={version.id} value={version.id}>
-                {version.version}
-              </option>
-            ))}
-          </select>
-        )}
-        <p id="repo-version-hint" className="spy-pending">
-          {strings.repoVersionHint}
-        </p>
-        <div className="actions">
-          <label htmlFor="repo-new-version">{strings.repoNewVersionLabel}</label>
-          <input
-            id="repo-new-version"
-            value={newVersion}
-            placeholder={strings.repoNewVersionPlaceholder}
-            onChange={(event) => setNewVersion(event.target.value)}
-          />
-          <button type="button" onClick={addVersion}>
-            {strings.repoAddVersion}
-          </button>
+        <h4>{strings.repoFoundBy}</h4>
+        <div className="repo-summary">
+          {findBy.length === 0 ? (
+            <p className="error">{strings.repoNoPrimary}</p>
+          ) : (
+            <dl>
+              {findBy.map((row) => (
+                <div key={row.field}>
+                  <dt>{strings.spyProperties[row.field]}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {matches !== undefined && findBy.length > 0 && (
+            <p className={matches === 1 ? 'ok' : 'error'} role="status">
+              {strings.repoMatches(matches)}
+            </p>
+          )}
+          {backup.length > 0 && (
+            <p className="spy-pending">
+              {strings.repoBackup(backup.map((row) => strings.spyProperties[row.field]))}
+            </p>
+          )}
         </div>
-        {versionError && (
-          <p className="error" role="alert">
-            {versionError}
-          </p>
-        )}
 
-        <h4>{strings.repoPropertiesTitle}</h4>
-        <p className="spy-pending">{strings.repoPropertiesHint}</p>
-        <table className="repo-properties">
-          <thead>
-            <tr>
-              <th scope="col">{strings.repoPropertyHeader}</th>
-              <th scope="col">{strings.repoValueHeader}</th>
-              <th scope="col">{strings.repoUseHeader}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const label = strings.spyProperties[row.field]
-              return (
-                <tr key={row.field}>
-                  <th scope="row" title={row.field}>
-                    {label}
-                  </th>
-                  <td>
-                    <input
-                      aria-label={`${label}: ${strings.repoValueHeader}`}
-                      value={row.value}
-                      inputMode={row.field === 'siblingIndex' ? 'numeric' : undefined}
-                      onChange={(event) => change(row.field, { value: event.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <select
-                      aria-label={`${label}: ${strings.repoUseHeader}`}
-                      value={row.use}
-                      onChange={(event) =>
-                        change(row.field, { use: event.target.value as PropertyUse })
-                      }
-                    >
-                      {(['primary', 'fallback', 'unused'] as const).map((use) => (
-                        <option key={use} value={use}>
-                          {strings.repoUses[use]}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        {matches !== undefined && Object.keys(primary).length > 0 && (
-          <p className={matches === 1 ? 'spy-pending' : 'error'} role="status">
-            {strings.repoMatches(matches)}
-          </p>
-        )}
+        <details
+          className="repo-advanced"
+          open={advanced}
+          onToggle={(event) => setAdvanced(event.currentTarget.open)}
+        >
+          <summary>{strings.repoAdvanced}</summary>
+          <p className="spy-pending">{strings.repoAdvancedHint}</p>
+          <table className="repo-properties">
+            <thead>
+              <tr>
+                <th scope="col">{strings.repoPropertyHeader}</th>
+                <th scope="col">{strings.repoValueHeader}</th>
+                <th scope="col">{strings.repoUseHeader}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const label = strings.spyProperties[row.field]
+                return (
+                  <tr key={row.field}>
+                    <th scope="row" title={row.field}>
+                      {label}
+                    </th>
+                    <td>
+                      <input
+                        aria-label={`${label}: ${strings.repoValueHeader}`}
+                        value={row.value}
+                        inputMode={row.field === 'siblingIndex' ? 'numeric' : undefined}
+                        onChange={(event) => change(row.field, { value: event.target.value })}
+                      />
+                    </td>
+                    <td>
+                      <select
+                        aria-label={`${label}: ${strings.repoUseHeader}`}
+                        value={row.use}
+                        onChange={(event) =>
+                          change(row.field, { use: event.target.value as PropertyUse })
+                        }
+                      >
+                        {(['primary', 'fallback', 'unused'] as const).map((use) => (
+                          <option key={use} value={use}>
+                            {strings.repoUses[use]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </details>
 
+        {!versionId && <p className="error">{strings.repoNoVersion}</p>}
         {problems.length > 0 && (
           <ul className="error" role="alert">
             {problems.map((problem) => (
@@ -287,7 +232,7 @@ export default function AddToRepository({
           </ul>
         )}
         <div className="actions">
-          <button type="submit" disabled={saving}>
+          <button type="submit" disabled={saving || !versionId}>
             {saving ? strings.repoSaving : strings.repoSave}
           </button>
           <button type="button" onClick={onCancel} disabled={saving}>

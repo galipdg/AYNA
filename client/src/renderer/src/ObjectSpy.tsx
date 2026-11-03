@@ -6,6 +6,7 @@ import AddToRepository from './AddToRepository.tsx'
 import ElementTree from './ElementTree.tsx'
 import PropertyPanel from './PropertyPanel.tsx'
 import { strings } from './strings.ts'
+import VersionBar from './VersionBar.tsx'
 
 type List =
   | { state: 'loading' }
@@ -54,7 +55,8 @@ function processLabel(win: WindowInfo): string {
 /**
  * Lists the desktop's top-level windows; choosing one flashes a frame around it on screen
  * and captures its element tree. Choosing an element in the tree frames it and shows its
- * properties; "Add to repository" stores it in the application `appId` (#25).
+ * properties; "Add to repository" stores it in the application `appId`, under the version
+ * chosen in the version bar (#25).
  */
 export default function ObjectSpy({ appId }: { appId: string }) {
   const [list, setList] = useState<List>({ state: 'loading' })
@@ -165,6 +167,7 @@ export default function ObjectSpy({ appId }: { appId: string }) {
           {strings.spyRefresh}
         </button>
       </div>
+      <VersionBar appId={appId} versionId={versionId} onChange={setVersionId} />
       {loading && <p>{strings.loading}</p>}
       {list.state === 'failed' && (
         <p className="error">{strings.agentErrors[list.reason](list.detail)}</p>
@@ -232,7 +235,6 @@ export default function ObjectSpy({ appId }: { appId: string }) {
                 snapshot={capture.snapshot}
                 node={node}
                 versionId={versionId}
-                onVersionChosen={setVersionId}
                 onSaved={(object) => {
                   setAdding(false)
                   setSaved(object.name)

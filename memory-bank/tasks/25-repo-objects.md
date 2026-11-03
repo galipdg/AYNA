@@ -6,7 +6,7 @@
 
 ## Approach
 Server: `POST /api/apps/{appId}/repo-objects`, body `{name, snapshotId, snapshotElementId, primary, fallback}` (`server/.../repository/`). The client first imports the picked element's snapshot (#15, idempotent), then posts the object; the server finds the Element by `(snapshotId, snapshotElementId)`, checks the snapshot is in this application, and writes `(Application)-[:HAS_OBJECT]->(RepoObject)-[:RESOLVES_TO {version}]->(Element)` in one transaction.
-Client: "Add to repository" under the Spy's property panel (#24) opens `renderer/src/AddToRepository.tsx`: logical name, application version (list + "add version" inline), and one row per identifying property with an editable value and a Primary / Fallback / Not used choice. Suggestions come from `shared/repository.ts` `suggestUses`. Main process `main/repository.ts` imports the snapshot under the version, then creates the object.
+Client: the Spy's `VersionBar.tsx` chooses (or adds) the application version once. "Add to repository" under the property panel (#24) opens `renderer/src/AddToRepository.tsx`: a name, a summary of how AYNA finds the element (the "Find by" properties, whether only this element matches, the backups), and "Advanced settings" with one row per identifying property (editable value; Find by / Backup / Don't use). Suggestions come from `shared/repository.ts` `suggestUses`. Main process `main/repository.ts` imports the snapshot under the version, then creates the object.
 
 ## Decisions (small, local to this task)
 - 2026-11-03 — App-scoped path `/api/apps/{appId}/repo-objects` instead of the issue's `/api/repo-objects`: matches the tests API (user approved).
@@ -16,7 +16,8 @@ Client: "Add to repository" under the Spy's property panel (#24) opens `renderer
 - 2026-11-03 — Logical name: step schema's `$defs/logicalName` pattern (read from the file), `none.noMatch` refused (galip, #71); malformed/reserved/blank → 400 on `$.name`. Duplicate in the app → 409 whose detail names the existing object's id (FR-07).
 - 2026-11-03 — Unknown snapshot (or one of another app) → 400 `$.snapshotId`; unknown element → 400 `$.snapshotElementId`; same as unknown step targets in the tests API. Unknown app → 404.
 - 2026-11-03 — No `Location` header: there is no GET for one object yet (#30's repository view).
-- 2026-11-03 — The client had no version choice, but the snapshot import needs one: the form lists the app's versions and can add one inline (user approved). The last choice is kept while the Spy is open; otherwise the last listed version.
+- 2026-11-03 — The client had no version choice, but the snapshot import needs one: first in the form (list + inline add); after the manual check moved to a bar at the top of the Spy, chosen once (user's choice). The choice is kept while the Spy is open; otherwise the last listed version. #183 moves it into the app shell's top bar.
+- 2026-11-03 — Form redesign after the manual check (omer found the first form hard to use and to present): only the name is needed in the common case; the properties are a short summary ("How AYNA finds it"), the table sits under "Advanced settings" and opens itself when a property problem blocks saving. Plain words in the UI: Name, Find by / Backup / Don't use; API and graph keep primary/fallback.
 - 2026-11-03 — Suggestion: primary takes the ADR priority (`automationId` unless generated, `name`, `nearestLabel`, `className`, `parentPath`, then `controlType`) in order, keeping only fields that narrow the matches in this capture, until the element is unique; the rest of the priority is fallback; `windowTitle`, `siblingIndex`, `helpText`, `accessKey` and a generated id start as "Not used". The form shows how many elements of the capture the primary set matches.
 - 2026-11-03 — `isGeneratedId` is a TS copy of the agent's `model.is_generated_id` (read only, hasan's code); a test keeps `LOGICAL_NAME` equal to the step schema's pattern, but nothing yet ties the generated-id regexes to the agent's.
 
@@ -24,14 +25,17 @@ Client: "Add to repository" under the Spy's property panel (#24) opens `renderer
 - [x] server endpoint + `RepoObjectIntegrationTest` (6); `./mvnw test` 76/76 on 2026-11-03; `openapi.yaml` regenerated; `docs/graph-model.md` RepoObject row updated
 - [x] merged `omer/24-object-spy` (with #17) into this branch, no conflicts
 - [x] client: `main/repository.ts` (versions, import + create), IPC + preload, form in the Spy; `npm test` 124/124, lint, typecheck, format, build green on 2026-11-03
-- [ ] manual check of the form on macOS (`npm run dev:mock` + real server), see below
-- Next step: run the manual check with omer; then ask about push and how to open the PR (branch carries #15, #17, #24).
+- [x] manual check 1 of the form: works, but hard to use → redesigned (version bar, summary + Advanced settings, plain labels); lint, typecheck, `npm test` 124/124, format, build green on 2026-11-03
+- [ ] manual check 2 of the redesigned form on macOS
+- Next step: manual check 2 with omer; then ask about push and how to open the PR (branch carries #15, #17, #24). After #25: #183 (app shell and plain-language UI), before the G0 demo (#28).
 
 ## Manual checks
-- 2026-11-03 · omer · form on macOS: `docker compose up --build` + `npm run dev:mock`, server `http://127.0.0.1:8080` · pending
+- 2026-11-03 · omer · form on macOS: `docker compose up --build` + `npm run dev:mock`, server `http://127.0.0.1:8080` · steps 1–7 and 9 pass (save, 409 naming the object, name hint, no-primary message); step 8 unclear (the red frame seen was the Spy highlight from #24, not the form). Verdict: the form works but is hard to use and understand; omer wants the UI redesigned before the PR. Evidence: fake-agent and server logs in the session, no errors.
+- 2026-11-03 · omer · redesigned form on macOS, same setup · pending
 - Weekly Windows session: the same with a real pilot app window (after #22 for the hotkey pick) · pending
 
 ## Open issues
+- The whole client is plain and has no navigation; the team finds it hard to use and explain → #183 (Week 3, after #25).
 - One Element may back several repository objects (not refused). Decide with #30 whether that is an error.
 - Name uniqueness is checked in the transaction, no constraint (same as test names): two concurrent creates of one name can both succeed.
 - The "generated id" rule (ADR descriptor v0 §3) lives in the agent (Python); the client needs the same rule to suggest `automationId`, or the agent/snapshot should flag it.
