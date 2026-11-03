@@ -15,12 +15,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
 
 /** Errors Spring raises before a controller runs get the same problem-details body (#158). */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({ TestcontainersConfiguration.class, SignedIn.class })
 class ApiErrorIntegrationTest {
 
 	@Autowired
