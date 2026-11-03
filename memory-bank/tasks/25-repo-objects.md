@@ -26,16 +26,16 @@ Client: the Spy's `VersionBar.tsx` chooses (or adds) the application version onc
 - [x] merged `omer/24-object-spy` (with #17) into this branch, no conflicts
 - [x] client: `main/repository.ts` (versions, import + create), IPC + preload, form in the Spy; `npm test` 124/124, lint, typecheck, format, build green on 2026-11-03
 - [x] manual check 1 of the form: works, but hard to use → redesigned (version bar, summary + Advanced settings, plain labels); lint, typecheck, `npm test` 124/124, format, build green on 2026-11-03
-- [ ] manual check 2 of the redesigned form on macOS
-- Next step: manual check 2 with omer; then ask about push and how to open the PR (branch carries #15, #17, #24). After #25: #183 (app shell and plain-language UI), before the G0 demo (#28).
+- [x] manual check 2 of the redesigned form on macOS: functions pass; layout and wording move to #183/#184/#185
+- Next step: ask about push and how to open the PR (branch carries #15, #17, #24). Then #183 (UI design first), #184, #185.
 
 ## Manual checks
 - 2026-11-03 · omer · form on macOS: `docker compose up --build` + `npm run dev:mock`, server `http://127.0.0.1:8080` · steps 1–7 and 9 pass (save, 409 naming the object, name hint, no-primary message); step 8 unclear (the red frame seen was the Spy highlight from #24, not the form). Verdict: the form works but is hard to use and understand; omer wants the UI redesigned before the PR. Evidence: fake-agent and server logs in the session, no errors.
-- 2026-11-03 · omer · redesigned form on macOS, same setup · pending
+- 2026-11-03 · omer · redesigned form on macOS, same setup · all 7 steps pass; still not clear enough for users → the whole client UI is redesigned in #183 (design + shell), #184 (three-panel Spy, takes over this form) and #185 (Turkish/English)
 - Weekly Windows session: the same with a real pilot app window (after #22 for the hotkey pick) · pending
 
 ## Open issues
-- The whole client is plain and has no navigation; the team finds it hard to use and explain → #183 (Week 3, after #25).
+- The whole client is plain and has no navigation; the team finds it hard to use and explain → #183 (design + shell, Week 3), #184 (Spy in three panels, Week 3), #185 (Turkish/English, Week 4).
 - One Element may back several repository objects (not refused). Decide with #30 whether that is an error.
 - Name uniqueness is checked in the transaction, no constraint (same as test names): two concurrent creates of one name can both succeed.
 - The "generated id" rule (ADR descriptor v0 §3) lives in the agent (Python); the client needs the same rule to suggest `automationId`, or the agent/snapshot should flag it.
