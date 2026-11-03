@@ -22,9 +22,10 @@ Rules in ADR `2026-11-03-client-ui-language`. No library: `i18n/en.ts` defines `
 - [x] Dates (Users, tokens, capture time) and counts per language
 - [x] Server message mapping (`serverText`) in Users, versions, add-to-repository
 - [x] ADR (Proposed), docs/ui wireframes + style guide lines
-- [ ] client/AGENTS.md rule "UI text in English for now" → needs omer's OK (§7)
+- [x] client/AGENTS.md rule updated (omer's OK 2026-11-03)
 - [ ] RS NFR-17 / TBD-2 by galip (inbox note on `omer/25-repo-objects`)
-- Next step: omer looks at the client in both languages; then push + PR (base main, stacked on #189) after asking.
+- [x] Pushed, PR opened (base main, stacked on #189)
+- Next step: omer reads both languages on every screen; galip/hasan review the Turkish wording and the ADR on the PR.
 
 ## Manual checks
 - 2026-11-03 · agent · macOS dark, real server :8080 + fake agent, driven over CDP · first run Turkish (OS tr-TR), gate switch → English saved in settings.json, top-bar switch with a capture open keeps capture and selection, tree search by English type label, Users dates "31 Eki 2026" and duplicate user 409 in Turkish, Settings page · pass · evidence: screenshots in the session only
