@@ -17,6 +17,7 @@ import {
   type Role,
 } from '../shared/api.ts'
 import { isLanguage, languageFor } from '../shared/language.ts'
+import type { StepDocument } from '../shared/steps.ts'
 import { AgentManager, resolveAgentCommand } from './agent.ts'
 import {
   isAllowedNavigation,
@@ -36,6 +37,15 @@ import {
   updateRepoObject,
 } from './repository.ts'
 import { checkServer } from './server.ts'
+import {
+  createTest,
+  deleteTest,
+  getTest,
+  listTests,
+  renameTest,
+  saveSteps,
+  validateSteps,
+} from './testCases.ts'
 import {
   createToken,
   createUser,
@@ -198,6 +208,32 @@ function registerIpc() {
     const { serverUrl, token } = await server()
     return track(await deleteRepoObject(serverUrl, String(id), { token }))
   })
+  handle(IPC.listTests, async (_event, appId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listTests(serverUrl, String(appId), { token }))
+  })
+  handle(IPC.createTest, async (_event, appId: unknown, name: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await createTest(serverUrl, String(appId), String(name), { token }))
+  })
+  handle(IPC.getTest, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await getTest(serverUrl, String(id), { token }))
+  })
+  handle(IPC.renameTest, async (_event, id: unknown, name: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await renameTest(serverUrl, String(id), String(name), { token }))
+  })
+  handle(IPC.deleteTest, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await deleteTest(serverUrl, String(id), { token }))
+  })
+  // The server checks the steps again against the same schema and the repository.
+  handle(IPC.saveSteps, async (_event, id: unknown, document: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await saveSteps(serverUrl, String(id), document as StepDocument, { token }))
+  })
+  handle(IPC.validateSteps, (_event, document: unknown) => validateSteps(document))
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
   handle(IPC.listWindows, () => listWindows(agent))

@@ -5,6 +5,7 @@ import type { ElementDescriptor } from './element.ts'
 import type { Language } from './language.ts'
 import type { PropertySet } from './repository.ts'
 import type { Snapshot } from './snapshot.ts'
+import type { StepDocument, StepProblem } from './steps.ts'
 
 export interface AppInfo {
   name: string
@@ -174,6 +175,38 @@ export type RepoObjectsResult = { ok: true; objects: RepoObjectSummary[] } | Rep
 export type RepoObjectResult = { ok: true; object: RepoObjectDetails } | RepoObjectError
 export type RepoDeleteResult = { ok: true } | RepoObjectError
 
+/** One row of the test list (#39). */
+export interface TestSummary {
+  id: string
+  name: string
+  stepCount: number
+}
+
+/** A test with its steps; the steps carry the ids the server gave them. */
+export interface TestCase {
+  id: string
+  name: string
+  document: StepDocument
+  /** Who changed the test last, and when (ISO time). */
+  updatedBy?: string
+  updatedAt: string
+}
+
+export interface TestError {
+  ok: false
+  reason:
+    | RequestFailure
+    | 'not-found' // the test (or application) is gone
+    | 'invalid' // `fields` says which, e.g. `$.steps[2].target`
+    | 'duplicate' // the name is taken in this application
+  detail?: string
+  fields?: FieldProblem[]
+}
+
+export type TestsResult = { ok: true; tests: TestSummary[] } | TestError
+export type TestResult = { ok: true; test: TestCase } | TestError
+export type TestDeleteResult = { ok: true } | TestError
+
 /** Why a user-management request failed; `detail` is the server's own message, when it sent one. */
 export interface UsersError {
   ok: false
@@ -298,6 +331,17 @@ export interface AynaApi {
   updateRepoObject(id: string, change: RepoObjectChange): Promise<RepoObjectResult>
   /** Refused with `in-use` while tests use the object (FR-09). */
   deleteRepoObject(id: string): Promise<RepoDeleteResult>
+  /** The application's tests by name, with their step counts. */
+  listTests(appId: string): Promise<TestsResult>
+  /** A new test with no steps. */
+  createTest(appId: string, name: string): Promise<TestResult>
+  getTest(id: string): Promise<TestResult>
+  renameTest(id: string, name: string): Promise<TestResult>
+  deleteTest(id: string): Promise<TestDeleteResult>
+  /** Replaces the test's steps; the answer has them as stored, with their ids. */
+  saveSteps(id: string, document: StepDocument): Promise<TestResult>
+  /** Checks `document` against `schemas/step.schema.json`; empty when it is valid. */
+  validateSteps(document: StepDocument): Promise<StepProblem[]>
   getAgentStatus(): Promise<AgentStatus>
   /** Calls `listener` on every agent status change; returns a function that unsubscribes. */
   onAgentStatus(listener: (status: AgentStatus) => void): () => void
@@ -354,6 +398,13 @@ export const IPC = {
   getRepoObject: 'repository:get',
   updateRepoObject: 'repository:update',
   deleteRepoObject: 'repository:delete',
+  listTests: 'tests:list',
+  createTest: 'tests:create',
+  getTest: 'tests:get',
+  renameTest: 'tests:rename',
+  deleteTest: 'tests:delete',
+  saveSteps: 'tests:save-steps',
+  validateSteps: 'tests:validate-steps',
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',
