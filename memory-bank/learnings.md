@@ -84,3 +84,5 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
   is what "the same file" actually means. **General point: the only Python on this Windows machine
   is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
   is not evidence that the version floor holds.**
+- 2026-11-05 · omer · #44 · Neo4j Community enforces composite uniqueness (`REQUIRE (n.a, n.b) IS UNIQUE`), and with it a losing concurrent write ends in `ClientException` code `Neo.ClientError.Schema.ConstraintValidationFailed`, which `executeWrite` does not retry → catch that code and read again if a repeat is legal (`RunService.writeResult`). Without the catch, 8 overlapping writes fail at once.
+- 2026-11-05 · omer · #44 · Node's global WebSocket (undici, used in the Electron main process) sends no `Origin` header, so Spring's default same-origin WebSocket check lets it through with no `setAllowedOrigins`; the Bearer header passes the normal security chain because the upgrade is an ordinary GET.

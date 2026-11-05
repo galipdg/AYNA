@@ -1,4 +1,4 @@
-# Graph model (v0.2)
+# Graph model (v0.3)
 
 The server's Neo4j schema. Part of the graph-schema contract (with `server/src/main/resources/neo4j/migrations/`), frozen at G1 (week 7). Change it only with a new migration and an ADR.
 
@@ -6,6 +6,7 @@ The server's Neo4j schema. Part of the graph-schema contract (with `server/src/m
 - Property names are camelCase. Only `id` (unique) and the indexed lookups below are enforced; the APIs that write each node settle the rest.
 - v0.1 (#39, ADR `2026-10-29-graph-schema-application-links`, proposed) adds `HAS_TEST` and `HAS_OBJECT` from Application and the Step properties `timeoutMs`, `checkpoint` and `row`.
 - v0.2 (#60, ADR `2026-10-31-accounts-and-tokens`, proposed, migration `V0003`) adds `User` and `AuthToken` with `HAS_TOKEN`, and who-did-it properties: `createdBy`/`createdAt`/`updatedBy`/`updatedAt` on TestCase (user id and datetime); `startedBy` on Run (#44) and `decidedBy`/`decidedAt` on HealingProposal (#74) follow the same rule. They are properties, not relationships: audit data, never traversed.
+- v0.3 (#44, ADR `2026-11-05-runs-api-and-live-updates`, proposed, migration `V0004`) adds `ON_VERSION` from Run, a unique `(runId, stepIndex)` on StepResult, the Run properties `stepCount`, `document`, `finishedAt` and the StepResult properties that make a write repeatable.
 - Migrations run automatically when the server starts ([neo4j-migrations](https://michael-simons.github.io/neo4j-migrations/); applied versions are stored as `__Neo4jMigration` nodes).
 
 ## Diagram
@@ -23,6 +24,7 @@ graph LR
   TestCase -- "HAS_STEP {order}" --> Step
   Step -- TARGETS --> RepoObject
   Run -- OF --> TestCase
+  Run -- ON_VERSION --> AppVersion
   Run -- HAS_RESULT --> StepResult
   StepResult -- FOR --> Step
   HealingProposal -- FOR --> RepoObject
@@ -42,8 +44,8 @@ graph LR
 | RepoObject | `name` (logical name, unique per application), primary + fallback properties, embedding | unique `id` · index `name` |
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
-| Run | `status`, `startedAt`, `duration` | unique `id` · index `startedAt` |
-| StepResult | `status`, `duration`, `screenshotPath` | unique `id` |
+| Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `duration` (ms) | unique `id` · index `startedAt` |
+| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `duration` (ms), `message`, `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
 | HealingProposal | `score`, per-property contributions, `decision` | unique `id` |
 | Rule | learned matching rule | unique `id` |
 | User | `username` (lower-case), `passwordHash` (BCrypt), `role` (`admin` / `tester`), `createdAt`; `removedAt` once removed (the node stays) | unique `id` · unique `username` (`V0003`) |
@@ -121,15 +123,21 @@ MATCH (r:Run)-[:OF]->(:TestCase {id: $testId})
 RETURN r ORDER BY r.startedAt DESC LIMIT 20
 ```
 
-**`(Run)-[:HAS_RESULT]->(StepResult)`**: the results recorded during a run.
+**`(Run)-[:ON_VERSION]->(AppVersion)`**: the version a run was played against.
 ```cypher
-MATCH (r:Run {id: $runId})
-CREATE (r)-[:HAS_RESULT]->(:StepResult {id: $resultId, status: $status, duration: $duration, screenshotPath: $screenshotPath})
+MATCH (r:Run)-[:ON_VERSION]->(:AppVersion {id: $versionId})
+RETURN r ORDER BY r.startedAt DESC LIMIT 20
 ```
 
-**`(StepResult)-[:FOR]->(Step)`**: which step a result belongs to.
+**`(Run)-[:HAS_RESULT]->(StepResult)`**: the results recorded during a run, one per step.
 ```cypher
-MATCH (:Run {id: $runId})-[:HAS_RESULT]->(sr:StepResult {status: 'FAILED'})-[:FOR]->(s:Step)
+MATCH (:Run {id: $runId})-[:HAS_RESULT]->(sr:StepResult)
+RETURN sr ORDER BY sr.stepIndex
+```
+
+**`(StepResult)-[:FOR]->(Step)`**: which step a result belongs to. The link goes when the step is deleted; `stepIndex` still points into the run's `document`.
+```cypher
+MATCH (:Run {id: $runId})-[:HAS_RESULT]->(sr:StepResult {status: 'failed'})-[:FOR]->(s:Step)
 RETURN s, sr.screenshotPath
 ```
 
