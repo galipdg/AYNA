@@ -92,16 +92,47 @@ Captures one window's UIA subtree.
 | Param | Type | Meaning |
 |---|---|---|
 | `handle` | positive integer, required | A `handle` from `listWindows`. |
-| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default applies (set with #12). When the budget runs out, the agent stops the walk and answers `-32002`. v0.1 returns no partial document. |
+| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default of **5 000 ms** applies (#12, measured in #161). When the budget runs out, the agent stops the walk and answers `-32002`. v0.1 returns no partial document. |
 
-Unknown params are refused with `-32602`. New optional ones (e.g. a depth or element limit from #12) are a minor `rpcVersion` bump.
+Unknown params are refused with `-32602`. New optional ones are a minor `rpcVersion` bump. There is deliberately no depth or element limit: an incomplete walk has exactly one outcome, `-32002`, because a partial tree is the one input healing must never rank candidates from (RS 0.6 FR-29/FR-35, "search incomplete"; ADR snapshot schema v0).
 
-The result is one snapshot document as defined by `schemas/snapshot.schema.json` (#12). A success example will be added here together with that schema. Until then:
+The result is one snapshot document as defined by `schemas/snapshot.schema.json` (#12): the window it came from, what the walk cost, and every element as a flat pre-order list of `{id, parentId, element}`, a parent always before its children, so one pass builds the tree. `element` is the descriptor of `schemas/element.schema.json`. Element ids are opaque and scoped to the document; a healing proposal's `candidates[].elementId` resolves against them, and its `snapshotAt` is `capture.startedAt`.
+
+Shortened — the trial app's login window has 14 elements; the whole document is
+[`schemas/examples/snapshot/trial-login.json`](../schemas/examples/snapshot/trial-login.json):
 
 ```json
-→ {"jsonrpc": "2.0", "id": 3, "method": "snapshot", "params": {"handle": 395942}}
-← {"jsonrpc": "2.0", "id": 3, "error": {"code": -32001, "message": "UI Automation unavailable: no UI Automation backend yet (#12)"}}
+→ {"jsonrpc": "2.0", "id": 3, "method": "snapshot", "params": {"handle": 657704}}
+← {"jsonrpc": "2.0", "id": 3, "result": {
+    "version": "0.1",
+    "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
+    "capture": {"startedAt": "2026-10-31T17:42:19+03:00", "durationMs": 312, "budgetMs": 5000,
+                "elementCount": 14, "readErrors": 0, "agentVersion": "0.0.0",
+                "featureVersion": "features-v0"},
+    "app": {"exeName": "python.exe", "fileVersion": "3.13.150.1013"},
+    "window": {"handle": 657704, "title": "AYNA Trial - Login", "className": "LoginWindow",
+               "bounds": [560, 210, 1010, 415], "dpi": 120},
+    "elements": [
+      {"id": "e0", "parentId": null,
+       "element": {"automationId": "QApplication.loginWindow", "name": "AYNA Trial - Login",
+                   "controlType": "Window", "className": "LoginWindow", "frameworkId": "Qt",
+                   "bounds": [560, 210, 1010, 415], "dpi": 120, "siblingIndex": 0,
+                   "windowTitle": "AYNA Trial - Login", "enabled": true, "offscreen": false,
+                   "nativeWindowHandle": 657704}},
+      {"id": "e8", "parentId": "e0",
+       "element": {"automationId": "QApplication.loginWindow.usernameInput", "name": "Username",
+                   "controlType": "Edit", "className": "QLineEdit", "frameworkId": "Qt",
+                   "bounds": [648, 223, 995, 255],
+                   "dpi": 120, "parentPath": "Window", "siblingIndex": 2,
+                   "nearestLabel": "Username", "nearestLabelSource": "geometric",
+                   "windowTitle": "AYNA Trial - Login", "enabled": true, "offscreen": false}},
+      {"…": "eleven more, e1–e7 and e9–e13"}
+    ]}}
 ```
+
+The agent writes the document in a canonical form — fixed key order, two-space indent, LF, UTF-8
+unescaped — so that reading a saved snapshot and writing it again gives the same file back
+(`agent/ayna_agent/recognition/snapshot.py`).
 
 A window that has closed since `listWindows`:
 

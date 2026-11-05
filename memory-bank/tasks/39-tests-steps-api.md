@@ -14,7 +14,7 @@ Package `server/src/main/java/com/ayna/server/tests/`. Endpoints: `POST/GET /api
 - 2026-10-29 — The server follows the step schema version on `main` (reads `version` const); tests never hard-code "0.1", so #150's 0.2 needs no server change except storing `row` (already in `JSON_FIELDS`).
 - 2026-10-29 — Export format `{format: "ayna-test", name, document}` without step ids; import creates a new test and rejects ids it does not own. Round trip compares the exported files.
 - 2026-10-29 — Test names unique per application (409), so an import cannot silently duplicate a test.
-- 2026-10-29 — Problem details only in this package (`TestErrorHandler`), not globally: #31 decides for all APIs.
+- 2026-10-29 — Problem details only in this package (`TestErrorHandler`), not globally: #158 (split out of #31) decides for all APIs.
 - 2026-10-29 — Server Docker build context moved to the repo root (`server/Dockerfile.dockerignore` allow-list; `server/.dockerignore` removed) so the image build sees `schemas/`.
 
 ## Status
@@ -30,7 +30,7 @@ Package `server/src/main/java/com/ayna/server/tests/`. Endpoints: `POST/GET /api
 ## Open issues
 - Deleting a test deletes its steps; once runs exist (#51), `StepResult-[:FOR]->Step` and `Run-[:OF]->TestCase` must decide whether history blocks the delete or is kept.
 - Re-reading a test stored under an older schema version relabels it with the current version (fine for 0.1 → 0.2, which #150 says is compatible; a breaking release would need a data migration).
-- `AppService` still returns Spring's default error body without the message (NFR-15); #31.
+- `AppService` still returns Spring's default error body without the message (NFR-15); #158.
 - No authorisation yet (#60): every endpoint is open, like `/api/apps`.
 
 ## Handoff

@@ -11,7 +11,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import com.ayna.server.tests.StepSchema.FieldError;
+import com.ayna.server.error.FieldError;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;

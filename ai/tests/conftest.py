@@ -1,6 +1,8 @@
 """Shared fixtures: a fake Ollama server on 127.0.0.1, so no model is needed in CI."""
 
+import ipaddress
 import json
+import socket
 import socketserver
 import threading
 import time
@@ -11,6 +13,42 @@ from pathlib import Path
 import pytest
 
 DATA = Path(__file__).resolve().parent / "data"
+
+
+@pytest.fixture
+def resolver(monkeypatch) -> dict[str, list[str]]:
+    """A fake name resolver: host name -> addresses, filled in by the test.
+
+    Names not in the table do not resolve, so no test depends on the machine's
+    hosts file or on DNS. Literal IP addresses go to the real resolver, which
+    does not look them up.
+    """
+    table: dict[str, list[str]] = {"localhost": ["127.0.0.1", "::1"]}
+    real = socket.getaddrinfo
+
+    def getaddrinfo(host, port, *args, **kwargs):
+        try:
+            ipaddress.ip_address(host)
+        except ValueError:
+            pass
+        else:
+            return real(host, port, *args, **kwargs)
+        if host not in table:
+            raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
+        return [
+            (
+                socket.AF_INET6 if ":" in address else socket.AF_INET,
+                socket.SOCK_STREAM,
+                socket.IPPROTO_TCP,
+                "",
+                (address, port or 0),
+            )
+            for address in table[host]
+        ]
+
+    monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)
+    return table
+
 
 # (path, request body or None) -> (HTTP status, JSON body, delay in seconds, extra headers)
 Responder = Callable[[str, dict | None], tuple[int, object, float, dict]]
