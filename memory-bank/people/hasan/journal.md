@@ -216,3 +216,42 @@ Append-only. One entry per session, newest at the bottom:
   that way with its condition met and is still wrong there, and a dozen issues cite D1.
 - Next step: the two Approve clicks on #169, then merge #169 **before** #170. Then #180's
   reviews, then #22 / #23.
+## 2026-11-01 (second session) — #12 window snapshot export
+
+**Issue:** #12. **Branch:** `hasan/12-snapshot-export`. **PR #180**, `Closes #12`, CI 5/5 green.
+
+**The one judgement call:** the handoff said "UIA backend first", but omer had asked on #12 twice
+(31 Oct and again that morning) for the schema and one example, because #15, #24, #25 and the G0
+demo (#28, 9 Nov) were blocked on the *shape*, not the code — with a "say by Monday" on it. I put
+the contract in the first commit so it can be reviewed on its own, and the backend in the second.
+Both landed the same day, so nothing was traded away.
+
+**Delivered:** `schemas/snapshot.schema.json` 0.1 + a real example (rebuilt by the tests from the
+#11 trial-app tree, so it cannot drift) + 39 named cases + ADR `2026-11-01-snapshot-schema-v0`
+(Proposed); `recognition/snapshot.py` and `recognition/uia.py`, wired into `rpc.main()`; the
+`snapshot` success example in `docs/agent-rpc.md`; `schemas/README.md` sections for the snapshot
+and for the element descriptor (#11 never added one). 95 new tests, agent suite 280 green.
+
+**Measured on this machine, not assumed:** trial app 14 elements in **28–32 ms** (criterion 1
+wanted under 2 s); KeePass 2's main window **114 elements in 819 ms** against #161's 2.26 s for
+the same window — the difference is the reader (12 properties, no pattern probes), not the
+framework; and a Qt window whose GUI thread slept 40 s returned `-32002` after **2 251 ms** of a
+2 000 ms budget, which is the proof the timer design was needed at all, since the *first* UIA read
+blocked and no between-element check could have fired. #16 also answered end-to-end over JSON-RPC.
+
+**Three real bugs found, two of them mine:**
+1. `python -m ayna_agent.rpc` loads the module twice (`__main__` + `ayna_agent.rpc`), so the two
+   copies had two different `UiaUnavailable` classes and a backend error came out as `-32603`
+   instead of `-32001`. Only the subprocess CLI test could see it.
+2. Wiring the backend into `main()` made the server refuse to start where UIA cannot run, which
+   would have stopped galip and omer from running anything on macOS. `setup()` now records the
+   reason, which is what `docs/agent-rpc.md` specified all along.
+3. `Path.read_text(newline=...)` is Python 3.13 only; CI runs 3.11.9. Green locally, red in CI.
+   **Only 3.13 exists on this machine, so nothing local can ever verify the 3.11 floor.**
+
+**Raised, not fixed:** `minLength: 1` cannot express "not only whitespace", so both this schema and
+`element.schema.json` promise something they do not enforce. Named as a *valid* case in the cases
+file so the gap is visible, and put to the deciders in the ADR.
+
+**Next step:** answer the #180 review, then chase **#169** — it still has no approval and it blocks
+#170 (#161), which is the oldest thing stuck on my side.

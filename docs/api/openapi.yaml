@@ -6,6 +6,8 @@ info:
   version: v0
 servers:
 - url: /
+security:
+- bearerAuth: []
 paths:
   /api/apps:
     get:
@@ -19,6 +21,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/AppResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
       tags:
       - app-controller
     post:
@@ -38,6 +42,8 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
       tags:
@@ -60,6 +66,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/TestSummary"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -87,6 +95,8 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -118,6 +128,8 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -142,6 +154,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/VersionResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -169,12 +183,59 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
       tags:
       - app-controller
+  /api/auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security: []
+      tags:
+      - auth-controller
+  /api/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      tags:
+      - auth-controller
+  /api/auth/me:
+    get:
+      operationId: me
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      tags:
+      - auth-controller
   /api/health:
     get:
       operationId: health
@@ -187,6 +248,7 @@ paths:
                 additionalProperties:
                   type: string
           description: OK
+      security: []
       tags:
       - health-controller
   /api/tests/{testId}:
@@ -201,6 +263,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -220,6 +284,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -247,6 +313,8 @@ paths:
           description: OK
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -269,6 +337,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestExport"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -298,10 +368,187 @@ paths:
           description: OK
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
+  /api/tokens/{tokenId}:
+    delete:
+      operationId: revokeToken
+      parameters:
+      - in: path
+        name: tokenId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - user-controller
+  /api/users:
+    get:
+      operationId: listUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      tags:
+      - user-controller
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - user-controller
+  /api/users/{userId}:
+    delete:
+      operationId: removeUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - user-controller
+    patch:
+      operationId: updateUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - user-controller
+  /api/users/{userId}/tokens:
+    get:
+      operationId: listTokens
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TokenResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - user-controller
+    post:
+      operationId: createToken
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTokenRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedTokenResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - user-controller
 components:
   responses:
     BadRequest:
@@ -316,12 +563,25 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
       description: A name is already taken
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The account's role may not do this
     NotFound:
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
       description: An id in the path names nothing
+    Unauthorized:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: "No valid session or API token; on login, a wrong user name or\
+        \ password"
   schemas:
     AppResponse:
       type: object
@@ -344,10 +604,36 @@ components:
       properties:
         name:
           type: string
+    CreateTokenRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    CreateUserRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        role:
+          type: string
+        username:
+          type: string
     CreateVersionRequest:
       type: object
       properties:
         version:
+          type: string
+    CreatedTokenResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        name:
+          type: string
+        token:
           type: string
     FieldError:
       type: object
@@ -361,6 +647,23 @@ components:
       required:
       - message
       - path
+    LoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        username:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserResponse"
     Problem:
       type: object
       description: RFC 9457 problem details; the body of every 4xx response
@@ -416,6 +719,11 @@ components:
       properties:
         appId:
           type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/UserRef"
         document:
           type: object
           description: JSON document; steps are validated against schemas/step.schema.json
@@ -423,6 +731,11 @@ components:
           type: string
         name:
           type: string
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/UserRef"
     TestSummary:
       type: object
       properties:
@@ -433,6 +746,42 @@ components:
         stepCount:
           type: integer
           format: int32
+    TokenResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        name:
+          type: string
+    UpdateUserRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        role:
+          type: string
+    UserRef:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+    UserResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        role:
+          type: string
+        username:
+          type: string
     VersionResponse:
       type: object
       properties:
@@ -440,3 +789,8 @@ components:
           type: string
         version:
           type: string
+  securitySchemes:
+    bearerAuth:
+      description: "Session token from POST /api/auth/login, or a CI API token (AYNA_SERVER_TOKEN)"
+      scheme: bearer
+      type: http
