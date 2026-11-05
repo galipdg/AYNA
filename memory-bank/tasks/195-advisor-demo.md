@@ -12,6 +12,7 @@
 - 2026-11-05 — Own user data folder with `--user-data-dir` (`$TMPDIR/ayna-demo-client`), so a demo never touches normal settings and needs no product code. Electron honours the switch.
 - 2026-11-05 — Login stays manual: it is a screen to show.
 - 2026-11-05 — Seed through the API, not Cypher, so sample data passes the real checks. Versions 1.0 (captured) and 1.1 (selected, not captured), so a live capture has something to add.
+- 2026-11-05 — The sample capture's snapshot id comes from a hash of its version id, not the fixture: the server takes an id into one version only, and a used database may hold the fixture's id. Unique per version and the same on every run, so a repeat is still a no-op.
 - 2026-11-05 — `.step-check` wraps (separate commit). The check controls were 35 px wide at the default window and only readable from about 1728 px. Narrowing Action and Element would bring back the truncation omer reported on #38. The commit belongs to #38 and sits here because the demo needs it.
 
 ## Status
@@ -25,8 +26,10 @@
 
 ## Manual checks
 - 2026-11-05 · agent · real Electron over CDP on a throwaway Compose project · pass: ready in 18 s with cached layers; login, Spy tree, property panel, live "Depoya ekle" on version 1.1 (6 objects), Repository counts and details, Tests with 7 and 4 steps, language switch. Second run through `npm run demo --no-build`: ready in 2 s, no duplicates, clean login. Failure messages checked: Docker missing, Docker not running, wrong password, no admin set. Evidence: screenshots in this session only.
-- Not covered: the real `.env`, the real `ayna` volume and project, `npm ci` on a fresh checkout, Windows.
-- 2026-11-05 · omer · manual check in the main folder · pending.
+- Not covered: `npm ci` on a fresh checkout, Windows.
+- 2026-11-05 · omer · manual check in the main folder · **fail** at the seed: 409, the fixture's snapshot id was already imported into another version on the real volume (the 2026-11-03 "Repo View Check" data). The `.env` login and Docker steps passed. My test had only used fresh volumes. Fixed: the sample capture gets an id derived from its version.
+- 2026-11-05 · agent · the same collision reproduced on a throwaway stack, then the fix: pass on that database with the failed run's partial state, on a repeat, on a fresh database and on its repeat; 5 objects, 2 tests, no duplicates each time.
+- 2026-11-05 · omer · same manual check again · pending.
 
 ## Open issues
 - At the default 1280 px window the step table still overflows by 138 px and the page by 8 px, so the row buttons need scrolling. `DEMO.md` says to use full screen; worth a follow-up on #38.

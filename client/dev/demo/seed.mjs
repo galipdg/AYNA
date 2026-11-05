@@ -1,5 +1,6 @@
 // Sample data for `npm run demo`. It goes through the real REST API, so it passes the same
 // checks as the client. Running it again adds only what is missing and leaves the rest alone.
+import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { defaultSnapshot } from '../mock/fake-agent-env.mjs'
 
@@ -48,6 +49,17 @@ const TESTS = {
   ],
 }
 
+/**
+ * The server takes a snapshot id into one version only, and a database that was used before
+ * may hold the fixture's id already. So the sample capture gets an id of its own, which stays
+ * the same on every run for this version.
+ */
+function snapshotIdFor(versionId) {
+  const hex = createHash('sha256').update(`ayna-demo:${versionId}`).digest('hex')
+  const part = (from, to) => hex.slice(from, to)
+  return `${part(0, 8)}-${part(8, 12)}-4${part(13, 16)}-8${part(17, 20)}-${part(20, 32)}`
+}
+
 /** Calls the server; an unexpected answer becomes an error that names the call. */
 function client(server, token) {
   return async (method, path, body) => {
@@ -87,7 +99,8 @@ export async function seed(server, token) {
   const captured = known.find((version) => version.version === CAPTURED_VERSION)
 
   // The same snapshot id into the same version answers 200 and writes nothing.
-  const snapshot = JSON.parse(await readFile(defaultSnapshot, 'utf8'))
+  const fixture = JSON.parse(await readFile(defaultSnapshot, 'utf8'))
+  const snapshot = { ...fixture, snapshotId: snapshotIdFor(captured.id) }
   await api('POST', `${versionsPath}/${captured.id}/snapshots`, snapshot)
 
   const objectsPath = `/api/apps/${app.id}/repo-objects`
