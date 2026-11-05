@@ -96,6 +96,14 @@ export function newDraft(): DraftStep {
   }
 }
 
+/**
+ * Rows with the ids a save gave them, found by row key. A row whose step no longer exists on
+ * the server loses its id, so bringing it back with undo creates a new step.
+ */
+export function withStoredIds(drafts: DraftStep[], ids: Map<string, string | undefined>) {
+  return drafts.map((draft) => ({ ...draft, id: ids.get(draft.key) }))
+}
+
 /** The rows for a stored document's steps. */
 export function draftsFrom(document: StepDocument): DraftStep[] {
   return document.steps.map((step) => {

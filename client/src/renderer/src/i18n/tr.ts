@@ -372,6 +372,10 @@ export const tr: Strings = {
   testsSaving: 'Kaydediliyor…',
   testsSaved: 'Kaydedildi.',
   testsCancel: 'Vazgeç',
+  testsUndo: 'Geri al',
+  testsUndoHint: 'Adımlardaki son değişikliği geri alır (Ctrl+Z ya da ⌘Z)',
+  testsRedo: 'Yinele',
+  testsRedoHint: 'Geri alınan değişikliği yineler (Ctrl+Y ya da ⇧⌘Z)',
   testsUnsaved: 'Kaydedilmemiş değişiklikler',
   testsUpdated: (user: string, date: string) => `Son değiştiren: ${user}, ${date}`,
   testsLeaveConfirm: (name: string) =>

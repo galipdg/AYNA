@@ -28,6 +28,9 @@ function byScreen(objects: RepoObjectSummary[]): [string, RepoObjectSummary[]][]
   return [...groups]
 }
 
+/** The fields filled in by typing; the others change in one go. */
+const TYPED_FIELDS = ['value', 'expectedText', 'timeout'] as const
+
 /** The columns a user can widen or narrow: default, smallest and largest width in px. */
 const COLUMNS = {
   action: { initial: 150, min: 110, max: 280 },
@@ -57,7 +60,8 @@ export default function StepTable({
   problems: StepProblem[]
   /** Null while the saved elements are loading or could not be loaded. */
   objects: RepoObjectSummary[] | null
-  onChange: (drafts: DraftStep[]) => void
+  /** `typedField` names a text field, so keystrokes in it undo as one change. */
+  onChange: (drafts: DraftStep[], typedField?: string) => void
 }) {
   const [dragFrom, setDragFrom] = useState<number>()
   const [dropAt, setDropAt] = useState<number>()
@@ -73,7 +77,11 @@ export default function StepTable({
   }
 
   function update(index: number, change: Partial<DraftStep>) {
-    onChange(drafts.map((draft, i) => (i === index ? { ...draft, ...change } : draft)))
+    const typed = TYPED_FIELDS.find((field) => field in change)
+    onChange(
+      drafts.map((draft, i) => (i === index ? { ...draft, ...change } : draft)),
+      typed && `${drafts[index].key}:${typed}`,
+    )
   }
 
   function add() {
