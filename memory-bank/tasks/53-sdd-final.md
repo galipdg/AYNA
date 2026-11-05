@@ -10,6 +10,7 @@ Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (he
 ## Decisions (small, local to this task)
 - 2026-11-05 — §5 is one block, by a script, so the only changes are heading level and number, AI-n references and the `---` rules between sections. The file's front matter (editor note, status table, labels) is not moved: §1.6 has the labels, §7 the ADRs.
 - 2026-11-05 — Accepted ADRs keep their `SDD AI-n` wording: they are never edited, and the same goes for journals, closed inbox items and old task notes, which are history.
+- 2026-11-05 — The `User` row stays in this PR (omer's OK): the conflict with #193 is one row, and leaving it would make §3.3 say Planned while §2.4.2 says Built.
 - 2026-11-05 — `active.md` stays untouched on this branch: #186–#193 all edit it, so a change here would add a real conflict (it has no union merge). This note and `journal.md` carry the state.
 - 2026-11-05 — Rows beyond the brief's list that #60, #11, #12, PR #173 and PR #174 made stale are fixed too (Client, Agent, Server and Database in §2.2, CI ↔ server in §2.4.2, Healing proposal in §3.4, the security paragraph in §6.2), so one document does not say both Built and Planned for the same issue.
 
@@ -18,11 +19,11 @@ Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (he
 - [x] §7 written: 22 ADRs, same order and titles as the index
 - [x] Status rows checked against the code and updated; version 0.3
 - [x] References in files of others: request in galip's inbox (`docs/rs/RS.md:285`, `ai/API.md:196`, `ai/ayna_ai/validate.py:29`); hasan has none
-- [ ] Remove `docs/sdd/SDD-ai.md` (needs omer's OK)
+- [x] `docs/sdd/SDD-ai.md` removed (omer's OK, 2026-11-05)
 - [ ] First PR (`Part of #53`)
 - [ ] After the final RS (#41, 23 Nov): §8 Traceability, one reference numbering (§1.5, §5.10, RS, `docs/literature.md`)
 - [ ] PDF rendered with the diagrams, stored in `docs/sdd/`, submitted by 7 Dec
-- Next step: after omer's OK, remove `SDD-ai.md`, push and open the PR with the prepared text.
+- Next step: review of the first PR; then §8 and the reference numbers after the final RS (#41).
 
 ## Manual checks
 - 2026-11-05 · agent · Mermaid 11.17.2 parser under jsdom on `SDD.md`: 10 blocks, 0 failed; 24 fence lines; `marked` GFM: 69 headings, no level skip, no duplicate text, 31 tables, no row with a wrong cell count · pass · evidence: this note (scratch script, not in the repo)
