@@ -94,10 +94,11 @@ Dürüstçe söylenecek nokta: Mac'te gerçek ajan pencere okuyamadığı için 
 
 1. **Geçerli kullanıcıyla giriş** testini açın: 7 adım, hiç JSON yazılmadan kurulmuş.
 2. Bir satırı tutamacından sürükleyerek taşıyın ya da Alt+↑ ve Alt+↓ kullanın.
-3. **+ Adım ekle** deyin. Yeni satırda öge seçili olmadığı için satır hemen işaretlenir ve nedeni yazılır. **Kaydet** hangi adımın düzeltilmesi gerektiğini söyler. Bir öge seçin ya da satırı silin.
-4. **Kaydet** deyin, başka bir teste geçip geri dönün. Test aynen geri gelir.
-5. Bir adımı silin, sonra ⌘Z (Windows'ta Ctrl+Z) ile geri getirin. ⇧⌘Z ya da Ctrl+Y yineler; aynı işler **Geri al** ve **Yinele** düğmelerinde de var.
-6. **+ Yeni test** ile yeni bir test açıp **+ Adım ekle** ile birkaç adım ekleyin.
+3. 5. adımdaki kontrol özetine tıklayın. Özellik, karşılaştırma ve beklenen değer küçük bir panelde açılır; Esc ile kapanır. Sol test listesini kenarından sürükleyerek daraltırsanız adımlara daha çok yer kalır.
+4. **+ Adım ekle** deyin. Yeni satırda öge seçili olmadığı için satır hemen işaretlenir ve nedeni yazılır. **Kaydet** hangi adımın düzeltilmesi gerektiğini söyler. Bir öge seçin ya da satırı silin.
+5. **Kaydet** deyin, başka bir teste geçip geri dönün. Test aynen geri gelir.
+6. Bir adımı silin, sonra ⌘Z (Windows'ta Ctrl+Z) ile geri getirin. ⇧⌘Z ya da Ctrl+Y yineler; aynı işler **Geri al** ve **Yinele** düğmelerinde de var.
+7. **+ Yeni test** ile yeni bir test açıp **+ Adım ekle** ile birkaç adım ekleyin.
 
 ### 6. Kullanıcılar
 

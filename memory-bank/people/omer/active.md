@@ -4,7 +4,7 @@ Only omer's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-11-05 (eleventh session, evening)
 - Current issue: **#196** (step editor undo) on `omer/196-step-undo`, stacked on #195's work, not pushed. Built and tested in Electron; omer's physical ⌘Z check still has to run on this code. Task note: `tasks/196-step-undo.md`.
-- **#195** (advisor demo): `npm run demo` and `DEMO.md` done; omer ran it in the main folder. Not pushed, no PR. The table shift omer reported is fixed on `omer/196-step-undo`; he has yet to confirm it (`tasks/195-advisor-demo.md`).
+- **#195** (advisor demo): `npm run demo` and `DEMO.md` done; omer ran it in the main folder. Not pushed, no PR. Table fit, one-line check rows and the resizable test list are on `omer/196-step-undo`; omer has yet to confirm them (`tasks/195-advisor-demo.md`).
 - **#44**, server half: PR #193 (`Part of #44`), reviewers galip and hasan. Client half waits for #38 on `main` and #40 (#26 under it has no branch).
 - **#38** (step editor): PR #192, CI 5/5, manual check passed. After #191 merges, retarget #192 to `main` (merge `origin/main` in, never rebase).
 - Windows check for #38 and #30 posted on #38 (2026-11-05), `needs-windows-test` added; run #184's check first. At the next sync of `omer/38-step-editor`, add "pending Windows session" to `tasks/38-step-editor.md` and `tasks/30-repository-view.md`. #24 and #25 are covered by #184's check.

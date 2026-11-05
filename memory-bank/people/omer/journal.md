@@ -198,3 +198,8 @@ Append-only. One entry per session, newest at the bottom:
 - Running the trial app on macOS showed the sample tests expected texts the app never shows; fixed, and every run now restores the two sample tests.
 - #196: undo and redo in the step editor, on the window so it works after a delete, and safe across a save. 189 client tests, 27 of 27 in Electron.
 - Next: the table shift omer saw (screenshot unreadable here), physical ⌘Z check, push and PRs.
+
+## 2026-11-05 (twelfth session) · #38 layout for the demo
+- omer: the check rows wrap to two and three lines. A check is now a one-line summary with a popover, every row 41 px. The test list resizes between 150 and 420 px (`Resizer.tsx`, shared with the column handles).
+- 26 of 28 checks in Electron on the first run; the other two were test assumptions (a scripted click does not focus; an empty expected text is valid), re-checked with a real click and the schema.
+- Next: omer confirms the table and ⌘Z in the main folder, then push and PRs.

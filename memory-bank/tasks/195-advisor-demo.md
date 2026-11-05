@@ -14,7 +14,7 @@
 - 2026-11-05 — Seed through the API, not Cypher, so sample data passes the real checks. Versions 1.0 (captured) and 1.1 (selected, not captured), so a live capture has something to add.
 - 2026-11-05 — The sample capture's snapshot id comes from a hash of its version id, not the fixture: the server takes an id into one version only, and a used database may hold the fixture's id. Unique per version and the same on every run, so a repeat is still a no-op.
 - 2026-11-05 — Every run puts the two sample tests back: it delivers corrections to a database already seeded, and a rehearsal leaves nothing behind in them. Tests and objects made by hand are not touched.
-- 2026-11-05 — `.step-check` wraps (separate commit). The check controls were 35 px wide at the default window and only readable from about 1728 px. Narrowing Action and Element would bring back the truncation omer reported on #38. The commit belongs to #38 and sits here because the demo needs it.
+- 2026-11-05 — A check is a one-line summary that opens a native popover. Wrapping its three controls made rows two and three lines tall, which omer found unbalanced, and one line cannot hold them. The popover sits in the top layer, so the table's scroll area cannot cut it off, and needs no new dependency. Belongs to #38; it sits here because the demo needs it.
 
 ## Status
 - [x] Issue, board In progress, branch
@@ -32,6 +32,7 @@
 - 2026-11-05 · agent · the same collision reproduced on a throwaway stack, then the fix: pass on that database with the failed run's partial state, on a repeat, on a fresh database and on its repeat; 5 objects, 2 tests, no duplicates each time.
 - 2026-11-05 · omer · same manual check again · screens fine, one table shift reported · the screenshot could not be read here (protected temp folder), so the shift is still open.
 - 2026-11-05 · omer · the table shift, screenshot received: at 1280 px the table needed sideways scrolling, so Step and Action were cut off to reach the row buttons. Fixed on `omer/196-step-undo`: no scrolling at 1280, 1366, 1440, 1728 and 2200 px, the page scrollbar is gone. A window below 1280 px scrolls the table (34 px at 1180). omer's look at the fix · pending.
+- 2026-11-05 · omer · rows 5 and 7 grew to two and three lines, which looked unbalanced, and he asked for a resizable test list. His screenshot was still from `aad8771`, before the table fit. Fixed: a check shows as a one-line summary and opens its controls in a popover; the test list drags between 150 and 420 px. omer's look · pending.
 - 2026-11-05 · agent · `eval/apps/trial/app.py` on macOS with PySide6 6.12.0 · pass, platform `cocoa`, window opens · this showed the sample tests expected texts the app never shows; fixed.
 
 ## Open issues
