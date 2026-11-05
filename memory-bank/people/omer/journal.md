@@ -192,3 +192,9 @@ Append-only. One entry per session, newest at the bottom:
 - #195 for the advisor: `npm run demo` starts Docker, seeds through the API and opens the client; `DEMO.md` in Turkish. Tested end to end on a throwaway stack over CDP.
 - The run found unreadable check steps in the editor (35 px controls): `.step-check` now wraps. Also corrected two wrong steps in the Windows check on #38.
 - Next: omer's manual check, then push and PR.
+
+## 2026-11-05 (eleventh session, late) · #195 fixes, #196 undo
+- omer's first manual check of `npm run demo` failed with a 409: the fixture's snapshot id was already in the real volume. The sample capture now has an id from its version. My test had used only fresh volumes.
+- Running the trial app on macOS showed the sample tests expected texts the app never shows; fixed, and every run now restores the two sample tests.
+- #196: undo and redo in the step editor, on the window so it works after a delete, and safe across a save. 189 client tests, 27 of 27 in Electron.
+- Next: the table shift omer saw (screenshot unreadable here), physical ⌘Z check, push and PRs.

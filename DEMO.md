@@ -29,6 +29,8 @@ Komut sırayla şunları yapar:
 
 Pencere açılınca `.env` dosyasındaki `AYNA_ADMIN_USERNAME` ve `AYNA_ADMIN_PASSWORD` ile oturum açın. Oturum açma ekranı da gösterimin parçası olduğu için otomatik geçilmez.
 
+**Hangi bilgisayardan?** Ana gösterimi Mac'ten yapın, çünkü bu akış baştan sona denendi. Yeni arayüz gerçek ajanla Windows'ta henüz çalıştırılmadı ve `npm run demo` Windows'ta denenmedi. Toplantıdan önce #184 ve #38 Windows kontrolleri geçerse, gerçek pencere yakalamayı Windows'ta kısa bir ek olarak gösterebilirsiniz.
+
 **Toplantıdan önce:**
 
 - Komutu bir kez çalıştırın. İlk derleme birkaç dakika sürebilir; sonraki açılışlar saniyeler içinde hazır olur.
@@ -95,7 +97,8 @@ Dürüstçe söylenecek nokta: Mac'te gerçek ajan pencere okuyamadığı için 
 2. Bir satırı tutamacından sürükleyerek taşıyın ya da Alt+↑ ve Alt+↓ kullanın.
 3. **+ Adım ekle** deyin. Yeni satırda öge seçili olmadığı için satır hemen işaretlenir ve nedeni yazılır. **Kaydet** hangi adımın düzeltilmesi gerektiğini söyler. Bir öge seçin ya da satırı silin.
 4. **Kaydet** deyin, başka bir teste geçip geri dönün. Test aynen geri gelir.
-5. **+ Yeni test** ile yeni bir test açıp **+ Adım ekle** ile birkaç adım ekleyin.
+5. Bir adımı silin, sonra ⌘Z (Windows'ta Ctrl+Z) ile geri getirin. ⇧⌘Z ya da Ctrl+Y yineler; aynı işler **Geri al** ve **Yinele** düğmelerinde de var.
+6. **+ Yeni test** ile yeni bir test açıp **+ Adım ekle** ile birkaç adım ekleyin.
 
 ### 6. Kullanıcılar
 
