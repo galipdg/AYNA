@@ -880,7 +880,34 @@ Each research question has one experiment, owned by the member who owns the comp
 
 ## 7 Design rationale
 
-_The ADRs behind this design, with one line each on the alternative that was rejected. Source: `memory-bank/decisions/README.md`. Filled at #53._
+The decisions behind this design are ADRs in `memory-bank/decisions/`. The table follows their index (`README.md`) in order and with its status, as of the date in the header. The last column gives what the ADR itself rejected and why; "None recorded" means the ADR names no alternative, and the column then gives its reasons. Elsewhere this document names an ADR by the start of its title. ADRs in open pull requests join the table when they merge.
+
+| Date | ADR | Status | Rejected alternative |
+|---|---|---|---|
+| 2026-10-20 | *Technology stack* | Accepted; client language superseded by *Client in TypeScript* | None recorded. The choice follows the languages the team knows and the reach of pywinauto into UI Automation. |
+| 2026-10-20 | *Neo4j as the single database* | Accepted | PostgreSQL / pgvector. Neo4j alone serves the tree queries and the vector search, so there is one store to operate. |
+| 2026-10-20 | *Electron client per test machine, one central server* | Accepted | None recorded. The Object Spy must run on the same machine as the AUT, and many engineers must share one repository without licence limits. |
+| 2026-10-20 | *Windows desktop only in semester 1* | Accepted | Web and mobile drivers in semester 1: time is limited and the HAVELSAN mentor has not fixed a target technology. The agent keeps a driver interface so they can be added. |
+| 2026-10-20 | *Language models only at authoring time* | Accepted | A model that chooses every action at run time, as in agent-style tools such as UFO: not repeatable, which regression testing cannot accept. |
+| 2026-10-20 | *Self-healing proposes, never applies mid-run* | Accepted | Applying a repair during the run, as TestComplete does: it can make a broken build pass (a false pass). |
+| 2026-10-20 | *Calibrated decision layer moves to semester 2* | Accepted | All three AI contributions in semester 1: that overloads the AI owner, and the decision layer is not part of the HAVELSAN value proposition. |
+| 2026-10-25 | *GitHub Issues + Project as the task source of truth* | Accepted | The earlier claude.ai board: agents could not read it. It stays as read-only history. |
+| 2026-10-25 | *Shared memory bank structure and English as memory language* | Accepted | A classic single-user memory bank with shared activeContext and progress files: with three agents on parallel branches it would conflict or lose notes. |
+| 2026-10-25 | *Weekly Windows test session for macOS developers* | Accepted | None recorded. A Windows VM is planned but not set up yet; the ADR is revisited when it is available. |
+| 2026-10-25 | *Client in TypeScript* | Accepted | JavaScript with JSDoc types checked by `tsc`, the first skeleton: the same type checker with more verbose syntax. |
+| 2026-10-25 | *Windows-bound work moves to Hasan* | Accepted | Writing UI Automation code on a Mac and looping it through Hasan's inbox, the weekly session and PRs: it turned out slow. |
+| 2026-10-25 | *Graph schema v0: neo4j-migrations and UUID ids* | Accepted | An own `ApplicationRunner` with idempotent scripts: no record of what ran, no checksum, hand-written guards for data migrations. Neo4j's `elementId()` as the identity: it can be reused after a delete. |
+| 2026-10-27 | *Step schema v0* | Proposed (#13) | A version on every step: repeated in every step and in the graph. A looser `target`: relaxing later is backward compatible, tightening is not. |
+| 2026-10-27 | *Agent JSON-RPC v0: handshake token, env-var token, ready line* | Accepted | The token in a query parameter (it ends up in logs) or in a first `hello` message (an unauthenticated socket stays open). Named pipes instead of TCP: Windows-specific code in Node and Python, awkward to test on macOS. |
+| 2026-10-28 | *Healing proposal transport: agent → client or CLI runner → server* | Accepted | The agent posting to the server itself: the user's session in a second process and a second network client. A separate `heal.proposed` message and `POST`: two writes for one fact, with an ordering rule. Floats with a tolerance: the contributions would add up to the score only within it. |
+| 2026-10-29 | *Graph schema v0.1: tests and repository objects belong to an application* | Accepted | An `appId` property: a foreign key that graph queries such as change impact cannot see. Tests per application version: copying a test for every version breaks NFR-33. |
+| 2026-10-29 | *REST error body: RFC 9457 problem details* | Accepted | A project-specific body: every error Spring raises before a controller runs would need its own mapping. Spring Boot's default body: no field list, and it leaks the messages of unexpected exceptions. |
+| 2026-10-31 | *Element descriptor v0: properties, priority and the label rule* | Accepted | Reusing `scoredElement` as the descriptor: no `dpi`, no state, no provenance for the label, and shaped for one consumer. Computing the label at healing time only: stored and live labels would come from different rules. |
+| 2026-10-31 | *Healing proposal schema 0.2: per-element DPI, feature versions, #151 review follow-ups* | Proposed (#149); extends the transport ADR | One `dpi` per proposal: the target and the candidates may come from machines with different scaling. Required feature versions: 0.2 would stop being a superset of 0.1. |
+| 2026-10-31 | *Accounts, roles, sessions and API tokens* | Proposed (#60) | A servlet session cookie: sessions lost on restart, CSRF protection needed, a second path for CI tokens. JWT: a library and a signing key, and revocation needs a deny list, which is a token store again. |
+| 2026-11-01 | *Snapshot schema v0: flat pre-order tree, one window, no partial document* | Accepted | Nested children instead of parent ids: every consumer would gain a recursion it does not need. A partial document with `truncated: true`: exactly the input FR-29 forbids healing to use. |
+
+Three ADRs are still Proposed in the index, although the work they describe is on `main`: *Step schema v0* (#13, PR #134), *Healing proposal schema 0.2* (#149, PR #174) and *Accounts, roles, sessions and API tokens* (#60, PR #179).
 
 ## 8 Traceability
 
