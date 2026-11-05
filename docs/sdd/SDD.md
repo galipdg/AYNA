@@ -341,7 +341,7 @@ Schema v0 was written before the APIs that use it. The issues below change it; e
 | Logical names unique per application, pattern of the step schema, `none.noMatch` refused | FR-07, SC-11; `none.noMatch` is reserved by the AI service | #25 | Planned. Per application, not per version (ADR *Graph schema v0.1*) |
 | `RepoObject.columns` (list of strings) | Grid column headers from the snapshot, for the editor and for `column` in generated steps | #25, #15 | Planned |
 | `Step.checkpoint` and `Step.row` as JSON strings; `Step.timeoutMs` integer | Neo4j properties cannot hold maps; v0 lists neither `timeoutMs` nor `row` | #39 | **Built** (PR #156) |
-| `User` node; acting user on edits, runs and decisions | FR-39, FR-40 | #60 | Planned |
+| `User` and `AuthToken` nodes; acting user on edits, runs and decisions | FR-39, FR-40 | #60, #44, #74 | **Built**: `V0003` and the user on test edits (#60, PR #179). Planned: on runs (#44), on decisions (#74) |
 | Per-candidate data on `CANDIDATE`; whole proposal JSON on `HealingProposal`; `(StepResult)-[:PROPOSED]->(HealingProposal)` | Contributions and raw similarities per candidate; the proposal kept exactly as the agent scored it | #74 | Planned (ADR *Healing proposal transport*, accepted) |
 | Vector index on `RepoObject.embedding` | NL retrieval (NFR-11) | #58 | Planned |
 
