@@ -179,3 +179,10 @@ Append-only. One entry per session, newest at the bottom:
 - Checked over CDP against `docker compose up --build`; omer's manual check passed on 2026-11-04 (the agent did not start only because the dev command was split over two lines).
 - PR #191 (stacked on #190), reviewers galip (DETACH DELETE vs #74 proposals) and hasan (Turkish texts).
 - Next: reviews of the stack (#182 → #191); next Week 5 issue #38 (step editor, needs #30).
+
+
+## 2026-11-04/05 (tenth session) · #38 step editor
+- #38: Tests place with a test list and a step table (add, delete, drag / Alt+↑↓ reorder, action, element from the repository, value / check, wait in seconds); rename, delete, unsaved-change warning. Step schema checked with Ajv in the main process (renderer CSP forbids `new Function`); `ajv` devDependency approved by omer.
+- API smoke against the real server passed; omer's manual check found truncated Action/Element columns → fixed layout + resizable columns (`3d532a1`); re-check passed 2026-11-05.
+- Pushed `omer/30-repo-view` (session-notes commit) and `omer/38-step-editor`; PR #192 (base `omer/30-repo-view`), CI 5/5. Not merged: all stack PRs need an approving review.
+- Next: reviews of the stack; next issue (#44 waits for #40).
