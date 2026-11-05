@@ -1,5 +1,6 @@
 // Sample data for `npm run demo`. It goes through the real REST API, so it passes the same
-// checks as the client. Running it again adds only what is missing and leaves the rest alone.
+// checks as the client. Running it again adds what is missing and puts the two sample tests
+// back as they were, so a rehearsal leaves nothing behind in them.
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { defaultSnapshot } from '../mock/fake-agent-env.mjs'
@@ -27,6 +28,7 @@ const contains = (target, expected) => ({
   checkpoint: { property: 'name', operator: 'contains', expected },
 })
 
+// The texts are the ones `eval/apps/trial/app.py` really shows.
 const TESTS = {
   'Geçerli kullanıcıyla giriş': [
     { keyword: 'Wait', target: 'login.userNameInput', timeoutMs: 10000 },
@@ -39,13 +41,13 @@ const TESTS = {
       checkpoint: { property: 'checked', operator: 'equals', expected: true },
     },
     click('login.loginButton'),
-    contains('login.statusLabel', 'Hoş geldiniz'),
+    contains('login.statusLabel', 'Welcome'),
   ],
   'Hatalı şifre uyarısı': [
     type('login.userNameInput', 'admin'),
     type('login.passwordInput', 'yanlis-sifre'),
     click('login.loginButton'),
-    contains('login.statusLabel', 'hatalı'),
+    contains('login.statusLabel', 'Invalid'),
   ],
 }
 
@@ -121,10 +123,8 @@ export async function seed(server, token) {
   const testsPath = `/api/apps/${app.id}/tests`
   const tests = await api('GET', testsPath)
   for (const [name, steps] of Object.entries(TESTS)) {
-    await ensure(tests, 'name', name, async () => {
-      const test = await api('POST', testsPath, { name })
-      return api('PUT', `/api/tests/${test.id}/steps`, { version: snapshot.version, steps })
-    })
+    const test = await ensure(tests, 'name', name, () => api('POST', testsPath, { name }))
+    await api('PUT', `/api/tests/${test.id}/steps`, { version: snapshot.version, steps })
   }
 
   return app

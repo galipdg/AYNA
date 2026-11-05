@@ -24,7 +24,7 @@ Komut sırayla şunları yapar:
 
 1. Docker'ın açık olduğunu kontrol eder.
 2. `docker compose up -d --build` ile Neo4j ve sunucuyu başlatır, hazır olmalarını bekler.
-3. Örnek veriyi gerçek API üzerinden kurar. Var olan veriye dokunmaz, yalnızca eksikleri ekler.
+3. Örnek veriyi gerçek API üzerinden kurar: eksikleri ekler, iki örnek testi baştaki haline döndürür.
 4. İstemciyi sahte ajanla açar. Sunucu ve uygulama seçili gelir, dil Türkçedir.
 
 Pencere açılınca `.env` dosyasındaki `AYNA_ADMIN_USERNAME` ve `AYNA_ADMIN_PASSWORD` ile oturum açın. Oturum açma ekranı da gösterimin parçası olduğu için otomatik geçilmez.
@@ -80,7 +80,7 @@ Anlatılacak nokta: Arayüz, TestComplete'ten daha sade ve anlaşılır olacak �
 3. **Login** düğmesini seçin. Sağda AYNA'nın onu nasıl bulacağı ve nerede olduğu görünür. **Gelişmiş** bölümünde tüm UI Automation özellikleri vardır.
 4. Ağaçtan **Username** etiketini seçip **Depoya ekle** düğmesine basın. Ad olarak `login.userNameLabel` yazıp kaydedin.
 
-Dürüstçe söylenecek nokta: Mac'te gerçek ajan pencere okuyamadığı için burada sahte ajan çalışıyor. Ağaç, deneme uygulamasının Windows'ta alınmış gerçek yakalamasıdır. Bu yüzden kırmızı vurgu çerçevesi ekranda gerçek bir pencerenin üzerinde değil, sabit bir yerde belirir.
+Dürüstçe söylenecek nokta: Mac'te gerçek ajan pencere okuyamadığı için burada sahte ajan çalışıyor. Ağaç, deneme uygulamasının Windows'ta alınmış gerçek yakalamasıdır. Bu yüzden kırmızı vurgu çerçevesi ekranda gerçek bir pencerenin üzerinde değil, sabit bir yerde belirir. Ayrıntı için [Yakalama nasıl çalışıyor](#yakalama-nasıl-çalışıyor) bölümüne bakın.
 
 ### 4. Depo
 
@@ -100,6 +100,32 @@ Dürüstçe söylenecek nokta: Mac'te gerçek ajan pencere okuyamadığı için 
 ### 6. Kullanıcılar
 
 **Kullanıcılar** ekranında hesapları, rolleri ve CI için API anahtarlarını gösterin. Sunucu her isteği oturum açmış bir hesapla ilişkilendirir.
+
+## Yakalama nasıl çalışıyor
+
+**Hangi uygulama?** Listedeki **AYNA Trial - Login**, ekibin yazdığı tek ekranlık PySide6 giriş penceresidir: `eval/apps/trial/app.py` (#9). AYNA'nın ilk hedefi olarak kullanılıyor. Ağaçtaki 14 öge, bu pencerenin Hasan'ın Windows bilgisayarında UI Automation ile alınmış yakalamasıdır (`schemas/examples/snapshot/trial-login.json`, #12).
+
+Pencerenin kendisi Mac'te de açılır. Hoca görmek isterse bir kez kurun:
+
+```bash
+python3 -m venv /tmp/ayna-trial && /tmp/ayna-trial/bin/pip install PySide6
+```
+
+Sonra depo kökünde çalıştırın (kullanıcı adı ve parola `admin`):
+
+```bash
+/tmp/ayna-trial/bin/python eval/apps/trial/app.py
+```
+
+**Ne statik, ne dinamik?**
+
+| | Bu demo (Mac) | Gerçek kullanım (Windows) |
+|---|---|---|
+| Pencere listesi | Sahte ajan, sabit dosya (`client/dev/demo/windows.json`) | Gerçek ajan, açık pencerelerin hepsi (`listWindows`) |
+| Öge ağacı | Kayıtlı yakalama | Seçilen pencere o anda okunur (`snapshot`, #12) |
+| Konum ve boyut | Yakalamadaki sabit değerler | O anki gerçek değerler |
+
+Dinamik yakalamanın ajan kodu `main` dalında hazır ve Windows'ta çalışıyor: deneme penceresi 28–32 ms'de yakalandı. Eksik olan iki şey var: yeni Nesne Gözcüsü ekranı gerçek ajanla henüz Windows'ta denenmedi (#184, haftalık Windows oturumu), imleçle öge seçme ise henüz yapılmadı (#22). Mac'te dinamik yakalama planlanmıyor, çünkü UI Automation bir Windows özelliğidir ve birinci dönem hedefi Windows masaüstüdür.
 
 ## Bugüne kadar yapılanlar
 
@@ -146,4 +172,4 @@ Dürüstçe söylenecek nokta: Mac'te gerçek ajan pencere okuyamadığı için 
 
 ## Tekrar prova ederken
 
-`npm run demo` yalnızca eksik örnek veriyi ekler; sizin yaptığınız değişiklikleri geri almaz. Provada `login.loginButton` ögesini yeniden adlandırdıysanız, toplantıdan önce adını geri alın. Aksi halde komut aynı adla yeni bir öge daha ekler.
+`npm run demo` eksik örnek veriyi ekler ve iki örnek testi baştaki haline döndürür. Sizin açtığınız testlere ve ögelere dokunmaz. Provada `login.loginButton` ögesini yeniden adlandırdıysanız, komut bu adla yeni bir öge ekler; yeniden adlandırdığınız öge de listede kalır.
