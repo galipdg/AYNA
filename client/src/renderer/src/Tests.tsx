@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react'
 import type {
   Application,
   RepoObjectSummary,
@@ -27,6 +35,7 @@ import {
 } from '../../shared/history.ts'
 import { foldText } from '../../shared/tree.ts'
 import Page from './Page.tsx'
+import Resizer from './Resizer.tsx'
 import StepTable, { problemText } from './StepTable.tsx'
 import { formatDate, formatTime, strings, testErrorText } from './strings.ts'
 
@@ -43,6 +52,12 @@ type Objects =
  * in a codeless table on the right. Steps are checked against the step schema while they are
  * edited and saved as a whole.
  */
+/** The test list can be narrowed to give the steps more room. */
+const LIST_WIDTH = { initial: 220, min: 150, max: 420 }
+
+/** The last width chosen, kept while the app runs, as for the step table's columns. */
+let chosenListWidth: number = LIST_WIDTH.initial
+
 export default function Tests({
   app,
   active,
@@ -54,6 +69,7 @@ export default function Tests({
   onSessionEnded: () => void
 }) {
   const [list, setList] = useState<List>({ state: 'loading' })
+  const [listWidth, setListWidth] = useState(chosenListWidth)
   const [objects, setObjects] = useState<Objects>({ state: 'loading' })
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string>()
@@ -161,9 +177,14 @@ export default function Tests({
     </button>
   )
 
+  function resizeList(width: number) {
+    chosenListWidth = Math.round(Math.min(LIST_WIDTH.max, Math.max(LIST_WIDTH.min, width)))
+    setListWidth(chosenListWidth)
+  }
+
   return (
     <Page title={strings.nav.tests} help={strings.testsHelp(app.name)} actions={newTest}>
-      <div className="tests">
+      <div className="tests" style={{ '--test-list-width': `${listWidth}px` } as CSSProperties}>
         <section className="panel spy-panel" aria-label={strings.nav.tests}>
           {creating && (
             <form className="form" onSubmit={create}>
@@ -250,6 +271,16 @@ export default function Tests({
             </footer>
           )}
         </section>
+
+        <Resizer
+          className="pane-resizer"
+          label={strings.testsListResize}
+          width={listWidth}
+          initial={LIST_WIDTH.initial}
+          min={LIST_WIDTH.min}
+          max={LIST_WIDTH.max}
+          onResize={resizeList}
+        />
 
         <section className="panel spy-panel" aria-label={strings.stepsLabel}>
           {leaveTo && (

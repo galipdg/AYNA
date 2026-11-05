@@ -376,6 +376,7 @@ export const tr: Strings = {
   testsUndoHint: 'Adımlardaki son değişikliği geri alır (Ctrl+Z ya da ⌘Z)',
   testsRedo: 'Yinele',
   testsRedoHint: 'Geri alınan değişikliği yineler (Ctrl+Y ya da ⇧⌘Z)',
+  testsListResize: 'Test listesinin genişliği',
   testsUnsaved: 'Kaydedilmemiş değişiklikler',
   testsUpdated: (user: string, date: string) => `Son değiştiren: ${user}, ${date}`,
   testsLeaveConfirm: (name: string) =>

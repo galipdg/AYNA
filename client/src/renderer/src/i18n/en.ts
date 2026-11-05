@@ -398,6 +398,7 @@ export const en = {
   testsUndoHint: 'Take back the last change to the steps (Ctrl+Z or ⌘Z)',
   testsRedo: 'Redo',
   testsRedoHint: 'Bring the change back (Ctrl+Y or ⇧⌘Z)',
+  testsListResize: 'Width of the test list',
   testsUnsaved: 'Unsaved changes',
   testsUpdated: (user: string, date: string) => `Last changed by ${user}, ${date}`,
   testsLeaveConfirm: (name: string) => `${name} has unsaved changes. Leave without saving them?`,

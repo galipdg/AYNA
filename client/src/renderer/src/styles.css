@@ -1135,9 +1135,29 @@ ul.message {
 
 .tests {
   display: grid;
-  grid-template-columns: minmax(200px, min(21%, 300px)) minmax(480px, 1fr);
-  gap: 8px;
+  grid-template-columns: var(--test-list-width) 8px minmax(480px, 1fr);
   height: 100%;
+}
+
+.pane-resizer {
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pane-resizer::after {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  content: '';
+}
+
+.pane-resizer:hover::after,
+.pane-resizer:focus-visible::after {
+  background: var(--accent);
 }
 
 .test-editor {
@@ -1267,19 +1287,54 @@ ul.message {
   color: var(--danger);
 }
 
+.step-check-summary {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  font-weight: 400;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step-check-summary[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+/* A popover in the top layer, so the table's scroll area cannot cut it off. */
 .step-check {
+  position-area: bottom span-left;
+  position-try-fallbacks: flip-block;
+  width: 360px;
+  margin: 4px 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
+}
+
+.step-check:popover-open {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
 }
 
-/* A control that no longer fits moves to the next line instead of shrinking until it is unreadable. */
-.step-check select,
+.step-check select {
+  flex: 0 0 auto;
+  width: auto;
+}
+
 .step-check input {
-  flex: 1 1 96px;
+  flex: 1;
   width: auto;
   min-width: 0;
+}
+
+.step-check select:last-child {
+  flex: 1;
 }
 
 .step-timeout {
