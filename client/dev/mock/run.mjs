@@ -6,18 +6,18 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createInterface } from 'node:readline'
-import { delimiter, dirname, resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
+import { defaultSnapshot, fakeAgentEnv, python } from './fake-agent-env.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const python = process.platform === 'win32' ? 'python' : 'python3'
 
 const { values } = parseArgs({
   options: {
     port: { type: 'string', default: '8099' },
     windows: { type: 'string', default: resolve(here, 'windows.json') },
-    snapshot: { type: 'string', default: resolve(here, 'snapshot.json') },
+    snapshot: { type: 'string', default: defaultSnapshot },
     'no-uia': { type: 'boolean', default: false },
     'slow-snapshots': { type: 'boolean', default: false },
   },
@@ -59,12 +59,12 @@ const dev = spawn('npm', ['run', 'dev'], {
   shell: process.platform === 'win32',
   env: {
     ...process.env,
-    AYNA_AGENT_PYTHON: python,
-    PYTHONPATH: [here, process.env.PYTHONPATH].filter(Boolean).join(delimiter),
-    AYNA_MOCK_WINDOWS: resolve(values.windows),
-    AYNA_MOCK_SNAPSHOT: resolve(values.snapshot),
-    AYNA_MOCK_UIA: values['no-uia'] ? 'off' : 'on',
-    AYNA_MOCK_SNAPSHOT_TIMEOUT: values['slow-snapshots'] ? 'on' : 'off',
+    ...fakeAgentEnv({
+      windows: values.windows,
+      snapshot: values.snapshot,
+      uia: !values['no-uia'],
+      slowSnapshots: values['slow-snapshots'],
+    }),
   },
 })
 

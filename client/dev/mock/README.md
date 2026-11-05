@@ -12,3 +12,5 @@ Options, after `--`: `--port <n>` for the stub server, `--windows <file>` for an
 In the app, enter `http://127.0.0.1:8099` as the server address. Ctrl+C or closing the app stops all three processes.
 
 Once the server needs a login (#60), the stub server must answer the login calls too.
+
+`npm run demo` (`dev/demo/`) uses the same fake agent, but with the real server and sample data; `DEMO.md` at the repository root explains it. `fake-agent-env.mjs` is what the two share.
