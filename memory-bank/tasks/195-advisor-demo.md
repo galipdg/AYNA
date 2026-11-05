@@ -32,7 +32,7 @@
 - 2026-11-05 · agent · the same collision reproduced on a throwaway stack, then the fix: pass on that database with the failed run's partial state, on a repeat, on a fresh database and on its repeat; 5 objects, 2 tests, no duplicates each time.
 - 2026-11-05 · omer · same manual check again · screens fine, one table shift reported · the screenshot could not be read here (protected temp folder), so the shift is still open.
 - 2026-11-05 · omer · the table shift, screenshot received: at 1280 px the table needed sideways scrolling, so Step and Action were cut off to reach the row buttons. Fixed on `omer/196-step-undo`: no scrolling at 1280, 1366, 1440, 1728 and 2200 px, the page scrollbar is gone. A window below 1280 px scrolls the table (34 px at 1180). omer's look at the fix · pending.
-- 2026-11-05 · omer · rows 5 and 7 grew to two and three lines, which looked unbalanced, and he asked for a resizable test list. His screenshot was still from `aad8771`, before the table fit. Fixed: a check shows as a one-line summary and opens its controls in a popover; the test list drags between 150 and 420 px. omer's look · pending.
+- 2026-11-05 · omer · rows 5 and 7 grew to two and three lines, which looked unbalanced, and he asked for a resizable test list. His screenshot was still from `aad8771`, before the table fit. Fixed: a check shows as a one-line summary and opens its controls in a popover; the test list drags between 150 and 420 px. omer's look · pending: a pass was reported while the main folder was still on `aad8771`, without these changes.
 - 2026-11-05 · agent · `eval/apps/trial/app.py` on macOS with PySide6 6.12.0 · pass, platform `cocoa`, window opens · this showed the sample tests expected texts the app never shows; fixed.
 
 ## Open issues
