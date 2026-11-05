@@ -37,7 +37,7 @@
 - "Pick in Object Spy…" in the element menu and a searchable element menu (wireframe §6) are not built.
 - Changing the application in the top bar while a test has unsaved changes drops them without asking (Shell remounts Tests by app id).
 - Save is last-write-wins: two people saving the same test overwrite each other; a step deleted by someone else makes the next save fail with "Step … is not a step of this test" (shown as "Someone else changed this test…").
-- Running a test from the editor is #43 (Week 6), not #38; omer asked for it on 2026-11-05.
+- Running a test from the editor is #44 (AYNA-043, Week 6), not #38; omer asked for it on 2026-11-05.
 - Row menu "duplicate / insert above" (wireframe) not built; rows are added at the end.
 
 ## Handoff
