@@ -8,9 +8,9 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
-| Version | 0.2 — draft of sections 1–4 and 6 |
-| Date | 2026-10-31 |
-| Status | Sections 1–4 (#45) and 6 (#48) drafted. Section 5: #50. Final PDF: #53, due 7 Dec 2026 |
+| Version | 0.3 — draft of sections 1–7 and 9 |
+| Date | 2026-11-05 |
+| Status | Sections 1–4 (#45), 5 (#50), 6 (#48) and 7 (#53) drafted. Section 8 waits for the final RS (#41). Final PDF: #53, due 7 Dec 2026 |
 
 ## Document history
 
@@ -19,6 +19,7 @@
 | 0.1 | 2026-10-29 | Ömerfaruk Sarıbal | Skeleton; introduction, architecture, data design and interface design (#45) |
 | 0.1 | 2026-10-31 | Ömerfaruk Sarıbal | Status after #135, #151, #156, #158 merged; retrieval and AI errors settled (#155 review) |
 | 0.2 | 2026-10-31 | Ömerfaruk Sarıbal | Test design (#48) |
+| 0.3 | 2026-11-05 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12 and #60 merged, and PR #173, PR #174 |
 
 ---
 
@@ -105,11 +106,11 @@ AYNA has six run-time components. The table gives each one's responsibility; §2
 
 | Component | Responsibility | Technology | Code | Owner | Status |
 |---|---|---|---|---|---|
-| **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); agent process manager (#17, PR #154). Planned: the screens of #24, #30, #38, #44, #68, #75, #78 |
-| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UIA, win32 fallback) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping`; `listWindows` and `snapshot` in the contract, backed by UI Automation from #12 (#16, PR #135); healing scorer v0 (#49, PR #141). Planned: #12, #22, #23, #26, #40, #54, #73 |
+| **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); login, users and API tokens (#60, PR #179); agent process manager (#17, PR #154). Planned: the screens of #24, #30, #38, #44, #68, #75, #78 |
+| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UIA, win32 fallback) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping` (#16, PR #135); element descriptor (#11, PR #175); `listWindows` and `snapshot` on UI Automation (#12, PR #180); healing scorer v0 (#49, PR #141). Planned: #22, #23, #26, #40, #54, #73 |
 | **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | Planned: #61, #66 |
-| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160). Planned: #15, #25, #51, #59, #60, #74 |
-| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39). Planned: vector index (#58) |
+| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160); accounts, roles and API tokens (#60, PR #179). Planned: #15, #25, #51, #59, #74 |
+| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39), v0.2 (`V0003`, #60). Planned: vector index (#58) |
 | **AI service** | Turkish instruction + candidate objects → suggested steps with reasons. Saves nothing. Uses a local model server. | Python; Ollama or llama.cpp with a 7–8B quantised model | `ai/` | galip | **Built**: constrained generation (#37, PR #142), HTTP service (#71, PR #146). Planned: retrieval (#58), offline packaging (#82). Design: §5 |
 
 ```mermaid
@@ -268,8 +269,8 @@ No component connects outside the closed network at run time: no CDN, telemetry,
 |---|---|---|
 | Client ↔ agent | Agent listens on 127.0.0.1 only; every connection must carry the per-session token (≥ 16 characters) that the client creates and passes in `AYNA_AGENT_TOKEN`, never on the command line; the agent removes it from its environment (NFR-31) | **Built** (#16, #17) |
 | Renderer | Sandbox, context isolation, no Node integration, strict CSP, navigation limited to the entry page, IPC sender check | **Built** (#5, #17) |
-| Client ↔ server | Local accounts with roles admin and tester, passwords as bcrypt hashes; every REST and WebSocket request except login needs a session (NFR-32, FR-39). Every test edit, run and healing decision stores the acting user (FR-40) | Planned: #60 |
-| CI ↔ server | Revocable API token for a CI service account in `AYNA_SERVER_TOKEN` (answer to TBD-10, ADR *Healing proposal transport*; RS NFR-32) | Planned: #60, #61 |
+| Client ↔ server | Local accounts with roles admin and tester, passwords as bcrypt hashes; every REST and WebSocket request needs a session or API token, except login, the health check and the API docs (NFR-32, FR-39). Every test edit, run and healing decision stores the acting user (FR-40) | **Built** for REST and test edits (#60, PR #179). Planned: the WebSocket handshake and the user on a run (#44), on a healing decision (#74) |
+| CI ↔ server | Revocable API token for a CI service account in `AYNA_SERVER_TOKEN` (answer to TBD-10, ADR *Healing proposal transport*; RS NFR-32) | **Built** on the server (#60, PR #179). Planned: the CLI runner's side, #61 |
 | Server ↔ AI service | No authentication; the AI service is reachable only on the Compose network | Planned: #82 |
 | Test data | The AI service never logs the instruction text, which may hold passwords | **Built** (PR #146) |
 
@@ -351,9 +352,9 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 | Document | Schema | Produced by → consumed by | Status |
 |---|---|---|---|
 | Step document `{version, steps[]}` | `schemas/step.schema.json` | editor, AI service, recorder → server → agent | **Built**: v0.1 on `main` (#13); v0.2 adds grid rows (PR #150, proposed) |
-| Element descriptor | `schemas/element.schema.json` | agent → client, server | Planned: #11 |
-| Window snapshot | `schemas/snapshot.schema.json` | agent → server | Planned: #12 |
-| Healing proposal | `schemas/healing-proposal.schema.json` | agent → client or CLI runner → server | **Built**: v0.1 on `main` (#149, PR #151) |
+| Element descriptor | `schemas/element.schema.json` | agent → client, server | **Built**: v0.1 on `main` (#11, PR #175) |
+| Window snapshot | `schemas/snapshot.schema.json` | agent → server | **Built**: v0.1 on `main` (#12, PR #180) |
+| Healing proposal | `schemas/healing-proposal.schema.json` | agent → client or CLI runner → server | **Built**: v0.2 on `main` (#149, PR #174) |
 
 ---
 
@@ -387,7 +388,7 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 | Healing | list proposals, approve or reject (`/api/healing/proposals…`) | FR-31, FR-32 | Planned: #74 (shape in ADR *Healing proposal transport*) |
 | NL suggestions | suggest steps for an instruction; AI errors mapped to problems with `code` | FR-25 – FR-27 | Planned: #78 |
 | Change impact | changed objects and affected tests between two versions | FR-33 | Planned: #81 |
-| Accounts and tokens | login, users and roles, API tokens for CI | FR-39, FR-40 | Planned: #60 |
+| Accounts and tokens | login, logout, current user (`/api/auth`); admin only: users and roles, API tokens for CI (`/api/users`, `/api/tokens`) | FR-39, FR-40 | **Built** (#60, PR #179); the user on runs and healing decisions comes with #44, #74 |
 
 **Errors.** Every 4xx body is an RFC 9457 problem (`application/problem+json`): `status`, `title`, `detail` (the message for the user, naming the step, object, field or id, NFR-15) and `instance`. A validation 400 adds `errors: [{path, message}]` (at most 50, JSONPath into the body) and `errorCount`. `type` is `urn:ayna:error:<kind>` where a caller must tell two problems with one status apart (the CLI runner, #61), otherwise absent. One global handler writes them; each endpoint lists its statuses in `docs/api/openapi.yaml` (ADR *REST error body*, accepted; **Built** in #158, PR #160). The client reacts to the status code and shows `detail` (`client/src/main/apps.ts`).
 
@@ -817,9 +818,9 @@ This section has two parts. §6.1–§6.5 describe how AYNA itself is verified: 
 | System | A whole suite through the CLI runner on the sample app, as a user's CI would run it; a bug-injected build must make it fail | CLI runner + headless agent, JUnit XML | Nightly and on demand on a Windows runner | T | Planned: #61, #66, #67 |
 | Acceptance | The reference scenarios (SC-01 … in `docs/rs/scenarios.md`) built in the editor and replayed without manual fixes (NFR-26) | the product itself | Weekly Windows session; at gates G0, G2 | D | Planned: #28, #62, #70 |
 | Manual check | What a person must see: Spy overlay and hotkeys, 100 % and 150 % display scaling (NFR-20), status bar, screen layout. Measurements so far run at 125 % (hasan's machine), and every result names its scaling, because location similarity depends on it (#49, PR #166) | script in the shape of `AGENTS.md` §10 | macOS for layout; the weekly Windows session for the rest | D | In use (#17, #32); repeated checks move to `docs/manual-checks/` |
-| Non-functional | Timing (NFR-01 – NFR-13), load (NFR-07, NFR-08), closed network (NFR-29, NFR-30), installer (NFR-36), security boundaries (NFR-31, NFR-32) | timing harnesses in `eval/`, load test (#152), air-gapped run (#85), clean-VM install (#84) | Team hardware, a clean offline Windows VM | T, A | Planned per NFR; agent token refusal **built** (#16) |
+| Non-functional | Timing (NFR-01 – NFR-13), load (NFR-07, NFR-08), closed network (NFR-29, NFR-30), installer (NFR-36), security boundaries (NFR-31, NFR-32) | timing harnesses in `eval/`, load test (#152), air-gapped run (#85), clean-VM install (#84) | Team hardware, a clean offline Windows VM | T, A | Planned per NFR; security boundaries **built**: agent token refusal (#16), server request refusal (#60) |
 
-Security boundaries are tested at the unit and integration levels where they are built: the agent refuses a connection without the session token (#16), the renderer's Content-Security-Policy and navigation rules have unit tests (`client/src/main/__tests__/security.test.ts`), and the AI service's model client refuses non-loopback hosts (PR #142; it still trusts the name `localhost` without resolving it, an open point in `memory-bank/tasks/71-nl-service.md`).
+Security boundaries are tested at the unit and integration levels where they are built: the agent refuses a connection without the session token (#16), the renderer's Content-Security-Policy and navigation rules have unit tests (`client/src/main/__tests__/security.test.ts`), the AI service's model client refuses non-loopback hosts, and a name such as `localhost` unless every address it resolves to is loopback (PR #142, PR #173), and the server answers 401 to a request without a valid token (`AuthIntegrationTest`, #60).
 
 ### 6.3 Environments
 
