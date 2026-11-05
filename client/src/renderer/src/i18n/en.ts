@@ -419,6 +419,8 @@ export const en = {
   stepsEmpty: 'No steps yet. Add the first one.',
   stepsAdd: 'Add step',
   stepsDrag: 'Drag to move the step, or use Alt+↑ and Alt+↓',
+  stepsResize: (column: string) => `Width of the ${column} column`,
+  stepsResizeHint: 'Drag, or use ← and →, to change the width. Double-click for the default.',
   stepsMoveUp: 'Move up',
   stepsMoveDown: 'Move down',
   stepsRemove: 'Delete step',

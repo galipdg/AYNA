@@ -1,4 +1,4 @@
-import { useState, type DragEvent, type KeyboardEvent } from 'react'
+import { useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
 import type { RepoObjectSummary } from '../../shared/api.ts'
 import {
   CHECK_PROPERTIES,
@@ -28,6 +28,16 @@ function byScreen(objects: RepoObjectSummary[]): [string, RepoObjectSummary[]][]
   return [...groups]
 }
 
+/** The columns a user can widen or narrow: default, smallest and largest width in px. */
+const COLUMNS = {
+  action: { initial: 150, min: 110, max: 280 },
+  element: { initial: 240, min: 140, max: 520 },
+} as const
+type Column = keyof typeof COLUMNS
+
+/** The last widths chosen, kept while the app runs so another test opens with them. */
+let chosenWidths: Record<Column, number> = { action: 150, element: 240 }
+
 export function problemText(problem: StepProblem): string {
   return problem.message ? serverText(problem.message) : strings.stepsProblems[problem.code]
 }
@@ -52,8 +62,15 @@ export default function StepTable({
   const [dragFrom, setDragFrom] = useState<number>()
   const [dropAt, setDropAt] = useState<number>()
   const [focusKey, setFocusKey] = useState<string>()
+  const [widths, setWidths] = useState(chosenWidths)
   const groups = byScreen(objects ?? [])
   const known = new Set((objects ?? []).map((object) => object.name))
+
+  function resize(column: Column, width: number) {
+    const { min, max } = COLUMNS[column]
+    chosenWidths = { ...widths, [column]: Math.round(Math.min(max, Math.max(min, width))) }
+    setWidths(chosenWidths)
+  }
 
   function update(index: number, change: Partial<DraftStep>) {
     onChange(drafts.map((draft, i) => (i === index ? { ...draft, ...change } : draft)))
@@ -111,14 +128,39 @@ export default function StepTable({
   return (
     <>
       <table className="steps" aria-label={strings.stepsLabel}>
+        <colgroup>
+          <col className="col-handle" />
+          <col className="col-number" />
+          <col style={{ width: widths.action }} />
+          <col style={{ width: widths.element }} />
+          <col className="col-value" />
+          <col className="col-timeout" />
+          <col className="col-actions" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">
               <span className="visually-hidden">{strings.stepsDrag}</span>
             </th>
             <th scope="col">{strings.stepsHeaderStep}</th>
-            <th scope="col">{strings.stepsHeaderAction}</th>
-            <th scope="col">{strings.stepsHeaderElement}</th>
+            <th scope="col" className="resizable">
+              {strings.stepsHeaderAction}
+              <ColumnResizer
+                label={strings.stepsResize(strings.stepsHeaderAction)}
+                width={widths.action}
+                {...COLUMNS.action}
+                onResize={(width) => resize('action', width)}
+              />
+            </th>
+            <th scope="col" className="resizable">
+              {strings.stepsHeaderElement}
+              <ColumnResizer
+                label={strings.stepsResize(strings.stepsHeaderElement)}
+                width={widths.element}
+                {...COLUMNS.element}
+                onResize={(width) => resize('element', width)}
+              />
+            </th>
             <th scope="col">{strings.stepsHeaderValue}</th>
             <th scope="col">{strings.stepsHeaderTimeout}</th>
             <th scope="col">
@@ -300,6 +342,59 @@ export default function StepTable({
         + {strings.stepsAdd}
       </button>
     </>
+  )
+}
+
+/**
+ * A handle on a header's right edge: drag it, or focus it and press ← / →, to change the
+ * column's width; a double click brings the default back.
+ */
+function ColumnResizer({
+  label,
+  width,
+  initial,
+  min,
+  max,
+  onResize,
+}: {
+  label: string
+  width: number
+  initial: number
+  min: number
+  max: number
+  onResize: (width: number) => void
+}) {
+  const start = useRef<{ x: number; width: number }>(undefined)
+  const stop = () => (start.current = undefined)
+  return (
+    <div
+      className="column-resizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={width}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      title={strings.stepsResizeHint}
+      tabIndex={0}
+      onPointerDown={(event) => {
+        event.preventDefault()
+        event.currentTarget.setPointerCapture(event.pointerId)
+        start.current = { x: event.clientX, width }
+      }}
+      onPointerMove={(event) => {
+        if (start.current) onResize(start.current.width + event.clientX - start.current.x)
+      }}
+      onPointerUp={stop}
+      onPointerCancel={stop}
+      onDoubleClick={() => onResize(initial)}
+      onKeyDown={(event) => {
+        const step = { ArrowLeft: -16, ArrowRight: 16 }[event.key]
+        if (step === undefined) return
+        event.preventDefault()
+        onResize(width + step)
+      }}
+    />
   )
 }
 

@@ -398,6 +398,9 @@ export const tr: Strings = {
   stepsEmpty: 'Henüz adım yok. İlk adımı ekleyin.',
   stepsAdd: 'Adım ekle',
   stepsDrag: 'Adımı taşımak için sürükleyin ya da Alt+↑ ve Alt+↓ kullanın',
+  stepsResize: (column: string) => `${column} sütununun genişliği`,
+  stepsResizeHint:
+    'Genişliği değiştirmek için sürükleyin ya da ← ve → kullanın. Çift tıklama varsayılana döndürür.',
   stepsMoveUp: 'Yukarı taşı',
   stepsMoveDown: 'Aşağı taşı',
   stepsRemove: 'Adımı sil',

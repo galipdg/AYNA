@@ -1154,7 +1154,57 @@ ul.message {
 
 .steps {
   width: 100%;
+  /* Fixed layout: the column widths come from <colgroup>, not from the longest cell. */
+  min-width: 860px;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.steps .col-handle {
+  width: 28px;
+}
+
+.steps .col-number {
+  width: 56px;
+}
+
+.steps .col-timeout {
+  width: 150px;
+}
+
+.steps .col-actions {
+  width: 112px;
+}
+
+.steps th.resizable {
+  position: relative;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 1;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.column-resizer::after {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 3px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border);
+  content: '';
+}
+
+.column-resizer:hover::after,
+.column-resizer:focus-visible::after {
+  background: var(--accent);
 }
 
 .steps thead th {
@@ -1225,6 +1275,7 @@ ul.message {
 }
 
 .step-check select {
+  flex: 0 1 auto;
   width: auto;
 }
 
@@ -1232,7 +1283,6 @@ ul.message {
   display: flex;
   align-items: center;
   gap: 4px;
-  width: 120px;
 }
 
 .step-actions {
