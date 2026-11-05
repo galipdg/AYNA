@@ -23,7 +23,8 @@
 - [x] End-to-end run on a throwaway stack (below)
 - [x] `DEMO.md`, link in `README.md`
 - [x] omer's manual check in the main folder, against the real `.env` and `ayna` stack
-- Next step: push and one PR for #195 and #196 on `omer/38-step-editor`, and the line in `client/AGENTS.md` (ask first, AGENTS §7).
+- [x] One PR for #195 and #196 from `omer/196-step-undo`, base `omer/38-step-editor`; line in `client/AGENTS.md` (omer's OK 2026-11-05)
+- Next step: reviews. Do not merge into the base; after #192 reaches `main`, retarget to `main`, merging `origin/main` in. The team reads `DEMO.md` only after the stack merges.
 
 ## Manual checks
 - 2026-11-05 · agent · real Electron over CDP on a throwaway Compose project · pass: ready in 18 s with cached layers; login, Spy tree, property panel, live "Depoya ekle" on version 1.1 (6 objects), Repository counts and details, Tests with 7 and 4 steps, language switch. Second run through `npm run demo --no-build`: ready in 2 s, no duplicates, clean login. Failure messages checked: Docker missing, Docker not running, wrong password, no admin set. Evidence: screenshots in this session only.

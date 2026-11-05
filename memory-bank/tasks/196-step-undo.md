@@ -18,7 +18,8 @@
 - [x] Editor wiring, buttons, en/tr texts
 - [x] Real Electron with real key events, on a throwaway stack: 27 of 27
 - [x] omer's check of a physical ⌘Z
-- Next step: push and PR, with #195 (ask first).
+- [x] PR with #195 (see `tasks/195-advisor-demo.md`)
+- Next step: reviews.
 
 ## Manual checks
 - 2026-11-05 · agent · Electron over CDP, keys sent with `Input.dispatchKeyEvent` · pass 27/27: Ctrl+Z, ⌘Z, Ctrl+Y, ⇧⌘Z, Ctrl+Shift+Z and the buttons; focus on `body` after a delete; undo back to saved clears the mark; typing as one change; reorder; action change; test search and other places untouched; undo after save and saving the restored step; a new history per test.
