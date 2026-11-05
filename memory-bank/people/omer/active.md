@@ -3,12 +3,12 @@
 Only omer's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-11-05 (eleventh session)
-- Current issue: **#44**, server half done on `omer/44-run-api` (from `main`, not stacked), committed, **not pushed**, no PR yet. ADR `2026-11-05-runs-api-and-live-updates` is Proposed. Task note: `tasks/44-run-from-editor.md`. Client half waits for #38 on `main` and #40 (hasan; #26 under it has no branch).
+- Current issue: **#44**, server half done on `omer/44-run-api` (from `main`, not stacked): **PR #193** (`Part of #44`), reviewers galip and hasan, opened 2026-11-05. ADR `2026-11-05-runs-api-and-live-updates` is Proposed. Task note: `tasks/44-run-from-editor.md`. Client half waits for #38 on `main` and #40 (hasan; #26 under it has no branch).
 - **#38** (step editor): PR #192, CI 5/5, manual check passed. After #191 merges, retarget #192 to `main` (merge `origin/main` in, never rebase).
 - **#30** (Repository view): PR #191, reviewers galip and hasan; manual check passed 2026-11-04; Windows look at the weekly session.
 - Merging: every PR of the stack is BLOCKED (`protect-main`: one approving review, threads resolved, squash only; Copilot reviews fail on quota; omer has no admin right). Ask omer before each merge. Do not merge #192 into `omer/30-repo-view`; merge #191 first, then #192, each only after its review and a yes from omer for that PR.
 - #185: PR #190 still waits for galip's/hasan's wording review; ADR `2026-11-03-client-ui-language` stays Proposed until then. CI 5/5 (a flaky `ai` test was re-run; note in galip's inbox and on #190).
-- Next step: on omer's OK, `git fetch`, merge `origin/main` if it moved, push `omer/44-run-api` and open the PR (`Part of #44`, reviewers galip and hasan). Then check reviews on the stack.
+- Next step: check CI and reviews on #193 and on the stack (#182 → #192). After the stack merges, regenerate `docs/api/openapi.yaml` on whichever of #193 or the stack is second. The #44 client half starts when #38 is on `main` and #40 is done.
 - G0 (#28, 9 Nov) at risk: #24 and #25 wait for review, #169 (#21) has conflicts, #26 has no branch.
 - #38 open issues worth new issues: Import/Export buttons, searchable element menu + "Pick in Object Spy…", app switch drops unsaved steps, row duplicate/insert above (task note).
 - How to see it: server from `docker compose up`; in `client/`: `AYNA_AGENT_PYTHON=python3 PYTHONPATH=$PWD/dev/mock AYNA_MOCK_WINDOWS=$PWD/dev/mock/windows.json AYNA_MOCK_SNAPSHOT=$PWD/dev/mock/snapshot.json AYNA_MOCK_UIA=on npx electron-vite dev`. Close older dev instances first (see `learnings.md`, 2026-11-03 HMR).

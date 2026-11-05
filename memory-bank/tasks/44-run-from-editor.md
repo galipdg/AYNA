@@ -29,9 +29,9 @@ Acceptance criteria against the halves:
 - [x] REST (`runs/RunController`, `RunService`), test delete removes runs; `RunIntegrationTest`
 - [x] `/ws/runs` (`RunEvents`, `RunEventsConfig`), 60 s token re-check; `RunEventsIntegrationTest` (real port, real client)
 - [x] `docs/graph-model.md` v0.3, SDD rows, OpenAPI regenerated; 86 server tests
-- [ ] Push and PR `Part of #44`, reviewers galip and hasan (ask omer first)
+- [x] PR #193 (`Part of #44`), reviewers galip and hasan, 2026-11-05
 - [ ] Client half: Run panel, outbox, `runSteps` (needs #38 on `main` and #40)
-- Next step: on omer's OK, `git fetch`, merge `origin/main` if it moved, push `omer/44-run-api`, open the PR.
+- Next step: reviews and CI on #193. Client half when #38 is on `main` and #40 is done.
 
 ## Manual checks
 - 2026-11-05 · agent · real Docker image on a fresh volume, Node's WebSocket as in `client/src/main/agent.ts` · pass, 15/15: bad or missing token refused, no `Origin` header needed, all three events reach the watcher, repeat not broadcast, 409 as a problem, step to watcher 69 ms (NFR-06: 1 s), logout closes with 1008 after 58.7 s through the real scheduler · evidence: run log in this session; the first run's one failure was the smoke script's stale waiter, not the server.
