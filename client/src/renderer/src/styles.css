@@ -1270,13 +1270,17 @@ ul.message {
 
 .step-check {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
 }
 
-.step-check select {
-  flex: 0 1 auto;
+/* A control that no longer fits moves to the next line instead of shrinking until it is unreadable. */
+.step-check select,
+.step-check input {
+  flex: 1 1 96px;
   width: auto;
+  min-width: 0;
 }
 
 .step-timeout {
