@@ -4,6 +4,8 @@
 
 Team: Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya
 
+**Demo:** [`DEMO.md`](DEMO.md) (Turkish) starts the client with one command and walks through what is built so far.
+
 ## Repository layout
 
 | Path | What |

@@ -186,3 +186,9 @@ Append-only. One entry per session, newest at the bottom:
 - API smoke against the real server passed; omer's manual check found truncated Action/Element columns → fixed layout + resizable columns (`3d532a1`); re-check passed 2026-11-05.
 - Pushed `omer/30-repo-view` (session-notes commit) and `omer/38-step-editor`; PR #192 (base `omer/30-repo-view`), CI 5/5. Not merged: all stack PRs need an approving review.
 - Next: reviews of the stack; next issue (#44 waits for #40).
+
+## 2026-11-05 (eleventh session, evening) · #169, #170, #195
+- Merged #169 at omer's request after syncing hasan's branch; #21 closed. #170 synced, blocked by a race in galip's `_send` (9 of 1 500 on `main`, 0 with a tested fix; in galip's inbox).
+- #195 for the advisor: `npm run demo` starts Docker, seeds through the API and opens the client; `DEMO.md` in Turkish. Tested end to end on a throwaway stack over CDP.
+- The run found unreadable check steps in the editor (35 px controls): `.step-check` now wraps. Also corrected two wrong steps in the Windows check on #38.
+- Next: omer's manual check, then push and PR.

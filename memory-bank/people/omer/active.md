@@ -2,12 +2,17 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-05 (tenth session)
-- Current issue: none in progress. **#38** (codeless step editor) done on `omer/38-step-editor` (stacked on `omer/30-repo-view`): **PR #192**, reviewers galip and hasan, CI 5/5; omer's manual check passed 2026-11-05. Task note: `tasks/38-step-editor.md`. After #191 merges, retarget #192 to `main` (merge `origin/main` in, never rebase).
+- Last update: 2026-11-05 (eleventh session, evening)
+- Current issue: **#195** (advisor demo) on `omer/195-advisor-demo`, stacked on `omer/38-step-editor`, not pushed. `npm run demo` and `DEMO.md` are done and tested on a throwaway stack; omer's manual check in the main folder is next. Task note: `tasks/195-advisor-demo.md`.
+- **#44**, server half: PR #193 (`Part of #44`), reviewers galip and hasan. Client half waits for #38 on `main` and #40 (#26 under it has no branch).
+- **#38** (step editor): PR #192, CI 5/5, manual check passed. After #191 merges, retarget #192 to `main` (merge `origin/main` in, never rebase).
+- Windows check for #38 and #30 posted on #38 (2026-11-05), `needs-windows-test` added; run #184's check first. At the next sync of `omer/38-step-editor`, add "pending Windows session" to `tasks/38-step-editor.md` and `tasks/30-repository-view.md`. #24 and #25 are covered by #184's check.
+- **#53**: first PR (SDD §5, §7, stale rows) runs in its own session on `omer/53-sdd-final`; §8 and the PDF wait for the final RS (#41).
 - **#30** (Repository view): PR #191, reviewers galip and hasan; manual check passed 2026-11-04; Windows look at the weekly session.
-- Merging: omer allowed merging "if everything is OK" (2026-11-05), but every PR of the stack is BLOCKED (branch protection needs an approving review; Copilot reviews fail on quota). Do not merge #192 into `omer/30-repo-view`; merge #191 first, then #192, each only after its review and a yes from omer for that PR.
+- Merging: every PR of the stack is BLOCKED (`protect-main`: one approving review, threads resolved, squash only; Copilot reviews fail on quota; omer has no admin right). Ask omer before each merge. Do not merge #192 into `omer/30-repo-view`; merge #191 first, then #192, each only after its review and a yes from omer for that PR.
 - #185: PR #190 still waits for galip's/hasan's wording review; ADR `2026-11-03-client-ui-language` stays Proposed until then. CI 5/5 (a flaky `ai` test was re-run; note in galip's inbox and on #190).
-- Next step: check reviews on the stack (#182 → #192); then the next issue. #44 (run from the editor, Week 6) needs #38 and #40 (hasan's playback v1, still open) — check #40 before proposing it; otherwise take the earliest open Week 5/6 issue. Ask omer first.
+- Next step: omer's manual check of `npm run demo`; then push and PR for #195 (ask first, also for one line in `client/AGENTS.md`). Then reviews on #193, #194 and the stack.
+- G0 (#28, 9 Nov) at risk: #24 and #25 wait for review, #26 has no branch. #169 merged 2026-11-05 at omer's request (`ede430e`), #21 closed, so D1 is done. #170 synced with `main` on hasan's branch (`ca22253`), approvals kept. It failed the `ai` job three times on a race in galip's `_send` (9 of 1 500 on `main`, 0 of 1 500 with the log line moved before the response; verified fix in galip's inbox). omer's yes for #170 still stands if CI turns green; merge `origin/main` into it after the fix lands. #186–#191 will show a `learnings.md` conflict that `git merge origin/main` resolves.
 - #38 open issues worth new issues: Import/Export buttons, searchable element menu + "Pick in Object Spy…", app switch drops unsaved steps, row duplicate/insert above (task note).
 - How to see it: server from `docker compose up`; in `client/`: `AYNA_AGENT_PYTHON=python3 PYTHONPATH=$PWD/dev/mock AYNA_MOCK_WINDOWS=$PWD/dev/mock/windows.json AYNA_MOCK_SNAPSHOT=$PWD/dev/mock/snapshot.json AYNA_MOCK_UIA=on npx electron-vite dev`. Close older dev instances first (see `learnings.md`, 2026-11-03 HMR).
 - #25 done on `omer/25-repo-objects`: PR #187 (base main, carries #15, #17, #24). Server `POST /api/apps/{appId}/repo-objects`, client version bar + simplified form; both manual checks passed. Windows check with a real pilot app still pending (weekly session).
