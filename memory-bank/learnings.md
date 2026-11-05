@@ -76,6 +76,20 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
   thawed. The cost is one leaked daemon thread per timeout, which is why the backend counts them
   and logs the count at shutdown.
 - 2026-11-01 · hasan · #71 #16 #17 · **On Windows a TCP connect to a closed port on 127.0.0.1 can time out instead of being refused**, so "the service is not running" arrives as a *timeout*, not as "connection refused". Measured twice in a row on the project machine (Windows 11 26300, default Defender Firewall): `socket.connect` and `urllib.request.urlopen` to a port nobody listens on both raised `TimeoutError` after the full 2 s, where macOS/Linux raise `ECONNREFUSED` in microseconds — the SYN is dropped, not answered with RST. It is not deterministic: in one run of the ai suite the same free port was refused for one call and dropped for the next. Why it matters beyond a test: code that distinguishes "down" from "slow" by which exception fired gets the answer wrong on our deployment platform. In the AI service (#71) `ModelTimeout` maps to HTTP 504 `timeout` while `cannot reach` maps to 503 `server_error`, and `ai/API.md` tells the client to retry on 504 but to disable the panel on 503 — so a model server that is simply not running can tell the user to retry, after the whole request timeout has elapsed. The same shape is in the agent RPC handshake (#16/#135) and the client's agent process manager (#17). Rule: decide "unreachable" by whether the *connection* came up (a short `create_connection` probe, or a connect timeout separate from the read timeout), never by the exception type alone, and never let a liveness check inherit a 30 s request timeout.
+
+## 2026-11-01 — a Qt AutomationId is not unique inside an item view
+
+Qt builds an AutomationId from the `objectName` chain, but an item view's children (table rows
+and cells, list items, tree items) have no `objectName` of their own, so they inherit their
+**container's** id verbatim. Measured two ways: each of KeePassXC's four `QListWidget`
+ListItems carries its `List` parent's AutomationId exactly (`eval/spikes/uia-dumps/keepassxc.json`,
+#6), and #150 measured the same for every cell of a Qt table.
+
+Consequences, because this bites in three places: a "no duplicated AutomationId" test on the
+sample app (#33) would fail on its own results grid, so it must exclude ListItem, DataItem and
+TreeItem; the Spy (#24) and the element descriptor (#11) must not present an AutomationId as a
+unique identifier inside an item view; and items are addressed by Name, or by row and cell from
+step schema v0.2. Written into ADR `2026-10-31-pilot-apps-and-sample-app-technology` (#21).
 - 2026-11-01 · omer · git · **A branch stacked on a PR that was squash-merged conflicts with `main` everywhere the base PR touched** (add/add on every new file), because `main` has the base PR's content but not its commits. Do not resolve by hand and do not merge the base branch's tip if it carries a revert. Find the last commit of the base branch your branch contains (or the merge commit where both histories meet, e.g. `acce05c` for #60), then `git merge origin/main`, `T=$(git merge-tree --write-tree --merge-base=<that commit> <branch> origin/main | head -1)`, `git restore --source=$T --staged --worktree :/`, fix only the remaining real conflicts, commit. Check: `git diff --name-only <that commit> <branch>` and `git diff --cached --name-only origin/main` list the same files.
 - 2026-11-01 · #12 · **`Path.read_text(newline=...)` is Python 3.13 only; `write_text(newline=...)`
   is 3.10.** The asymmetry is easy to miss and both modules declare `requires-python = ">=3.11"`.
