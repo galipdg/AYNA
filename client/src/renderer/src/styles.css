@@ -1135,7 +1135,7 @@ ul.message {
 
 .tests {
   display: grid;
-  grid-template-columns: minmax(220px, 300px) minmax(480px, 1fr);
+  grid-template-columns: minmax(200px, min(21%, 300px)) minmax(480px, 1fr);
   gap: 8px;
   height: 100%;
 }
@@ -1155,25 +1155,24 @@ ul.message {
 .steps {
   width: 100%;
   /* Fixed layout: the column widths come from <colgroup>, not from the longest cell. */
-  min-width: 860px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
 .steps .col-handle {
-  width: 28px;
+  width: 20px;
 }
 
 .steps .col-number {
-  width: 56px;
+  width: 44px;
 }
 
 .steps .col-timeout {
-  width: 150px;
+  width: 120px;
 }
 
 .steps .col-actions {
-  width: 112px;
+  width: 96px;
 }
 
 .steps th.resizable {

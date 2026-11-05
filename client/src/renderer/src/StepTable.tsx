@@ -33,13 +33,23 @@ const TYPED_FIELDS = ['value', 'expectedText', 'timeout'] as const
 
 /** The columns a user can widen or narrow: default, smallest and largest width in px. */
 const COLUMNS = {
-  action: { initial: 150, min: 110, max: 280 },
+  action: { initial: 124, min: 100, max: 280 },
   element: { initial: 240, min: 140, max: 520 },
 } as const
 type Column = keyof typeof COLUMNS
 
 /** The last widths chosen, kept while the app runs so another test opens with them. */
-let chosenWidths: Record<Column, number> = { action: 150, element: 240 }
+let chosenWidths: Record<Column, number> = {
+  action: COLUMNS.action.initial,
+  element: COLUMNS.element.initial,
+}
+
+/**
+ * The handle, number, wait and row-button columns, as in `styles.css`, plus the least the value
+ * column can work with. The table fits the default window; widening a column beyond that
+ * makes it scroll instead of squeezing the values.
+ */
+const OTHER_COLUMNS_WIDTH = 20 + 44 + 120 + 96 + 96
 
 export function problemText(problem: StepProblem): string {
   return problem.message ? serverText(problem.message) : strings.stepsProblems[problem.code]
@@ -135,7 +145,11 @@ export default function StepTable({
 
   return (
     <>
-      <table className="steps" aria-label={strings.stepsLabel}>
+      <table
+        className="steps"
+        aria-label={strings.stepsLabel}
+        style={{ minWidth: OTHER_COLUMNS_WIDTH + widths.action + widths.element }}
+      >
         <colgroup>
           <col className="col-handle" />
           <col className="col-number" />
