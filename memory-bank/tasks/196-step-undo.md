@@ -24,7 +24,7 @@
 - 2026-11-05 · agent · Electron over CDP, keys sent with `Input.dispatchKeyEvent` · pass 27/27: Ctrl+Z, ⌘Z, Ctrl+Y, ⇧⌘Z, Ctrl+Shift+Z and the buttons; focus on `body` after a delete; undo back to saved clears the mark; typing as one change; reorder; action change; test search and other places untouched; undo after save and saving the restored step; a new history per test.
 - A mutation run without the id fix was inconclusive: the script's login step typed into a step field, so its failures say nothing about the fix.
 - CDP goes straight to the renderer, so it does not cover the macOS menu's own Edit > Undo path.
-- 2026-11-05 · omer · physical ⌘Z · pending. A pass was reported, but the main folder was still on `ee6c333` with no undo code, so the check has not run on this feature.
+- 2026-11-05 · omer · physical ⌘Z · pending. An earlier pass was reported while the main folder was on `ee6c333`, with no undo code. A later screenshot shows the buttons with Redo enabled, so the code now runs there; omer has yet to confirm the keys.
 
 ## Open issues
 - A `Wait` row's first input is the timeout; nothing to do here, but scripts that fill "the first input" hit it.

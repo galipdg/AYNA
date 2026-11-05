@@ -34,7 +34,6 @@ Pencere açılınca `.env` dosyasındaki `AYNA_ADMIN_USERNAME` ve `AYNA_ADMIN_PA
 **Toplantıdan önce:**
 
 - Komutu bir kez çalıştırın. İlk derleme birkaç dakika sürebilir; sonraki açılışlar saniyeler içinde hazır olur.
-- Pencereyi tam ekran yapın. Test tablosu dar pencerede yana kayar.
 - Başka bir `npm run dev` açıksa kapatın.
 
 Uygulamayı kapatınca Docker çalışmaya devam eder. Durdurmak için:

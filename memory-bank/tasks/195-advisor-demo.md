@@ -31,10 +31,11 @@
 - 2026-11-05 · omer · manual check in the main folder · **fail** at the seed: 409, the fixture's snapshot id was already imported into another version on the real volume (the 2026-11-03 "Repo View Check" data). The `.env` login and Docker steps passed. My test had only used fresh volumes. Fixed: the sample capture gets an id derived from its version.
 - 2026-11-05 · agent · the same collision reproduced on a throwaway stack, then the fix: pass on that database with the failed run's partial state, on a repeat, on a fresh database and on its repeat; 5 objects, 2 tests, no duplicates each time.
 - 2026-11-05 · omer · same manual check again · screens fine, one table shift reported · the screenshot could not be read here (protected temp folder), so the shift is still open.
+- 2026-11-05 · omer · the table shift, screenshot received: at 1280 px the table needed sideways scrolling, so Step and Action were cut off to reach the row buttons. Fixed on `omer/196-step-undo`: no scrolling at 1280, 1366, 1440, 1728 and 2200 px, the page scrollbar is gone. A window below 1280 px scrolls the table (34 px at 1180). omer's look at the fix · pending.
 - 2026-11-05 · agent · `eval/apps/trial/app.py` on macOS with PySide6 6.12.0 · pass, platform `cocoa`, window opens · this showed the sample tests expected texts the app never shows; fixed.
 
 ## Open issues
-- At the default 1280 px window the step table still overflows by 138 px and the page by 8 px, so the row buttons need scrolling. `DEMO.md` says to use full screen; worth a follow-up on #38.
+- The active item in the side menu draws 2 px wider than the menu (`NAV.nav` scroll width 202 of 200). Cosmetic, not from this work.
 - omer asked for Ctrl+Z in the step editor; not built yet.
 - `DEMO.md` will go stale as the stack merges; it is for this meeting, and #91 is the real guide.
 
