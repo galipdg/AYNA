@@ -17,13 +17,14 @@
 - [x] `shared/history.ts`, `withStoredIds`, 14 new tests (189 client tests)
 - [x] Editor wiring, buttons, en/tr texts
 - [x] Real Electron with real key events, on a throwaway stack: 27 of 27
-- [ ] omer's check of a physical ⌘Z
-- Next step: omer presses ⌘Z in the real app; then push and PR, with #195.
+- [ ] omer's check of a physical ⌘Z, in a folder that has this branch
+- Next step: omer merges this branch into the main folder and repeats the check; then push and PR, with #195.
 
 ## Manual checks
 - 2026-11-05 · agent · Electron over CDP, keys sent with `Input.dispatchKeyEvent` · pass 27/27: Ctrl+Z, ⌘Z, Ctrl+Y, ⇧⌘Z, Ctrl+Shift+Z and the buttons; focus on `body` after a delete; undo back to saved clears the mark; typing as one change; reorder; action change; test search and other places untouched; undo after save and saving the restored step; a new history per test.
 - A mutation run without the id fix was inconclusive: the script's login step typed into a step field, so its failures say nothing about the fix.
-- CDP goes straight to the renderer, so the macOS menu's own Edit > Undo path is not covered. omer · physical ⌘Z · pending.
+- CDP goes straight to the renderer, so it does not cover the macOS menu's own Edit > Undo path.
+- 2026-11-05 · omer · physical ⌘Z · pending. A pass was reported, but the main folder was still on `ee6c333` with no undo code, so the check has not run on this feature.
 
 ## Open issues
 - A `Wait` row's first input is the timeout; nothing to do here, but scripts that fill "the first input" hit it.
