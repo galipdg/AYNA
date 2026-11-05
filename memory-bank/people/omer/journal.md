@@ -115,3 +115,9 @@ Append-only. One entry per session, newest at the bottom:
 - CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
+
+## 2026-11-05 · #53 SDD final (first PR)
+- Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
+- galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
+- Open: removal of `SDD-ai.md`, the `User` row's conflict with #193, push and PR; all wait for omer. Task note lists the follow-ups.
+- Next: PR, then §8 and the PDF after the final RS (#41).

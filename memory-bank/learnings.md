@@ -84,3 +84,4 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
   is what "the same file" actually means. **General point: the only Python on this Windows machine
   is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
   is not evidence that the version floor holds.**
+- 2026-11-05 · omer · git · `git grep -E '\bfoo'` on macOS finds nothing and reports no error, because the system regex library has no `\b`: a search for references can look clean when it is not → use `git grep -P`, or spell out the boundary as `(^|[^A-Za-z0-9-])foo`. Also, git treats a row edited directly above a row another branch inserts as a conflict, even with no shared line: test with `git merge-tree --write-tree --name-only` before promising two PRs will not conflict.
