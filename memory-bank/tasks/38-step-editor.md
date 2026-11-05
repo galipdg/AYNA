@@ -18,6 +18,7 @@
 - 2026-11-04 — "Wait up to" is typed in seconds (decimal point or comma, ms precision) and stored as `timeoutMs`; empty = the run's default.
 - 2026-11-04 — New row defaults to Click (most common), element empty → "Choose an element." shows at once, as in the wireframe.
 - 2026-11-04 — The Tests place stays mounted while hidden (Shell `hidden` wrapper), so unsaved steps survive a visit to another place; switching tests with unsaved changes asks first (Leave / Keep editing). The element list reloads each time the place is shown.
+- 2026-11-05 — Step table uses a fixed layout; Action and Element widths can be dragged (or ←/→ on the handle, double-click resets); widths are kept in memory while the app runs, not saved — omer found the columns truncated.
 - 2026-11-04 — Terms follow the style-guide glossary (Type text / Choose item / Check / Wait for; Text / Field content; "Wait up to (s)").
 
 ## Status
@@ -29,13 +30,14 @@
 
 ## Manual checks
 - 2026-11-04 · agent · API-level smoke (client main modules → server on :8080, app "Repo View Check"): 6 rows (Type, Type with empty text, Click, Verify text contains, Verify enabled = no, Wait 2,5 s) → schema clean → create, save, reload: identical apart from the new ids; reorder → identical, ids kept; unknown element → 400 shown on step 7 as `target-unknown`; test deleted afterwards · pass · evidence: this session's output (script in the session scratchpad, not kept).
-- 2026-11-04 · omer · editor screen on macOS against the real server · pending
+- 2026-11-05 · omer · editor screen on macOS against the real server · partial: login test built and saved (5 steps); action and element columns were truncated ("Kont", "login.kulla") → fixed in `3d532a1` (fixed layout, resizable columns); rest of the check pending
 
 ## Open issues
 - Import / Export buttons (FR-14, wireframe §6) are not in #38's criteria; the server has them (#39). Suggest a small follow-up issue or fold into #38 if omer wants.
 - "Pick in Object Spy…" in the element menu and a searchable element menu (wireframe §6) are not built.
 - Changing the application in the top bar while a test has unsaved changes drops them without asking (Shell remounts Tests by app id).
 - Save is last-write-wins: two people saving the same test overwrite each other; a step deleted by someone else makes the next save fail with "Step … is not a step of this test" (shown as "Someone else changed this test…").
+- Running a test from the editor is #43 (Week 6), not #38; omer asked for it on 2026-11-05.
 - Row menu "duplicate / insert above" (wireframe) not built; rows are added at the end.
 
 ## Handoff
