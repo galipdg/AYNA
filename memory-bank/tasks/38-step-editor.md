@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/38
 - Owner: omer · Branch: `omer/38-step-editor` (stacked on `omer/30-repo-view`, PR #191)
-- Started: 2026-11-04 · Last update: 2026-11-04
+- Started: 2026-11-04 · Last update: 2026-11-05
 
 ## Approach
 - Tests place (wireframe §6): test list (search, new) | editor (rename, delete, steps table, Save). `client/src/renderer/src/Tests.tsx`, `StepTable.tsx`.
@@ -25,12 +25,12 @@
 - [x] Shared row model, schema check, server calls, IPC, Tests + StepTable screens, en/tr texts, styles
 - [x] `npm run lint`, `typecheck`, `test` (175 pass), `electron-vite build` (schema bundled in main, no Ajv in the renderer)
 - [x] Smoke run against the real server (below)
-- [ ] Manual check of the screen by omer (below)
-- Next step: run the manual check below with omer; fix what it finds; then push and open the PR (base `omer/30-repo-view`).
+- [x] Manual check of the screen by omer (below)
+- Next step: PR open (base `omer/30-repo-view`); after #191 merges, retarget it to `main`; then #44 (run from the editor).
 
 ## Manual checks
 - 2026-11-04 · agent · API-level smoke (client main modules → server on :8080, app "Repo View Check"): 6 rows (Type, Type with empty text, Click, Verify text contains, Verify enabled = no, Wait 2,5 s) → schema clean → create, save, reload: identical apart from the new ids; reorder → identical, ids kept; unknown element → 400 shown on step 7 as `target-unknown`; test deleted afterwards · pass · evidence: this session's output (script in the session scratchpad, not kept).
-- 2026-11-05 · omer · editor screen on macOS against the real server · partial: login test built and saved (5 steps); action and element columns were truncated ("Kont", "login.kulla") → fixed in `3d532a1` (fixed layout, resizable columns); rest of the check pending
+- 2026-11-05 · omer · editor screen on macOS against the real server · partial: login test built and saved (5 steps); action and element columns were truncated ("Kont", "login.kulla") → fixed in `3d532a1` (fixed layout, resizable columns); after the fix omer re-checked the screen and reported the check passed (2026-11-05) · pass · evidence: omer's screenshot in the session
 
 ## Open issues
 - Import / Export buttons (FR-14, wireframe §6) are not in #38's criteria; the server has them (#39). Suggest a small follow-up issue or fold into #38 if omer wants.
