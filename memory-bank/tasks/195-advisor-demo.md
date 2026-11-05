@@ -22,8 +22,8 @@
 - [x] Client lint, format, typecheck, 175 tests
 - [x] End-to-end run on a throwaway stack (below)
 - [x] `DEMO.md`, link in `README.md`
-- [ ] omer's manual check in the main folder, against the real `.env` and `ayna` stack
-- Next step: omer runs the manual check; then push and PR, and the line in `client/AGENTS.md` (asked at the same time, AGENTS §7).
+- [x] omer's manual check in the main folder, against the real `.env` and `ayna` stack
+- Next step: push and one PR for #195 and #196 on `omer/38-step-editor`, and the line in `client/AGENTS.md` (ask first, AGENTS §7).
 
 ## Manual checks
 - 2026-11-05 · agent · real Electron over CDP on a throwaway Compose project · pass: ready in 18 s with cached layers; login, Spy tree, property panel, live "Depoya ekle" on version 1.1 (6 objects), Repository counts and details, Tests with 7 and 4 steps, language switch. Second run through `npm run demo --no-build`: ready in 2 s, no duplicates, clean login. Failure messages checked: Docker missing, Docker not running, wrong password, no admin set. Evidence: screenshots in this session only.
@@ -32,7 +32,7 @@
 - 2026-11-05 · agent · the same collision reproduced on a throwaway stack, then the fix: pass on that database with the failed run's partial state, on a repeat, on a fresh database and on its repeat; 5 objects, 2 tests, no duplicates each time.
 - 2026-11-05 · omer · same manual check again · screens fine, one table shift reported · the screenshot could not be read here (protected temp folder), so the shift is still open.
 - 2026-11-05 · omer · the table shift, screenshot received: at 1280 px the table needed sideways scrolling, so Step and Action were cut off to reach the row buttons. Fixed on `omer/196-step-undo`: no scrolling at 1280, 1366, 1440, 1728 and 2200 px, the page scrollbar is gone. A window below 1280 px scrolls the table (34 px at 1180). omer's look at the fix · pending.
-- 2026-11-05 · omer · rows 5 and 7 grew to two and three lines, which looked unbalanced, and he asked for a resizable test list. His screenshot was still from `aad8771`, before the table fit. Fixed: a check shows as a one-line summary and opens its controls in a popover; the test list drags between 150 and 420 px. omer's look · pending: a pass was reported while the main folder was still on `aad8771`, without these changes.
+- 2026-11-05 · omer · rows 5 and 7 grew to two and three lines, which looked unbalanced, and he asked for a resizable test list. His screenshot was still from `aad8771`, before the table fit. Fixed: a check shows as a one-line summary and opens its controls in a popover; the test list drags between 150 and 420 px. omer's look · pass on `5ad0ced` in the main folder, reported in the session.
 - 2026-11-05 · agent · `eval/apps/trial/app.py` on macOS with PySide6 6.12.0 · pass, platform `cocoa`, window opens · this showed the sample tests expected texts the app never shows; fixed.
 
 ## Open issues
