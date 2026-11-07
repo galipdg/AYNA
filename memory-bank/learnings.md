@@ -50,6 +50,8 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
 - 2026-10-29 · hasan · #22 · `IUIAutomation::ElementFromPoint` costs **~5 ms** (median 4.7 ms, max 6.0 ms over 5 calls) on a WinForms window, so NFR-01's 300 ms budget for the Spy pick is comfortable and whatever risk that requirement carries is in filling the property panel afterwards, not in the hit test.
 - 2026-10-29 · hasan · #49 · The healing scorer's location similarity has its cut-off in **physical** pixels (`1 - d/100 px`), while a layout shift is a device-independent quantity, so the same movement scores differently per display scaling: a control moved 64 DIP scores 0.36 at 100%, **0.20 at 125%** (this machine, DPI 120), 0.04 at 150% and 0.00 at 200% → divide the distance by `dpi/96` (`GetDpiForWindow`, which `eval/spikes/uia_dump.py` already records per window) before comparing, or an RQ4 number is not comparable between machines.
 - 2026-10-29 · hasan · git · **The `merge=union` conflict flag cascades, so a batch of PRs has to be merged one at a time.** Nine open PRs all appended to `memory-bank/people/hasan/inbox.md`, so GitHub flagged every one of them as conflicting (it ignores the union driver — see omer's 2026-10-29 entry). Merging the first one re-flags the remaining eight, because each still appends to the same trailing region: the fix is not a one-off, it is `git merge origin/main` + push on every remaining branch **after each merge**. Nine PRs cost nine rounds. Verify a re-sync with `git diff --name-only origin/main...<branch>` before and after — if the file set shrinks, that is the stacked-PR cleanup (the base PR's files dropping out), not content loss; if it grows, stop. Chaining the branches into each other collapses it to one round but invalidates reviews that were given on the individual diffs → not worth it. The real fix is to stop appending to one shared file: a directory of dated one-fact files never conflicts (proposed, needs an ADR).
+- 2026-10-31 · hasan · #161 · A UI Automation walk of a WinForms window costs ~18 ms per element — until the application stops pumping messages, and then it collapses: with a modal message box open (KeePass's "password is weak" Yes/No box), a traversal-only walk of the window behind it took **230 s for 85 elements** against 0.6 s for the same 114-element walk with the box closed. The median element stayed at 1.4 ms; six container elements (the dialog window 72.5 s, the main window 30 s, a ComboBox 24 s, the ToolBar 18 s) absorbed 170 s of it, because `GetFirstChild`/`FindAll` on a container needs the provider's UI thread and the box owns it. A *tracked menu* does not do this (1.55 s with the File menu open) — the message box's own modal loop does. Consequences: (1) any snapshot/search deadline must be enforced on a timer, not between elements, because a single call can block for a minute; (2) "the app is showing a message box" is a far more likely cause of a snapshot timeout than "the window is huge", so report what the walk was blocked on; (3) when a measurement on a desktop app is 100× out, suspect a modal dialog before suspecting the framework. Measured with `eval/spikes/uia_probe.py`, raw data in `eval/spikes/uia-probe-keepass2-modal.json`.
+- 2026-11-01 · hasan · #161 #12 · **A walk that starts from every top-level window counts an owned dialog twice.** An owned modal dialog (KeePass 2's *Add Entry*, Notepad++'s *Find*) is both a top-level window — so `find_windows` returns it as a root — and a child of its owner in the UIA tree, so a pre-order walk over those roots visits its whole subtree twice. `uia_dump.walk` deduplicates by window handle and was right; `uia_probe.py` did not and reported 154 elements for a tree of 114 (#170 review caught it from the depths in the slowest table: the same pane at depth 0 and at depth 1). Two things make this hard to spot: the inflated count sits in the *totals* (~26 % too high here) while the *per-element* mean looks fine — in fact flattered, because the second pass over an already-realised subtree is cheaper, which is why the corrected per-element cost went **up** from 11.6 to 18.5 ms. So: deduplicate by handle (`None`/0 never skipped, first visit wins, subtree included), order the roots owner-first so depths are real, and report what was skipped. Anything that walks windows — #12's snapshot, Spy, healing candidate collection — needs this, and a number that cannot be decomposed into count × per-element should not be trusted.
 
 - 2026-11-01 · #12 #16 · **`python -m some.module` makes two copies of that module, and
   `isinstance` then fails across them.** `ayna_agent/rpc.py` run as `python -m ayna_agent.rpc`
@@ -151,3 +153,68 @@ Tracked as **#199**, with the three options (rename one module, `--import-mode=i
 both trees packages); the fix touches omer's CI job, which is why it is an issue and not a quiet
 change. **Always name the path when
 running eval tests**, and treat a batch failure there as this collision until proved otherwise.
+
+## 2026-11-07 — the agent had never actually been per-monitor-v2 DPI aware (hasan, #12)
+
+`docs/agent-rpc.md` and `schemas/snapshot.schema.json` both promise bounds "as UI Automation
+reports them to a **per-monitor-v2** DPI aware agent". Measured on this machine: the process was
+**per-monitor-v1**, and nothing we wrote had set it.
+
+Three mistakes stacked up, and each one hid the next:
+
+1. `DPI_AWARENESS_CONTEXT` is a **pointer-sized handle**. `user32.SetProcessDpiAwarenessContext(-4)`
+   through ctypes' default argument conversion truncates it to 32 bits, so on 64-bit Windows the
+   call fails with **`ERROR_INVALID_PARAMETER` (87)**. Declaring `argtypes = [c_void_p]` and passing
+   `c_void_p(-4)` makes it succeed.
+2. The old code treated **87 the same as 5** (`ERROR_ACCESS_DENIED`, "awareness is already set") and
+   logged `INFO  DPI awareness was already set before the backend started`. A malformed call looked
+   like a benign one.
+3. The very next statement in `setup()` imports pywinauto, **which sets the process to
+   per-monitor-v1 itself**. So the process always ended up aware — just not the way the contract
+   says — and the log line above was technically true by the time anyone read it.
+
+**`GetAwarenessFromDpiAwarenessContext` cannot tell v1 from v2.** The `DPI_AWARENESS` enum has no
+value of its own for v2, so both read as `PER_MONITOR_AWARE` (2). Comparing contexts with
+**`AreDpiAwarenessContextsEqual`** is the only way to ask the question, and it is what
+`recognition.uia.dpi_awareness()` now does.
+
+**What it did and did not break.** v1 and v2 are both *unscaled*, so every bounds number measured so
+far is still right and no stored snapshot is wrong. What v2 adds is per-monitor behaviour for
+dialogs and child windows and DPI-scaled non-client areas — i.e. exactly the mixed-DPI case that is
+still unmeasured (every number we have is from one 120-DPI display). So this was a latent
+contract violation, not a wrong measurement.
+
+**General point: a success log is not evidence.** This one said "already set" for weeks on a call
+that had never worked. When an API's outcome is load-bearing for a contract, *read the state back*
+and warn when it is not what was promised, rather than inferring it from a return value — which is
+what the function does now, and what `test_setup_leaves_the_process_per_monitor_v2` pins in a fresh
+interpreter (awareness can be set only once per process, so an in-process test cannot check it).
+
+## 2026-11-07 — one window has three different rectangles, and we were reporting the wrong one (hasan, #16/#184)
+
+Measured on the trial app at 150 % scaling, during the Windows session for #184:
+
+```
+Win32 GetWindowRect        472 x 261   <- what listWindows reported
+DWM extended frame bounds  456 x 253   <- what a person sees
+UIA BoundingRectangle      450 x 213   <- what snapshot reports (per element)
+```
+
+- **`GetWindowRect` is 8 px too big on the left, right and bottom.** Since Windows 10 a resizable
+  window carries an **invisible** resize border outside its visible frame and `GetWindowRect`
+  includes it. (The same effect makes a maximised browser report `[-11, -11, 1931, 1019]` on a
+  1920×1080 screen — the negative origin is not a bug in the reader.) The border is DPI-scaled, so
+  it is 8 px at 150 % and 11 px elsewhere; never hard-code it.
+- **UIA's rectangle is 38 px short at the top**: no title bar. Right for an *element*, wrong for
+  "the window".
+- **`DwmGetWindowAttribute(DWMWA_EXTENDED_FRAME_BOUNDS, …)`** is the only one of the three that
+  means "the window as it looks": invisible border out, title bar in.
+
+The user spotted it the way a tester would — the Spy's red frame around a *window* sat outside the
+window — while the frame around every *element* was exactly right. So `listWindows` now reports the
+DWM rectangle and `docs/agent-rpc.md` says which rectangle it is, and says explicitly that it is
+**not** the same as `snapshot`'s `window.bounds`. Both are called `bounds`, which is what let the
+difference hide.
+
+**General point: "bounds" is not one concept on Windows.** Any new coordinate consumer (#54's
+screenshot crop, #23's win32 fallback, the overlay) has to say which of the three it means.
