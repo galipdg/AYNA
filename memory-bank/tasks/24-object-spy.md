@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/24
 - Owner: omer · Branch: `omer/24-object-spy` (stacked on `omer/17-agent-process-manager`, PR #154, until it merges; do **not** merge this PR into that branch, see `learnings.md` 2026-10-31)
-- Started: 2026-10-31 · Last update: 2026-11-03
+- Started: 2026-10-31 · Last update: 2026-11-07
 
 ## Approach
 Build the parts that need no snapshot format first: window list over `listWindows`, the on-screen highlight overlay, the screen layout and the hotkey plumbing. The element tree and property panel wait for `schemas/snapshot.schema.json` (#12, hasan); element under the cursor waits for #22. Main process: `src/main/spy.ts` (agent calls → plain results, geometry; no Electron imports, unit-tested) and `src/main/overlay.ts` (`Highlighter`, Electron).
@@ -34,6 +34,7 @@ Build the parts that need no snapshot format first: window list over `listWindow
 - [x] Snapshot schema: hasan's PR #180 (`schemas/snapshot.schema.json` 0.1, ADR `2026-11-01-snapshot-schema-v0`, Proposed). omer approved 2026-11-01; galip's approval pending. Flat pre-order `{id, parentId, element}` list, `element` = the 0.1 descriptor, so the panel needs no change. Its agent answers -32001 on macOS (checked through `AgentManager`).
 - [x] 2026-11-03: #180 merged (schema ADR Accepted, names final). `snapshot.test.ts` now checks the `Snapshot`/`SnapshotCapture`/`SnapshotWindow`/`SnapshotNode`/`app` types against `schemas/snapshot.schema.json` (key lists with `satisfies Record<keyof T, true>`, so drift fails typecheck and the test), and `parseSnapshot` accepts `trial-login.json` and every valid case of `cases.json`. No field name had moved. 108 tests, lint, typecheck green
 - [x] 2026-11-03: merged `omer/17-agent-process-manager` (with `origin/main`, #179 accounts) into this branch; login/users and Spy side by side, all handlers through `handle()`. 105 tests, lint, typecheck, build green before the test above
+- [x] 2026-11-07, galip's #186 point 1: `parseWindows` reads each window on its own; a null `title`/`className` (the agent sends one when UIA cannot read it, e.g. an elevated window) becomes "", an invalid window is left out instead of failing the list. hasan's point 2: `buildTree`'s comment says it checks parents-before-children, weaker than the server's pre-order. 111 tests, lint, typecheck, format green. His points 1 (bigger budget on "Capture again") and 4 (mock snapshot copy, newer snapshot version) went to a follow-up issue
 - Next step: when #22 adds `elementFromPoint` to agent RPC, call it from the pick handler and select the node in the tree. Until then, #25 (server side: add a snapshot element to the repository) can start on top of #15
 
 ## Manual checks

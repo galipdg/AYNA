@@ -9,6 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.IntStream;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +28,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
+import com.ayna.server.snapshots.SnapshotDtos.ImportResult;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -46,6 +50,9 @@ class SnapshotIntegrationTest {
 
 	@Autowired
 	ObjectMapper mapper;
+
+	@Autowired
+	SnapshotService service;
 
 	String appId;
 
@@ -115,9 +122,12 @@ class SnapshotIntegrationTest {
 			.containsEntry("featureVersion", "features-v0")
 			.containsEntry("exeName", "python.exe")
 			.containsEntry("fileVersion", "3.13.150.1013")
+			.containsEntry("captureDurationMs", 29L)
+			.containsEntry("readErrors", 0L)
+			.containsEntry("agentVersion", "0.0.0")
 			.containsEntry("createdBy", SignedIn.TESTER.userId())
 			.containsKey("createdAt")
-			.doesNotContainKeys("handle", "processId");
+			.doesNotContainKeys("handle", "processId", "bounds", "dpi", "budgetMs");
 		assertThat(window.get("capturedAt")).isInstanceOf(ZonedDateTime.class);
 		assertThat(((ZonedDateTime) window.get("capturedAt")).toOffsetDateTime().toString())
 			.isEqualTo("2026-10-31T17:42:19+03:00");
@@ -144,6 +154,31 @@ class SnapshotIntegrationTest {
 		assertThat(count("MATCH (n) WHERE NOT any(l IN labels(n) WHERE l STARTS WITH '__') RETURN count(n) AS n"))
 			.isEqualTo(nodes);
 		assertThat(count("MATCH ()-[r]->() RETURN count(r) AS n")).isEqualTo(relationships);
+	}
+
+	@Test
+	void overlappingImportsOfOneSnapshotStoreOneWindow() throws Exception {
+		JsonNode document = SnapshotSchemaTest.trialLogin();
+		CountDownLatch start = new CountDownLatch(1);
+
+		List<CompletableFuture<ImportResult>> imports = IntStream.range(0, 8)
+			.mapToObj(i -> CompletableFuture.supplyAsync(() -> {
+				try {
+					start.await();
+				}
+				catch (InterruptedException ex) {
+					throw new IllegalStateException(ex);
+				}
+				return service.importSnapshot(appId, versionId, document, SignedIn.TESTER.userId());
+			}))
+			.toList();
+		start.countDown();
+
+		List<ImportResult> results = imports.stream().map(CompletableFuture::join).toList();
+		assertThat(results).filteredOn(ImportResult::created).hasSize(1);
+		assertThat(results).extracting(r -> r.snapshot().windowId()).containsOnly(results.get(0).snapshot().windowId());
+		assertThat(count("MATCH (w:Window {snapshotId: $s}) RETURN count(w) AS n")).isEqualTo(1);
+		assertThat(count("MATCH (e:Element {snapshotId: $s}) RETURN count(e) AS n")).isEqualTo(14);
 	}
 
 	@Test

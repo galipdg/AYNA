@@ -64,11 +64,11 @@ class GraphSchemaMigrationIntegrationTest {
 
 		assertThat(applied).extracting(r -> r.get("version").asString() + " " + r.get("description").asString())
 			.containsExactly("0001 graph schema v0", "0002 tests and objects belong to an application",
-					"0003 accounts and tokens");
+					"0003 accounts and tokens", "0005 one window per snapshot");
 	}
 
 	@Test
-	void usernamesAndTokenHashesAreUnique() {
+	void usernamesTokenHashesAndSnapshotIdsAreUnique() {
 		List<String> constraints = driver.executableQuery("""
 				SHOW CONSTRAINTS YIELD type, labelsOrTypes, properties
 				WHERE type = 'UNIQUENESS' AND properties <> ['id'] AND NOT labelsOrTypes[0] STARTS WITH '__'
@@ -79,7 +79,7 @@ class GraphSchemaMigrationIntegrationTest {
 			.map(r -> r.get("key").asString())
 			.toList();
 
-		assertThat(constraints).containsExactlyInAnyOrder("User.username", "AuthToken.tokenHash");
+		assertThat(constraints).containsExactlyInAnyOrder("User.username", "AuthToken.tokenHash", "Window.snapshotId");
 	}
 
 }
