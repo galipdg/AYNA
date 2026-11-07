@@ -76,13 +76,21 @@ the part it needs in a way #40 and #73 extend without breaking.
 - [x] `recognition/uia.py`: `read_tree()` and the live element per node (see Decisions)
 - [x] **`@pytest.mark.windows`: the 3-step login on the real trial app, 10/10** — plus the
       empty-value, fallback and ambiguity cases on the real app
-- [ ] `rpc.py` wiring and the `docs/agent-rpc.md` section — **needs galip** (his file, his doc)
-- Next step: write the `runSteps` wiring in `rpc.py` as its own commit, open the PR, and ask
-  galip to approve that commit and the contract section.
+- [x] `rpc.py` wiring (`5cfaf94`) + 37 tests in `tests/test_rpc_run_steps.py`, and the
+      `docs/agent-rpc.md` section (`5ee6b26`) — both in **galip's** file/content, each in its
+      own commit so he can take, move or redirect it
+- [ ] PR open, galip's approval on the two commits above, omer told about `targets[].fallback`
+- Next step: open the PR with `Closes #26`, request both reviews, and say in the body what each
+  of them should check.
 
 **Measured 2026-11-07 on this machine** (Windows 11 Pro 26300, 120 DPI, Python 3.13.0,
-pywinauto 0.6.9, PySide6 6.12.0): agent suite **360 passed** in 10.6 s, ruff and format clean.
+pywinauto 0.6.9, PySide6 6.12.0): agent suite **397 passed** in 10.4 s, ruff and format clean.
 The five trial-app tests take 7.2 s together, the ten login runs included.
+
+**Both acceptance criteria are met and measured**, not argued:
+`test_the_three_step_login_passes_ten_times_out_of_ten` (10/10 on the real app, each run
+resetting the status label first so it proves its own login) and
+`test_no_coordinate_can_be_stored_in_a_test`.
 
 ## Manual checks
 
