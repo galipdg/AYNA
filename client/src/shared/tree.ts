@@ -9,17 +9,25 @@ export interface TreeRow {
 }
 
 /**
- * Case-insensitive form for search that also ignores the Turkish dotted/dotless i, so
- * "kullanici" finds "Kullanıcı" and "id" finds "ID" (a Turkish locale alone would turn
- * "I" into "ı" and miss the second).
+ * Form for search that ignores case and the Turkish letters people type as ASCII: "giris"
+ * finds "Giriş", "degistir" finds "Değiştir", "kullanici" finds "Kullanıcı" and "id" finds
+ * "ID". ş ğ ü ö ç decompose under NFD into a base letter and a mark, which is dropped; ı has
+ * no mark, so the i's are folded first (a Turkish locale alone would turn "I" into "ı" and
+ * miss "ID").
  */
 export function foldText(text: string): string {
-  return text.replace(/[İIı]/g, 'i').toLowerCase()
+  return text
+    .replace(/[İIı]/g, 'i')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
 }
 
 /**
- * Whether an element matches a search, by name, control type or AutomationId. `typeLabel`
- * adds the type's plain-language label, so "text box" finds Edit elements too.
+ * Whether an element matches a search, by name, control type, AutomationId or nearest label.
+ * The label is what finds a text box with no name of its own (common in Qt and WinForms) by the
+ * caption next to it. `typeLabel` adds the type's plain-language label, so "text box" finds
+ * Edit elements too.
  */
 export function elementMatches(
   element: ElementDescriptor,
@@ -28,8 +36,14 @@ export function elementMatches(
 ): boolean {
   const needle = foldText(query.trim())
   if (!needle) return true
-  const { name, controlType, automationId } = element
-  const haystack = [name, controlType, automationId, controlType && typeLabel?.(controlType)]
+  const { name, controlType, automationId, nearestLabel } = element
+  const haystack = [
+    name,
+    controlType,
+    automationId,
+    nearestLabel,
+    controlType && typeLabel?.(controlType),
+  ]
   return haystack.some((text) => text !== undefined && foldText(text).includes(needle))
 }
 
