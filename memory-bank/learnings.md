@@ -98,3 +98,36 @@ step schema v0.2. Written into ADR `2026-10-31-pilot-apps-and-sample-app-technol
   is what "the same file" actually means. **General point: the only Python on this Windows machine
   is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
   is not evidence that the version floor holds.**
+
+## 2026-11-07 — KeePass 2's entry list is a UIA List with no Grid or Table pattern (hasan, #150/#147)
+
+Measured on Windows 11 Pro 26300 at 120 DPI, KeePass 2 from `C:\ayna-pilots\keepass2\` with the
+demo database, raw UIA through pywinauto 0.6.9 after `eval/spikes/kp_state.py main`:
+
+- `m_lvEntries` (`WindowsForms10.SysListView32…`) is a UIA **List** whose only patterns are
+  `Selection` and `LegacyIAccessible`. **No Grid pattern, no Table pattern**, so `GridPattern`
+  `RowCount`/`GetItem` and `TablePattern.GetColumnHeaders` are all unavailable on it.
+- Its ControlView children are a `Header` (5 `HeaderItem`s: Title, User Name, Password, URL, Notes)
+  and one `ListItem` per entry. So **the list has columns without having a TablePattern** — the
+  reason `cell` is grid-only is the `column` definition (a TablePattern header Name), not "a list
+  has no columns".
+- Each `ListItem`'s `Name` is the **Title column only**, but it has **five `Text` children, one per
+  column, in header order**, each carrying its column's text in `Name`. The #6 dump showed none of
+  them because it was taken with the Add Entry dialog on top. So a per-column read on a
+  pattern-less list is possible through those children — which is how #40 answers
+  `rowExists {value}` and `{value, column}` on KeePass 2.
+- **No ValuePattern anywhere** on the list, the items or the Text children. The v0.2 cell-text rule
+  (non-empty ValuePattern value, else Name) therefore reads Name, which is correct — and means
+  Name-first and Value-first are indistinguishable on every WinForms control we actually have.
+- Source [9] of the v0.2 ADR (a `DataGridView` cell's Name is the column header plus the row index)
+  stays **docs-only**: no pilot app has a `DataGridView` (KeePass 2 is SysListView32, HandBrake is
+  WPF, Notepad++ is Win32, KeePassXC is Qt), so it cannot be checked until the sample app (#33).
+
+## 2026-11-07 — Turkish search needs NFD diacritic stripping, not only the dotted/dotless i (hasan, #185/#184)
+
+`foldText` in the client folded `İ`/`I`/`ı` to `i` — the subtle half, and right — but left `ş ğ ü ö ç`
+alone, so "kullanici" found "Kullanıcı" while "giris" did **not** find "Giriş". Half a folded
+keyboard is worse than none: the first success teaches the user to expect the second.
+`.replace(/[İIı]/g,'i').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase()` handles every
+case — the five others decompose to a base letter plus a combining mark, while `ı` has no mark to
+strip, which is why the explicit replace has to stay and has to come first.
