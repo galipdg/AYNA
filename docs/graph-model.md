@@ -37,7 +37,7 @@ graph LR
 |---|---|---|
 | Application | `name`, `technology` | unique `id` · index `name` |
 | AppVersion | `version` | unique `id` |
-| Window | `snapshotId`, `name` (window title), `className`, `capturedAt` (datetime), `featureVersion`, `exeName`, `fileVersion`; `createdBy`, `createdAt` (who imported it); written by the snapshot import (#15) | unique `id` |
+| Window | `snapshotId`, `name` (window title), `className`, `capturedAt` (datetime), `featureVersion`, `exeName`, `fileVersion`, `captureDurationMs`, `readErrors`, `agentVersion` (the capture's evidence, #64); `createdBy`, `createdAt` (who imported it); written by the snapshot import (#15) | unique `id` · unique `snapshotId` (`V0005`) |
 | Element | the element descriptor's properties as the snapshot carries them (`schemas/snapshot.schema.json#/$defs/element`; `bounds` as an int list), plus `snapshotId` and `snapshotElementId` (the agent's id inside the snapshot, so `(snapshotId, snapshotElementId)` finds a healing candidate) | unique `id` · index `snapshotId` · index `automationId` |
 | RepoObject | `name` (logical name, `screen.element`, unique per application); `primary` and `fallback` as JSON strings (descriptor property → value, best first; only identifying properties, ADR element descriptor v0 §3); `createdBy`, `createdAt`, `updatedBy`, `updatedAt`; written by the repository API (#25); embedding (#58) | unique `id` · index `name` |
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
