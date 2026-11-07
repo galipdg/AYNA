@@ -53,8 +53,11 @@ export interface TreeNode {
 }
 
 /**
- * Builds the tree in one pass over the pre-order list. Null when the list is not one tree
- * in pre-order: no root or a second one, a repeated id, or a parent that comes later.
+ * Builds the tree in one pass over the list. Null when the list is not one tree with each
+ * parent before its children: no root or a second one, a repeated id, or a parent that comes
+ * later. That is weaker than the schema's pre-order (the server and the agent also refuse a
+ * subtree that is not contiguous), so the Spy showing a document does not mean the server
+ * accepts it.
  */
 export function buildTree(elements: readonly SnapshotNode[]): TreeNode | null {
   const byId = new Map<string, TreeNode>()

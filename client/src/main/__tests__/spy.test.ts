@@ -45,11 +45,18 @@ describe('listWindows', () => {
     assert.equal(calls[0][0], 'listWindows')
   })
 
-  it('reports a result that does not match the contract', async () => {
-    assert.deepEqual(await listWindows(agentAnswering({ windows: [{ ...notepad, bounds: [] }] })), {
+  it('reports a result that is not a window list', async () => {
+    assert.deepEqual(await listWindows(agentAnswering({ windows: null })), {
       ok: false,
       reason: 'bad-response',
     })
+  })
+
+  it('leaves out a window that does not match the contract', async () => {
+    const result = await listWindows(
+      agentAnswering({ windows: [{ ...notepad, bounds: [] }, notepad] }),
+    )
+    assert.deepEqual(result, { ok: true, windows: [notepad] })
   })
 
   it('reports why the call failed', async () => {
@@ -173,18 +180,31 @@ describe('parseWindows', () => {
     assert.deepEqual(parseWindows({ windows: [{ ...notepad, extra: 1 }] }), [notepad])
   })
 
-  it('rejects anything else', () => {
-    for (const result of [
+  it('reads a null title or class name as empty', () => {
+    const elevated = { ...notepad, title: null, className: null }
+    assert.deepEqual(parseWindows({ windows: [elevated] }), [
+      { ...notepad, title: '', className: '' },
+    ])
+  })
+
+  it('leaves out a window outside the contract and keeps the others', () => {
+    for (const bad of [
       null,
-      [],
-      { windows: null },
-      { windows: [null] },
-      { windows: [{ ...notepad, handle: '1' }] },
-      { windows: [{ ...notepad, handle: 1.5 }] },
-      { windows: [{ ...notepad, title: null }] },
-      { windows: [{ ...notepad, processId: undefined }] },
-      { windows: [{ ...notepad, processName: 5 }] },
+      'window',
+      { ...notepad, handle: '1' },
+      { ...notepad, handle: 1.5 },
+      { ...notepad, title: 5 },
+      { ...notepad, className: {} },
+      { ...notepad, processId: undefined },
+      { ...notepad, processName: 5 },
+      { ...notepad, bounds: [0, 0, 0] },
     ]) {
+      assert.deepEqual(parseWindows({ windows: [bad, notepad] }), [notepad], JSON.stringify(bad))
+    }
+  })
+
+  it('rejects a result that is not a window list', () => {
+    for (const result of [null, [], {}, { windows: null }, { windows: {} }]) {
       assert.equal(parseWindows(result), null, JSON.stringify(result))
     }
   })
