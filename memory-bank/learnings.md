@@ -131,3 +131,21 @@ keyboard is worse than none: the first success teaches the user to expect the se
 `.replace(/[İIı]/g,'i').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase()` handles every
 case — the five others decompose to a base letter plus a combining mark, while `ı` has no mark to
 strip, which is why the explicit replace has to stay and has to come first.
+
+## 2026-11-07 — `eval/` has two different `uia_dump.py` modules, and they collide (hasan)
+
+`eval/apps/trial/uia_dump.py` (5.8 kB, the trial app's AutomationId check) and
+`eval/spikes/uia_dump.py` (20.6 kB, the #6 tree dumper) are **different files with the same module
+name**, and nothing packages either of them. Each tree is green on its own —
+`pytest eval/apps/trial/tests` 12 passed, `pytest eval/spikes` 26 passed — but
+**`pytest eval/` from the repo root fails 26 of 38**, because whichever `uia_dump` is imported first
+shadows the other in `sys.modules`.
+
+It is invisible today: `testpaths = ["apps/trial/tests"]` means the bare `pytest` never collects
+`spikes/`, the documented command is `pytest eval/apps/trial/tests`, and CI runs the trial tests
+only. So this is not a regression — but a plain `pytest eval/` looks like 26 real failures, and the
+next person to widen `testpaths` or point CI at the whole folder will meet it.
+
+Worth its own issue rather than a quiet fix: the options (rename one module, add `__init__.py` to
+both trees, or set `--import-mode=importlib`) touch omer's CI job. **Always name the path when
+running eval tests**, and treat a batch failure there as this collision until proved otherwise.
