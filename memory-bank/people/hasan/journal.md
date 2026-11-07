@@ -124,6 +124,32 @@ Append-only. One entry per session, newest at the bottom:
   tested next to the component that produces it.
 - PR #175. Next: #12, which emits these descriptors with the #161 budget.
 
+## 2026-11-01 — #170 review answered: the measurement was wrong, so it was taken again
+- Merged #172 and #175 (#11 closed, element descriptor on `main`). Found that a
+  `copilot-swe-agent[bot]` merge had been pushed to my #161 branch and had left a literal
+  `<<<<<<< HEAD` marker in `memory-bank/decisions/README.md`; removed it. Worth asking omer
+  what that bot is doing on my branches.
+- Galip's three #170 points all held, and the first one was not theoretical: this machine has
+  a KeePass database of the user's own, and `--fresh` was pointing `taskkill /IM KeePass.exe`
+  and an `os.remove` at the default `Documents\Database.kdbx`. Now: the pilot process is
+  found by image path through a CIM query and killed by pid, the demo database is
+  `C:\ayna-pilots\ayna-demo.kdbx`, and `--fresh` refuses any path outside the pilot folder.
+- The deduplication point reached further than it looked. `uia_probe.run` counted KeePass's
+  `Add Entry` twice (154 "elements" for a tree of 114), which inflated every total by ~26 %
+  **and** flattered every per-element mean, because a second pass over an already-realised
+  subtree is cheaper. So the honest fix was to re-measure, not to rescale: the full walk is
+  18.5 ms per element, not 11.6 ms, and the gap to the #6 dump is ~140× per element *and*
+  ~140× in total, instead of two numbers that disagreed. The #12 budget argument moved from
+  "3× the measured walk" to "~330 elements at the descriptor rate".
+- The driver script was the day's real lesson. Three honest failures before it worked
+  unattended: `click_input()` leaves KeePass's secure boxes unfocused so the keystrokes
+  vanish (KeePass then says the password is *empty* — the counter read "0 ch." after a click
+  and "9 ch." after `set_focus()`); a classic message box blocks UIA against the whole
+  process, so it has to be answered over Win32 `BM_CLICK`, while the new-database *task
+  dialog* must not be, or the script loops; and `STEP_TIMEOUT` was budgeting one step rather
+  than the sequence. A cold `--fresh` run now completes, in about six minutes, nearly all of
+  it inside one blocked UIA call — the issue's own finding, measured from the driver's side.
+- Next step: push, answer the review on #170, then #12.
 ## 2026-11-01 (second part) — reviewed #176 and #173
 - Both were follow-ups to my own earlier reviews, so the job was to check the rules are
   usable rather than to re-argue them. Approved both.
@@ -312,3 +338,91 @@ own #61 retry path would race into a state that breaks every later read of that 
 then #38 and #17, plus #197's popover and resizer. Before that, or in the same branch: the four
 follow-ups in `active.md` (pre-order fix in `loads`, `nearest_label_source`, the two probe scripts
 under `eval/spikes/`, and the `docs/AGENTS.md` ownership question for the user).
+
+## 2026-11-07 (continued) — #26 built, then the Windows session found two bugs of mine
+
+**#26 is done** (PR #200). `playback/` with resolution, actions and the runner; `read_tree()` on
+the UIA backend so a target is matched against the *same* derivation that produced the values the
+repository stored. Both acceptance criteria measured, not argued: the 3-step login 10/10 on the
+real trial app (each run resetting the status label first so it proves its own login), and "no
+coordinates" as a property of the contract rather than of one document. 112 new tests.
+
+**I avoided in my own code the bug I had just found in omer's #192**: the runner reads step schema
+0.1 *and* 0.2 instead of pinning one version. Pinning is what would break the day #150 merges.
+
+**Then the Windows session for #184, and it earned its keep.** Six of eight steps pass. Two of the
+failures are omer's to decide (the Turkish fold; smoothness at 285 real elements versus his
+synthetic 3031). But the session's real output was **two coordinate bugs of mine**, both invisible
+on one display and in every unit test:
+
+1. The agent had **never** been per-monitor-v2 DPI aware. A pointer-sized context handle truncated
+   by ctypes, a call failing with error 87, my code treating 87 as "already set", and pywinauto's
+   import quietly setting v1. The log line said "already set" for weeks about a call that had never
+   worked. **A success log is not evidence** — read the state back when a contract depends on it.
+2. `listWindows` reported `GetWindowRect`, which includes Windows 10's invisible resize border, so
+   the Spy framed a window 8 px too wide. My user found this one by *looking*: the frame around
+   every element was exact, the frame around a window was not. One window has three rectangles and
+   we were reporting the wrong one; "bounds" is not one concept on Windows.
+
+Both in PR #201. The second is the better argument for the weekly session existing: no test I would
+have thought to write catches "the rectangle is subtly too big", and a person noticed in seconds.
+
+**And the G0 chain ran end to end** (#28). The object my user picked in the Spy went to Neo4j, and
+playback read its property sets *back from the graph* and played the login — "Welcome, admin!". I
+ticked three of #28's four criteria; the last one is galip's #7. Two days before the gate, the
+thing that had never been connected is connected.
+
+**Three mistakes of my own worth remembering.** I told the user the display was at 100 % — I had
+read it from a DPI-unaware process, which is the same class of mistake as bug 1 above. I predicted
+"2 matches" for a search from the #11 fixture when the live window had 3, because a fixture is one
+moment. And my own ad-hoc G0 script read the status label immediately after the click and saw the
+*previous* state — exactly the trap #26's test already guards against, which is now twice-proven
+and is the design point for #40's checkpoints.
+
+**Next step:** #38 and #17 are still in the Windows queue and the environment is now proven
+(`http://[::1]:8080`, seeded app/version/objects). Before that, #170 is one click from merging.
+
+## 2026-11-07 (third part) — the Windows queue: #184 and #38 run with my user
+
+**#184: six of eight pass. #38: twelve of fourteen.** Both results are issue comments; both labels
+stay, for findings rather than for anything unverified.
+
+**The best part was not a test result.** Twice my user found something by *looking* that no test I
+would have written would catch:
+
+- the Spy's red frame around a **window** sat outside the window while the frame around every
+  **element** was exact — which turned out to be `listWindows` reporting `GetWindowRect`, invisible
+  resize border included (PR #201);
+- *"this element is no longer in the repository"* on a step whose element was right there — which
+  turned out to be the editor reading the test once per `id` while refetching the element menu on
+  every show, so it showed a pre-rename document and then blamed the data.
+
+Both are the argument for the weekly session existing. Neither is a thing a unit test fails on.
+
+**Two predictions I made from the code before my user looked, and both held:** `2,5` would come back
+as `2.5` (`secondsText` is `String(ms / 1000)`, locale-fixed on the way out only), and `Login` in
+the Spy's search would match 8 of 14 elements because every Qt id is a dotted path containing the
+window's name. Reading the code first made the manual check sharper — "type this, expect exactly
+this" instead of "have a look".
+
+**And two things I got wrong and had to walk back.** I said the picker failing was silently
+swallowed — it is not, omer renders `stepsElementsFailed` and I had read the file too fast. And I
+implied a server bug when `GET …/versions` looked empty — that was my own shell loop eating the
+output. Both corrected in the same breath; the lesson is to run the thing rather than skim it,
+which is also what made the good findings good.
+
+**My own setup mistake, worth remembering:** I switched the checkout to #38's branch but left the
+server container built from #184's, so the element picker was empty because the endpoint did not
+exist in the running image. `docker compose up --build` builds from the checked-out branch and
+nothing ties the image to it. It will happen to someone at the demo.
+
+**Also fixed, found the same way:** the agent had never been per-monitor-v2 DPI aware, and I had
+read "100 % scaling" off a DPI-unaware process and told my user so — the same class of mistake as
+the bug. The display was 125 % the whole time.
+
+**Left behind:** the stack stopped but not deleted, with `AYNA Trial`, five repository objects and
+two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`.
+
+**Next step:** #17 (omer's PR #154) is the last item in the Windows queue. Its happy path ran
+incidentally all session — every client start launched the agent and every close logged
+`stdin closed, shutting down` — so the check is presumably about crash and restart.

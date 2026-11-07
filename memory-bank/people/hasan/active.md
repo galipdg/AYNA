@@ -2,8 +2,22 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-07 (review round: twelve PRs)
-- Current issue: **none in progress.** The session was a review round, not a build.
+- Last update: 2026-11-07 (review round, #26 built, Windows session: #184 and #38 run)
+- Current issue: **#26 is done** (PR #200, `Closes #26`, both criteria measured). Nothing else in
+  progress.
+- **My open PRs, in merge order:**
+  1. **#170** (`hasan/161-winforms-walk`, `Closes #161`) — 5/5 CI green, both approvals,
+     `MERGEABLE`. **Waiting only on the merge click.** The `ai` job that blocked it for days was
+     galip's flaky request-log race; re-running the job made it green.
+  2. **#200** (`hasan/26-minimal-playback`, `Closes #26`) — CI 5/5 green. Two of its commits are
+     in galip's `rpc.py` and `docs/agent-rpc.md` on purpose, each on its own, so he can take,
+     move or redirect them.
+  3. **#201** (`hasan/dpi-awareness-v2`) — the two coordinate bugs below. Small, two commits.
+- **#198 is merged** (`9a95381`), so the four review follow-ups are on `main`.
+- **The G0 chain (#28) ran end to end on Windows today and works.** Spy → Neo4j → playback by
+  logical name, with the application confirming "Welcome, admin!". I ticked three of #28's four
+  criteria; **the remaining one is galip's #7** (a 7–8B model returning valid JSON for a Turkish
+  prompt). Evidence is a comment on #28.
 - **Review queue: empty.** All twelve PRs that were waiting on me are approved (2026-11-07):
   galip's **#150**, and omer's **#182, #186, #187, #188, #189, #190, #191, #192, #193, #194,
   #197**. Two ADRs approved with them: `2026-11-03-client-ui-language` and
@@ -93,19 +107,82 @@ window is open, the matching snapshot element `id`, so the Spy selects the tree 
 instead of re-deriving it from `bounds`. The client already converts the cursor correctly
 (`screen.dipToScreenPoint`), so the point arrives in physical pixels.
 
+## Two coordinate bugs of mine, found at a real scaling (PR #201)
+
+Both were invisible on one 120-DPI display and in every unit test, and both are written up in
+`learnings.md` 2026-11-07:
+
+1. **The agent had never been per-monitor-v2 DPI aware**, although `docs/agent-rpc.md` and
+   `snapshot.schema.json` both promise it. `DPI_AWARENESS_CONTEXT` is pointer-sized; my ctypes
+   call truncated it, failed with `ERROR_INVALID_PARAMETER` (87), my code treated 87 like 5
+   ("already set") and logged success, and pywinauto's import then set per-monitor-**v1**.
+   `GetAwarenessFromDpiAwarenessContext` cannot tell v1 from v2 — only
+   `AreDpiAwarenessContextsEqual` can, which is what `dpi_awareness()` now uses.
+   **No measurement is invalidated:** v1 and v2 are both unscaled.
+2. **`listWindows` reported `GetWindowRect`**, which includes Windows 10's *invisible* resize
+   border (8 px at 150 %), so the Spy framed a window 8 px too wide. One window has three
+   rectangles — `GetWindowRect` 472×261, DWM extended frame bounds 456×253, UIA 450×213 (no title
+   bar). It now reports DWM's. **"bounds" is not one concept on Windows**; any new consumer (#54's
+   crop, #23's fallback) has to say which it means.
+
+**The lesson worth keeping: a success log is not evidence.** The first bug said "already set" for
+weeks on a call that had never worked. When an API's outcome is load-bearing for a contract, read
+the state back.
+
 ## Windows queue — the next real session
 
-`gh issue list --label needs-windows-test` → **#184, #38, #17** (all omer's). Run **#184 first**: it
-saves the elements #38's check uses. Beyond the steps on the issues, I said I would also take:
+**#184 done — six of eight steps pass.** Label stays for step 2 (the Turkish fold, and the trial
+app having no Turkish text at all) and step 6's smoothness (not smooth at 285 *real* elements, while
+omer's synthetic 3031 were). Step 8 needs #22.
 
-- #184 step 7 **on a second monitor at a different scaling**, not only at 150 % on one. The overlay
-  uses `screen.screenToDipRect`, which picks the scale of the display the rectangle is on — correct,
-  and the straddling case is the untested one. **Every snapshot number we have is from one 120-DPI
-  display**, so this is unmeasured territory generally.
-- #184 step 6 **on a real pilot window**, not only omer's synthetic 3031-element tree. The capture
-  may not finish: the agent's default budget is 5 000 ms and the client sends no `timeoutMs`, so a
-  window like KeePass 2's (278.5 s in #161) times out with `-32002` and "Capture again" retries the
-  same budget. I asked omer for a bigger budget on retry (#186). Report the budget separately.
+**#38 done — twelve of fourteen pass.** Label stays for two findings, both on the issue and
+summarised on PR #192:
+1. **A Turkish UI shows `2.5`, not `2,5`.** Input parses both separators (2500 ms on the server,
+   verified); `secondsText` is `String(ms / 1000)`, so only the *output* is locale-fixed. Against
+   omer's own ADR `2026-11-03-client-ui-language` and style-guide rule 7.
+2. **Renaming an element breaks the open test, and the server is innocent.** After the rename the
+   step targets *are* `login.confirmButton` in the graph and `testCount` is 1 — FR-08 holds. The
+   editor reads the test once per `id` (`[id, onSessionEnded]`) while the element menu is refetched
+   on every show; so the editor keeps the pre-rename document, the fresh menu no longer has the old
+   name, and the step is marked "no longer in the repository" — true from the client's view, wrong
+   about reality, and **saving from that state writes the old name back**.
+
+**Both Windows-specific risks omer wrote #38's check for are clean:** Alt+↑/↓ never touch the menu
+bar, and native drag-and-drop and column resizing behave as on macOS. Turkish text is intact end to
+end — the saved value is `'ayşe İĞÜ'` byte for byte off the server.
+
+**Still queued: #17** (omer's PR #154, still open). Its mechanism was exercised incidentally all
+session — every client start launched the agent, it connected, and on close it logged
+`stdin closed, shutting down`. So #154's check is presumably about the edge cases (crash, restart,
+a stale agent), which is where to start.
+
+The environment is proven now, so #17 is cheap:
+
+- Server address is **`http://[::1]:8080`**, not `localhost` — `PEMHTTPD-x64` (EnterpriseDB's
+  Apache, auto-start service) holds IPv4 8080 on this machine and cannot be stopped without
+  elevation. Compose binds `[::]` too, which is the way in.
+- Admin is `admin` / `ayna-dev-admin` (the `.env` I wrote today; it is git-ignored).
+- The database is **seeded and stopped, not deleted** (`docker compose stop`, the
+  `ayna_neo4j-data` volume is intact): `AYNA Trial` (`Qt / PySide6`) with version `0.1-dev`, five
+  repository objects (`login.confirmButton`, `login.cancelButton`, `login.loginButton`,
+  `login.passwordInput`, `login.userNameInput`) and two tests (`Giriş Denemesi` 4 steps,
+  `İkinci Test` 1 step). `docker compose start` brings it back.
+- **Rebuild the server when you switch branches.** `docker compose up --build` builds it from the
+  checked-out branch and nothing ties the running image to it. This cost me time on #38: the client
+  was on `omer/38-step-editor` while the server image was still `omer/184-spy-workspace`, which has
+  no `GET /api/apps/{id}/repo-objects`, so the element picker was empty. The client showed the right
+  warning; the diagnosis was the slow part.
+- Local throwaway branches from this session, safe to delete: `omer-184-local`, `omer-38-local`,
+  `omer-30-repo-view-local`.
+
+What I would still take beyond the steps on those issues:
+
+- **A second monitor at another scaling is not "pending" — it is impossible here.** This machine
+  has one 1920×1080 display. Stop listing it as a weekly-session item until there is a second
+  monitor; say so plainly instead.
+- The 5 s capture budget is **comfortable for Chromium-class windows** (VS Code 285 elements in
+  723 ms, Opera 456 in 1321 ms, no timeout), so my #186 worry about not being able to raise it
+  stands for WinForms (#161's 278.5 s), not for these. Try it on KeePass 2 when #38's check runs.
 - #197: the check popover (anchored, survives scrolling, Esc, not clipped) and the test-list resizer
   at both ends of 150–420 px, at 100 % **and** 150 %; `npm run demo` including its Docker and
   wrong-password messages; **Ctrl+Z / Ctrl+Y**, which were never pressed (only ⌘Z on macOS).
