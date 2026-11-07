@@ -81,7 +81,7 @@ The visible top-level windows on the desktop, for the Spy's window picker. No pa
 | `className` | string | UIA ClassName. For Qt it is the Python/C++ class name, the most stable handle for a window. |
 | `processId` | integer | Owning process. |
 | `processName` | string or null | Exe file name without path; `null` when it cannot be read (e.g. an elevated process). |
-| `bounds` | [left, top, right, bottom] | Physical pixels in virtual-screen coordinates. Values are negative on a monitor left of or above the primary one. |
+| `bounds` | [left, top, right, bottom] | Physical pixels in virtual-screen coordinates. Values are negative on a monitor left of or above the primary one. The rectangle the window **appears** to occupy (DWM extended frame bounds), not `GetWindowRect`: since Windows 10 a resizable window carries an *invisible* resize border outside its visible frame, and including it makes a highlight land outside the window (measured 8 px at 150 % scaling, #184). This is deliberately **not** the same rectangle as `snapshot`'s `window.bounds`, which is the window element's UI Automation rectangle and excludes the title bar. |
 
 Without a UI Automation backend (not Windows, or before #12) the method answers `-32001`.
 
