@@ -124,6 +124,32 @@ Append-only. One entry per session, newest at the bottom:
   tested next to the component that produces it.
 - PR #175. Next: #12, which emits these descriptors with the #161 budget.
 
+## 2026-11-01 — #170 review answered: the measurement was wrong, so it was taken again
+- Merged #172 and #175 (#11 closed, element descriptor on `main`). Found that a
+  `copilot-swe-agent[bot]` merge had been pushed to my #161 branch and had left a literal
+  `<<<<<<< HEAD` marker in `memory-bank/decisions/README.md`; removed it. Worth asking omer
+  what that bot is doing on my branches.
+- Galip's three #170 points all held, and the first one was not theoretical: this machine has
+  a KeePass database of the user's own, and `--fresh` was pointing `taskkill /IM KeePass.exe`
+  and an `os.remove` at the default `Documents\Database.kdbx`. Now: the pilot process is
+  found by image path through a CIM query and killed by pid, the demo database is
+  `C:\ayna-pilots\ayna-demo.kdbx`, and `--fresh` refuses any path outside the pilot folder.
+- The deduplication point reached further than it looked. `uia_probe.run` counted KeePass's
+  `Add Entry` twice (154 "elements" for a tree of 114), which inflated every total by ~26 %
+  **and** flattered every per-element mean, because a second pass over an already-realised
+  subtree is cheaper. So the honest fix was to re-measure, not to rescale: the full walk is
+  18.5 ms per element, not 11.6 ms, and the gap to the #6 dump is ~140× per element *and*
+  ~140× in total, instead of two numbers that disagreed. The #12 budget argument moved from
+  "3× the measured walk" to "~330 elements at the descriptor rate".
+- The driver script was the day's real lesson. Three honest failures before it worked
+  unattended: `click_input()` leaves KeePass's secure boxes unfocused so the keystrokes
+  vanish (KeePass then says the password is *empty* — the counter read "0 ch." after a click
+  and "9 ch." after `set_focus()`); a classic message box blocks UIA against the whole
+  process, so it has to be answered over Win32 `BM_CLICK`, while the new-database *task
+  dialog* must not be, or the script loops; and `STEP_TIMEOUT` was budgeting one step rather
+  than the sequence. A cold `--fresh` run now completes, in about six minutes, nearly all of
+  it inside one blocked UIA call — the issue's own finding, measured from the driver's side.
+- Next step: push, answer the review on #170, then #12.
 ## 2026-11-01 (second part) — reviewed #176 and #173
 - Both were follow-ups to my own earlier reviews, so the job was to check the rules are
   usable rather than to re-argue them. Approved both.
