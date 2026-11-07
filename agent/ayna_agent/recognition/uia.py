@@ -39,7 +39,12 @@ from typing import Any
 
 from ayna_agent import __version__
 from ayna_agent.recognition import snapshot as snap
-from ayna_agent.rpc import SnapshotTimeout, UiaUnavailable, WindowNotFound
+from ayna_agent.rpc import (
+    BadStepDocument,
+    SnapshotTimeout,
+    UiaUnavailable,
+    WindowNotFound,
+)
 
 log = logging.getLogger(__name__)
 
@@ -237,20 +242,28 @@ class UiaDesktop:
         Raises `UiaUnavailable` when there is no backend here, `WindowNotFound` for a handle
         that is not a top-level window, and `SnapshotTimeout` when a window cannot be read
         inside its budget -- the same three as `snapshot`, because reading the window is how a
-        target is resolved. A step that simply fails comes back as a `failed` result instead.
+        target is resolved -- plus `BadStepDocument` for a document that cannot be read at all.
+        A step that simply fails comes back as a `failed` result instead.
         """
-        from ayna_agent.playback.runner import DEFAULT_TIMEOUT_MS
+        from ayna_agent.playback.runner import DEFAULT_TIMEOUT_MS, StepDocumentError
         from ayna_agent.playback.runner import run_steps as play
 
         self._require_ready()
-        results = play(
-            steps,
-            targets,
-            lambda: self.read_tree(handle),
-            default_timeout_ms=(
-                DEFAULT_TIMEOUT_MS if default_timeout_ms is None else default_timeout_ms
-            ),
-        )
+        try:
+            results = play(
+                steps,
+                targets,
+                lambda: self.read_tree(handle),
+                default_timeout_ms=(
+                    DEFAULT_TIMEOUT_MS
+                    if default_timeout_ms is None
+                    else default_timeout_ms
+                ),
+            )
+        except StepDocumentError as exc:
+            # The server owns the error vocabulary and imports nothing from a backend, so the
+            # translation happens here rather than in `rpc.py`.
+            raise BadStepDocument(str(exc)) from exc
         return [result.to_json() for result in results]
 
     def _walk_window(
