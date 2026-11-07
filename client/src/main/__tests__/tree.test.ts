@@ -37,6 +37,27 @@ describe('foldText', () => {
     assert.equal(foldText('İptal'), 'iptal')
     assert.equal(foldText('ID'), 'id')
   })
+
+  it('ignores the marks of ş ğ ü ö ç, so ASCII typing finds Turkish text', () => {
+    const cases: [string, string][] = [
+      ['Giriş', 'giris'],
+      ['Şifre', 'sifre'],
+      ['Oturum Aç', 'oturum ac'],
+      ['Değiştir', 'degistir'],
+      ['Kullanıcı', 'kullanici'],
+      ['ID', 'id'],
+      ['Gözat ÜST', 'gozat ust'],
+    ]
+    for (const [text, typed] of cases) {
+      assert.ok(foldText(text).includes(foldText(typed)), `${typed} -> ${text}`)
+    }
+    assert.equal(foldText('ŞĞÜÖÇİI şğüöçıi'), 'sguocii sguocii')
+  })
+
+  it('still finds Turkish text typed with its own letters', () => {
+    assert.ok(foldText('Giriş').includes(foldText('giriş')))
+    assert.ok(foldText('Kullanıcı adı').includes(foldText('KULLANICI ADI')))
+  })
 })
 
 describe('elementMatches', () => {
@@ -46,6 +67,12 @@ describe('elementMatches', () => {
     assert.ok(elementMatches(edit, 'edit'))
     assert.ok(elementMatches(edit, 'USERNAME'))
     assert.ok(!elementMatches(edit, 'button'))
+  })
+
+  it('matches the nearest label, so a text box with no name is found by its caption', () => {
+    const edit = { controlType: 'Edit', name: '', nearestLabel: 'Kullanıcı adı:' }
+    assert.ok(elementMatches(edit, 'kullanici'))
+    assert.ok(!elementMatches({ controlType: 'Edit', name: '' }, 'kullanici'))
   })
 
   it('matches the plain type label when given', () => {
