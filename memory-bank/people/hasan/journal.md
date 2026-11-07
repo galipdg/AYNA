@@ -312,3 +312,46 @@ own #61 retry path would race into a state that breaks every later read of that 
 then #38 and #17, plus #197's popover and resizer. Before that, or in the same branch: the four
 follow-ups in `active.md` (pre-order fix in `loads`, `nearest_label_source`, the two probe scripts
 under `eval/spikes/`, and the `docs/AGENTS.md` ownership question for the user).
+
+## 2026-11-07 (continued) — #26 built, then the Windows session found two bugs of mine
+
+**#26 is done** (PR #200). `playback/` with resolution, actions and the runner; `read_tree()` on
+the UIA backend so a target is matched against the *same* derivation that produced the values the
+repository stored. Both acceptance criteria measured, not argued: the 3-step login 10/10 on the
+real trial app (each run resetting the status label first so it proves its own login), and "no
+coordinates" as a property of the contract rather than of one document. 112 new tests.
+
+**I avoided in my own code the bug I had just found in omer's #192**: the runner reads step schema
+0.1 *and* 0.2 instead of pinning one version. Pinning is what would break the day #150 merges.
+
+**Then the Windows session for #184, and it earned its keep.** Six of eight steps pass. Two of the
+failures are omer's to decide (the Turkish fold; smoothness at 285 real elements versus his
+synthetic 3031). But the session's real output was **two coordinate bugs of mine**, both invisible
+on one display and in every unit test:
+
+1. The agent had **never** been per-monitor-v2 DPI aware. A pointer-sized context handle truncated
+   by ctypes, a call failing with error 87, my code treating 87 as "already set", and pywinauto's
+   import quietly setting v1. The log line said "already set" for weeks about a call that had never
+   worked. **A success log is not evidence** — read the state back when a contract depends on it.
+2. `listWindows` reported `GetWindowRect`, which includes Windows 10's invisible resize border, so
+   the Spy framed a window 8 px too wide. My user found this one by *looking*: the frame around
+   every element was exact, the frame around a window was not. One window has three rectangles and
+   we were reporting the wrong one; "bounds" is not one concept on Windows.
+
+Both in PR #201. The second is the better argument for the weekly session existing: no test I would
+have thought to write catches "the rectangle is subtly too big", and a person noticed in seconds.
+
+**And the G0 chain ran end to end** (#28). The object my user picked in the Spy went to Neo4j, and
+playback read its property sets *back from the graph* and played the login — "Welcome, admin!". I
+ticked three of #28's four criteria; the last one is galip's #7. Two days before the gate, the
+thing that had never been connected is connected.
+
+**Three mistakes of my own worth remembering.** I told the user the display was at 100 % — I had
+read it from a DPI-unaware process, which is the same class of mistake as bug 1 above. I predicted
+"2 matches" for a search from the #11 fixture when the live window had 3, because a fixture is one
+moment. And my own ad-hoc G0 script read the status label immediately after the click and saw the
+*previous* state — exactly the trap #26's test already guards against, which is now twice-proven
+and is the design point for #40's checkpoints.
+
+**Next step:** #38 and #17 are still in the Windows queue and the environment is now proven
+(`http://[::1]:8080`, seeded app/version/objects). Before that, #170 is one click from merging.
