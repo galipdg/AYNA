@@ -2,7 +2,7 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-07 (review round, #26 built, Windows session, two coordinate bugs)
+- Last update: 2026-11-07 (review round, #26 built, Windows session: #184 and #38 run)
 - Current issue: **#26 is done** (PR #200, `Closes #26`, both criteria measured). Nothing else in
   progress.
 - **My open PRs, in merge order:**
@@ -131,18 +131,49 @@ the state back.
 
 ## Windows queue — the next real session
 
-**#184 is done: six of eight steps pass**, result posted as a comment. The label stays for step 2
-(the Turkish fold, and the trial app having no Turkish text at all) and step 6's smoothness (not
-smooth at 285 *real* elements, while omer's synthetic 3031 were). Step 8 needs #22.
+**#184 done — six of eight steps pass.** Label stays for step 2 (the Turkish fold, and the trial
+app having no Turkish text at all) and step 6's smoothness (not smooth at 285 *real* elements, while
+omer's synthetic 3031 were). Step 8 needs #22.
 
-**Still queued: #38 and #17.** The environment is proven now, so they are cheaper than #184 was:
+**#38 done — twelve of fourteen pass.** Label stays for two findings, both on the issue and
+summarised on PR #192:
+1. **A Turkish UI shows `2.5`, not `2,5`.** Input parses both separators (2500 ms on the server,
+   verified); `secondsText` is `String(ms / 1000)`, so only the *output* is locale-fixed. Against
+   omer's own ADR `2026-11-03-client-ui-language` and style-guide rule 7.
+2. **Renaming an element breaks the open test, and the server is innocent.** After the rename the
+   step targets *are* `login.confirmButton` in the graph and `testCount` is 1 — FR-08 holds. The
+   editor reads the test once per `id` (`[id, onSessionEnded]`) while the element menu is refetched
+   on every show; so the editor keeps the pre-rename document, the fresh menu no longer has the old
+   name, and the step is marked "no longer in the repository" — true from the client's view, wrong
+   about reality, and **saving from that state writes the old name back**.
+
+**Both Windows-specific risks omer wrote #38's check for are clean:** Alt+↑/↓ never touch the menu
+bar, and native drag-and-drop and column resizing behave as on macOS. Turkish text is intact end to
+end — the saved value is `'ayşe İĞÜ'` byte for byte off the server.
+
+**Still queued: #17** (omer's PR #154, still open). Its mechanism was exercised incidentally all
+session — every client start launched the agent, it connected, and on close it logged
+`stdin closed, shutting down`. So #154's check is presumably about the edge cases (crash, restart,
+a stale agent), which is where to start.
+
+The environment is proven now, so #17 is cheap:
 
 - Server address is **`http://[::1]:8080`**, not `localhost` — `PEMHTTPD-x64` (EnterpriseDB's
   Apache, auto-start service) holds IPv4 8080 on this machine and cannot be stopped without
   elevation. Compose binds `[::]` too, which is the way in.
 - Admin is `admin` / `ayna-dev-admin` (the `.env` I wrote today; it is git-ignored).
-- `AYNA Trial` application with version `0.1-dev` and three repository objects
-  (`login.userNameInput`, `login.passwordInput`, `login.loginButton`) are already in the database.
+- The database is **seeded and stopped, not deleted** (`docker compose stop`, the
+  `ayna_neo4j-data` volume is intact): `AYNA Trial` (`Qt / PySide6`) with version `0.1-dev`, five
+  repository objects (`login.confirmButton`, `login.cancelButton`, `login.loginButton`,
+  `login.passwordInput`, `login.userNameInput`) and two tests (`Giriş Denemesi` 4 steps,
+  `İkinci Test` 1 step). `docker compose start` brings it back.
+- **Rebuild the server when you switch branches.** `docker compose up --build` builds it from the
+  checked-out branch and nothing ties the running image to it. This cost me time on #38: the client
+  was on `omer/38-step-editor` while the server image was still `omer/184-spy-workspace`, which has
+  no `GET /api/apps/{id}/repo-objects`, so the element picker was empty. The client showed the right
+  warning; the diagnosis was the slow part.
+- Local throwaway branches from this session, safe to delete: `omer-184-local`, `omer-38-local`,
+  `omer-30-repo-view-local`.
 
 What I would still take beyond the steps on those issues:
 
