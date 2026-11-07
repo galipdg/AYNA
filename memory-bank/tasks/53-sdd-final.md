@@ -23,7 +23,8 @@ Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (he
 - [ ] First PR (`Part of #53`)
 - [ ] After the final RS (#41, 23 Nov): §8 Traceability, one reference numbering (§1.5, §5.10, RS, `docs/literature.md`)
 - [ ] PDF rendered with the diagrams, stored in `docs/sdd/`, submitted by 7 Dec
-- Next step: review of the first PR; then §8 and the reference numbers after the final RS (#41).
+- [x] 2026-11-07, hasan's #194 review: the Client row and the deployment row say PR #154 is still open and its Windows check pending (it read as Built); #63 added to the Agent row's Planned list; the §7 note on Proposed ADRs no longer counts them, so it does not go stale when #150 flips *Step schema v0*
+- Next step: merge #194; when #182, #190 and #193 merge, §7 needs rows for their ADRs (*Client UI language*, *Runs API and live updates*, *Graph schema v0.4*) and the status rows of #15/#24/#25/#30/#38/#44 need updating; then §8 and the reference numbers after the final RS (#41).
 
 ## Manual checks
 - 2026-11-05 · agent · Mermaid 11.17.2 parser under jsdom on `SDD.md`: 10 blocks, 0 failed; 24 fence lines; `marked` GFM: 69 headings, no level skip, no duplicate text, 31 tables, no row with a wrong cell count · pass · evidence: this note (scratch script, not in the repo)
