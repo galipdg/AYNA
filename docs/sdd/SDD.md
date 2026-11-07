@@ -9,7 +9,7 @@
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
 | Version | 0.3 — draft of sections 1–7 and 9 |
-| Date | 2026-11-05 |
+| Date | 2026-11-07 |
 | Status | Sections 1–4 (#45), 5 (#50), 6 (#48) and 7 (#53) drafted. Section 8 waits for the final RS (#41). Final PDF: #53, due 7 Dec 2026 |
 
 ## Document history
@@ -19,7 +19,7 @@
 | 0.1 | 2026-10-29 | Ömerfaruk Sarıbal | Skeleton; introduction, architecture, data design and interface design (#45) |
 | 0.1 | 2026-10-31 | Ömerfaruk Sarıbal | Status after #135, #151, #156, #158 merged; retrieval and AI errors settled (#155 review) |
 | 0.2 | 2026-10-31 | Ömerfaruk Sarıbal | Test design (#48) |
-| 0.3 | 2026-11-05 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12 and #60 merged, and PR #173, PR #174 |
+| 0.3 | 2026-11-07 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12, #21 and #60 merged, and PR #173, PR #174 |
 
 ---
 
@@ -903,6 +903,7 @@ The decisions behind this design are ADRs in `memory-bank/decisions/`. The table
 | 2026-10-28 | *Healing proposal transport: agent → client or CLI runner → server* | Accepted | The agent posting to the server itself: the user's session in a second process and a second network client. A separate `heal.proposed` message and `POST`: two writes for one fact, with an ordering rule. Floats with a tolerance: the contributions would add up to the score only within it. |
 | 2026-10-29 | *Graph schema v0.1: tests and repository objects belong to an application* | Accepted | An `appId` property: a foreign key that graph queries such as change impact cannot see. Tests per application version: copying a test for every version breaks NFR-33. |
 | 2026-10-29 | *REST error body: RFC 9457 problem details* | Accepted | A project-specific body: every error Spring raises before a controller runs would need its own mapping. Spring Boot's default body: no field list, and it leaks the messages of unexpected exceptions. |
+| 2026-10-31 | *D1: sample app stays PySide6; pilots are KeePass 2 and HandBrake* | Accepted | A WPF sample app, the plan's exception: Qt's measured weakness is id uniqueness in other people's apps, which does not apply to one we name ourselves, the stack is Python, and HandBrake already covers WPF. Notepad++ as a pilot: 59 % id-or-Name, and UIA does not see its Scintilla editor. |
 | 2026-10-31 | *Element descriptor v0: properties, priority and the label rule* | Accepted | Reusing `scoredElement` as the descriptor: no `dpi`, no state, no provenance for the label, and shaped for one consumer. Computing the label at healing time only: stored and live labels would come from different rules. |
 | 2026-10-31 | *Healing proposal schema 0.2: per-element DPI, feature versions, #151 review follow-ups* | Proposed (#149); extends the transport ADR | One `dpi` per proposal: the target and the candidates may come from machines with different scaling. Required feature versions: 0.2 would stop being a superset of 0.1. |
 | 2026-10-31 | *Accounts, roles, sessions and API tokens* | Proposed (#60) | A servlet session cookie: sessions lost on restart, CSRF protection needed, a second path for CI tokens. JWT: a library and a signing key, and revocation needs a deny list, which is a token store again. |

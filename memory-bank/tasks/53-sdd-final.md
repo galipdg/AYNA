@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/53
 - Owner: omer · Branch: `omer/53-sdd-final` (first PR; the issue stays open, `Part of #53`)
-- Started: 2026-11-05 · Last update: 2026-11-05
+- Started: 2026-11-05 · Last update: 2026-11-07
 
 ## Approach
 Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (headings AI-n → 5.n), §7 written from the ADR index, stale status rows fixed. Second step, after the final RS (#41, 23 Nov): §8 Traceability, reference numbers, PDF in `docs/sdd/`.
@@ -16,7 +16,7 @@ Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (he
 
 ## Status
 - [x] §5 moved, headings and references renumbered; the reverse transform equals the original block
-- [x] §7 written: 22 ADRs, same order and titles as the index
+- [x] §7 written: 23 ADRs, same order and titles as the index (D1 added 2026-11-07, after #169 merged)
 - [x] Status rows checked against the code and updated; version 0.3
 - [x] References in files of others: request in galip's inbox (`docs/rs/RS.md:285`, `ai/API.md:196`, `ai/ayna_ai/validate.py:29`); hasan has none
 - [x] `docs/sdd/SDD-ai.md` removed (omer's OK, 2026-11-05)
