@@ -381,3 +381,48 @@ and is the design point for #40's checkpoints.
 
 **Next step:** #38 and #17 are still in the Windows queue and the environment is now proven
 (`http://[::1]:8080`, seeded app/version/objects). Before that, #170 is one click from merging.
+
+## 2026-11-07 (third part) — the Windows queue: #184 and #38 run with my user
+
+**#184: six of eight pass. #38: twelve of fourteen.** Both results are issue comments; both labels
+stay, for findings rather than for anything unverified.
+
+**The best part was not a test result.** Twice my user found something by *looking* that no test I
+would have written would catch:
+
+- the Spy's red frame around a **window** sat outside the window while the frame around every
+  **element** was exact — which turned out to be `listWindows` reporting `GetWindowRect`, invisible
+  resize border included (PR #201);
+- *"this element is no longer in the repository"* on a step whose element was right there — which
+  turned out to be the editor reading the test once per `id` while refetching the element menu on
+  every show, so it showed a pre-rename document and then blamed the data.
+
+Both are the argument for the weekly session existing. Neither is a thing a unit test fails on.
+
+**Two predictions I made from the code before my user looked, and both held:** `2,5` would come back
+as `2.5` (`secondsText` is `String(ms / 1000)`, locale-fixed on the way out only), and `Login` in
+the Spy's search would match 8 of 14 elements because every Qt id is a dotted path containing the
+window's name. Reading the code first made the manual check sharper — "type this, expect exactly
+this" instead of "have a look".
+
+**And two things I got wrong and had to walk back.** I said the picker failing was silently
+swallowed — it is not, omer renders `stepsElementsFailed` and I had read the file too fast. And I
+implied a server bug when `GET …/versions` looked empty — that was my own shell loop eating the
+output. Both corrected in the same breath; the lesson is to run the thing rather than skim it,
+which is also what made the good findings good.
+
+**My own setup mistake, worth remembering:** I switched the checkout to #38's branch but left the
+server container built from #184's, so the element picker was empty because the endpoint did not
+exist in the running image. `docker compose up --build` builds from the checked-out branch and
+nothing ties the image to it. It will happen to someone at the demo.
+
+**Also fixed, found the same way:** the agent had never been per-monitor-v2 DPI aware, and I had
+read "100 % scaling" off a DPI-unaware process and told my user so — the same class of mistake as
+the bug. The display was 125 % the whole time.
+
+**Left behind:** the stack stopped but not deleted, with `AYNA Trial`, five repository objects and
+two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`.
+
+**Next step:** #17 (omer's PR #154) is the last item in the Windows queue. Its happy path ran
+incidentally all session — every client start launched the agent and every close logged
+`stdin closed, shutting down` — so the check is presumably about crash and restart.
