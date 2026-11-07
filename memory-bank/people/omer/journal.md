@@ -134,3 +134,10 @@ Append-only. One entry per session, newest at the bottom:
 - Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
 - Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
 - Next: #154's approval, then #186 → #192, #197 one by one.
+
+## 2026-11-08 · #208 Compose port and Neo4j password hint (side session)
+- hasan's 2026-11-07 inbox item (#28 Windows session) had no issue: opened #208 on omer's OK (Week 3, owner:omer, area:devops, area:server, board In progress).
+- Compose publishes `${AYNA_SERVER_PORT:-8080}`; `.env.example` and `server/AGENTS.md` say so. `docker compose config` checked with the variable unset and set to 18080.
+- Reproduced the crash with the built jar against a separate Neo4j (111 lines, `AuthenticationException` at line 55). `Neo4jAuthFailureHint` (registered in `spring.factories`) now logs one ERROR line with the URI, the user and `docker compose down -v`; Boot's trace still follows. Unit + integration test (own Neo4j container).
+- Server suite 106/106; the rebuilt jar logs the hint at line 25 of 112 and nothing when Neo4j is simply down. A `@Component` variant logged the line twice, so `spring.factories` stays (learnings).
+- Next: push and PR with `Closes #208` on omer's OK.
