@@ -1,10 +1,15 @@
-// Test steps (`schemas/step.schema.json` version 0.1, ADR 2026-10-27-step-schema-v0) and the
-// codeless editor's row model (#38). Kept free of Electron and DOM imports so plain
-// `node --test` can use it.
+// Test steps (`schemas/step.schema.json`, ADR 2026-10-27-step-schema-v0) and the codeless
+// editor's row model (#38). Kept free of Electron and DOM imports so plain `node --test` can
+// use it.
 
+import stepSchema from '../../../schemas/step.schema.json' with { type: 'json' }
 import { LOGICAL_NAME } from './repository.ts'
 
-export const STEP_SCHEMA_VERSION = '0.1'
+/**
+ * The `version` const of the schema file the client is built with, which is also the file the
+ * server reads, so a schema release cannot leave the editor saving an old version.
+ */
+export const STEP_SCHEMA_VERSION: string = stepSchema.properties.version.const
 
 export const KEYWORDS = ['Click', 'Type', 'Select', 'Verify', 'Wait'] as const
 export type Keyword = (typeof KEYWORDS)[number]
