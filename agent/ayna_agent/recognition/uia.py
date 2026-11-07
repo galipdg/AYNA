@@ -65,6 +65,10 @@ _WS_CHILD = 0x4000_0000
 #: picker that lists them is listing windows a tester cannot see.
 _DWMWA_CLOAKED = 14
 
+#: DWMWA_EXTENDED_FRAME_BOUNDS: the rectangle the window *appears* to occupy. See
+#: `_frame_bounds` for why `GetWindowRect` is the wrong answer.
+_DWMWA_EXTENDED_FRAME_BOUNDS = 9
+
 
 class UiaDesktop:
     """Reads the desktop through UI Automation. One instance per agent process.
@@ -161,7 +165,6 @@ class UiaDesktop:
             if not _is_pickable_window(handle):
                 return True
             info = _quiet(lambda: UIAElementInfo(handle))
-            left, top, right, bottom = win32gui.GetWindowRect(handle)
             process_id = _window_process(handle)
             windows.append(
                 {
@@ -170,7 +173,7 @@ class UiaDesktop:
                     "className": _quiet(lambda: info.class_name) if info else None,
                     "processId": process_id,
                     "processName": _exe_name(process_id),
-                    "bounds": [left, top, right, bottom],
+                    "bounds": _frame_bounds(handle),
                 }
             )
             return True
@@ -534,6 +537,40 @@ def _set_dpi_awareness() -> None:
             error,
             got,
         )
+
+
+def _frame_bounds(handle: int) -> list[int]:
+    """The rectangle the window appears to occupy, in physical pixels.
+
+    **Not `GetWindowRect`.** Since Windows 10 a resizable window carries an *invisible* resize
+    border outside its visible frame, and `GetWindowRect` includes it -- which is why a
+    maximised browser reports a negative origin. Measured on this window at 150 % scaling:
+
+        GetWindowRect              472 x 261   (8 px of nothing on the left, right and bottom)
+        DWM extended frame bounds  456 x 253   <- what a person sees
+        UIA BoundingRectangle      450 x 213   (38 px short at the top: no title bar)
+
+    So the Spy's red frame around a *window* used to be drawn outside the window, which is what
+    a tester notices first (#184, 2026-11-07). DWM's extended frame bounds is the only one of
+    the three that means "the window as it looks": it drops the invisible border and keeps the
+    title bar. UIA's rectangle stays the right answer for an *element*, and that is what a
+    snapshot reports.
+
+    Falls back to `GetWindowRect` when DWM declines, which it does for a window that is already
+    gone -- a wrong-by-8-pixels rectangle beats no window in the list.
+    """
+    rect = ctypes.wintypes.RECT()
+    status = ctypes.WinDLL("dwmapi").DwmGetWindowAttribute(
+        ctypes.wintypes.HWND(handle),
+        ctypes.c_uint(_DWMWA_EXTENDED_FRAME_BOUNDS),
+        ctypes.byref(rect),
+        ctypes.sizeof(rect),
+    )
+    if status == 0:
+        return [rect.left, rect.top, rect.right, rect.bottom]
+    import win32gui
+
+    return list(win32gui.GetWindowRect(handle))
 
 
 def _is_window(handle: int) -> bool:

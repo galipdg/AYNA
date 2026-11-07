@@ -436,3 +436,35 @@ def test_setup_leaves_the_process_per_monitor_v2():
         check=True,
     )
     assert done.stdout.strip().splitlines()[-1] == "per-monitor-v2", done.stderr
+
+
+@pytest.mark.windows
+def test_window_bounds_exclude_the_invisible_resize_border(desktop):
+    """`listWindows` reports the window as a person sees it, not as `GetWindowRect` does.
+
+    Since Windows 10 a resizable window has an *invisible* resize border outside its visible
+    frame, and `GetWindowRect` includes it -- which is why a maximised browser reports a
+    negative origin. The Spy drew its red frame from this rectangle, so the frame landed
+    outside the window (#184, found at 150 % scaling on 2026-11-07).
+
+    The assertion is a relation rather than a number, because the border is DPI-scaled and
+    differs per window: the reported rectangle must sit **inside** `GetWindowRect`, and for at
+    least one window on a real desktop it must be strictly smaller -- otherwise the fix is not
+    doing anything and the test would pass against the old code.
+    """
+    import win32gui
+
+    windows = desktop.list_windows()
+    assert windows, "a session with no visible window at all is not a session"
+    smaller = 0
+    for window in windows:
+        left, top, right, bottom = window["bounds"]
+        outer = win32gui.GetWindowRect(window["handle"])
+        assert left >= outer[0] and top >= outer[1], window["title"]
+        assert right <= outer[2] and bottom <= outer[3], window["title"]
+        if (right - left) < (outer[2] - outer[0]):
+            smaller += 1
+    assert smaller, (
+        "no window's frame bounds were narrower than GetWindowRect; either every window on "
+        "this desktop is borderless or the DWM call is not being used"
+    )

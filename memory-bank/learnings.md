@@ -186,3 +186,32 @@ that had never worked. When an API's outcome is load-bearing for a contract, *re
 and warn when it is not what was promised, rather than inferring it from a return value — which is
 what the function does now, and what `test_setup_leaves_the_process_per_monitor_v2` pins in a fresh
 interpreter (awareness can be set only once per process, so an in-process test cannot check it).
+
+## 2026-11-07 — one window has three different rectangles, and we were reporting the wrong one (hasan, #16/#184)
+
+Measured on the trial app at 150 % scaling, during the Windows session for #184:
+
+```
+Win32 GetWindowRect        472 x 261   <- what listWindows reported
+DWM extended frame bounds  456 x 253   <- what a person sees
+UIA BoundingRectangle      450 x 213   <- what snapshot reports (per element)
+```
+
+- **`GetWindowRect` is 8 px too big on the left, right and bottom.** Since Windows 10 a resizable
+  window carries an **invisible** resize border outside its visible frame and `GetWindowRect`
+  includes it. (The same effect makes a maximised browser report `[-11, -11, 1931, 1019]` on a
+  1920×1080 screen — the negative origin is not a bug in the reader.) The border is DPI-scaled, so
+  it is 8 px at 150 % and 11 px elsewhere; never hard-code it.
+- **UIA's rectangle is 38 px short at the top**: no title bar. Right for an *element*, wrong for
+  "the window".
+- **`DwmGetWindowAttribute(DWMWA_EXTENDED_FRAME_BOUNDS, …)`** is the only one of the three that
+  means "the window as it looks": invisible border out, title bar in.
+
+The user spotted it the way a tester would — the Spy's red frame around a *window* sat outside the
+window — while the frame around every *element* was exactly right. So `listWindows` now reports the
+DWM rectangle and `docs/agent-rpc.md` says which rectangle it is, and says explicitly that it is
+**not** the same as `snapshot`'s `window.bounds`. Both are called `bounds`, which is what let the
+difference hide.
+
+**General point: "bounds" is not one concept on Windows.** Any new coordinate consumer (#54's
+screenshot crop, #23's win32 fallback, the overlay) has to say which of the three it means.
