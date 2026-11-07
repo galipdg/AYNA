@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/17
 - Owner: omer · Branch: `omer/17-agent-process-manager`
-- Started: 2026-10-29 · Last update: 2026-11-01
+- Started: 2026-10-29 · Last update: 2026-11-08
 
 ## Approach
 `client/src/main/agent.ts` (`AgentManager`, no Electron imports, so `node --test` drives it): spawns `python -m ayna_agent.rpc --port 0` with a fresh 32-byte token in `AYNA_AGENT_TOKEN`, reads the one `{"event":"listening","port":n}` stdout line, connects to `ws://127.0.0.1:<port>` with `Authorization: Bearer`, pings, then keeps a heartbeat. Crash or failed heartbeat → kill tree → restart with backoff, at most 3 times, counter reset after 60 s connected → `failed` (UI offers "Start again"). Quit: `before-quit` waits for `stop()`: stdin closed (agent exits on EOF, #135), process tree killed after 3 s. Status goes to the renderer over IPC (`agent:status` event, `agent:get-status`, `agent:retry`); `AgentStatusBar.tsx` shows it under the tagline. Contract: `docs/agent-rpc.md` on #135.
@@ -26,7 +26,8 @@ Tests: `src/main/__tests__/agent.test.ts` against `fixtures/fake-agent.ts`, a de
 - [x] Manual UI check on macOS passed (below).
 - [x] Windows session 2026-10-31 (hasan): 6/7 steps pass; `agent.test.ts:160` and the "failed" message wrong on Windows → fixed 2026-11-01 (`describeExit`); handshake deadline added; 57 tests green on macOS.
 - [ ] Windows re-run of `npm test` + the "failed" message check; `needs-windows-test` stays on #17 until then.
-- Next step: after the Windows re-run passes, switch the PR body to `Closes #17` and mark it ready.
+- [x] PR #154 ready for review since 2026-11-07 (galip, hasan requested); `origin/main` merged in 2026-11-08 (`a09d801`), 75 client tests green.
+- Next step: merge #154 as "Refs #17" once it has an approval (it unblocks the client stack #186–#197); after the Windows re-run passes, close #17 by hand with the evidence.
 
 ## Manual checks
 - 2026-10-29 · omer · status bar on macOS (`npm run dev`, 7 steps: failure path with retry and quick quit; real #135 agent connected, kill → restart ×3, 4th kill → failed, Start again, quit leaves no `ayna_agent.rpc` process) · pass · evidence: omer's report in session
@@ -37,7 +38,7 @@ Tests: `src/main/__tests__/agent.test.ts` against `fixtures/fake-agent.ts`, a de
 - Electron's renderer is not exposed to UI Automation on Windows (hasan, 2026-10-31): a UIA walk finds only the menu bar. Matters for #24/#44 manual checks and if AYNA should ever test its own client; candidate for an issue.
 
 ## Handoff
-- `AgentManager.call(method, params, timeoutMs)` is the entry point for later issues (Spy #24, playback #44); give long calls a timeout that covers them, since the heartbeat pauses while a call is pending.
+- `AgentManager.call(method, params, timeoutMs)` is the entry point for later issues (Spy #24, playback #44); give long calls a timeout that covers them; the heartbeat keeps pinging during a long call (the agent answers in any order).
 - The packaged app has no venv next to it; #84 must set `AYNA_AGENT_PYTHON` (or extend `resolveAgentCommand`).
 
 ## Outcome (fill when the issue closes)

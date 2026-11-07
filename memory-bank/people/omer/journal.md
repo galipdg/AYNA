@@ -134,3 +134,10 @@ Append-only. One entry per session, newest at the bottom:
 - Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
 - Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
 - Next: #154's approval, then #186 → #192, #197 one by one.
+
+## 2026-11-08 (fourteenth session) · #154 up to date, still no approval
+- `main` unchanged since 2026-11-07 (`2e27199`). #154 still has no human review; Copilot fails on quota. Every client stack PR (#186–#197) carries #17's commits, so all wait on #154.
+- Merged `origin/main` into `omer/17-agent-process-manager` (`a09d801`, clean), client lint/typecheck/format and 75/75 tests green, pushed on omer's yes. Fixed the PR body's stale heartbeat note.
+- `protect-main` ruleset: 1 approval, squash only, threads resolved, approvals not dismissed on push.
+- hasan's docker port / Neo4j password note handed to a separate session (new issue + branch).
+- Next: #154's approval → merge → #186 → #192, #197.
