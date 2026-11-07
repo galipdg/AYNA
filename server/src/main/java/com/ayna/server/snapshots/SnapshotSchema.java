@@ -22,7 +22,8 @@ import tools.jackson.databind.ObjectMapper;
  * The snapshot schema (`schemas/snapshot.schema.json`, #12) plus the rules it cannot express
  * (ADR `2026-11-01-snapshot-schema-v0`): unique element ids, one root that comes first,
  * pre-order (a parent before its children, each subtree contiguous), and `capture.elementCount`
- * equal to the number of elements. The agent's `snapshot.loads` refuses the same documents.
+ * equal to the number of elements. The agent's `snapshot.loads` refuses the same documents
+ * (its pre-order check was tightened to contiguous subtrees in #198).
  */
 @Component
 public class SnapshotSchema {
