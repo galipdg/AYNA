@@ -79,6 +79,20 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
 - 2026-11-01 · omer · server · **After switching branches, run `./mvnw clean test`, not `./mvnw test`.** Maven never deletes resources that left `src/`, so a migration from another branch (here `V0003__accounts_and_tokens.cypher` from #60) stays in `target/classes`, neo4j-migrations applies it, and `GraphSchemaMigrationIntegrationTest` fails with unexpected labels (`User`, `AuthToken`) and an extra migration. CI is unaffected (fresh checkout).
 
 - 2026-11-01 · omer · GitHub's "This branch has conflicts" ignores `.gitattributes`, so `merge=union` files (inboxes, journals, `learnings.md`, `decisions/README.md`) block a PR even though `git merge origin/main` locally resolves them silently. Fix: merge `main` into the branch and push the merge commit. To see what GitHub sees: `git --attr-source=4b825dc642cb6eb9a060e54bf8d69288fbee4904 merge-tree --write-tree --name-only origin/main <branch>` (empty tree as attribute source, git ≥ 2.40).
+
+## 2026-11-01 — a Qt AutomationId is not unique inside an item view
+
+Qt builds an AutomationId from the `objectName` chain, but an item view's children (table rows
+and cells, list items, tree items) have no `objectName` of their own, so they inherit their
+**container's** id verbatim. Measured two ways: each of KeePassXC's four `QListWidget`
+ListItems carries its `List` parent's AutomationId exactly (`eval/spikes/uia-dumps/keepassxc.json`,
+#6), and #150 measured the same for every cell of a Qt table.
+
+Consequences, because this bites in three places: a "no duplicated AutomationId" test on the
+sample app (#33) would fail on its own results grid, so it must exclude ListItem, DataItem and
+TreeItem; the Spy (#24) and the element descriptor (#11) must not present an AutomationId as a
+unique identifier inside an item view; and items are addressed by Name, or by row and cell from
+step schema v0.2. Written into ADR `2026-10-31-pilot-apps-and-sample-app-technology` (#21).
 - 2026-11-01 · omer · git · **A branch stacked on a PR that was squash-merged conflicts with `main` everywhere the base PR touched** (add/add on every new file), because `main` has the base PR's content but not its commits. Do not resolve by hand and do not merge the base branch's tip if it carries a revert. Find the last commit of the base branch your branch contains (or the merge commit where both histories meet, e.g. `acce05c` for #60), then `git merge origin/main`, `T=$(git merge-tree --write-tree --merge-base=<that commit> <branch> origin/main | head -1)`, `git restore --source=$T --staged --worktree :/`, fix only the remaining real conflicts, commit. Check: `git diff --name-only <that commit> <branch>` and `git diff --cached --name-only origin/main` list the same files.
 - 2026-11-01 · #12 · **`Path.read_text(newline=...)` is Python 3.13 only; `write_text(newline=...)`
   is 3.10.** The asymmetry is easy to miss and both modules declare `requires-python = ">=3.11"`.
