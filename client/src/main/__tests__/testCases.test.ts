@@ -2,11 +2,11 @@ import assert from 'node:assert/strict'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { after, before, describe, it } from 'node:test'
-import type { StepDocument } from '../../shared/steps.ts'
+import { STEP_SCHEMA_VERSION, type StepDocument } from '../../shared/steps.ts'
 import { createTest, deleteTest, getTest, listTests, renameTest, saveSteps } from '../testCases.ts'
 
 const document: StepDocument = {
-  version: '0.1',
+  version: STEP_SCHEMA_VERSION,
   steps: [
     {
       id: '62b637f6-79e5-475f-9668-bd444c7ae20d',
@@ -126,7 +126,7 @@ describe('tests API', () => {
       json(res, 200, stored)
     }
     const fresh: StepDocument = {
-      version: '0.1',
+      version: STEP_SCHEMA_VERSION,
       steps: [{ keyword: 'Type', target: 'login.usernameInput', value: 'admin' }],
     }
     assert.deepEqual(await saveSteps(base, 't1', fresh), { ok: true, test })

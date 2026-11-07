@@ -3,13 +3,16 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import {
+  CHECK_PROPERTIES,
   documentFrom,
   draftsFrom,
+  KEYWORDS,
   localProblems,
   move,
   newDraft,
   parseSeconds,
   serverProblems,
+  STEP_SCHEMA_VERSION,
   type StepDocument,
 } from '../../shared/steps.ts'
 import { validateSteps } from '../testCases.ts'
@@ -29,13 +32,28 @@ interface Case {
   step?: unknown
 }
 const cases = read('examples', 'step', 'cases.json') as { valid: Case[]; invalid: Case[] }
-const documentOf = (c: Case) => c.document ?? { version: '0.1', steps: [c.step] }
+const documentOf = (c: Case) => c.document ?? { version: STEP_SCHEMA_VERSION, steps: [c.step] }
+
+/**
+ * Whether the editor has rows for every step: its keywords and check properties, and no `row`.
+ * Step schema 0.2 (#150) adds SelectRow, `row` and the row checks, which the editor does not
+ * offer yet (follow-up issue), so those examples cannot make the round trip.
+ */
+const editable = (document: StepDocument) =>
+  document.steps.every(
+    (step) =>
+      (KEYWORDS as readonly string[]).includes(step.keyword) &&
+      !('row' in step) &&
+      (!step.checkpoint ||
+        (CHECK_PROPERTIES as readonly string[]).includes(step.checkpoint.property)),
+  )
 
 describe('step rows', () => {
   it('turn a stored document into rows and back without a change', () => {
     assert.deepEqual(documentFrom(draftsFrom(example)), example)
     for (const c of cases.valid) {
       const document = documentOf(c) as StepDocument
+      if (!editable(document)) continue
       assert.deepEqual(documentFrom(draftsFrom(document)), document, c.name)
     }
   })
@@ -83,6 +101,31 @@ describe('step rows', () => {
     assert.equal(parseSeconds('1.0001'), null)
   })
 
+  it('write the version of the schema file, the one the server checks', () => {
+    assert.equal(STEP_SCHEMA_VERSION, read('step.schema.json').properties.version.const)
+    assert.equal(documentFrom([]).version, STEP_SCHEMA_VERSION)
+    assert.equal(example.version, STEP_SCHEMA_VERSION)
+  })
+
+  it('keep a wait of 0 (check once) apart from an empty one (the run default)', () => {
+    const verify = { keyword: 'Verify', target: 'login.okButton' } as const
+    const checkpoint = { property: 'enabled', operator: 'equals', expected: true } as const
+    const stored: StepDocument = {
+      version: STEP_SCHEMA_VERSION,
+      steps: [
+        { ...verify, checkpoint, timeoutMs: 0 },
+        { ...verify, checkpoint },
+      ],
+    }
+    const drafts = draftsFrom(stored)
+    assert.deepEqual(
+      drafts.map((draft) => draft.timeout),
+      ['0', ''],
+    )
+    assert.deepEqual(documentFrom(drafts), stored)
+    assert.equal(documentFrom([{ ...drafts[1], timeout: '0' }]).steps[0].timeoutMs, 0)
+  })
+
   it('move a step up and down', () => {
     assert.deepEqual(move(['a', 'b', 'c'], 0, 2), ['b', 'c', 'a'])
     assert.deepEqual(move(['a', 'b', 'c'], 2, 0), ['c', 'a', 'b'])
@@ -118,7 +161,7 @@ describe('validateSteps', () => {
       { keyword: 'Verify', target: 'login.status', checkpoint: { property: 'name' } },
       { keyword: 'Click', target: 'login.okButton', value: 'x' },
     ]
-    assert.deepEqual(validateSteps({ version: '0.1', steps }), [
+    assert.deepEqual(validateSteps({ version: STEP_SCHEMA_VERSION, steps }), [
       { index: 0, code: 'target-missing' },
       { index: 1, code: 'value-empty' },
       { index: 2, code: 'value-too-long' },
