@@ -15,29 +15,41 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - Still to tick by hand: **#161's five acceptance boxes on the issue** — PR #170 ticks them, the
   issue does not.
 
-## What the review round committed me to (do these before new feature work)
+## What the review round committed me to
 
-Each is small, each came out of reading someone else's code, and each is in my own area:
+All on branch `hasan/review-round-1107` / **PR #198**. Three of the four are **done** (`d00c491`):
 
-1. **`agent/ayna_agent/recognition/snapshot.py` — `loads` is too permissive.** It checks only that
-   a parent appeared earlier; omer's Java `SnapshotSchema.treeError` enforces **contiguous
-   subtrees** (true pre-order), which is what the schema's own text says. A level-order document
-   passes the agent and gets a 400 from the server. The server is right. Fix `loads`, and add the
-   level-order case to `schemas/examples/snapshot/cases.json` as invalid so both sides are pinned
-   by the shared file. (Found by #182's `anElementOutsideItsParentsSubtreeIsRejected`.)
-   The client's `buildTree` is equally permissive, which is fine — being liberal in what you
-   display is right for a Spy — but its comment claims pre-order; omer has that note.
-2. **`agent/ayna_agent/model.py` — add `nearest_label_source` to `NEVER_MATCH`**, with omer's
-   reason (it says how `nearestLabel` was found, not what the element is), and add it to the
-   descriptor ADR §3 list. The server's `RepoObjectService.NEVER_MATCH` already has it, so today
-   the agent would match on a property the server refuses.
-3. **Commit the probe scripts under `eval/spikes/`** with their output: the KeePass 2 grid probe
-   from this session (findings in `learnings.md` 2026-11-07) and the Qt grid probe galip asked for
-   on #150 (2026-10-29). My own branch, not in anyone's PR.
-4. **Ask the user about `docs/AGENTS.md`**: give `ui/` to omer, refresh the stale Layout list
-   (`ui/`, `graph-model.md`, `tool-matrix.md`, `agent-rpc.md`, and `manual-checks/` from root §10),
-   and fix the pre-ADR ownership tables in `docs/working-agreement.md` §1 and `docs/README.md`
-   (galip's #19 note). One small PR for all of it.
+1. **DONE — `recognition/snapshot.py`: `loads` now refuses a level-order document.** It checked
+   only that a parent appeared earlier; omer's Java `SnapshotSchema.treeError` enforces
+   **contiguous subtrees**, which is what the schema's text ("in pre-order") means, so the agent
+   could hand the server a document it answers with a 400. `loads` now tracks the current path the
+   way the server does, and the module docstring no longer states the weaker rule. New test
+   `test_loads_refuses_an_element_outside_its_parents_subtree`; `test_loads_refuses_a_second_root`
+   now matches the clearer message. 281 agent tests pass.
+   - **The cases.json half of that promise was wrong and is withdrawn.** Every `invalid` case in
+     `schemas/examples/snapshot/cases.json` must name the **JSON Schema keyword** that rejects it
+     (`"rule"`), and a level-order document is schema-*valid* — no keyword rejects it. Adding it
+     would have broken both my `test_a_named_invalid_case_is_refused_by_the_rule_it_names` and
+     omer's `everyInvalidCaseIsRejected`. Structural rules are correctly tested on each side
+     separately; no `schemas/` change was needed, so no ADR and no team approval either. Said so on
+     #182.
+   - The client's `buildTree` is equally permissive, which is fine — being liberal in what you
+     display is right for a Spy — but its comment claims pre-order; omer has that note on #186.
+2. **DONE — `model.py`: `nearest_label_source` is in `NEVER_MATCH`**, with omer's reason.
+   **The ADR was deliberately not touched:** `2026-10-31-element-descriptor-v0` is Accepted, the
+   root rules say never edit an accepted ADR, and that ADR already names `model.NEVER_MATCH` as the
+   list ("with the reason in the code"). So the code is the only place this belongs. If the team
+   wants the ADR's enumeration to be authoritative, that needs a superseding ADR — not worth one
+   for a property nobody matches on, but it is the team's call, not mine.
+3. **DONE — `eval/spikes/grid_probe.py`**, `grid_probe_app.py` and `grid-probes.md`. Both runs are
+   reproduced through the committed script: the Qt table and list (galip asked for this one on
+   #150) and KeePass 2's `m_lvEntries`. Deliberately **does not import `kp_state.py`**, which lives
+   on `hasan/161-winforms-walk` and is not on `main` yet — it takes a window handle instead, so
+   #198 does not depend on #170's merge order.
+4. **TODO — `docs/AGENTS.md`**: give `ui/` to omer, refresh the stale Layout list (`ui/`,
+   `graph-model.md`, `tool-matrix.md`, `agent-rpc.md`, and `manual-checks/` from root §10), and fix
+   the pre-ADR ownership tables in `docs/working-agreement.md` §1 and `docs/README.md` (galip's #19
+   note). **Needs the user's OK** (root §7: changing an `AGENTS.md` requires asking).
 
 ## Decisions I made in the reviews — do not re-derive them
 
@@ -136,3 +148,11 @@ anchor positioning, which #197's check popover needs. Pilot apps are in `C:\ayna
 (password `ayna-demo`). `eval/spikes/kp_state.py main` brings KeePass 2 to a database-open state in
 about 16 s and prints the window handle. Docker and Java 21 were **not** available in the
 2026-11-01 session and were not needed in this one.
+
+## Found while running the follow-ups — worth its own issue, not mine to sneak in
+
+`eval/` has **two different modules named `uia_dump.py`** (`apps/trial/` and `spikes/`). Each tree
+is green alone but `pytest eval/` from the repo root fails 26 of 38, because one shadows the other.
+Hidden today by `testpaths = ["apps/trial/tests"]` and by CI running only the trial tests. Details
+and the three fix options in `learnings.md` 2026-11-07; the fix touches omer's CI job, so propose an
+issue rather than changing it. **Always name the path when running eval tests.**
