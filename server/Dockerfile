@@ -1,12 +1,13 @@
 # Build context: the repository root (docker-compose.yml), because the server
-# validates steps against schemas/step.schema.json (#39).
+# validates steps and snapshots against schemas/step.schema.json (#39) and
+# schemas/snapshot.schema.json (#15).
 # Build stage: compiles the server with the Maven wrapper.
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /src/server
 COPY server/.mvn/ .mvn/
 COPY server/mvnw server/pom.xml ./
 RUN ./mvnw -q -B dependency:go-offline
-COPY schemas/step.schema.json /src/schemas/
+COPY schemas/step.schema.json schemas/snapshot.schema.json /src/schemas/
 COPY server/src/ src/
 RUN ./mvnw -q -B package -DskipTests
 

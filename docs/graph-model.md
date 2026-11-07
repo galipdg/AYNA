@@ -39,8 +39,8 @@ graph LR
 |---|---|---|
 | Application | `name`, `technology` | unique `id` · index `name` |
 | AppVersion | `version` | unique `id` |
-| Window | `name`, `className`, `snapshotId` | unique `id` |
-| Element | `automationId`, `name`, `controlType`, `className`, `bounds`, `snapshotId` | unique `id` · index `snapshotId` · index `automationId` |
+| Window | `snapshotId`, `name` (window title), `className`, `capturedAt` (datetime), `featureVersion`, `exeName`, `fileVersion`, `captureDurationMs`, `readErrors`, `agentVersion` (the capture's evidence, #64); `createdBy`, `createdAt` (who imported it); written by the snapshot import (#15) | unique `id` · unique `snapshotId` (`V0005`) |
+| Element | the element descriptor's properties as the snapshot carries them (`schemas/snapshot.schema.json#/$defs/element`; `bounds` as an int list), plus `snapshotId` and `snapshotElementId` (the agent's id inside the snapshot, so `(snapshotId, snapshotElementId)` finds a healing candidate) | unique `id` · index `snapshotId` · index `automationId` |
 | RepoObject | `name` (logical name, unique per application), primary + fallback properties, embedding | unique `id` · index `name` |
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
@@ -81,13 +81,13 @@ MATCH (:Application {name: $appName})-[:HAS_VERSION]->(:AppVersion {version: $ve
 RETURN w
 ```
 
-**`(Window)-[:CONTAINS]->(Element)`**: top-level elements of a window.
+**`(Window)-[:CONTAINS]->(Element)`**: the window's own root element (the snapshot's first element); every other element hangs below it.
 ```cypher
-MATCH (w:Window {id: $windowId})
-CREATE (w)-[:CONTAINS]->(:Element {id: $elementId, snapshotId: w.snapshotId, automationId: $automationId, controlType: $controlType})
+MATCH (:Window {id: $windowId})-[:CONTAINS]->(root:Element)
+RETURN root
 ```
 
-**`(Element)-[:CONTAINS]->(Element)`**: the UI Automation tree below a top-level element.
+**`(Element)-[:CONTAINS]->(Element)`**: the UI Automation tree below the root element, from each snapshot entry's `parentId`.
 ```cypher
 MATCH (:Window {id: $windowId})-[:CONTAINS*1..]->(e:Element {automationId: $automationId})
 RETURN e
