@@ -364,7 +364,23 @@ def test_loads_refuses_a_parent_that_comes_later():
 def test_loads_refuses_a_second_root():
     document = built()
     document["elements"][1]["parentId"] = None
-    with pytest.raises(ValueError, match="not above it"):
+    with pytest.raises(ValueError, match="second root"):
+        snapshot.loads(json.dumps(document))
+
+
+def test_loads_refuses_an_element_outside_its_parents_subtree():
+    """Pre-order means contiguous subtrees, not just "the parent came earlier" (#182).
+
+    The example's `e1` is a child of the root and `e7` is deeper in a later subtree, so
+    re-parenting the last element to `e1` keeps every parent above its child while breaking
+    pre-order: `e1`'s subtree ended long before. The server refuses such a document
+    (`SnapshotSchema.treeError`), so the agent that writes them must too.
+    """
+    document = built()
+    last = document["elements"][-1]
+    assert last["parentId"] != "e1"
+    last["parentId"] = "e1"
+    with pytest.raises(ValueError, match="not in pre-order"):
         snapshot.loads(json.dumps(document))
 
 
