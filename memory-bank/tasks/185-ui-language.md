@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/185
 - Owner: omer · Branch: `omer/185-ui-language` (stacked on `omer/184-spy-workspace`)
-- Started: 2026-11-03 · Last update: 2026-11-03
+- Started: 2026-11-03 · Last update: 2026-11-07
 
 ## Approach
 Rules in ADR `2026-11-03-client-ui-language`. No library: `i18n/en.ts` defines `Strings`, `i18n/tr.ts` has the same shape; `strings.ts` holds the current dictionary as a live `export let strings`, so the ~230 `strings.x` reads in the components did not change. App keeps the language in state and provides `LanguageContext`; a switch sets the dictionary first, then the state, so the whole tree re-renders in the new language without remounting (capture, selection and place are kept). `main.tsx` asks main for the language before the first render.
@@ -25,7 +25,8 @@ Rules in ADR `2026-11-03-client-ui-language`. No library: `i18n/en.ts` defines `
 - [x] client/AGENTS.md rule updated (omer's OK 2026-11-03)
 - [ ] RS NFR-17 / TBD-2 by galip (inbox note on `omer/25-repo-objects`)
 - [x] Pushed, PR #190 opened (base main, stacked on #189); CI 5/5 green on 2026-11-03 (run 41658132027)
-- Next step: omer reads both languages on every screen; galip/hasan review the Turkish wording and the ADR on the PR.
+- [x] 2026-11-07: ADR Accepted (galip 2026-11-05, hasan 2026-11-07) with galip's wording: translate a problem by its `type`; matching the English text is a stopgap for problems without a kind. No code change (the server sends no kind yet)
+- Next step: the Turkish wording points of galip (#188 Q6, #190) and hasan (#190) went to a follow-up issue; merge #190 after #189
 
 ## Manual checks
 - 2026-11-03 · agent · macOS dark, real server :8080 + fake agent, driven over CDP · first run Turkish (OS tr-TR), gate switch → English saved in settings.json, top-bar switch with a capture open keeps capture and selection, tree search by English type label, Users dates "31 Eki 2026" and duplicate user 409 in Turkish, Settings page · pass · evidence: screenshots in the session only
