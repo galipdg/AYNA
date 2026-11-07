@@ -12,6 +12,7 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionContext;
+import org.neo4j.driver.exceptions.ClientException;
 import org.springframework.stereotype.Service;
 
 import com.ayna.server.auth.UserRef;
@@ -32,11 +33,14 @@ import tools.jackson.databind.JsonNode;
  *
  * A snapshot id is imported once (FR-04): the same id again under the same version returns the
  * stored window and writes nothing; under another version it is a conflict. The check runs in
- * the write transaction, with no constraint behind it (as #128's names), so two concurrent
- * imports of one new snapshot id can both succeed.
+ * the write transaction, and the `window_snapshot_id` constraint (`V0005`) refuses the second of
+ * two overlapping imports of one new id, which then runs again and finds the first.
  */
 @Service
 public class SnapshotService {
+
+	/** What Neo4j reports when a uniqueness constraint refuses a write. */
+	private static final String CONSTRAINT_FAILED = "Neo.ClientError.Schema.ConstraintValidationFailed";
 
 	private final Driver driver;
 
@@ -48,6 +52,19 @@ public class SnapshotService {
 	}
 
 	public ImportResult importSnapshot(String appId, String versionId, JsonNode document, String userId) {
+		try {
+			return importOnce(appId, versionId, document, userId);
+		}
+		catch (ClientException ex) {
+			if (!CONSTRAINT_FAILED.equals(ex.code())) {
+				throw ex;
+			}
+			// An overlapping import of the same snapshot id committed first, so this one is now a repeat.
+			return importOnce(appId, versionId, document, userId);
+		}
+	}
+
+	private ImportResult importOnce(String appId, String versionId, JsonNode document, String userId) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
 				if (!tx.run("MATCH (a:Application {id: $id}) RETURN a LIMIT 1", Map.of("id", appId)).hasNext()) {
@@ -65,7 +82,9 @@ public class SnapshotService {
 	/**
 	 * Validates and imports `document` inside the caller's transaction; the step-result write of
 	 * a `repairProposed` result (#51) uses this, so its snapshot and proposal commit together.
-	 * `userId` is the acting user, stored as the Window's `createdBy` (FR-40).
+	 * `userId` is the acting user, stored as the Window's `createdBy` (FR-40). When an overlapping
+	 * import of the same new snapshot id commits first, the commit fails with Neo4j's
+	 * `ConstraintValidationFailed`; run the whole write again and this call answers as a repeat.
 	 */
 	public ImportResult importInto(TransactionContext tx, String versionId, JsonNode document, String userId) {
 		if (!document.isObject()) {
@@ -146,8 +165,11 @@ public class SnapshotService {
 	}
 
 	/**
-	 * The Window node: what identifies the window across runs and what the Spy panel shows
-	 * (#24, #25). `handle` and `processId` are session-scoped and not stored.
+	 * The Window node: what identifies the window across runs, what the Spy panel shows (#24,
+	 * #25), and the capture's evidence for measurements (#64): how long the walk took, how many
+	 * property reads failed and which agent made it. `handle` and `processId` are session-scoped
+	 * and not stored; `window.bounds`, `window.dpi` and `capture.budgetMs` are left out on purpose
+	 * (no reader needs them; every Element keeps its own `bounds` and `dpi`).
 	 */
 	private static Map<String, Object> window(JsonNode document) {
 		JsonNode window = document.get("window");
@@ -160,6 +182,11 @@ public class SnapshotService {
 		putString(props, "className", window.get("className"));
 		props.put("capturedAt", OffsetDateTime.parse(capture.get("startedAt").asString()));
 		putString(props, "featureVersion", capture.get("featureVersion"));
+		props.put("captureDurationMs", capture.get("durationMs").longValue());
+		if (capture.has("readErrors")) {
+			props.put("readErrors", capture.get("readErrors").longValue());
+		}
+		putString(props, "agentVersion", capture.get("agentVersion"));
 		putString(props, "exeName", app.get("exeName"));
 		putString(props, "fileVersion", app.get("fileVersion"));
 		return props;

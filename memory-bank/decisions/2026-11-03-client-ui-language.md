@@ -1,7 +1,7 @@
 # Client UI language: Turkish and English, chosen by the user
 
 - Date: 2026-11-03
-- Status: Proposed (#185) — the choice of both languages was made by the team on 2026-11-03; the rules below wait for the #185 PR review
+- Status: Accepted (#185) — the choice of both languages was made by the team on 2026-11-03; Galip approved the rules on PR #190 (2026-11-05, with the server-message wording below), Hasan on 2026-11-07
 - Deciders: Galip, Ömerfaruk, Hasan
 - Issues: #185 · RS NFR-17 / TBD-2 (galip) · advisor question Q4 (#19) · NFR-16
 
@@ -23,12 +23,12 @@ new dependency for this.
 - **First run** (nothing saved): the operating system's first preferred language if it is Turkish or English, otherwise **Turkish** (`languageFor`, `client/src/shared/language.ts`).
 - **No library.** Texts live in `client/src/renderer/src/i18n/en.ts` and `tr.ts` with the same keys; TypeScript checks the shape and `i18n.test.ts` fails when a text, a key or an argument differs, or when a Turkish text is still English.
 - **Dates and numbers** follow the language: `tr-TR`, and `en-GB` for English (day-month order and a 24-hour clock, as the users expect). Coordinates, ids, DPI and pixel sizes stay plain.
-- **Server messages** stay English on the server. The client maps the messages it knows (problem-details `detail` and field messages) to the current language, and shows any other message as sent. The table is `SERVER_MESSAGES` in `client/src/renderer/src/strings.ts`, with one real example of each in the test.
+- **Server messages** stay English on the server. The client translates a problem by its **`type`** (`urn:ayna:error:<kind>`, ADR *REST error body: RFC 9457 problem details*) when the server sends one. Matching the English text (problem-details `detail` and field messages) is a **stopgap** for problems without a kind: the table is `SERVER_MESSAGES` in `client/src/renderer/src/strings.ts`, with one real example of each in the test. A message the client translates gets a kind on the server the next time its API is touched, and its text pattern then goes. Any other message is shown as sent.
 - **Test data is never translated**, upper-cased or changed (NFR-16), and no Turkish suffix is put after a value in a text.
 
 ## Consequences
 - Every new text needs both languages; the test catches a missing one.
-- Changing a server message the client maps breaks only the mapping (the message is then shown as sent); the test examples have to follow the server's wording.
+- Until a message has a kind, rewording it on the server breaks only its mapping (the message is then shown as sent); the test examples have to follow the server's wording. A kind removes that coupling, which is why text matching is only the stopgap.
 - The agent's failure detail (exit code, last stderr line) and the agent's own error messages are diagnostics and stay as sent.
 - RS NFR-17 / TBD-2 must say "Turkish and English, chosen by the user" (galip).
 - Revisit if a third language or real plural rules are needed: that is when a library pays off.

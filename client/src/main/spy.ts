@@ -68,32 +68,44 @@ export function describeFailure(error: unknown): { reason: AgentFailure; detail?
   return { reason: 'agent-error', detail: error instanceof Error ? error.message : String(error) }
 }
 
-/** The `listWindows` result's windows, or null if it does not match the contract. */
+/**
+ * The `listWindows` result's windows, or null if it is not a window list. Each window is read
+ * on its own: a null title or class name (the agent sends one when UI Automation cannot read
+ * it, e.g. for an elevated process's window) becomes "", and a window that is still outside the
+ * contract is left out, so one odd window cannot hide the others.
+ */
 export function parseWindows(result: unknown): WindowInfo[] | null {
   if (!isRecord(result) || !Array.isArray(result.windows)) return null
   const windows: WindowInfo[] = []
   for (const item of result.windows) {
-    if (
-      !isRecord(item) ||
-      !Number.isInteger(item.handle) ||
-      typeof item.title !== 'string' ||
-      typeof item.className !== 'string' ||
-      !Number.isInteger(item.processId) ||
-      !(item.processName === null || typeof item.processName === 'string') ||
-      !isBounds(item.bounds)
-    ) {
-      return null
-    }
-    windows.push({
-      handle: item.handle as number,
-      title: item.title,
-      className: item.className,
-      processId: item.processId as number,
-      processName: item.processName,
-      bounds: item.bounds,
-    })
+    const window = parseWindow(item)
+    if (window) windows.push(window)
   }
   return windows
+}
+
+function parseWindow(item: unknown): WindowInfo | null {
+  if (!isRecord(item)) return null
+  const title = item.title ?? ''
+  const className = item.className ?? ''
+  if (
+    !Number.isInteger(item.handle) ||
+    typeof title !== 'string' ||
+    typeof className !== 'string' ||
+    !Number.isInteger(item.processId) ||
+    !(item.processName === null || typeof item.processName === 'string') ||
+    !isBounds(item.bounds)
+  ) {
+    return null
+  }
+  return {
+    handle: item.handle as number,
+    title,
+    className,
+    processId: item.processId as number,
+    processName: item.processName,
+    bounds: item.bounds,
+  }
 }
 
 /**
