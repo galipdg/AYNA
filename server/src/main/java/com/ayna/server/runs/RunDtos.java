@@ -19,9 +19,9 @@ final class RunDtos {
 	record FinishRunRequest(String status) {
 	}
 
-	/** `duration` is in milliseconds; it and `finishedAt` are null while the run is `running`. */
+	/** `durationMs` and `finishedAt` are null while the run is `running`. */
 	record RunSummary(String id, String testId, String appVersionId, String status, int stepCount, UserRef startedBy,
-			Instant startedAt, Instant finishedAt, Long duration) {
+			Instant startedAt, Instant finishedAt, Long durationMs) {
 	}
 
 	/**
@@ -29,11 +29,11 @@ final class RunDtos {
 	 * position in it, so editing the test later does not change what a result means.
 	 */
 	record RunDetail(String id, String testId, String appVersionId, String status, int stepCount, UserRef startedBy,
-			Instant startedAt, Instant finishedAt, Long duration, JsonNode document,
+			Instant startedAt, Instant finishedAt, Long durationMs, JsonNode document,
 			List<StepResultResponse> results) {
 	}
 
-	record StepResultResponse(String id, int stepIndex, String stepId, String status, Long duration, String message,
+	record StepResultResponse(String id, int stepIndex, String stepId, String status, Long durationMs, String message,
 			Instant receivedAt) {
 	}
 
@@ -63,7 +63,7 @@ final class RunDtos {
 		}
 
 		record StepResult(String type, String testId, String runId, int stepIndex, String stepId, String status,
-				Long duration, String message) {
+				Long durationMs, String message) {
 		}
 
 		record Error(String type, String detail) {

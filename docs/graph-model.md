@@ -44,8 +44,8 @@ graph LR
 | RepoObject | `name` (logical name, unique per application), primary + fallback properties, embedding | unique `id` · index `name` |
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
-| Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `duration` (ms) | unique `id` · index `startedAt` |
-| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `duration` (ms), `message`, `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
+| Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `durationMs` | unique `id` · index `startedAt` |
+| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `durationMs`, `message`, `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
 | HealingProposal | `score`, per-property contributions, `decision` | unique `id` |
 | Rule | learned matching rule | unique `id` |
 | User | `username` (lower-case), `passwordHash` (BCrypt), `role` (`admin` / `tester`), `createdAt`; `removedAt` once removed (the node stays) | unique `id` · unique `username` (`V0003`) |

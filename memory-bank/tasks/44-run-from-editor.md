@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/44
 - Owner: omer · Branch: `omer/44-run-api` (server half, from `main`)
-- Started: 2026-11-05 · Last update: 2026-11-05
+- Started: 2026-11-05 · Last update: 2026-11-07
 
 ## Approach
 Two halves, because #40 (and #26 under it) has not started and `runSteps` is #40's to define.
@@ -22,6 +22,7 @@ Acceptance criteria against the halves:
 - 2026-11-05 — Follow schema 0.2 ADR point 7 (409 for a repeat with another body), not the SDD row "never 409". The ADR is still Proposed in the index, but it came from omer's own review and `docs/agent-rpc.md` already says the same. Fix the SDD row here.
 - 2026-11-05 — The plain `PUT` moves from #51 to this PR, because #44's criteria need it. #51 keeps `repairProposed`, screenshots, retention, idle timeout.
 - 2026-11-05 — No block on deleting a test with a `running` run: with no idle timeout yet, a run whose client died would block the delete forever.
+- 2026-11-07 — From hasan's #193 review: `duration` → `durationMs` everywhere (result body, `Run`, `StepResult`, event); the ADR asked him to settle the name. The ADR now says a run stopped by a repair proposal finishes as `repairProposed` (added by #51; allowed with ≥ 1 `repairProposed` result and no `failed` one), so `aborted` keeps meaning a crash (user approved the review scope).
 
 ## Status
 - [x] Branch from `main`, #44 In progress on the board
@@ -31,7 +32,8 @@ Acceptance criteria against the halves:
 - [x] `docs/graph-model.md` v0.3, SDD rows, OpenAPI regenerated; 86 server tests
 - [x] PR #193 (`Part of #44`), reviewers galip and hasan, 2026-11-05
 - [ ] Client half: Run panel, outbox, `runSteps` (needs #38 on `main` and #40)
-- Next step: reviews and CI on #193. Client half when #38 is on `main` and #40 is done.
+- [x] 2026-11-07: hasan's review fixes (`durationMs`, ADR `repairProposed`); 86 server tests, OpenAPI regenerated
+- Next step: merge #193 (before #182, whose `V0005` must not be applied before `V0004`). Client half when #38 is on `main` and #40 is done. `docs/agent-rpc.md` "#40 (duration, message)" is galip's; hasan asks him on #40.
 
 ## Manual checks
 - 2026-11-05 · agent · real Docker image on a fresh volume, Node's WebSocket as in `client/src/main/agent.ts` · pass, 15/15: bad or missing token refused, no `Origin` header needed, all three events reach the watcher, repeat not broadcast, 409 as a problem, step to watcher 69 ms (NFR-06: 1 s), logout closes with 1008 after 58.7 s through the real scheduler · evidence: run log in this session; the first run's one failure was the smoke script's stale waiter, not the server.

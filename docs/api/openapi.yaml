@@ -8,7 +8,7 @@ info:
     - Client to server: `{"type":"subscribe","testId":"…"}`, `{"type":"unsubscribe","testId":"…"}`
     - `subscribed`: `testId`
     - `run.started`: `testId`, `run`
-    - `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `duration`, `message`
+    - `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `durationMs`, `message`
     - `run.finished`: `testId`, `run`
     - `error`: `detail`
 
@@ -890,7 +890,7 @@ components:
         document:
           type: object
           description: JSON document; steps are validated against schemas/step.schema.json
-        duration:
+        durationMs:
           type: integer
           format: int64
         finishedAt:
@@ -919,7 +919,7 @@ components:
       properties:
         appVersionId:
           type: string
-        duration:
+        durationMs:
           type: integer
           format: int64
         finishedAt:
@@ -942,7 +942,7 @@ components:
     StepResultResponse:
       type: object
       properties:
-        duration:
+        durationMs:
           type: integer
           format: int64
         id:

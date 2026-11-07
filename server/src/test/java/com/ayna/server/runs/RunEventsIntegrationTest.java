@@ -123,7 +123,7 @@ class RunEventsIntegrationTest {
 
 		String stepId = run.path("document").path("steps").path(0).path("id").asString();
 		put("/api/runs/" + runId + "/results/0", Map.of("runId", runId, "stepIndex", 0, "stepId", stepId, "status",
-				"passed", "duration", 40, "message", "tamam"));
+				"passed", "durationMs", 40, "message", "tamam"));
 		JsonNode step = watcher.next(LIVE);
 		assertThat(step.path("type").asString()).isEqualTo("run.stepResult");
 		assertThat(step.path("testId").asString()).isEqualTo(testId);
@@ -131,14 +131,14 @@ class RunEventsIntegrationTest {
 		assertThat(step.path("stepIndex").asInt()).isZero();
 		assertThat(step.path("stepId").asString()).isEqualTo(stepId);
 		assertThat(step.path("status").asString()).isEqualTo("passed");
-		assertThat(step.path("duration").asLong()).isEqualTo(40);
+		assertThat(step.path("durationMs").asLong()).isEqualTo(40);
 		assertThat(step.path("message").asString()).isEqualTo("tamam");
 
 		post("/api/runs/" + runId + "/finish", Map.of("status", "passed"));
 		JsonNode finished = watcher.next(LIVE);
 		assertThat(finished.path("type").asString()).isEqualTo("run.finished");
 		assertThat(finished.path("run").path("status").asString()).isEqualTo("passed");
-		assertThat(finished.path("run").path("duration").isNumber()).isTrue();
+		assertThat(finished.path("run").path("durationMs").isNumber()).isTrue();
 	}
 
 	@Test

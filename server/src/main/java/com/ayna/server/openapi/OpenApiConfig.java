@@ -67,7 +67,7 @@ class OpenApiConfig {
 						- Client to server: `{"type":"subscribe","testId":"…"}`, `{"type":"unsubscribe","testId":"…"}`
 						- `subscribed`: `testId`
 						- `run.started`: `testId`, `run`
-						- `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `duration`, `message`
+						- `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `durationMs`, `message`
 						- `run.finished`: `testId`, `run`
 						- `error`: `detail`
 

@@ -169,7 +169,7 @@ public class RunService {
 		if (stored.created()) {
 			events.publish(stored.testId(),
 					new Events.StepResult(Events.STEP_RESULT, stored.testId(), runId, stepIndex, text(body, "stepId"),
-							body.path("status").asString(), number(body, "duration"), text(body, "message")));
+							body.path("status").asString(), number(body, "durationMs"), text(body, "message")));
 		}
 		return new StoredResult(stored.id(), stored.created());
 	}
@@ -198,7 +198,7 @@ public class RunService {
 						MATCH (r:Run {id: $id})
 						WITH r, datetime() AS now
 						SET r.status = $status, r.finishedAt = now,
-						  r.duration = duration.inSeconds(r.startedAt, now).milliseconds""",
+						  r.durationMs = duration.inSeconds(r.startedAt, now).milliseconds""",
 						Map.of("id", runId, "status", status))
 					.consume();
 				return new Finished(summary(detail(tx, runId)), true);
@@ -239,14 +239,14 @@ public class RunService {
 				params.put("stepIndex", stepIndex);
 				params.put("stepId", stepId);
 				params.put("status", body.path("status").asString());
-				params.put("duration", number(body, "duration"));
+				params.put("durationMs", number(body, "durationMs"));
 				params.put("message", text(body, "message"));
 				params.put("hash", hash);
 				params.put("body", canonical);
 				tx.run("""
 						MATCH (r:Run {id: $runId})
 						CREATE (r)-[:HAS_RESULT]->(:StepResult {id: $id, runId: $runId, stepIndex: $stepIndex,
-						  stepId: $stepId, status: $status, duration: $duration, message: $message,
+						  stepId: $stepId, status: $status, durationMs: $durationMs, message: $message,
 						  bodyHash: $hash, body: $body, receivedAt: datetime()})""", params).consume();
 				// No link if the step was deleted after the run started; `stepIndex` still points into the copy.
 				if (stepId != null) {
@@ -283,10 +283,10 @@ public class RunService {
 		if (!stepId.isMissingNode() && !stepId.isNull() && !stepId.isString()) {
 			errors.add(new FieldError("$.stepId", "stepId must be a string or null"));
 		}
-		JsonNode duration = body.path("duration");
-		if (!duration.isMissingNode() && !duration.isNull()
-				&& (!duration.isIntegralNumber() || !duration.canConvertToLong() || duration.longValue() < 0)) {
-			errors.add(new FieldError("$.duration", "duration must be a whole number of milliseconds, 0 or more"));
+		JsonNode durationMs = body.path("durationMs");
+		if (!durationMs.isMissingNode() && !durationMs.isNull()
+				&& (!durationMs.isIntegralNumber() || !durationMs.canConvertToLong() || durationMs.longValue() < 0)) {
+			errors.add(new FieldError("$.durationMs", "durationMs must be a whole number of milliseconds, 0 or more"));
 		}
 		JsonNode message = body.path("message");
 		if (!message.isMissingNode() && !message.isNull() && !message.isString()) {
@@ -362,7 +362,7 @@ public class RunService {
 				MATCH (:Run {id: $id})-[:HAS_RESULT]->(sr:StepResult)
 				RETURN sr ORDER BY sr.stepIndex""", Map.of("id", runId)).list(RunService::result);
 		return new RunDetail(run.id(), run.testId(), run.appVersionId(), run.status(), run.stepCount(), run.startedBy(),
-				run.startedAt(), run.finishedAt(), run.duration(),
+				run.startedAt(), run.finishedAt(), run.durationMs(),
 				mapper.readTree(r.get("r").get("document").asString()), results);
 	}
 
@@ -371,18 +371,18 @@ public class RunService {
 		return new RunSummary(run.get("id").asString(), r.get("testId").asString(), r.get("appVersionId").asString(),
 				run.get("status").asString(), run.get("stepCount").asInt(),
 				new UserRef(run.get("startedBy").asString(), r.get("username").asString(null)),
-				instant(run.get("startedAt")), instant(run.get("finishedAt")), longOrNull(run.get("duration")));
+				instant(run.get("startedAt")), instant(run.get("finishedAt")), longOrNull(run.get("durationMs")));
 	}
 
 	private static RunSummary summary(RunDetail run) {
 		return new RunSummary(run.id(), run.testId(), run.appVersionId(), run.status(), run.stepCount(), run.startedBy(),
-				run.startedAt(), run.finishedAt(), run.duration());
+				run.startedAt(), run.finishedAt(), run.durationMs());
 	}
 
 	private static StepResultResponse result(Record r) {
 		Value result = r.get("sr");
 		return new StepResultResponse(result.get("id").asString(), result.get("stepIndex").asInt(),
-				result.get("stepId").asString(null), result.get("status").asString(), longOrNull(result.get("duration")),
+				result.get("stepId").asString(null), result.get("status").asString(), longOrNull(result.get("durationMs")),
 				result.get("message").asString(null), instant(result.get("receivedAt")));
 	}
 

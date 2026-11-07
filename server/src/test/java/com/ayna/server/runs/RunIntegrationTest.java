@@ -103,7 +103,7 @@ class RunIntegrationTest {
 			.andExpect(jsonPath("$.startedBy.id").value(SignedIn.TESTER.userId()))
 			.andExpect(jsonPath("$.startedAt").isString())
 			.andExpect(jsonPath("$.finishedAt").value(nullValue()))
-			.andExpect(jsonPath("$.duration").value(nullValue()))
+			.andExpect(jsonPath("$.durationMs").value(nullValue()))
 			.andExpect(jsonPath("$.document.steps[*].id").value(contains(stepIds.toArray())))
 			.andExpect(jsonPath("$.results", hasSize(0)));
 	}
@@ -151,7 +151,7 @@ class RunIntegrationTest {
 		writeResult(runId, 1, result(runId, 1, "passed")).andExpect(status().isCreated())
 			.andExpect(jsonPath("$.stepResultId").value(matchesPattern(UUID_PATTERN)));
 		Map<String, Object> failed = result(runId, 0, "failed");
-		failed.put("duration", 120);
+		failed.put("durationMs", 120);
 		failed.put("message", "Öge 500 ms sonra bulunamadı");
 		writeResult(runId, 0, failed).andExpect(status().isCreated());
 
@@ -159,7 +159,7 @@ class RunIntegrationTest {
 			.andExpect(jsonPath("$.results[*].stepIndex").value(contains(0, 1)))
 			.andExpect(jsonPath("$.results[0].stepId").value(stepIds.get(0)))
 			.andExpect(jsonPath("$.results[0].status").value("failed"))
-			.andExpect(jsonPath("$.results[0].duration").value(120))
+			.andExpect(jsonPath("$.results[0].durationMs").value(120))
 			.andExpect(jsonPath("$.results[0].message").value("Öge 500 ms sonra bulunamadı"))
 			.andExpect(jsonPath("$.results[0].receivedAt").isString())
 			.andExpect(jsonPath("$.results[1].status").value("passed"));
@@ -251,7 +251,7 @@ class RunIntegrationTest {
 				new Bad(0, Map.of("stepId", stepIds.get(1)), "$.stepId"), new Bad(0, Map.of("stepId", 7), "$.stepId"),
 				new Bad(0, Map.of("status", "skipped"), "$.status"),
 				new Bad(0, Map.of("status", "repairProposed"), "$.status"),
-				new Bad(0, Map.of("duration", -1), "$.duration"), new Bad(0, Map.of("duration", 1.5), "$.duration"),
+				new Bad(0, Map.of("durationMs", -1), "$.durationMs"), new Bad(0, Map.of("durationMs", 1.5), "$.durationMs"),
 				new Bad(0, Map.of("message", 5), "$.message"), new Bad(0, Map.of("runId", Map.of()), "$.runId"),
 				new Bad(0, Map.of("stepIndex", List.of()), "$.stepIndex"), new Bad(0, Map.of("status", List.of()), "$.status"),
 				new Bad(0, Map.of("status", Map.of()), "$.status"), new Bad(0, Map.of("stepId", Map.of()), "$.stepId")));
@@ -311,7 +311,7 @@ class RunIntegrationTest {
 
 		Instant startedAt = Instant.parse(JsonPath.read(body, "$.startedAt"));
 		Instant finishedAt = Instant.parse(JsonPath.read(body, "$.finishedAt"));
-		Number duration = JsonPath.read(body, "$.duration");
+		Number duration = JsonPath.read(body, "$.durationMs");
 		assertThat(duration.longValue()).isEqualTo(Duration.between(startedAt, finishedAt).toMillis());
 	}
 
