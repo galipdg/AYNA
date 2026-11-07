@@ -219,6 +219,40 @@ class UiaDesktop:
         )
         return progress.nodes, progress.infos
 
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Play a step document against one window and return one result per step (#26).
+
+        Lives on this class rather than in `playback/` because **every UI Automation call has
+        to happen on the server's single `ayna-uia` thread**, in its COM apartment, and this
+        object is what owns that thread. The rules themselves are in
+        `ayna_agent.playback.runner`, which knows nothing about UIA; this method is only the
+        place where the window reading and the step playing meet.
+
+        Raises `UiaUnavailable` when there is no backend here, `WindowNotFound` for a handle
+        that is not a top-level window, and `SnapshotTimeout` when a window cannot be read
+        inside its budget -- the same three as `snapshot`, because reading the window is how a
+        target is resolved. A step that simply fails comes back as a `failed` result instead.
+        """
+        from ayna_agent.playback.runner import DEFAULT_TIMEOUT_MS
+        from ayna_agent.playback.runner import run_steps as play
+
+        self._require_ready()
+        results = play(
+            steps,
+            targets,
+            lambda: self.read_tree(handle),
+            default_timeout_ms=(
+                DEFAULT_TIMEOUT_MS if default_timeout_ms is None else default_timeout_ms
+            ),
+        )
+        return [result.to_json() for result in results]
+
     def _walk_window(
         self, handle: int, timeout_ms: int | None
     ) -> tuple[_Progress, datetime, int, int]:
