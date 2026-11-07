@@ -33,7 +33,8 @@ Acceptance criteria against the halves:
 - [x] PR #193 (`Part of #44`), reviewers galip and hasan, 2026-11-05
 - [ ] Client half: Run panel, outbox, `runSteps` (needs #38 on `main` and #40)
 - [x] 2026-11-07: hasan's review fixes (`durationMs`, ADR `repairProposed`); 86 server tests, OpenAPI regenerated
-- Next step: merge #193 (before #182, whose `V0005` must not be applied before `V0004`). Client half when #38 is on `main` and #40 is done. `docs/agent-rpc.md` "#40 (duration, message)" is galip's; hasan asks him on #40.
+- [x] 2026-11-07: PR #193 squash-merged (`4d0c98a`) on omer's yes, before #182
+- Next step: Client half when #38 is on `main` and #40 is done. `docs/agent-rpc.md` "#40 (duration, message)" is galip's; hasan asks him on #40.
 
 ## Manual checks
 - 2026-11-05 · agent · real Docker image on a fresh volume, Node's WebSocket as in `client/src/main/agent.ts` · pass, 15/15: bad or missing token refused, no `Origin` header needed, all three events reach the watcher, repeat not broadcast, 409 as a problem, step to watcher 69 ms (NFR-06: 1 s), logout closes with 1008 after 58.7 s through the real scheduler · evidence: run log in this session; the first run's one failure was the smoke script's stale waiter, not the server.

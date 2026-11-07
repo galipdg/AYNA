@@ -116,9 +116,21 @@ Append-only. One entry per session, newest at the bottom:
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
 
+## 2026-11-05 · #53 SDD final (first PR)
+- Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
+- galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
+- Open: removal of `SDD-ai.md`, the `User` row's conflict with #193, push and PR; all wait for omer. Task note lists the follow-ups.
+- Next: PR, then §8 and the PDF after the final RS (#41).
 ## 2026-11-05 (eleventh session) · stack reviews, #44 server half
 - Stack #182 → #192: no human review yet, all BLOCKED on one approval (`protect-main`, squash only); Copilot reviews fail on quota. Nothing merged. #154 sits inside the stack: draft, Windows re-run pending since 2026-11-01. G0 (#28, 9 Nov) at risk: #26 has no branch, #169 has conflicts.
 - #44 cannot start whole (#40 and #26 have no branch), so omer chose the server half from `main`: `runs/`, `V0004`, `/ws/runs`, `spring-boot-starter-websocket`, ADR `2026-11-05-runs-api-and-live-updates` (Proposed). 86 server tests.
 - Docker image smoke with Node's WebSocket on a throwaway stack: 15/15, step to watcher 69 ms, logout closes with 1008 after 58.7 s. omer's `ayna` stack left running.
 - SDD: "never 409" corrected to the schema 0.2 ADR; open item 5 settled.
 - Next: push and PR on omer's OK; reviews; client half after #38 and #40.
+
+## 2026-11-07 (thirteenth session) · review fixes on the stack, first merges
+- Read every review on #182–#194 and #197 (no inline threads, all top-level). Triage with omer: fix what reviewers flagged (#182, #186, #189, #190, #192, #193, #194), the rest to issues #203–#207.
+- #182: `V0005` uniqueness constraint on `Window.snapshotId` (8 Windows without it under 8 concurrent imports, 1 with it) + ADR, and the capture's `durationMs`/`readErrors`/`agentVersion`. #192: the editor saves the schema file's version; checked with #150's 0.2 schemas. #193: `durationMs`, `repairProposed` run status in the ADR.
+- Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
+- Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
+- Next: #154's approval, then #186 → #192, #197 one by one.
