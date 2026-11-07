@@ -127,3 +127,10 @@ Append-only. One entry per session, newest at the bottom:
 - Docker image smoke with Node's WebSocket on a throwaway stack: 15/15, step to watcher 69 ms, logout closes with 1008 after 58.7 s. omer's `ayna` stack left running.
 - SDD: "never 409" corrected to the schema 0.2 ADR; open item 5 settled.
 - Next: push and PR on omer's OK; reviews; client half after #38 and #40.
+
+## 2026-11-07 (thirteenth session) · review fixes on the stack, first merges
+- Read every review on #182–#194 and #197 (no inline threads, all top-level). Triage with omer: fix what reviewers flagged (#182, #186, #189, #190, #192, #193, #194), the rest to issues #203–#207.
+- #182: `V0005` uniqueness constraint on `Window.snapshotId` (8 Windows without it under 8 concurrent imports, 1 with it) + ADR, and the capture's `durationMs`/`readErrors`/`agentVersion`. #192: the editor saves the schema file's version; checked with #150's 0.2 schemas. #193: `durationMs`, `repairProposed` run status in the ADR.
+- Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
+- Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
+- Next: #154's approval, then #186 → #192, #197 one by one.
