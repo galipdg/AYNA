@@ -101,3 +101,55 @@ step schema v0.2. Written into ADR `2026-10-31-pilot-apps-and-sample-app-technol
 - 2026-11-05 · omer · #44 · Neo4j Community enforces composite uniqueness (`REQUIRE (n.a, n.b) IS UNIQUE`), and with it a losing concurrent write ends in `ClientException` code `Neo.ClientError.Schema.ConstraintValidationFailed`, which `executeWrite` does not retry → catch that code and read again if a repeat is legal (`RunService.writeResult`). Without the catch, 8 overlapping writes fail at once.
 - 2026-11-05 · omer · #44 · Node's global WebSocket (undici, used in the Electron main process) sends no `Origin` header, so Spring's default same-origin WebSocket check lets it through with no `setAllowedOrigins`; the Bearer header passes the normal security chain because the upgrade is an ordinary GET.
 - 2026-11-05 · omer · #170 · **A race can hide under CPU load.** `test_the_request_log_holds_no_instruction_text` failed 9 of 1 500 repeats on an idle machine and 0 of 300 under heavy load, so a load run proved nothing. To show a timing cause, inject a delay at the suspected point and compare the fix on the same setup. Also in zsh: `kill $pids` does not split a space-separated string, so background loops keep running; use an array and check with `ps` afterwards.
+
+## 2026-11-07 — KeePass 2's entry list is a UIA List with no Grid or Table pattern (hasan, #150/#147)
+
+Measured on Windows 11 Pro 26300 at 120 DPI, KeePass 2 from `C:\ayna-pilots\keepass2\` with the
+demo database, raw UIA through pywinauto 0.6.9 after `eval/spikes/kp_state.py main`:
+
+- `m_lvEntries` (`WindowsForms10.SysListView32…`) is a UIA **List** whose only patterns are
+  `Selection` and `LegacyIAccessible`. **No Grid pattern, no Table pattern**, so `GridPattern`
+  `RowCount`/`GetItem` and `TablePattern.GetColumnHeaders` are all unavailable on it.
+- Its ControlView children are a `Header` (5 `HeaderItem`s: Title, User Name, Password, URL, Notes)
+  and one `ListItem` per entry. So **the list has columns without having a TablePattern** — the
+  reason `cell` is grid-only is the `column` definition (a TablePattern header Name), not "a list
+  has no columns".
+- Each `ListItem`'s `Name` is the **Title column only**, but it has **five `Text` children, one per
+  column, in header order**, each carrying its column's text in `Name`. The #6 dump showed none of
+  them because it was taken with the Add Entry dialog on top. So a per-column read on a
+  pattern-less list is possible through those children — which is how #40 answers
+  `rowExists {value}` and `{value, column}` on KeePass 2.
+- **No ValuePattern anywhere** on the list, the items or the Text children. The v0.2 cell-text rule
+  (non-empty ValuePattern value, else Name) therefore reads Name, which is correct — and means
+  Name-first and Value-first are indistinguishable on every WinForms control we actually have.
+- Source [9] of the v0.2 ADR (a `DataGridView` cell's Name is the column header plus the row index)
+  stays **docs-only**: no pilot app has a `DataGridView` (KeePass 2 is SysListView32, HandBrake is
+  WPF, Notepad++ is Win32, KeePassXC is Qt), so it cannot be checked until the sample app (#33).
+
+## 2026-11-07 — Turkish search needs NFD diacritic stripping, not only the dotted/dotless i (hasan, #185/#184)
+
+`foldText` in the client folded `İ`/`I`/`ı` to `i` — the subtle half, and right — but left `ş ğ ü ö ç`
+alone, so "kullanici" found "Kullanıcı" while "giris" did **not** find "Giriş". Half a folded
+keyboard is worse than none: the first success teaches the user to expect the second.
+`.replace(/[İIı]/g,'i').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase()` handles every
+case — the five others decompose to a base letter plus a combining mark, while `ı` has no mark to
+strip, which is why the explicit replace has to stay and has to come first.
+
+## 2026-11-07 — `eval/` has two different `uia_dump.py` modules, and they collide (hasan)
+
+`eval/apps/trial/uia_dump.py` (5.8 kB, the trial app's AutomationId check) and
+`eval/spikes/uia_dump.py` (20.6 kB, the #6 tree dumper) are **different files with the same module
+name**, and nothing packages either of them. Each tree is green on its own —
+`pytest eval/apps/trial/tests` 12 passed, `pytest eval/spikes` 26 passed — but
+**`pytest eval/` from the repo root fails 26 of 38**, because whichever `uia_dump` is imported first
+shadows the other in `sys.modules`.
+
+It is invisible today: `testpaths = ["apps/trial/tests"]` means the bare `pytest` never collects
+`spikes/`, the documented command is `pytest eval/apps/trial/tests`, and CI runs the trial tests
+only. So this is not a regression — but a plain `pytest eval/` looks like 26 real failures, and the
+next person to widen `testpaths` or point CI at the whole folder will meet it.
+
+Tracked as **#199**, with the three options (rename one module, `--import-mode=importlib`, or make
+both trees packages); the fix touches omer's CI job, which is why it is an issue and not a quiet
+change. **Always name the path when
+running eval tests**, and treat a batch failure there as this collision until proved otherwise.

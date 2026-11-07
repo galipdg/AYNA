@@ -255,3 +255,60 @@ file so the gap is visible, and put to the deciders in the ADR.
 
 **Next step:** answer the #180 review, then chase **#169** — it still has no approval and it blocks
 #170 (#161), which is the oldest thing stuck on my side.
+
+## 2026-11-07 — review round: twelve PRs, and a KeePass 2 measurement
+
+**No issue of my own.** The queue had grown to twelve PRs while #169/#180 were waiting to merge:
+galip's #150 and omer's whole stack (#182 → #191, plus #192, #193, #194, #197). All twelve are
+approved now, and two ADRs with them (client UI language, runs API).
+
+**What I measured rather than reasoned about.** #150's ADR listed one check as "still to do at a
+Windows session", so I did it instead of approving around it: KeePass 2's `m_lvEntries` through raw
+UIA after `eval/spikes/kp_state.py main`. It is a UIA **List** with no Grid and no Table pattern —
+which confirms galip's fallback paragraph — but his ADR says its ListItems have no cell children,
+and they have **five `Text` children each, one per column, in header order**. The #6 dump missed
+them because it was taken with the Add Entry dialog on top. That also settles the WinForms half of
+the v0.2 cell-text rule: there is no ValuePattern at all on that control, so Value-first and
+Name-first are indistinguishable on every WinForms control we actually have, and source [9] stays
+docs-only until the sample app brings a real `DataGridView`. Full numbers in `learnings.md`.
+
+**The find that matters most for the team.** #192 hard-codes `STEP_SCHEMA_VERSION = '0.1'` while
+compiling the real `schemas/step.schema.json` with Ajv — and I had just given #150 (which makes that
+const `'0.2'`) its third and last approval. Whichever merges second makes **every test save fail**,
+in the client's own validator and on the server, with only a generic document-level message. It is
+not a conflict git reports: neither side touches the other's file. Galip hit the identical bug in
+`ai/` two weeks ago, so the fix and the precedent both existed.
+
+**Three places where reading someone else's code found my own bug.** omer's Java `treeError`
+enforces contiguous subtrees; my `snapshot.loads` only checks "the parent appeared earlier", so a
+level-order document passes the agent and gets a 400 from the server. His test
+`anElementOutsideItsParentsSubtreeIsRejected` is the one that caught it — the shared `cases.json`
+working in the direction I did not expect. Also: his `NEVER_MATCH` has `nearestLabelSource` and my
+`model.NEVER_MATCH` does not. Both are now in `active.md` as things to fix.
+
+**Two gaps that only appear by tracing a decision through to its consequence.** (1) #187 rightly
+lets an ambiguous Find-by set be saved, but FR-35 has no category for "more than one element
+matched" — so I decided #40's rule: *element not found*, never pick the first (UIA child order is
+not stable, and guessing would make RQ2 measure our own nondeterminism), and no healing, because
+the answer is another property rather than another element. (2) #193's run statuses are four, so a
+run stopped by a repair proposal (TBD-6, mine) can only finish as `aborted` — while omer's own
+style guide lists `repairProposed` as a run status with the words "Needs review / İnceleme
+bekliyor". RQ5 (#86) counts those runs; stored as `aborted` they are indistinguishable from a crash.
+
+**The Turkish review was worth doing properly.** omer's `foldText` folds `İ`/`I`/`ı` — the subtle
+half, and correct — but not `ş ğ ü ö ç`, so **step 2 of his own #184 Windows check cannot pass**:
+"giris" does not find "Giriş". Ran the cases rather than reading them. Also: "Seç" in the editor is
+ambiguous against galip's §4.1 NL vocabulary, where *seç* is Click for a tab and Select for a combo
+box, and the English column already distinguishes them ("Choose item"); "Zaman aşımı" reintroduces
+the jargon the English deliberately avoided ("Took too long"); and *Geçti / Kaldı* for passed/failed
+is the best line in that glossary.
+
+**Also found:** SDD §2.2 claims the agent process manager is Built when PR #154 is still open and
+#17 still carries `needs-windows-test`; `Window.snapshotId` has no uniqueness constraint, which my
+own #61 retry path would race into a state that breaks every later read of that snapshot; and
+`docs/ui/` lands in my `docs/` area by the current `AGENTS.md`.
+
+**Next step:** the Windows session queue — **#184 first** (it saves the elements #38's check uses),
+then #38 and #17, plus #197's popover and resizer. Before that, or in the same branch: the four
+follow-ups in `active.md` (pre-order fix in `loads`, `nearest_label_source`, the two probe scripts
+under `eval/spikes/`, and the `docs/AGENTS.md` ownership question for the user).
