@@ -150,3 +150,39 @@ Tracked as **#199**, with the three options (rename one module, `--import-mode=i
 both trees packages); the fix touches omer's CI job, which is why it is an issue and not a quiet
 change. **Always name the path when
 running eval tests**, and treat a batch failure there as this collision until proved otherwise.
+
+## 2026-11-07 — the agent had never actually been per-monitor-v2 DPI aware (hasan, #12)
+
+`docs/agent-rpc.md` and `schemas/snapshot.schema.json` both promise bounds "as UI Automation
+reports them to a **per-monitor-v2** DPI aware agent". Measured on this machine: the process was
+**per-monitor-v1**, and nothing we wrote had set it.
+
+Three mistakes stacked up, and each one hid the next:
+
+1. `DPI_AWARENESS_CONTEXT` is a **pointer-sized handle**. `user32.SetProcessDpiAwarenessContext(-4)`
+   through ctypes' default argument conversion truncates it to 32 bits, so on 64-bit Windows the
+   call fails with **`ERROR_INVALID_PARAMETER` (87)**. Declaring `argtypes = [c_void_p]` and passing
+   `c_void_p(-4)` makes it succeed.
+2. The old code treated **87 the same as 5** (`ERROR_ACCESS_DENIED`, "awareness is already set") and
+   logged `INFO  DPI awareness was already set before the backend started`. A malformed call looked
+   like a benign one.
+3. The very next statement in `setup()` imports pywinauto, **which sets the process to
+   per-monitor-v1 itself**. So the process always ended up aware — just not the way the contract
+   says — and the log line above was technically true by the time anyone read it.
+
+**`GetAwarenessFromDpiAwarenessContext` cannot tell v1 from v2.** The `DPI_AWARENESS` enum has no
+value of its own for v2, so both read as `PER_MONITOR_AWARE` (2). Comparing contexts with
+**`AreDpiAwarenessContextsEqual`** is the only way to ask the question, and it is what
+`recognition.uia.dpi_awareness()` now does.
+
+**What it did and did not break.** v1 and v2 are both *unscaled*, so every bounds number measured so
+far is still right and no stored snapshot is wrong. What v2 adds is per-monitor behaviour for
+dialogs and child windows and DPI-scaled non-client areas — i.e. exactly the mixed-DPI case that is
+still unmeasured (every number we have is from one 120-DPI display). So this was a latent
+contract violation, not a wrong measurement.
+
+**General point: a success log is not evidence.** This one said "already set" for weeks on a call
+that had never worked. When an API's outcome is load-bearing for a contract, *read the state back*
+and warn when it is not what was promised, rather than inferring it from a return value — which is
+what the function does now, and what `test_setup_leaves_the_process_per_monitor_v2` pins in a fresh
+interpreter (awareness can be set only once per process, so an in-process test cannot check it).

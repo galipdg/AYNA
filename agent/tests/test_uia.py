@@ -392,3 +392,47 @@ def test_a_budget_too_small_for_any_window_is_a_snapshot_timeout(desktop):
     windows = desktop.list_windows()
     with pytest.raises(SnapshotTimeout, match="walk stopped"):
         desktop.snapshot(windows[0]["handle"], 1)
+
+
+# --- DPI awareness -----------------------------------------------------------------------
+
+
+def test_the_awareness_names_cover_every_context():
+    """One name per `DPI_AWARENESS_CONTEXT`, so a warning can say what the process got."""
+    from ayna_agent.recognition.uia import _AWARENESS_CONTEXTS, _PER_MONITOR_AWARE_V2
+
+    assert _AWARENESS_CONTEXTS["per-monitor-v2"] == _PER_MONITOR_AWARE_V2
+    assert sorted(_AWARENESS_CONTEXTS.values()) == [-5, -4, -3, -2, -1]
+
+
+@pytest.mark.windows
+def test_setup_leaves_the_process_per_monitor_v2():
+    """The bounds contract, as a test rather than as a comment.
+
+    `docs/agent-rpc.md` and `schemas/snapshot.schema.json` promise bounds "as UI Automation
+    reports them to a per-monitor-v2 DPI aware agent". Awareness can be set only once per
+    process and pytest has long since imported pywinauto by the time this runs, so the check
+    has to happen in a **fresh interpreter** -- which is also how the agent really starts.
+
+    This failed before 2026-11-07: `DPI_AWARENESS_CONTEXT` is pointer-sized, ctypes truncated
+    the negative constant, the call returned `ERROR_INVALID_PARAMETER`, the code treated that
+    as "already set", and pywinauto's import then made the process per-monitor-**v1**.
+    """
+    import subprocess
+    import sys
+
+    probe = (
+        "from ayna_agent.recognition.uia import UiaDesktop, dpi_awareness\n"
+        "d = UiaDesktop()\n"
+        "d.setup()\n"
+        "print(dpi_awareness())\n"
+        "d.close()\n"
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", probe],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=True,
+    )
+    assert done.stdout.strip().splitlines()[-1] == "per-monitor-v2", done.stderr
