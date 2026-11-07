@@ -121,3 +121,9 @@ Append-only. One entry per session, newest at the bottom:
 - galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
 - Open: removal of `SDD-ai.md`, the `User` row's conflict with #193, push and PR; all wait for omer. Task note lists the follow-ups.
 - Next: PR, then §8 and the PDF after the final RS (#41).
+## 2026-11-05 (eleventh session) · stack reviews, #44 server half
+- Stack #182 → #192: no human review yet, all BLOCKED on one approval (`protect-main`, squash only); Copilot reviews fail on quota. Nothing merged. #154 sits inside the stack: draft, Windows re-run pending since 2026-11-01. G0 (#28, 9 Nov) at risk: #26 has no branch, #169 has conflicts.
+- #44 cannot start whole (#40 and #26 have no branch), so omer chose the server half from `main`: `runs/`, `V0004`, `/ws/runs`, `spring-boot-starter-websocket`, ADR `2026-11-05-runs-api-and-live-updates` (Proposed). 86 server tests.
+- Docker image smoke with Node's WebSocket on a throwaway stack: 15/15, step to watcher 69 ms, logout closes with 1008 after 58.7 s. omer's `ayna` stack left running.
+- SDD: "never 409" corrected to the schema 0.2 ADR; open item 5 settled.
+- Next: push and PR on omer's OK; reviews; client half after #38 and #40.

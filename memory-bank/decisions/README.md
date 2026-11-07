@@ -27,3 +27,4 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-31 | [Healing proposal schema 0.2: per-element DPI, feature versions, #151 review follow-ups](2026-10-31-healing-proposal-schema-0-2.md) (extends the transport ADR) | Proposed (#149) |
 | 2026-10-31 | [Accounts, roles, sessions and API tokens](2026-10-31-accounts-and-tokens.md) | Proposed (#60) |
 | 2026-11-01 | [Snapshot schema v0: flat pre-order tree, one window, no partial document](2026-11-01-snapshot-schema-v0.md) | Accepted |
+| 2026-11-05 | [Runs API and live run updates](2026-11-05-runs-api-and-live-updates.md) | Proposed (#44) |
