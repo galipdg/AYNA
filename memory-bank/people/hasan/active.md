@@ -46,10 +46,13 @@ All on branch `hasan/review-round-1107` / **PR #198**. Three of the four are **d
    #150) and KeePass 2's `m_lvEntries`. Deliberately **does not import `kp_state.py`**, which lives
    on `hasan/161-winforms-walk` and is not on `main` yet — it takes a window handle instead, so
    #198 does not depend on #170's merge order.
-4. **TODO — `docs/AGENTS.md`**: give `ui/` to omer, refresh the stale Layout list (`ui/`,
-   `graph-model.md`, `tool-matrix.md`, `agent-rpc.md`, and `manual-checks/` from root §10), and fix
-   the pre-ADR ownership tables in `docs/working-agreement.md` §1 and `docs/README.md` (galip's #19
-   note). **Needs the user's OK** (root §7: changing an `AGENTS.md` requires asking).
+4. **DONE — the `docs/` ownership cleanup**, with the user's OK (asked, per root §7).
+   `docs/AGENTS.md` gives `ui/` to omer and its Layout list now names every folder and document
+   that exists plus the four that do not yet (`ui/`, `report/`, `manual-checks/`, `literature/`),
+   so the next person puts a new file in the right place. `docs/README.md` names the carve-outs
+   instead of implying all of `docs/` is mine. `docs/working-agreement.md` §1 is the post-ADR
+   split, with a paragraph saying why `recognition/` moved and that the root `AGENTS.md` §2 table
+   must change with it (galip's #19 note, closed).
 
 ## Decisions I made in the reviews — do not re-derive them
 
@@ -149,10 +152,12 @@ anchor positioning, which #197's check popover needs. Pilot apps are in `C:\ayna
 about 16 s and prints the window handle. Docker and Java 21 were **not** available in the
 2026-11-01 session and were not needed in this one.
 
-## Found while running the follow-ups — worth its own issue, not mine to sneak in
+## Found while running the follow-ups — now issue #199
 
 `eval/` has **two different modules named `uia_dump.py`** (`apps/trial/` and `spikes/`). Each tree
 is green alone but `pytest eval/` from the repo root fails 26 of 38, because one shadows the other.
-Hidden today by `testpaths = ["apps/trial/tests"]` and by CI running only the trial tests. Details
-and the three fix options in `learnings.md` 2026-11-07; the fix touches omer's CI job, so propose an
-issue rather than changing it. **Always name the path when running eval tests.**
+Hidden today by `testpaths = ["apps/trial/tests"]` and by CI running only the trial tests. Opened as
+**#199** (assigned to me) with three options; my preference is `--import-mode=importlib`. The fix
+touches `eval/pyproject.toml` and possibly omer's CI job, so it needs his agreement.
+**Always name the path when running eval tests**, and treat a batch failure there as this collision
+until proved otherwise. Also note `eval/spikes/` tests are in no CI job at all.

@@ -146,6 +146,7 @@ It is invisible today: `testpaths = ["apps/trial/tests"]` means the bare `pytest
 only. So this is not a regression — but a plain `pytest eval/` looks like 26 real failures, and the
 next person to widen `testpaths` or point CI at the whole folder will meet it.
 
-Worth its own issue rather than a quiet fix: the options (rename one module, add `__init__.py` to
-both trees, or set `--import-mode=importlib`) touch omer's CI job. **Always name the path when
+Tracked as **#199**, with the three options (rename one module, `--import-mode=importlib`, or make
+both trees packages); the fix touches omer's CI job, which is why it is an issue and not a quiet
+change. **Always name the path when
 running eval tests**, and treat a batch failure there as this collision until proved otherwise.
