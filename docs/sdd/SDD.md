@@ -314,6 +314,7 @@ graph LR
   TestCase -- "HAS_STEP {order}" --> Step
   Step -- TARGETS --> RepoObject
   Run -- OF --> TestCase
+  Run -- ON_VERSION --> AppVersion
   Run -- HAS_RESULT --> StepResult
   StepResult -- FOR --> Step
   HealingProposal -- FOR --> RepoObject
@@ -341,6 +342,7 @@ Schema v0 was written before the APIs that use it. The issues below change it; e
 | `RepoObject.columns` (list of strings) | Grid column headers from the snapshot, for the editor and for `column` in generated steps | #25, #15 | Planned |
 | `Step.checkpoint` and `Step.row` as JSON strings; `Step.timeoutMs` integer | Neo4j properties cannot hold maps; v0 lists neither `timeoutMs` nor `row` | #39 | **Built** (PR #156) |
 | `User` node; acting user on edits, runs and decisions | FR-39, FR-40 | #60 | Planned |
+| `(Run)-[:ON_VERSION]->(AppVersion)`; a copy of the steps on Run; unique `(runId, stepIndex)` on StepResult | History by version (FR-22); results keep their meaning when a test is edited; overlapping retries cannot store a result twice | #44 | **Built** (`V0004`) |
 | Per-candidate data on `CANDIDATE`; whole proposal JSON on `HealingProposal`; `(StepResult)-[:PROPOSED]->(HealingProposal)` | Contributions and raw similarities per candidate; the proposal kept exactly as the agent scored it | #74 | Planned (ADR *Healing proposal transport*, accepted) |
 | Vector index on `RepoObject.embedding` | NL retrieval (NFR-11) | #58 | Planned |
 
@@ -364,7 +366,7 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 | Interface | Between | Transport | Contract | Version | Status |
 |---|---|---|---|---|---|
 | REST API | client, CLI runner → server | HTTP/1.1, JSON | `docs/api/openapi.yaml`, generated from the server (#31) | v0 | **Built** in part (§4.2) |
-| Live updates | server → clients | WebSocket | in the OpenAPI document's description (#31) until #52 | — | Planned: #44, #51 |
+| Live updates | server → clients | WebSocket `/ws/runs`, JSON messages | in the OpenAPI document's description (#31) until #52; ADR *Runs API and live run updates* | v0 | **Built** on the server (#44); the client's screen comes with #44's client half |
 | Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [3] over WebSocket on 127.0.0.1 | `docs/agent-rpc.md` | 0.1 built; 0.2 (step results with proposals) drafted there, ADR accepted | **Built**: 0.1 (PR #135). Planned: 0.2 (#73) |
 | AI service API | server → AI service | HTTP/1.1, JSON | `ai/API.md` | v0 | **Built** (PR #146); design in §5 |
 | Database | server → Neo4j | Bolt | `docs/graph-model.md` + migrations | v0 | **Built** (#14) |
@@ -382,7 +384,7 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 | Snapshots | `POST /api/apps/{id}/versions/{v}/snapshots`, idempotent on the snapshot id | FR-04 | Planned: #15 |
 | Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests) | FR-06 – FR-09 | Planned: #25, #30 |
 | Tests and steps | create, read, replace the step list (validated against the step schema), export and import | FR-11 – FR-14 | **Built** (#39, PR #156) |
-| Runs and results | create a run; `PUT /api/runs/{runId}/results/{stepIndex}`, first write wins and a repeat answers 200 with the stored result, never 409; screenshot uploaded separately | FR-20, FR-28 | Planned: #51 (shape in ADR *Healing proposal transport*) |
+| Runs and results | `POST /api/runs` (copies the steps), `GET /api/runs/{id}`, `GET /api/tests/{id}/runs`, `POST /api/runs/{id}/finish`; `PUT /api/runs/{runId}/results/{stepIndex}`: 201, 200 for an identical repeat, 409 for another body (ADR *Healing proposal schema 0.2*); screenshot uploaded separately | FR-20, FR-28 | **Built** (#44): plain results. Planned: #51 (`repairProposed`, screenshots, retention, idle timeout) |
 | Reports | HTML report of a run | FR-21 | Planned: #59 |
 | Healing | list proposals, approve or reject (`/api/healing/proposals…`) | FR-31, FR-32 | Planned: #74 (shape in ADR *Healing proposal transport*) |
 | NL suggestions | suggest steps for an instruction; AI errors mapped to problems with `code` | FR-25 – FR-27 | Planned: #78 |
@@ -503,7 +505,7 @@ _Requirement → section table for every FR and NFR of the RS. Filled at #53, on
 | 2 | v0 has no Application → RepoObject and Application → TestCase links | §3.3 | Settled: migration `V0002` (#39) |
 | 3 | One REST error body for all endpoints (RFC 9457 proposed) | §4.2 | Settled: RFC 9457 (ADR *REST error body*, #158) |
 | 4 | Retrieval: the server picks the candidate objects and the AI service has no Bolt edge (proposed), or the AI service reads Neo4j | §2.2.2 rule 5, §5 | Settled: the server picks them (#155 review, PR #165); built in #58 |
-| 5 | How live updates are framed on the WebSocket (topics, message shape) | §4.1 | #44, #51 |
+| 5 | How live updates are framed on the WebSocket (topics, message shape) | §4.1 | Settled: subscribe per test, JSON messages, no replay (ADR *Runs API and live run updates*, #44) |
 | 6 | `architecture.md` foresees an nginx container; its role (TLS, static files) is not designed | §2.3 | #84 |
 | 7 | `/api/health` has no bound on how long it waits while Neo4j shuts down (`memory-bank/tasks/32-server-settings.md`) | §4.2 | #31 |
 | 8 | RQ1's measure: settled in the #157 review (stable vs positional, interactive population); the labelling procedure for ground truth is not written yet | §6.6 | #64 |

@@ -115,3 +115,10 @@ Append-only. One entry per session, newest at the bottom:
 - CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
+
+## 2026-11-05 (eleventh session) · stack reviews, #44 server half
+- Stack #182 → #192: no human review yet, all BLOCKED on one approval (`protect-main`, squash only); Copilot reviews fail on quota. Nothing merged. #154 sits inside the stack: draft, Windows re-run pending since 2026-11-01. G0 (#28, 9 Nov) at risk: #26 has no branch, #169 has conflicts.
+- #44 cannot start whole (#40 and #26 have no branch), so omer chose the server half from `main`: `runs/`, `V0004`, `/ws/runs`, `spring-boot-starter-websocket`, ADR `2026-11-05-runs-api-and-live-updates` (Proposed). 86 server tests.
+- Docker image smoke with Node's WebSocket on a throwaway stack: 15/15, step to watcher 69 ms, logout closes with 1008 after 58.7 s. omer's `ayna` stack left running.
+- SDD: "never 409" corrected to the schema 0.2 ADR; open item 5 settled.
+- Next: push and PR on omer's OK; reviews; client half after #38 and #40.

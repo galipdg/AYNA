@@ -1,7 +1,18 @@
 openapi: 3.1.0
 info:
-  description: REST API between the AYNA client and server. Generated from the code;
-    do not edit by hand.
+  description: |-
+    REST API between the AYNA client and server. Generated from the code; do not edit by hand.
+
+    **Live run status** is a WebSocket at `/ws/runs`, outside this document (ADR runs-api-and-live-updates). The upgrade request carries the same Bearer token; without a valid one it gets 401, and a token that expires or is revoked closes the connection with 1008 within 60 s. All messages are JSON objects.
+
+    - Client to server: `{"type":"subscribe","testId":"…"}`, `{"type":"unsubscribe","testId":"…"}`
+    - `subscribed`: `testId`
+    - `run.started`: `testId`, `run`
+    - `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `durationMs`, `message`
+    - `run.finished`: `testId`, `run`
+    - `error`: `detail`
+
+    `run` has the shape of `RunSummary`. Nothing is replayed: after `subscribed` and after a reconnect, read `GET /api/tests/{testId}/runs?status=running` and `GET /api/runs/{runId}`, then merge by `stepIndex`.
   title: AYNA server API
   version: v0
 servers:
@@ -251,6 +262,129 @@ paths:
       security: []
       tags:
       - health-controller
+  /api/runs:
+    post:
+      operationId: createRun
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRunRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDetail"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
+  /api/runs/{runId}:
+    get:
+      operationId: getRun
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDetail"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
+  /api/runs/{runId}/finish:
+    post:
+      operationId: finishRun
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinishRunRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunSummary"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - run-controller
+  /api/runs/{runId}/results/{stepIndex}:
+    put:
+      operationId: writeResult
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: stepIndex
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: JSON document; steps are validated against schemas/step.schema.json
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultWritten"
+          description: Identical repeat; nothing was written
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultWritten"
+          description: Stored
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - run-controller
   /api/tests/{testId}:
     delete:
       operationId: deleteTest
@@ -343,6 +477,37 @@ paths:
           $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
+  /api/tests/{testId}/runs:
+    get:
+      operationId: listRuns
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RunSummary"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
   /api/tests/{testId}/steps:
     put:
       operationId: replaceSteps
@@ -562,7 +727,8 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
-      description: A name is already taken
+      description: "The request conflicts with what is stored, such as a name already\
+        \ taken"
     Forbidden:
       content:
         application/problem+json:
@@ -598,6 +764,13 @@ components:
         name:
           type: string
         technology:
+          type: string
+    CreateRunRequest:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        testId:
           type: string
     CreateTestRequest:
       type: object
@@ -647,6 +820,11 @@ components:
       required:
       - message
       - path
+    FinishRunRequest:
+      type: object
+      properties:
+        status:
+          type: string
     LoginRequest:
       type: object
       properties:
@@ -703,6 +881,88 @@ components:
       type: object
       properties:
         name:
+          type: string
+    RunDetail:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        document:
+          type: object
+          description: JSON document; steps are validated against schemas/step.schema.json
+        durationMs:
+          type: integer
+          format: int64
+        finishedAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepResultResponse"
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          $ref: "#/components/schemas/UserRef"
+        status:
+          type: string
+        stepCount:
+          type: integer
+          format: int32
+        testId:
+          type: string
+    RunSummary:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        durationMs:
+          type: integer
+          format: int64
+        finishedAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          $ref: "#/components/schemas/UserRef"
+        status:
+          type: string
+        stepCount:
+          type: integer
+          format: int32
+        testId:
+          type: string
+    StepResultResponse:
+      type: object
+      properties:
+        durationMs:
+          type: integer
+          format: int64
+        id:
+          type: string
+        message:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        stepId:
+          type: string
+        stepIndex:
+          type: integer
+          format: int32
+    StepResultWritten:
+      type: object
+      properties:
+        stepResultId:
           type: string
     TestExport:
       type: object

@@ -100,6 +100,9 @@ step schema v0.2. Written into ADR `2026-10-31-pilot-apps-and-sample-app-technol
   is what "the same file" actually means. **General point: the only Python on this Windows machine
   is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
   is not evidence that the version floor holds.**
+- 2026-11-05 · omer · #44 · Neo4j Community enforces composite uniqueness (`REQUIRE (n.a, n.b) IS UNIQUE`), and with it a losing concurrent write ends in `ClientException` code `Neo.ClientError.Schema.ConstraintValidationFailed`, which `executeWrite` does not retry → catch that code and read again if a repeat is legal (`RunService.writeResult`). Without the catch, 8 overlapping writes fail at once.
+- 2026-11-05 · omer · #44 · Node's global WebSocket (undici, used in the Electron main process) sends no `Origin` header, so Spring's default same-origin WebSocket check lets it through with no `setAllowedOrigins`; the Bearer header passes the normal security chain because the upgrade is an ordinary GET.
+- 2026-11-05 · omer · #170 · **A race can hide under CPU load.** `test_the_request_log_holds_no_instruction_text` failed 9 of 1 500 repeats on an idle machine and 0 of 300 under heavy load, so a load run proved nothing. To show a timing cause, inject a delay at the suspected point and compare the fix on the same setup. Also in zsh: `kill $pids` does not split a space-separated string, so background loops keep running; use an array and check with `ps` afterwards.
 
 ## 2026-11-07 — KeePass 2's entry list is a UIA List with no Grid or Table pattern (hasan, #150/#147)
 

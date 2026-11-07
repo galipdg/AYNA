@@ -41,7 +41,10 @@ class BearerTokenFilter extends OncePerRequestFilter {
 	}
 
 	static Optional<String> bearerToken(HttpServletRequest request) {
-		String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+		return bearerToken(request.getHeader(HttpHeaders.AUTHORIZATION));
+	}
+
+	static Optional<String> bearerToken(String header) {
 		if (header == null || !header.regionMatches(true, 0, PREFIX, 0, PREFIX.length())) {
 			return Optional.empty();
 		}
