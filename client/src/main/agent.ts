@@ -80,7 +80,9 @@ export function describeExit(
 export function killTree(child: ChildProcess): void {
   if (child.exitCode !== null || child.signalCode !== null) return
   if (process.platform === 'win32' && child.pid !== undefined) {
-    spawn('taskkill', ['/F', '/T', '/PID', String(child.pid)], {
+    // Full path: System32 is not on every PATH (Git Bash, some service accounts).
+    const taskkill = win32.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'taskkill.exe')
+    spawn(taskkill, ['/F', '/T', '/PID', String(child.pid)], {
       stdio: 'ignore',
       windowsHide: true,
     }).on('error', () => child.kill())
@@ -106,6 +108,11 @@ export interface AgentManagerOptions {
   stableMs?: number
   /** On quit: how long the agent gets to exit after its stdin closes before it is killed. */
   stopTimeoutMs?: number
+  /**
+   * On quit: how long the kill gets to take effect. After that `stop()` resolves anyway
+   * (a denied `taskkill` or a process stuck in the kernel), so the app can always quit.
+   */
+  killGraceMs?: number
   kill?: (child: ChildProcess) => void
   log?: (line: string) => void
 }
@@ -166,6 +173,7 @@ export class AgentManager {
   private stopRequested = false
   private stopped?: Promise<void>
   private resolveStopped?: () => void
+  private stopDeadline?: NodeJS.Timeout
 
   constructor(options: AgentManagerOptions) {
     this.options = {
@@ -177,6 +185,7 @@ export class AgentManager {
       restartDelayMs: 500,
       stableMs: 60_000,
       stopTimeoutMs: 3_000,
+      killGraceMs: 2_000,
       kill: killTree,
       log: (line) => console.log(line),
       ...options,
@@ -214,7 +223,9 @@ export class AgentManager {
 
   /**
    * Stops the agent for good: closes its stdin (the agent exits on EOF) and kills its
-   * process tree if it is still running after `stopTimeoutMs`.
+   * process tree if it is still running after `stopTimeoutMs`. Always settles: if the
+   * agent outlives the kill by `killGraceMs`, it is left behind (logged) and the status
+   * goes to `stopped`, because quitting waits for this promise.
    */
   stop(): Promise<void> {
     if (this.stopped) return this.stopped
@@ -231,10 +242,20 @@ export class AgentManager {
     this.closeSocket()
     child.stdin?.end()
     this.launchTimer(this.options.stopTimeoutMs, () => this.options.kill(child))
+    this.stopDeadline = setTimeout(() => {
+      this.options.log(`[agent] could not stop the agent (pid ${child.pid}); quitting without it`)
+      this.generation++ // a late 'exit' from this child must not run afterExit again
+      this.endLaunch()
+      this.afterExit('could not stop the agent')
+    }, this.options.stopTimeoutMs + this.options.killGraceMs)
     return this.stopped
   }
 
-  /** Sends one JSON-RPC request to the agent and resolves with its `result`. */
+  /**
+   * Sends one JSON-RPC request to the agent and resolves with its `result`. The caller
+   * owns the timeout: give long calls (snapshot, a run) more than the agent's own budget,
+   * because an answer that arrives after `timeoutMs` is dropped.
+   */
   call(method: string, params?: Record<string, unknown>, timeoutMs = 30_000): Promise<unknown> {
     const socket = this.socket
     if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -384,6 +405,7 @@ export class AgentManager {
     this.child = undefined
     clearTimeout(this.stableTimer)
     if (this.stopRequested) {
+      clearTimeout(this.stopDeadline)
       this.setStatus('stopped', this.status.restarts)
       this.resolveStopped?.()
       return
