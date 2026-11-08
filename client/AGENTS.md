@@ -11,6 +11,8 @@ Owner: omer. Read `/AGENTS.md` first; this file adds only what is specific to `c
 Run from `client/` (Node >= 22.12):
 - `npm ci` — install (all packages are devDependencies; everything is bundled)
 - `npm run dev` — open the app with hot reload (first downloads the Electron binary via `install-electron`)
+- `npm run dev:mock` — the same against a stub server (`http://127.0.0.1:8099`) and a fake agent, on any OS without the server, Neo4j or Windows; options and window list in `dev/mock/README.md`
+- `npm run demo` — everything for a demo: starts the backend with Docker, adds sample data through the API and opens the app with the fake agent; see `DEMO.md`
 - `npm run build` — `out/` + unpacked app in `release/<platform>-unpacked` (no installer)
 - `npm run lint` — ESLint
 - `npm run typecheck` — `tsc -b` (`tsconfig.node.json` for main/preload/shared, `tsconfig.web.json` for the renderer, which sees no Node types)
@@ -26,4 +28,4 @@ Before committing: `npm run lint && npm run typecheck && npm test` (CI also runs
 ## Rules
 - `contextIsolation: true`, `nodeIntegration: false`; renderer never imports Node modules.
 - No remote content, CDN fonts or auto-update (closed network).
-- UI text in English for now; keep strings in one place for later translation.
+- Every UI text exists in Turkish and English (#185, ADR `2026-11-03-client-ui-language`): add it to `src/renderer/src/i18n/en.ts` and `i18n/tr.ts`, read it as `strings.x` at render time (never copy it into a module constant); `i18n.test.ts` fails on a missing or untranslated text. Dates through `formatDate` / `formatTime`; known server messages through `serverText`. Test data is never translated (NFR-16).

@@ -59,6 +59,61 @@ paths:
           $ref: "#/components/responses/Conflict"
       tags:
       - app-controller
+  /api/apps/{appId}/repo-objects:
+    get:
+      operationId: listRepoObjects
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RepoObjectSummary"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - repo-object-controller
+    post:
+      operationId: createRepoObject
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRepoObjectRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoObjectResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - repo-object-controller
   /api/apps/{appId}/tests:
     get:
       operationId: listTests
@@ -308,6 +363,78 @@ paths:
       security: []
       tags:
       - health-controller
+  /api/repo-objects/{objectId}:
+    delete:
+      operationId: deleteRepoObject
+      parameters:
+      - in: path
+        name: objectId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - repo-object-controller
+    get:
+      operationId: getRepoObject
+      parameters:
+      - in: path
+        name: objectId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoObjectResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - repo-object-controller
+    patch:
+      operationId: updateRepoObject
+      parameters:
+      - in: path
+        name: objectId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRepoObjectRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepoObjectResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - repo-object-controller
   /api/runs:
     post:
       operationId: createRun
@@ -813,6 +940,21 @@ components:
           type: string
         technology:
           type: string
+    CreateRepoObjectRequest:
+      type: object
+      properties:
+        fallback:
+          type: object
+          additionalProperties: {}
+        name:
+          type: string
+        primary:
+          type: object
+          additionalProperties: {}
+        snapshotElementId:
+          type: string
+        snapshotId:
+          type: string
     CreateRunRequest:
       type: object
       properties:
@@ -930,6 +1072,77 @@ components:
       properties:
         name:
           type: string
+    RepoObjectResponse:
+      type: object
+      properties:
+        appId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/UserRef"
+        element:
+          type: object
+          additionalProperties: {}
+        fallback:
+          type: object
+          additionalProperties: {}
+        id:
+          type: string
+        name:
+          type: string
+        primary:
+          type: object
+          additionalProperties: {}
+        resolvesTo:
+          type: array
+          items:
+            $ref: "#/components/schemas/Resolution"
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/UserRef"
+        usedBy:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestRef"
+    RepoObjectSummary:
+      type: object
+      properties:
+        controlType:
+          type: string
+        fallback:
+          type: object
+          additionalProperties: {}
+        id:
+          type: string
+        name:
+          type: string
+        nearestLabel:
+          type: string
+        primary:
+          type: object
+          additionalProperties: {}
+        resolvesTo:
+          type: array
+          items:
+            $ref: "#/components/schemas/Resolution"
+        testCount:
+          type: integer
+          format: int32
+    Resolution:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        elementId:
+          type: string
+        snapshotElementId:
+          type: string
+        snapshotId:
+          type: string
     RunDetail:
       type: object
       properties:
@@ -1045,6 +1258,13 @@ components:
           type: string
         name:
           type: string
+    TestRef:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
     TestResponse:
       type: object
       properties:
@@ -1088,6 +1308,17 @@ components:
           type: string
         name:
           type: string
+    UpdateRepoObjectRequest:
+      type: object
+      properties:
+        fallback:
+          type: object
+          additionalProperties: {}
+        name:
+          type: string
+        primary:
+          type: object
+          additionalProperties: {}
     UpdateUserRequest:
       type: object
       properties:

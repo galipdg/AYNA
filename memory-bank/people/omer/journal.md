@@ -116,6 +116,93 @@ Append-only. One entry per session, newest at the bottom:
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
 
+## 2026-10-31/11-01 · #24 resume
+- #24 blocked on #12 (snapshot schema) and #22 (`elementFromPoint`); pushed `937a06f` (pick hotkey) over HTTPS; reminders on #12 (draft schema, or fields in a comment and omer drafts it; answer by 2 Nov) and #22 (RPC contract first).
+- Hotkey manual check on macOS with a scratch stub server + fake agent (`AYNA_AGENT_PYTHON`): all steps pass (omer). Stopped the `ayna` Compose stack (`stop`, data kept).
+- Merged `origin/main` (#6, #11, #122, #149, #166, #172, #177) into the branch; client lint, typecheck, 66 tests green.
+- Found on `main`: hasan's #17 Windows run, 6/7 pass, `agent.test.ts:160` fails (no signals on Windows); #11 element schema unblocks the Spy property panel.
+- Next: fix #17 on Windows semantics, then the #24 property panel against `schemas/element.schema.json`.
+
+## 2026-11-01 · #17 fix, #24 property panel, review round, merges
+- #17: `describeExit()` (no INFO tail after a kill, hex for large Windows codes), restart test platform-aware; WebSocket handshake deadline (hasan's connect-timeout finding, #178). 57 tests; Windows re-run requested on #17.
+- #24: `PropertyPanel.tsx` + `shared/element.ts` on the element descriptor 0.1, test keeps the field list equal to the schema; panel shows the selected window until the tree exists. 77 tests, build green; manual check pending.
+- Reviews: approved #170, #173, #176, #178; commented #169 (wait for galip's points).
+- Merged at omer's explicit request: #178, #160, #155 (re-synced), #157 (re-synced, retargeted to `main`); `main`'s stray `<<<<<<< HEAD` (from #174) gone with #160.
+- #60: synced with `main` against `acce05c` after #160's squash (recipe in `learnings.md`); server 54 + client 51 tests; new PR #179.
+- Next: property panel manual check; #179 reviews; #17 Windows re-run.
+
+## 2026-11-01 · #24 property panel check, dev:mock, #180 review
+- Property panel manual check on macOS passed (omer): long values wrap, empty title "not captured", lower fields shown. Off-screen window's highlight covers the screen on macOS → open issue for the Windows session (minimized windows at −32000).
+- First tries failed on setup, not code (env var lost, stub not running) → `npm run dev:mock` (`client/dev/mock/`: stdlib stub server + fake agent found via PYTHONPATH, `--port`/`--windows`/`--no-uia`); line in `client/AGENTS.md` (user approved). Pushed `8011c52`.
+- #12 moved: hasan's PR #180 (snapshot schema 0.1 + UIA backend). Reviewed the contract, ran its agent on macOS through `AgentManager` (-32001, clean stop); approved with 5 non-blocking points.
+- #179 still has no human review; #17 waits for the Windows session.
+- Next: #24 element tree on snapshot 0.1.
+- Later: merged #173 at omer's request. Its only conflict was `omer/inbox.md`; GitHub's mergeability ignores `merge=union`, so a real merge commit was pushed to galip's branch (omer approved the exception to "own branch only"), CI 5/5. Conflict notes on #176, #150, #169, #170.
+
+## 2026-11-01 · #24 element tree, #169 approval
+- Element tree on snapshot 0.1 (#180's branch): `snapshot` IPC, `parseSnapshot`, `buildTree` (`src/shared/snapshot.ts`), `ElementTree.tsx`, panel fed by the selected node, `-32000`/`-32002` messages; fake agent answers `snapshot` (`--snapshot`, `--slow-snapshots`). 87 tests; checked over CDP, then omer's manual check passed.
+- omer deleted the whole `windows.json` during the check (my step was unclear): the fake agent dropped the connection on `FileNotFoundError` (an `OSError`). Fixed to answer -32603; `dev:mock` checks its files at start. Pushed `9b14c8a`.
+- Approved #169 at omer's request (all six review points in `a488608`).
+- Next: #24 waits on #180 (merge) and #22 (`elementFromPoint`); #17 Windows re-run.
+
+## 2026-11-03 · #15 snapshot import, branch upkeep after #179
+- #15: `POST /api/apps/{appId}/versions/{versionId}/snapshots`. One Window and one Element per entry (root `e0` included, 14 for the trial app). Tree rules are checked on top of the schema. A repeat import returns 200 with no write; the same id under another version → 409. `importInto(tx, …)` is kept public for #51. The shared schema loader moved to `schema/SchemaFile`. Dockerfile and its ignore file now copy `snapshot.schema.json`; the image was checked on a throwaway Neo4j. PR #182, CI 5/5.
+- #179 merged on main → merged into #15 (Window `createdBy`/`createdAt`, as the #60 rule requires; `openapi.yaml` regenerated), into #17 (auth handlers routed through `handle()`) and into #24 via #17 (Spy and login side by side; one CSS rule had been split by the merge). All pushed.
+- #24: snapshot types checked against the merged schema with `satisfies Record<keyof T, true>` key lists; no field name had moved. 108 client tests.
+- Learnings: a shared schema the server reads needs 3 entries (pom, Dockerfile, .dockerignore); the compose Neo4j volume keeps migrations from other branches.
+- Next: #25 (design proposed in `active.md`, waiting for omer's OK).
+
+## 2026-11-03 · #25 object repository, UI redesign issues
+- #25 server: `POST /api/apps/{appId}/repo-objects`; primary/fallback as JSON strings; allowed keys read from the snapshot schema minus never-match fields; name pattern from the step schema, `none.noMatch` refused; duplicate → 409 naming the object. 76 server tests.
+- #25 client: merged #24 in; snapshot import then create; property suggestion (`suggestUses`) until the element is unique in the capture. After omer's first manual check the form was hard to use → version bar at the top of the Spy, form = name + "How AYNA finds it" summary + "Advanced settings". 124 client tests; both manual checks passed.
+- omer: the whole client UI is still hard to read and to present, and should beat TestComplete's dated UI → opened #183 (design + shell, expanded), #184 (three-panel Spy), #185 (Turkish/English; galip's inbox for RS TBD-2).
+- PRs #186 (#24, "Part of") and #187 (#25) opened on main.
+- Next: #183, wireframes first, omer's OK before code.
+
+## 2026-11-03 (seventh session) · #183 UI design + shell, #184 three-panel Spy
+- #183: `docs/ui/` (README with 6 review questions, style guide with colour tokens checked ≥ 4.5:1, flows F1–F8, wireframes 0–14). omer could not judge ASCII wireframes → the shell was built before the team review (top bar: app, version, agent, language, user; navigation with "Later" places; gate cards before login; Users and Settings as places). Version moved from the Spy to the top bar.
+- #184: Spy as windows | tree | properties; virtualized tree with search and keyboard (`shared/tree.ts`, 11 tests); plain property groups + Advanced; add form in the right panel. 3031-element tree: 25 rows in the DOM. Checked under the production CSP. 135 client tests, build green.
+- Seen by the agent over CDP (dark theme only); omer had the window open meanwhile.
+- Next: omer's feedback on the shell and Spy; then team review of `docs/ui/` + running client; Windows check of #184 (not posted yet).
+
+## 2026-11-03 (eighth session) · #185 Turkish and English UI
+- `i18n/en.ts` + `i18n/tr.ts` (same keys; `strings.ts` holds the current one as a live binding, so components did not change); `i18n.test.ts` checks parity, arguments, untranslated texts, dates, counts and server messages. 150 client tests, build green.
+- Language switch in the top bar, Settings and the gate; `Settings.language` in `settings.json`; first run: OS tr/en else Turkish. Dates tr-TR / en-GB. Known server messages mapped (`serverText`), others as sent.
+- ADR `2026-11-03-client-ui-language` (Proposed); `client/AGENTS.md` rule updated with omer's OK; PR #190, reviewers galip + hasan.
+- Checked over CDP with the real server and the fake agent. Vite hot-reloaded the branch into two older dev instances (blank windows) → learnings entry.
+- Next: omer reads both languages; wording fixes from the team; ADR → Accepted after approval.
+
+
+## 2026-11-03/04 (ninth session) · #185 CI, #30 Repository view
+- #185: no review yet on PR #190. One flaky `ai` test (request log written after the response, race) → note in galip's inbox + PR #190 comment; re-run green; CI 5/5 after pushing the note.
+- #30: server list/get/PATCH/DELETE for repository objects (409 names the tests; rename keeps steps via `TARGETS`); 83 server tests. Client Repository place (`Repository.tsx`), shared `PropertySetEditor.tsx`, "looks saved already" warning in the Spy form; 156 client tests, build green.
+- Checked over CDP against `docker compose up --build`; omer's manual check passed on 2026-11-04 (the agent did not start only because the dev command was split over two lines).
+- PR #191 (stacked on #190), reviewers galip (DETACH DELETE vs #74 proposals) and hasan (Turkish texts).
+- Next: reviews of the stack (#182 → #191); next Week 5 issue #38 (step editor, needs #30).
+
+
+## 2026-11-04/05 (tenth session) · #38 step editor
+- #38: Tests place with a test list and a step table (add, delete, drag / Alt+↑↓ reorder, action, element from the repository, value / check, wait in seconds); rename, delete, unsaved-change warning. Step schema checked with Ajv in the main process (renderer CSP forbids `new Function`); `ajv` devDependency approved by omer.
+- API smoke against the real server passed; omer's manual check found truncated Action/Element columns → fixed layout + resizable columns (`3d532a1`); re-check passed 2026-11-05.
+- Pushed `omer/30-repo-view` (session-notes commit) and `omer/38-step-editor`; PR #192 (base `omer/30-repo-view`), CI 5/5. Not merged: all stack PRs need an approving review.
+- Next: reviews of the stack; next issue (#44 waits for #40).
+
+## 2026-11-05 (eleventh session, evening) · #169, #170, #195
+- Merged #169 at omer's request after syncing hasan's branch; #21 closed. #170 synced, blocked by a race in galip's `_send` (9 of 1 500 on `main`, 0 with a tested fix; in galip's inbox).
+- #195 for the advisor: `npm run demo` starts Docker, seeds through the API and opens the client; `DEMO.md` in Turkish. Tested end to end on a throwaway stack over CDP.
+- The run found unreadable check steps in the editor (35 px controls): `.step-check` now wraps. Also corrected two wrong steps in the Windows check on #38.
+- Next: omer's manual check, then push and PR.
+
+## 2026-11-05 (eleventh session, late) · #195 fixes, #196 undo
+- omer's first manual check of `npm run demo` failed with a 409: the fixture's snapshot id was already in the real volume. The sample capture now has an id from its version. My test had used only fresh volumes.
+- Running the trial app on macOS showed the sample tests expected texts the app never shows; fixed, and every run now restores the two sample tests.
+- #196: undo and redo in the step editor, on the window so it works after a delete, and safe across a save. 189 client tests, 27 of 27 in Electron.
+- Next: the table shift omer saw (screenshot unreadable here), physical ⌘Z check, push and PRs.
+
+## 2026-11-05 (twelfth session) · #38 layout for the demo
+- omer: the check rows wrap to two and three lines. A check is now a one-line summary with a popover, every row 41 px. The test list resizes between 150 and 420 px (`Resizer.tsx`, shared with the column handles).
+- 26 of 28 checks in Electron on the first run; the other two were test assumptions (a scripted click does not focus; an empty expected text is valid), re-checked with a real click and the schema.
+- Next: omer confirms the table and ⌘Z in the main folder, then push and PRs.
 ## 2026-11-05 · #53 SDD final (first PR)
 - Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
 - galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
@@ -134,3 +221,17 @@ Append-only. One entry per session, newest at the bottom:
 - Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
 - Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
 - Next: #154's approval, then #186 → #192, #197 one by one.
+
+## 2026-11-08 (fourteenth session) · #154 up to date, still no approval
+- `main` unchanged since 2026-11-07 (`2e27199`). #154 still has no human review; Copilot fails on quota. Every client stack PR (#186–#197) carries #17's commits, so all wait on #154.
+- Merged `origin/main` into `omer/17-agent-process-manager` (`a09d801`, clean), client lint/typecheck/format and 75/75 tests green, pushed on omer's yes. Fixed the PR body's stale heartbeat note.
+- `protect-main` ruleset: 1 approval, squash only, threads resolved, approvals not dismissed on push.
+- hasan's docker port / Neo4j password note handed to a separate session (new issue + branch).
+- Next: #154's approval → merge → #186 → #192, #197.
+## 2026-11-08 · #208 Compose port and Neo4j password hint (side session)
+- hasan's 2026-11-07 inbox item (#28 Windows session) had no issue: opened #208 on omer's OK (Week 3, owner:omer, area:devops, area:server, board In progress).
+- Compose publishes `${AYNA_SERVER_PORT:-8080}`; `.env.example` and `server/AGENTS.md` say so. `docker compose config` checked with the variable unset and set to 18080.
+- Reproduced the crash with the built jar against a separate Neo4j (111 lines, `AuthenticationException` at line 55). `Neo4jAuthFailureHint` (registered in `spring.factories`) now logs one ERROR line with the URI, the user and `docker compose down -v`; Boot's trace still follows. Unit + integration test (own Neo4j container).
+- Server suite 106/106; the rebuilt jar logs the hint at line 25 of 112 and nothing when Neo4j is simply down. A `@Component` variant logged the line twice, so `spring.factories` stays (learnings).
+- Next: push and PR with `Closes #208` on omer's OK.
+- Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.

@@ -38,10 +38,9 @@ export default function ServerSettings({
   }
 
   return (
-    <section className="card">
+    <section className="card gate-card">
       <h2>{strings.serverTitle}</h2>
-      <p>{strings.serverIntro}</p>
-      <form className="server-form" onSubmit={submit}>
+      <form className="form" onSubmit={submit}>
         <label htmlFor="server-url">{strings.serverUrlLabel}</label>
         <input
           id="server-url"
@@ -54,24 +53,28 @@ export default function ServerSettings({
           onChange={(event) => setUrl(event.target.value)}
           disabled={busy}
           aria-invalid={failure ? true : undefined}
-          aria-describedby={failure ? 'server-error' : undefined}
+          aria-describedby={failure ? 'server-error' : 'server-hint'}
         />
-        <div className="actions">
-          <button type="submit" disabled={busy || !url.trim()}>
-            {busy ? strings.connecting : strings.connect}
-          </button>
+        {failure ? (
+          <p id="server-error" className="field-error" role="alert">
+            {strings.connectionErrors[failure.reason](failure.url)}
+          </p>
+        ) : (
+          <p id="server-hint" className="hint">
+            {strings.serverIntro}
+          </p>
+        )}
+        <div className="form-actions">
           {onCancel && (
             <button type="button" onClick={onCancel} disabled={busy}>
               {strings.cancel}
             </button>
           )}
+          <button type="submit" className="btn-main" disabled={busy || !url.trim()}>
+            {busy ? strings.connecting : strings.connect}
+          </button>
         </div>
       </form>
-      {failure && (
-        <p id="server-error" className="error" role="alert">
-          {strings.connectionErrors[failure.reason](failure.url)}
-        </p>
-      )}
     </section>
   )
 }
