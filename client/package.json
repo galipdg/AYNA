@@ -11,6 +11,7 @@
   "scripts": {
     "predev": "install-electron",
     "dev": "electron-vite dev",
+    "dev:mock": "node dev/mock/run.mjs",
     "build": "electron-vite build && electron-builder --dir",
     "prepreview": "install-electron",
     "preview": "electron-vite preview",

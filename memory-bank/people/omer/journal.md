@@ -116,6 +116,41 @@ Append-only. One entry per session, newest at the bottom:
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
 
+## 2026-10-31/11-01 · #24 resume
+- #24 blocked on #12 (snapshot schema) and #22 (`elementFromPoint`); pushed `937a06f` (pick hotkey) over HTTPS; reminders on #12 (draft schema, or fields in a comment and omer drafts it; answer by 2 Nov) and #22 (RPC contract first).
+- Hotkey manual check on macOS with a scratch stub server + fake agent (`AYNA_AGENT_PYTHON`): all steps pass (omer). Stopped the `ayna` Compose stack (`stop`, data kept).
+- Merged `origin/main` (#6, #11, #122, #149, #166, #172, #177) into the branch; client lint, typecheck, 66 tests green.
+- Found on `main`: hasan's #17 Windows run, 6/7 pass, `agent.test.ts:160` fails (no signals on Windows); #11 element schema unblocks the Spy property panel.
+- Next: fix #17 on Windows semantics, then the #24 property panel against `schemas/element.schema.json`.
+
+## 2026-11-01 · #17 fix, #24 property panel, review round, merges
+- #17: `describeExit()` (no INFO tail after a kill, hex for large Windows codes), restart test platform-aware; WebSocket handshake deadline (hasan's connect-timeout finding, #178). 57 tests; Windows re-run requested on #17.
+- #24: `PropertyPanel.tsx` + `shared/element.ts` on the element descriptor 0.1, test keeps the field list equal to the schema; panel shows the selected window until the tree exists. 77 tests, build green; manual check pending.
+- Reviews: approved #170, #173, #176, #178; commented #169 (wait for galip's points).
+- Merged at omer's explicit request: #178, #160, #155 (re-synced), #157 (re-synced, retargeted to `main`); `main`'s stray `<<<<<<< HEAD` (from #174) gone with #160.
+- #60: synced with `main` against `acce05c` after #160's squash (recipe in `learnings.md`); server 54 + client 51 tests; new PR #179.
+- Next: property panel manual check; #179 reviews; #17 Windows re-run.
+
+## 2026-11-01 · #24 property panel check, dev:mock, #180 review
+- Property panel manual check on macOS passed (omer): long values wrap, empty title "not captured", lower fields shown. Off-screen window's highlight covers the screen on macOS → open issue for the Windows session (minimized windows at −32000).
+- First tries failed on setup, not code (env var lost, stub not running) → `npm run dev:mock` (`client/dev/mock/`: stdlib stub server + fake agent found via PYTHONPATH, `--port`/`--windows`/`--no-uia`); line in `client/AGENTS.md` (user approved). Pushed `8011c52`.
+- #12 moved: hasan's PR #180 (snapshot schema 0.1 + UIA backend). Reviewed the contract, ran its agent on macOS through `AgentManager` (-32001, clean stop); approved with 5 non-blocking points.
+- #179 still has no human review; #17 waits for the Windows session.
+- Next: #24 element tree on snapshot 0.1.
+- Later: merged #173 at omer's request. Its only conflict was `omer/inbox.md`; GitHub's mergeability ignores `merge=union`, so a real merge commit was pushed to galip's branch (omer approved the exception to "own branch only"), CI 5/5. Conflict notes on #176, #150, #169, #170.
+
+## 2026-11-01 · #24 element tree, #169 approval
+- Element tree on snapshot 0.1 (#180's branch): `snapshot` IPC, `parseSnapshot`, `buildTree` (`src/shared/snapshot.ts`), `ElementTree.tsx`, panel fed by the selected node, `-32000`/`-32002` messages; fake agent answers `snapshot` (`--snapshot`, `--slow-snapshots`). 87 tests; checked over CDP, then omer's manual check passed.
+- omer deleted the whole `windows.json` during the check (my step was unclear): the fake agent dropped the connection on `FileNotFoundError` (an `OSError`). Fixed to answer -32603; `dev:mock` checks its files at start. Pushed `9b14c8a`.
+- Approved #169 at omer's request (all six review points in `a488608`).
+- Next: #24 waits on #180 (merge) and #22 (`elementFromPoint`); #17 Windows re-run.
+
+## 2026-11-03 · #15 snapshot import, branch upkeep after #179
+- #15: `POST /api/apps/{appId}/versions/{versionId}/snapshots`. One Window and one Element per entry (root `e0` included, 14 for the trial app). Tree rules are checked on top of the schema. A repeat import returns 200 with no write; the same id under another version → 409. `importInto(tx, …)` is kept public for #51. The shared schema loader moved to `schema/SchemaFile`. Dockerfile and its ignore file now copy `snapshot.schema.json`; the image was checked on a throwaway Neo4j. PR #182, CI 5/5.
+- #179 merged on main → merged into #15 (Window `createdBy`/`createdAt`, as the #60 rule requires; `openapi.yaml` regenerated), into #17 (auth handlers routed through `handle()`) and into #24 via #17 (Spy and login side by side; one CSS rule had been split by the merge). All pushed.
+- #24: snapshot types checked against the merged schema with `satisfies Record<keyof T, true>` key lists; no field name had moved. 108 client tests.
+- Learnings: a shared schema the server reads needs 3 entries (pom, Dockerfile, .dockerignore); the compose Neo4j volume keeps migrations from other branches.
+- Next: #25 (design proposed in `active.md`, waiting for omer's OK).
 ## 2026-11-05 · #53 SDD final (first PR)
 - Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
 - galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.

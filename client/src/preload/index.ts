@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import { IPC, type AgentStatus, type AynaApi } from '../shared/api.ts'
+import { IPC, type AgentStatus, type AynaApi, type ScreenPoint } from '../shared/api.ts'
 
 const api: AynaApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
@@ -17,6 +17,15 @@ const api: AynaApi = {
     return () => ipcRenderer.removeListener(IPC.agentStatus, forward)
   },
   retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
+  listWindows: () => ipcRenderer.invoke(IPC.listWindows),
+  snapshot: (handle) => ipcRenderer.invoke(IPC.snapshot, handle),
+  highlight: (bounds) => ipcRenderer.invoke(IPC.highlight, bounds),
+  setPickHotkey: (enabled) => ipcRenderer.invoke(IPC.setPickHotkey, enabled),
+  onPick: (listener) => {
+    const forward = (_event: IpcRendererEvent, point: ScreenPoint) => listener(point)
+    ipcRenderer.on(IPC.pick, forward)
+    return () => ipcRenderer.removeListener(IPC.pick, forward)
+  },
   login: (username, password) => ipcRenderer.invoke(IPC.login, username, password),
   logout: () => ipcRenderer.invoke(IPC.logout),
   currentUser: () => ipcRenderer.invoke(IPC.currentUser),
