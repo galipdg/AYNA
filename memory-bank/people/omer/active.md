@@ -2,7 +2,7 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-08 (fourteenth session, end: everything open is merged)
+- Last update: 2026-11-08 (fifteenth session: #207 done locally, not pushed)
 - **`main` at the end of the session** (`3bf3f15`): the whole client stack (#154, #186–#192, #197), plus:
   - #209 (#208);
   - #214 (CI Electron cache, #213 closed);
@@ -25,7 +25,7 @@ Only omer's agent edits this file. Overwrite it at every session end.
   - #206 (`needs-windows-test`: a 6-step re-run is posted on the issue, then close it by hand with the evidence);
   - #28 (G0, team; the LLM criterion is galip's).
 - **Next step** (resume here): Week 4 issues, earliest first:
-  - #207: demo seed backups (use #187's suggestion: `name` + `controlType`), the DEMO.md capture note, the Chromium 125+ line in `client/AGENTS.md`, minimum window width vs the 1280 px step table;
+  - #207 is done on `omer/207-demo-seed-window` (task note `memory-bank/tasks/207-demo-seed-window.md`): push, PR `Closes #207`, hasan as reviewer, on omer's OK. The branch also carries the 2026-11-08 session-end memory;
   - then #203, #204;
   - #205 (step schema 0.2 rows) is unblocked now that #150 has merged.
 

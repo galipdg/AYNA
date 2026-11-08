@@ -244,3 +244,9 @@ Append-only. One entry per session, newest at the bottom:
 - Merged on omer's word after rerunning the 5xx client jobs: #210, #211, #212. #214–#216 and #150 merged too. Only #126 is open.
 - Inbox cleaned (only the #199 SDD path item left).
 - Next: #207, then #203/#204; #205 is unblocked.
+
+## 2026-11-08 (fifteenth session) · #207 demo seed backups, capture note, window width
+- Branched from `omer/memory-2026-11-08-end` at `ba1b0cc` (the amended tip; `7765e45` was the commit before the amend).
+- Seed: backup sets `name` + `controlType`, `statusLabel` none; a rerun PATCHes the sample objects' sets back. `demoSeed.test.ts` checks each set finds one element in the trial capture. Client 203/203. End-to-end on a throwaway Compose project on port 8097 (old → new seed, fresh database), removed afterwards.
+- DEMO.md capture note (#11 tree, rebuilt by the agent tests; fixture `snapshotId`/`agentVersion`), Chromium 125+ line in `client/AGENTS.md`, style guide keeps 960 minimum and says the step table scrolls below ~1280.
+- Next: push and PR on omer's OK, then #203/#204, #205.
