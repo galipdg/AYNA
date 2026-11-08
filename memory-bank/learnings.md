@@ -232,3 +232,16 @@ difference hide.
 screenshot crop, #23's win32 fallback, the overlay) has to say which of the three it means.
 - 2026-11-08 · omer · #208 · **On Windows, `docker compose up` publishes a host port that another program already holds, and says nothing.** hasan's machine had EnterpriseDB's Apache (`PEMHTTPD-x64`, auto-start) on IPv4 8080: the server started, the container's own `/api/health` said UP, and every `http://localhost:8080` request reached Apache (`http://[::1]:8080` reached the server, because Apache listened on IPv4 only) → set `AYNA_SERVER_PORT` in `.env` (Compose publishes `${AYNA_SERVER_PORT:-8080}`), and check who holds a port with `netstat -ano | findstr :8080` before a demo.
 - 2026-11-08 · omer · #208 · Spring Boot: an `ApplicationListener<ApplicationFailedEvent>` that is a `@Component` hears about a failed start only if its bean was created before the bean that failed, and in our test it logged its line twice → register it in `META-INF/spring.factories` under `org.springframework.context.ApplicationListener` (once, whichever bean fails). A `FailureAnalyzer` prints a tidier block but logs the original stack trace only at DEBUG.
+
+## 2026-11-08 — Merging `main` into a stacked branch after a squash merge can resurrect deleted files (omer, #186–#197)
+
+After the PR below it is squash-merged, the next branch in a stack still carries the original
+commits, so `git merge origin/main` uses an old merge base. Two things go wrong: (1) every line
+the lower PR touched and the branch later changed again conflicts, and (2) worse, silently, a file
+the branch **deleted** comes back, because relative to the old base `main` "added" it
+(`VersionBar.tsx` on #188). What worked: when `main`'s tree equals a commit the branch already
+contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), record the merge with
+`git merge -s ours origin/main` — the branch's tree is exactly right. Otherwise re-merge each
+conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
+version the branch was built on). Always compare the merged tree with what you expect before
+pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
