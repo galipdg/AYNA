@@ -467,11 +467,9 @@ function TestEditor({
     }
   }, [text])
 
-  const targets =
-    objects.state === 'loaded' ? new Set(objects.objects.map((object) => object.name)) : null
   const problems = unique([
     ...schemaIssues,
-    ...localProblems(drafts, targets),
+    ...localProblems(drafts, objects.state === 'loaded' ? objects.objects : null),
     ...serverIssues.filter((problem) => problem.index < drafts.length),
   ])
 

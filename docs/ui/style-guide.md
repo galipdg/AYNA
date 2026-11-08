@@ -179,9 +179,12 @@ The UI word is what the user sees. The internal term may appear only under Advan
 | UIA element | Element | Öge | |
 | Control type | Type | Tür | |
 | Nearest label | Label next to it | Yanındaki etiket | |
-| Step keyword Click / Type / Select / Verify / Wait | Click / Type text / Choose item / Check / Wait for | Tıkla / Yaz / Seç / Kontrol et / Bekle | |
+| Step keyword Click / Type / Select / SelectRow / Verify / Wait | Click / Type text / Choose item / Choose row / Check / Wait for | Tıkla / Yaz / Seç / Satır seç / Kontrol et / Bekle | |
 | Checkpoint, Verify step | Check | Kontrol | |
 | Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / Visible / Checked / Selected | Metin / Alan içeriği / Etkin / Görünür / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
+| Checkpoint property cell / rowExists / rowCount (grid or list) | Cell / Row is listed / Number of rows | Hücre / Satır listede / Satır sayısı | Cell: a table only; "a list has no columns" |
+| Row `{index}` / `{value, column}` | Row number / Row with the text … in column | Satır sırası / Metni olan satır … sütun | Summary: "row 2", "row with “Yılmaz” in Soyad" / "2. satır", "Soyad sütunu “Yılmaz” olan satır" |
+| Grid / DataGrid / Table, List (control types) | Table, list | Tablo, liste | |
 | Operator equals / notEquals / contains | is / is not / contains | eşittir / eşit değildir / içerir | |
 | `timeoutMs` | Wait up to (s) | En çok bekle (sn) | |
 | Healing proposal | Repair suggestion | Onarım önerisi | "AYNA could not find the element and suggests similar ones. Nothing changes until you choose." |

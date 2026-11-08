@@ -1318,6 +1318,13 @@ ul.message {
 
 .step-check:popover-open {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* One line of controls: what to check, the row, the column, the expected value. */
+.step-check-line {
+  display: flex;
   align-items: center;
   gap: 4px;
 }

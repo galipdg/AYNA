@@ -236,3 +236,9 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR with `Closes #208` on omer's OK.
 - Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.
 - Then (omer: dismiss hasan's change request and merge; merge every PR of ours with finished reviews): #154 merged after dismissing hasan's review (galip approved; no bypass, no auto-merge in the repo). Whole stack merged in order #186 → #197, closing #25, #30, #195, #196; #188/#190 bodies changed to "Part of" (criteria open). Client build in CI fails with a 504 from an electron-builder download on `main` too; merged on CI lint/tests + local build. Squash-stack gotcha in `learnings.md`.
+## 2026-11-08 (fifteenth session) · #205 SelectRow and row checks in the editor
+- `main` unchanged (`3bf3f15`); SSH still times out, fetched over HTTPS. No PR waits for omer's review; #217/#218/#219 wait for reviews.
+- #205 on `omer/205-selectrow-rows` (board In progress): `SelectRow`, a row picker (number, or a cell's text with an optional column), `cell` / `rowExists` / `rowCount` checks, element menu limited to tables and lists (cell: tables) with a local problem for a wrong control type. The #192 round-trip test no longer skips any valid case. en/tr texts, `docs/ui/` vocabulary.
+- Client 207/207, lint, typecheck, format green. Tried the StepTable in a throwaway Vite harness; not in the real app (demo seed has no grid).
+- Inbox emptied: every item was handled and #150 has merged.
+- Next: push and PR (Closes #205) on omer's OK.
