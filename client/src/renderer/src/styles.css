@@ -768,6 +768,49 @@ ul.message {
   height: 100%;
 }
 
+/* ---------- Repository: saved elements | details (#30) ---------- */
+
+.page-body:has(> .repository) {
+  overflow: hidden;
+  padding: 12px;
+}
+
+.repository {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(360px, 1fr);
+  gap: 8px;
+  height: 100%;
+}
+
+.repo-group > summary {
+  padding: 4px 2px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.repo-group .choice-list {
+  margin: 0 0 8px 12px;
+}
+
+.repository h4 {
+  margin: 16px 0 4px;
+}
+
+.repo-used-by {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.repo-versions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .spy-panel {
   display: flex;
   flex-direction: column;

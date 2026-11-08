@@ -9,6 +9,7 @@ import {
   LOGICAL_NAME,
   logicalNameProblem,
   matchCount,
+  objectsMatching,
   suggestUses,
 } from '../../shared/repository.ts'
 import type { Snapshot } from '../../shared/snapshot.ts'
@@ -101,5 +102,28 @@ describe('suggestUses', () => {
       name: 'primary',
       controlType: 'fallback',
     })
+  })
+})
+
+describe('objectsMatching', () => {
+  const saved = [
+    {
+      name: 'login.userNameInput',
+      primary: { automationId: 'QApplication.loginWindow.usernameInput' },
+    },
+    { name: 'login.anyEdit', primary: { controlType: 'Edit' as const } },
+    { name: 'login.passwordInput', primary: { nearestLabel: 'Password', controlType: 'Edit' } },
+    { name: 'login.nothing', primary: {} },
+  ]
+
+  it('finds the objects whose every Find by value the element has', () => {
+    assert.deepEqual(
+      objectsMatching(saved, element('e8')).map((object) => object.name),
+      ['login.userNameInput', 'login.anyEdit'],
+    )
+  })
+
+  it('never matches an object without Find by properties', () => {
+    assert.deepEqual(objectsMatching(saved.slice(3), element('e8')), [])
   })
 })

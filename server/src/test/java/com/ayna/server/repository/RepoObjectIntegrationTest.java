@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,7 +39,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
-/** Adding picked elements to the object repository, against a real Neo4j (Testcontainers, needs Docker). */
+/** The object repository API (#25, #30), against a real Neo4j (Testcontainers, needs Docker). */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({ TestcontainersConfiguration.class, SignedIn.class })
@@ -205,6 +208,187 @@ class RepoObjectIntegrationTest {
 					List.of(Map.of("keyword", "Type", "target", "login.userNameInput", "value", "admin"))))))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.document.steps[0].target").value("login.userNameInput"));
+	}
+
+	// --- list, get, edit, delete (#30) -----------------------------------------
+
+	/** FR-08: each object with the number of tests that use it and what kind of element it is. */
+	@Test
+	void theListShowsEachObjectWithItsTestCount() throws Exception {
+		create(appId, userNameInput("login.userNameInput")).andExpect(status().isCreated());
+		create(appId, request("login.passwordInput", "e10", Map.of("automationId", "QApplication.loginWindow.passwordInput"),
+				null))
+			.andExpect(status().isCreated());
+		String first = createTest("Login works", "login.userNameInput");
+		addStep(first, "login.userNameInput");
+		createTest("Login rejects empty password", "login.userNameInput");
+
+		mvc.perform(get("/api/apps/{appId}/repo-objects", appId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[*].name").value(contains("login.passwordInput", "login.userNameInput")))
+			.andExpect(jsonPath("$[0].testCount").value(0))
+			.andExpect(jsonPath("$[1].testCount").value(2))
+			.andExpect(jsonPath("$[1].controlType").value("Edit"))
+			.andExpect(jsonPath("$[1].nearestLabel").value("Username"))
+			.andExpect(jsonPath("$[1].primary.automationId").value("QApplication.loginWindow.usernameInput"))
+			.andExpect(jsonPath("$[1].resolvesTo[0].appVersionId").value(versionId))
+			.andExpect(jsonPath("$[1].resolvesTo[0].snapshotElementId").value(USER_NAME_INPUT));
+
+		mvc.perform(get("/api/apps/{appId}/repo-objects", createApp("Notepad")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.length()").value(0));
+		mvc.perform(get("/api/apps/{appId}/repo-objects", "no-such-app")).andExpect(status().isNotFound());
+	}
+
+	/** The details name the tests and carry the captured element, in the descriptor's order. */
+	@Test
+	void oneObjectShowsItsTestsAndTheCapturedElement() throws Exception {
+		String id = createdId(userNameInput("login.userNameInput"));
+		String testId = createTest("Login works", "login.userNameInput");
+
+		String body = mvc.perform(get("/api/repo-objects/{id}", id))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("login.userNameInput"))
+			.andExpect(jsonPath("$.usedBy.length()").value(1))
+			.andExpect(jsonPath("$.usedBy[0].id").value(testId))
+			.andExpect(jsonPath("$.usedBy[0].name").value("Login works"))
+			.andExpect(jsonPath("$.element.automationId").value("QApplication.loginWindow.usernameInput"))
+			.andExpect(jsonPath("$.element.controlType").value("Edit"))
+			.andExpect(jsonPath("$.element.bounds.length()").value(4))
+			.andExpect(jsonPath("$.element.id").doesNotExist())
+			.andExpect(jsonPath("$.element.snapshotId").doesNotExist())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		List<String> order = List.copyOf(mapper.readTree(body).get("element").propertyNames());
+		assertThat(order.indexOf("controlType")).isLessThan(order.indexOf("bounds"));
+
+		mvc.perform(get("/api/repo-objects/{id}", "no-such-object")).andExpect(status().isNotFound());
+	}
+
+	/** FR-08: a step points at the object, not its name, so it follows a rename. */
+	@Test
+	void aRenameKeepsTheStepsThatUseTheObject() throws Exception {
+		String id = createdId(userNameInput("login.userNameInput"));
+		String testId = createTest("Login works", "login.userNameInput");
+
+		patchObject(id, Map.of("name", "login.kullaniciAdiInput")).andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("login.kullaniciAdiInput"))
+			.andExpect(jsonPath("$.primary.automationId").value("QApplication.loginWindow.usernameInput"))
+			.andExpect(jsonPath("$.updatedBy.id").value(SignedIn.TESTER.userId()));
+		mvc.perform(get("/api/tests/{testId}", testId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.document.steps[0].target").value("login.kullaniciAdiInput"));
+
+		// Its own name again is not a conflict.
+		patchObject(id, Map.of("name", "login.kullaniciAdiInput")).andExpect(status().isOk());
+	}
+
+	@Test
+	void aRenameToANameTakenInTheApplicationIsAConflict() throws Exception {
+		String taken = createdId(userNameInput("login.userNameInput"));
+		String id = createdId(request("login.passwordInput", "e10",
+				Map.of("automationId", "QApplication.loginWindow.passwordInput"), null));
+
+		patchObject(id, Map.of("name", "login.userNameInput")).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("The logical name login.userNameInput is already used by repository object "
+					+ taken + " in this application"));
+		patchObject(id, Map.of("name", "none.noMatch")).andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[*].path").value(contains("$.name")));
+		assertThat(count("MATCH (o:RepoObject {name: 'login.passwordInput'}) RETURN count(o) AS n")).isEqualTo(1);
+	}
+
+	/** FR-06: the user changes how AYNA finds the element; both sets are replaced together. */
+	@Test
+	void thePropertySetsAreReplacedTogether() throws Exception {
+		String id = createdId(userNameInput("login.userNameInput"));
+		Map<String, Object> primary = new LinkedHashMap<>();
+		primary.put("nearestLabel", "Username");
+		primary.put("controlType", "Edit");
+
+		patchObject(id, Map.of("primary", primary, "fallback", Map.of("siblingIndex", 3))).andExpect(status().isOk())
+			.andExpect(jsonPath("$.name").value("login.userNameInput"))
+			.andExpect(jsonPath("$.fallback.siblingIndex").value(3))
+			.andExpect(jsonPath("$.fallback.name").doesNotExist());
+		assertThat(query("MATCH (o:RepoObject) RETURN o.primary AS primary").get(0).get("primary").asString())
+			.isEqualTo("{\"nearestLabel\":\"Username\",\"controlType\":\"Edit\"}");
+
+		patchObject(id, Map.of("primary", Map.of("name", "Username"))).andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[*].path").value(contains("$.fallback")));
+		patchObject(id, Map.of("primary", Map.of(), "fallback", Map.of("bounds", List.of(1, 2, 3, 4))))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.errors[*].path").value(containsInAnyOrder("$.primary", "$.fallback.bounds")));
+		patchObject("no-such-object", Map.of("name", "login.other")).andExpect(status().isNotFound());
+
+		// Nothing changed by the refused requests.
+		mvc.perform(get("/api/repo-objects/{id}", id))
+			.andExpect(jsonPath("$.primary.nearestLabel").value("Username"))
+			.andExpect(jsonPath("$.fallback.siblingIndex").value(3));
+	}
+
+	/** FR-09: an object a step uses cannot go; the message names the tests. */
+	@Test
+	void anObjectUsedByATestCannotBeDeleted() throws Exception {
+		String id = createdId(userNameInput("login.userNameInput"));
+		createTest("Login works", "login.userNameInput");
+		createTest("Login rejects empty password", "login.userNameInput");
+
+		mvc.perform(delete("/api/repo-objects/{id}", id))
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.detail").value("login.userNameInput is used by 2 tests: Login rejects empty password, "
+					+ "Login works. Change those steps first"));
+		assertThat(count("MATCH (o:RepoObject) RETURN count(o) AS n")).isEqualTo(1);
+	}
+
+	/** The captured elements stay: they belong to the snapshot, not to the object. */
+	@Test
+	void anUnusedObjectIsDeletedAndItsElementStays() throws Exception {
+		String id = createdId(userNameInput("login.userNameInput"));
+		long elements = count("MATCH (e:Element) RETURN count(e) AS n");
+
+		mvc.perform(delete("/api/repo-objects/{id}", id)).andExpect(status().isNoContent());
+		assertThat(count("MATCH (o:RepoObject) RETURN count(o) AS n")).isZero();
+		assertThat(count("MATCH (e:Element) RETURN count(e) AS n")).isEqualTo(elements);
+		mvc.perform(get("/api/repo-objects/{id}", id)).andExpect(status().isNotFound());
+		mvc.perform(delete("/api/repo-objects/{id}", id)).andExpect(status().isNotFound());
+
+		// The name is free again.
+		create(appId, userNameInput("login.userNameInput")).andExpect(status().isCreated());
+	}
+
+	private String createdId(JsonNode body) throws Exception {
+		return JsonPath.read(create(appId, body).andExpect(status().isCreated())
+			.andReturn()
+			.getResponse()
+			.getContentAsString(), "$.id");
+	}
+
+	private ResultActions patchObject(String id, Map<String, Object> body) throws Exception {
+		return mvc.perform(patch("/api/repo-objects/{id}", id).contentType(MediaType.APPLICATION_JSON)
+			.content(mapper.writeValueAsString(body)));
+	}
+
+	/** A test of this application with one Click step on `target`. */
+	private String createTest(String name, String target) throws Exception {
+		String testId = JsonPath.read(mvc.perform(post("/api/apps/{appId}/tests", appId).contentType(MediaType.APPLICATION_JSON)
+			.content(mapper.writeValueAsString(Map.of("name", name))))
+			.andExpect(status().isCreated())
+			.andReturn()
+			.getResponse()
+			.getContentAsString(), "$.id");
+		putSteps(testId, List.of(Map.of("keyword", "Click", "target", target)));
+		return testId;
+	}
+
+	/** Replaces the test's steps with two Click steps on `target`: one test, two steps. */
+	private void addStep(String testId, String target) throws Exception {
+		putSteps(testId, List.of(Map.of("keyword", "Click", "target", target), Map.of("keyword", "Click", "target", target)));
+	}
+
+	private void putSteps(String testId, List<?> steps) throws Exception {
+		mvc.perform(put("/api/tests/{testId}/steps", testId).contentType(MediaType.APPLICATION_JSON)
+			.content(mapper.writeValueAsString(Map.of("version", "0.1", "steps", steps))))
+			.andExpect(status().isOk());
 	}
 
 	private ObjectNode userNameInput(String name) {

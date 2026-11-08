@@ -172,6 +172,13 @@ Append-only. One entry per session, newest at the bottom:
 - Checked over CDP with the real server and the fake agent. Vite hot-reloaded the branch into two older dev instances (blank windows) → learnings entry.
 - Next: omer reads both languages; wording fixes from the team; ADR → Accepted after approval.
 
+
+## 2026-11-03/04 (ninth session) · #185 CI, #30 Repository view
+- #185: no review yet on PR #190. One flaky `ai` test (request log written after the response, race) → note in galip's inbox + PR #190 comment; re-run green; CI 5/5 after pushing the note.
+- #30: server list/get/PATCH/DELETE for repository objects (409 names the tests; rename keeps steps via `TARGETS`); 83 server tests. Client Repository place (`Repository.tsx`), shared `PropertySetEditor.tsx`, "looks saved already" warning in the Spy form; 156 client tests, build green.
+- Checked over CDP against `docker compose up --build`; omer's manual check passed on 2026-11-04 (the agent did not start only because the dev command was split over two lines).
+- PR #191 (stacked on #190), reviewers galip (DETACH DELETE vs #74 proposals) and hasan (Turkish texts).
+- Next: reviews of the stack (#182 → #191); next Week 5 issue #38 (step editor, needs #30).
 ## 2026-11-05 · #53 SDD final (first PR)
 - Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
 - galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.

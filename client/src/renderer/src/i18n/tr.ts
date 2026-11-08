@@ -30,8 +30,6 @@ export const tr: Strings = {
   laterTitle: 'Henüz hazır değil',
   laterIssue: (issue: number) => `Bu ekran sonraki bir sürümde gelecek (#${issue}).`,
   laterPlaces: {
-    repository:
-      'Uygulamanın kayıtlı ögelerini arayın, yeniden adlandırın, düzenleyin ve her birini hangi testlerin kullandığını görün.',
     tests:
       'Testleri kod yazmadan adım adım oluşturun: bir eylem ve bir öge seçin, kontroller ekleyin, içe ve dışa aktarın.',
     runs: 'Her çalıştırmayı sonucuyla görün, filtreleyin, raporu açın ya da indirin.',
@@ -300,6 +298,8 @@ export const tr: Strings = {
   repoSaving: 'Kaydediliyor…',
   repoCancel: 'Vazgeç',
   repoSaved: (name: string) => `Depoya kaydedildi: ${name}.`,
+  repoAlreadySaved: (names: string[]) =>
+    `Bu öge zaten kayıtlı görünüyor: ${names.join(', ')}. Yine de başka bir adla kaydedebilirsiniz.`,
   repoErrors: {
     'no-server': 'Sunucu ayarlanmamış. Önce bir sunucuya bağlanın.',
     unreachable: 'Sunucuya ulaşılamadı. Çalıştığını kontrol edin.',
@@ -311,6 +311,45 @@ export const tr: Strings = {
     'not-found': 'Uygulama ya da sürüm artık sunucuda yok.',
     'snapshot-conflict':
       'Bu yakalama başka bir sürümün altında saklı. Bu sürümün altında saklamak için pencereyi yeniden yakalayın.',
+  },
+
+  repoViewHelp: (app: string) => `Testlerin adıyla kullandığı ögeler. Uygulama: ${app}`,
+  repoViewOpenSpy: 'Nesne Gözcüsü’nü aç',
+  repoViewSearch: 'Kayıtlı ögelerde ara',
+  repoViewCount: (elements: number) => `${count(elements)} öge`,
+  repoViewTests: (tests: number) => `${count(tests)} test`,
+  repoViewNoMatch: (query: string) => `"${query}" ile eşleşen kayıtlı öge yok.`,
+  repoViewEmpty: 'Henüz kayıtlı öge yok. Nesne Gözcüsü’nde bir öge seçip buraya ekleyin.',
+  repoViewChoose: 'Ayrıntılarını görmek için kayıtlı bir öge seçin.',
+  repoViewReload: 'Yeniden yükle',
+  repoViewRename: 'Yeniden adlandır',
+  repoViewRenameLabel: 'Yeni ad',
+  repoViewRenameHint: 'Bu ögeyi kullanan testler yeni adla çalışmaya devam eder.',
+  repoViewRenamed: (name: string) =>
+    `Yeni ad: ${name}. Ögeyi kullanan testler çalışmaya devam eder.`,
+  repoViewEdit: 'Düzenle',
+  repoViewEditHint:
+    'Değerler ögenin son yakalamasından gelir. AYNA ögeyi önce "Bununla bul" özellikleriyle arar, sonra "Yedek" olanları dener.',
+  repoViewUpdated: (name: string) => `AYNA’nın ögeyi nasıl bulacağı kaydedildi: ${name}.`,
+  repoViewUsedBy: (tests: number) =>
+    tests === 0 ? 'Henüz hiçbir testte kullanılmıyor' : `${count(tests)} testte kullanılıyor`,
+  repoViewSeenIn: 'Bulunduğu sürümler',
+  repoViewSeen: 'bu sürümde bulundu',
+  repoViewNotSeen: 'bu sürümde yakalanmadı',
+  repoViewCaptured: 'Ögenin son yakalanan hâli',
+  repoViewRemove: 'Kaldır',
+  repoViewRemoveConfirm: (name: string) => `Depodan kaldırılsın mı: ${name}? Bu geri alınamaz.`,
+  repoViewRemoved: (name: string) => `Depodan kaldırıldı: ${name}.`,
+  repoViewErrors: {
+    'no-server': 'Sunucu ayarlanmamış. Önce bir sunucuya bağlanın.',
+    unreachable: 'Sunucuya ulaşılamadı. Çalıştığını kontrol edin.',
+    timeout: 'Sunucu zamanında yanıt vermedi.',
+    unauthorized: 'Oturumunuz sona erdi. Yeniden oturum açın.',
+    'bad-response': 'Sunucu beklenmeyen bir yanıt verdi.',
+    'not-found': 'Bu öge artık depoda yok. Listeyi yeniden yükleyin.',
+    invalid: 'Sunucu değişikliği kabul etmedi.',
+    duplicate: 'Bu ad bu uygulamada zaten kullanılıyor.',
+    'in-use': 'Bu ögeyi hâlâ testler kullanıyor. Önce o adımları değiştirin.',
   },
   versionLabel: 'Uygulama sürümü',
   versionNone:
@@ -415,6 +454,9 @@ export const tr: Strings = {
     elementNameTaken: (name: string) =>
       `Bu öge adı bu uygulamada zaten kullanılıyor: ${name}. Başka bir ad seçin.`,
     primaryNeeded: 'Ögeyi bulmak için en az bir özellik seçin.',
+    objectInUse: (name: string, tests: string, names: string) =>
+      `${name} ${tests} testte kullanılıyor: ${names}. Önce o adımları değiştirin.`,
+    objectGone: 'Bu öge artık depoda yok. Listeyi yeniden yükleyin.',
     objectInvalid: 'Sunucu ögeyi kabul etmedi.',
   },
 }
