@@ -50,6 +50,16 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: client/package-lock.json
+      # electron-builder downloads Electron and its SHASUMS256.txt from GitHub on every run;
+      # 5xx answers to the checksum file failed most builds on 2026-11-08 (#213). A cached zip
+      # is used without that request. The cache fills on the first green run.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: electron-${{ runner.os }}-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: electron-${{ runner.os }}-
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
