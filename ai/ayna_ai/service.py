@@ -587,17 +587,8 @@ class ServiceHandler(BaseHTTPRequestHandler):
 
     def _send(self, code: int, body: dict, headers: dict | None = None) -> None:
         data = json.dumps(body, ensure_ascii=False).encode("utf-8")
-        try:
-            self.send_response(code)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "no-store")
-            for name, value in (headers or {}).items():
-                self.send_header(name, value)
-            self.end_headers()
-            self.wfile.write(data)
-        except (BrokenPipeError, ConnectionResetError):
-            log.warning(_record("client_gone", path=self._route(), code=code))
+        # Logged before the answer is written: once the client has its answer, the line must
+        # already exist (a test that reads the log right after the call raced it, #71).
         # The instruction text is test data and may hold passwords: not logged.
         log.info(
             _record(
@@ -612,6 +603,17 @@ class ServiceHandler(BaseHTTPRequestHandler):
                 latency_ms=round((time.perf_counter() - self._started) * 1000),
             )
         )
+        try:
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            for name, value in (headers or {}).items():
+                self.send_header(name, value)
+            self.end_headers()
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            log.warning(_record("client_gone", path=self._route(), code=code))
 
     def log_message(self, format: str, *args) -> None:
         # Only http.server's own errors (bad request line, ...) arrive here; the
