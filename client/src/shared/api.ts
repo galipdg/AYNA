@@ -1,6 +1,7 @@
 // Contract between the preload bridge and the renderer. The renderer only ever
 // sees `window.ayna`, shaped like `AynaApi`; every method maps to one IPC channel.
 
+import type { Language } from './language.ts'
 import type { PropertySet } from './repository.ts'
 import type { Snapshot } from './snapshot.ts'
 
@@ -19,6 +20,8 @@ export interface Settings {
   serverUrl: string | null
   /** The chosen application on that server; cleared when the server changes (ids are per server). */
   applicationId: string | null
+  /** The UI language the user chose; null until they choose (then the system's is used). */
+  language: Language | null
 }
 
 /** An application under test, as the server's `/api/apps` returns it. */
@@ -220,6 +223,10 @@ export interface PickHotkeyState {
 export interface AynaApi {
   getAppInfo(): Promise<AppInfo>
   getSettings(): Promise<Settings>
+  /** The UI language: the user's choice, else the first-run rule (`languageFor`). */
+  getLanguage(): Promise<Language>
+  /** Saves the user's choice of UI language, kept across restarts. */
+  setLanguage(language: Language): Promise<void>
   /** Checks `url` against the server's health endpoint without saving it. */
   checkServer(url: string): Promise<ConnectionResult>
   /** Checks `url` and, only if the server answers, saves it as this machine's server. */
@@ -277,6 +284,8 @@ export interface AynaApi {
 export const IPC = {
   getAppInfo: 'app:get-info',
   getSettings: 'settings:get',
+  getLanguage: 'settings:get-language',
+  setLanguage: 'settings:set-language',
   checkServer: 'server:check',
   connectServer: 'server:connect',
   listApplications: 'apps:list',

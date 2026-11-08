@@ -27,4 +27,4 @@ Before committing: `npm run lint && npm run typecheck && npm test` (CI also runs
 ## Rules
 - `contextIsolation: true`, `nodeIntegration: false`; renderer never imports Node modules.
 - No remote content, CDN fonts or auto-update (closed network).
-- UI text in English for now; keep strings in one place for later translation.
+- Every UI text exists in Turkish and English (#185, ADR `2026-11-03-client-ui-language`): add it to `src/renderer/src/i18n/en.ts` and `i18n/tr.ts`, read it as `strings.x` at render time (never copy it into a module constant); `i18n.test.ts` fails on a missing or untranslated text. Dates through `formatDate` / `formatTime`; known server messages through `serverText`. Test data is never translated (NFR-16).

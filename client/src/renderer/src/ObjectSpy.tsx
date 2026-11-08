@@ -14,7 +14,7 @@ import AddToRepository from './AddToRepository.tsx'
 import ElementTree from './ElementTree.tsx'
 import Page from './Page.tsx'
 import PropertyPanel from './PropertyPanel.tsx'
-import { controlTypeLabel, strings } from './strings.ts'
+import { controlTypeLabel, formatTime, strings } from './strings.ts'
 
 type List =
   | { state: 'loading' }
@@ -51,7 +51,7 @@ async function fetchSnapshot(handle: number): Promise<Capture> {
 }
 
 function capturedLine({ capture, app }: Snapshot): string {
-  const time = new Date(capture.startedAt).toLocaleTimeString()
+  const time = formatTime(capture.startedAt)
   const exe = app.exeName && [app.exeName, app.fileVersion].filter(Boolean).join(' ')
   return strings.spyCaptured(time, exe, capture.elementCount, capture.durationMs)
 }

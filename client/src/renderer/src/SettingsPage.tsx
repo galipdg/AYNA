@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AppInfo } from '../../shared/api.ts'
 import { AgentDetails, AgentPill, useAgentStatus } from './AgentStatusBar.tsx'
+import { LanguageChoice } from './Language.tsx'
 import Page from './Page.tsx'
 import { strings } from './strings.ts'
 
@@ -32,8 +33,10 @@ export default function SettingsPage({
         </div>
         <div className="setting">
           <span className="setting-name">{strings.settingsLanguage}</span>
-          <span>{strings.topLanguage}</span>
-          <span className="hint">{strings.topLanguageHint}</span>
+          <span>
+            <LanguageChoice />
+          </span>
+          <span className="hint">{strings.languageHint}</span>
         </div>
         <div className="setting">
           <span className="setting-name" title={strings.settingsAgentHint}>
@@ -56,7 +59,7 @@ export default function SettingsPage({
               <dd>{info.chrome}</dd>
               <dt>Node</dt>
               <dd>{info.node}</dd>
-              <dt>Platform</dt>
+              <dt>{strings.settingsPlatform}</dt>
               <dd>{info.platform}</dd>
             </dl>
           )}

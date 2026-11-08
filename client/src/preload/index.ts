@@ -4,6 +4,8 @@ import { IPC, type AgentStatus, type AynaApi, type ScreenPoint } from '../shared
 const api: AynaApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
   getSettings: () => ipcRenderer.invoke(IPC.getSettings),
+  getLanguage: () => ipcRenderer.invoke(IPC.getLanguage),
+  setLanguage: (language) => ipcRenderer.invoke(IPC.setLanguage, language),
   checkServer: (url) => ipcRenderer.invoke(IPC.checkServer, url),
   connectServer: (url) => ipcRenderer.invoke(IPC.connectServer, url),
   listApplications: () => ipcRenderer.invoke(IPC.listApplications),

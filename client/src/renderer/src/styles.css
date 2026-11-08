@@ -497,8 +497,15 @@ ul.message {
   flex-direction: column;
   align-items: center;
   gap: 24px;
+  position: relative;
   min-height: 100%;
   padding: 10vh 24px 48px;
+}
+
+.gate-language {
+  position: absolute;
+  top: 12px;
+  right: 24px;
 }
 
 .gate-brand {

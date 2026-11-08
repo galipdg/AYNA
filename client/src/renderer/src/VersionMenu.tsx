@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import type { AppVersion } from '../../shared/api.ts'
 import Icon from './Icons.tsx'
 import Menu from './Menu.tsx'
-import { strings } from './strings.ts'
+import { serverText, strings } from './strings.ts'
 
 type Versions =
   | { state: 'loading' }
@@ -62,7 +62,10 @@ export default function VersionMenu({
     try {
       const result = await window.ayna.createVersion(appId, text)
       if (!result.ok && result.reason === 'unauthorized') return onSessionEnded()
-      if (!result.ok) return setError(result.detail ?? strings.versionErrors[result.reason])
+      if (!result.ok)
+        return setError(
+          result.detail ? serverText(result.detail) : strings.versionErrors[result.reason],
+        )
       setNewVersion('')
       onChange(result.version)
       setVersions({ state: 'loading' })

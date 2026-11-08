@@ -164,6 +164,14 @@ Append-only. One entry per session, newest at the bottom:
 - #184: Spy as windows | tree | properties; virtualized tree with search and keyboard (`shared/tree.ts`, 11 tests); plain property groups + Advanced; add form in the right panel. 3031-element tree: 25 rows in the DOM. Checked under the production CSP. 135 client tests, build green.
 - Seen by the agent over CDP (dark theme only); omer had the window open meanwhile.
 - Next: omer's feedback on the shell and Spy; then team review of `docs/ui/` + running client; Windows check of #184 (not posted yet).
+
+## 2026-11-03 (eighth session) · #185 Turkish and English UI
+- `i18n/en.ts` + `i18n/tr.ts` (same keys; `strings.ts` holds the current one as a live binding, so components did not change); `i18n.test.ts` checks parity, arguments, untranslated texts, dates, counts and server messages. 150 client tests, build green.
+- Language switch in the top bar, Settings and the gate; `Settings.language` in `settings.json`; first run: OS tr/en else Turkish. Dates tr-TR / en-GB. Known server messages mapped (`serverText`), others as sent.
+- ADR `2026-11-03-client-ui-language` (Proposed); `client/AGENTS.md` rule updated with omer's OK; PR #190, reviewers galip + hasan.
+- Checked over CDP with the real server and the fake agent. Vite hot-reloaded the branch into two older dev instances (blank windows) → learnings entry.
+- Next: omer reads both languages; wording fixes from the team; ADR → Accepted after approval.
+
 ## 2026-11-05 · #53 SDD final (first PR)
 - Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
 - galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
