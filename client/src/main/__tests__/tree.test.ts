@@ -4,6 +4,7 @@ import type { ElementDescriptor } from '../../shared/element.ts'
 import type { TreeNode } from '../../shared/snapshot.ts'
 import {
   ancestorIds,
+  automationIdLeaf,
   elementMatches,
   foldText,
   parentMap,
@@ -79,6 +80,24 @@ describe('elementMatches', () => {
     const label = (type: string) => (type === 'Edit' ? 'Text box' : type)
     assert.ok(elementMatches({ controlType: 'Edit' }, 'text box', label))
     assert.ok(!elementMatches({ controlType: 'Edit' }, 'text box'))
+  })
+
+  it('searches a dotted Qt AutomationId by its last part only (#204)', () => {
+    const button = { controlType: 'Button', automationId: 'QApplication.loginWindow.loginButton' }
+    const input = { controlType: 'Edit', automationId: 'QApplication.loginWindow.usernameInput' }
+    // "login" is in the window's part of every id; only the button's own part has it.
+    assert.ok(elementMatches(button, 'login'))
+    assert.ok(!elementMatches(input, 'login'))
+    assert.ok(!elementMatches(input, 'qapplication'))
+    // A pasted id, or part of one with a dot, is matched against the whole id.
+    assert.ok(elementMatches(input, 'loginWindow.username'))
+    assert.ok(elementMatches(input, 'QApplication.loginWindow.usernameInput'))
+  })
+
+  it('takes the whole id when it has no dots', () => {
+    assert.equal(automationIdLeaf('userName'), 'userName')
+    assert.equal(automationIdLeaf('a.b.c'), 'c')
+    assert.equal(automationIdLeaf(''), '')
   })
 
   it('matches everything for a blank query', () => {

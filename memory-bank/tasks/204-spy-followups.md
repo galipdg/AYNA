@@ -26,12 +26,16 @@ main-process / dev-mock changes testable with `node --test`; 4, 5, 7 are rendere
 - [x] 2 newer snapshot version → reason `snapshot-version`, detail = the agent's version
 - [x] 3 mock reads `schemas/examples/snapshot/trial-login.json`; copy deleted (it differed only in
   Prettier formatting). `--slow-snapshots` now walks 20 s, so a 30 s retry succeeds in `dev:mock`.
-- [ ] 4 AutomationId search on the leaf
-- [ ] 5 unnamed structural rows
+- [x] 4 AutomationId search on the leaf (`automationIdLeaf` in `shared/tree.ts`); a query with a
+  dot matches the whole id, so a pasted id still works. The tree caption still shows the full id.
+- [x] 5 unnamed structural rows: an element with no Name and no AutomationId is captioned by its
+  type alone, muted (`.node-unnamed`). Not collapsed: collapsing changes the tree's shape for
+  keyboard moves and parent paths, and labelling answers "26 % of rows say nothing".
 - [ ] 6 large-tree smoothness
-- [ ] 7 ambiguous Find-by opens Advanced; style-guide wording
+- [x] 7 Add to repository opens "Advanced settings" when the suggested Find-by set does not find
+  exactly one element; style guide §Advanced reworded (not "only test engineers").
 - [ ] 8 (optional) dev-only Desktop behind the real `rpc.py`
-- Next step: point 1.
+- Next step: point 6 — find what makes 285 real elements slower than 3031 synthetic ones.
 
 ## Manual checks
 - (planned) Windows session: point 6 on VS Code (285 elements) — scroll and search; point 1 on

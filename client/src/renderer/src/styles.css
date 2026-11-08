@@ -944,6 +944,11 @@ ul.message {
   font-weight: 400;
 }
 
+/* An element with no name or AutomationId, named by its type alone (#204). */
+.node-unnamed {
+  color: var(--text-muted);
+}
+
 .automation-id,
 .mono {
   font-family: ui-monospace, Consolas, monospace;
