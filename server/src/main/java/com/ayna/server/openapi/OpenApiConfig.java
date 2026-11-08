@@ -51,29 +51,34 @@ class OpenApiConfig {
 
 	static final String BEARER_AUTH = "bearerAuth";
 
+	/**
+	 * Version of the REST contract. Additions keep the major number; a breaking change needs an
+	 * ADR and the next major number, or the `contracts` CI job fails (#52).
+	 */
+	static final String CONTRACT_VERSION = "1.0";
+
 	@Bean
 	OpenAPI aynaOpenApi() {
 		return new OpenAPI()
 			.info(new Info().title("AYNA server API")
-				.version("v0")
+				.version(CONTRACT_VERSION)
 				.description("""
 						REST API between the AYNA client and server. Generated from the code; do not edit by hand.
 
-						**Live run status** is a WebSocket at `/ws/runs`, outside this document (ADR \
-						runs-api-and-live-updates). The upgrade request carries the same Bearer token; without a valid \
-						one it gets 401, and a token that expires or is revoked closes the connection with 1008 within \
-						60 s. All messages are JSON objects.
+						**Frozen as 1.0** (#52, ADR contracts-v1-freeze): later 1.x versions only add endpoints, \
+						optional fields and status values, and a client ignores what it does not know. A change that \
+						removes or narrows anything needs an ADR and version 2.0; CI compares every pull request with \
+						the base branch.
 
-						- Client to server: `{"type":"subscribe","testId":"…"}`, `{"type":"unsubscribe","testId":"…"}`
-						- `subscribed`: `testId`
-						- `run.started`: `testId`, `run`
-						- `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `durationMs`, `message`
-						- `run.finished`: `testId`, `run`
-						- `error`: `detail`
-
-						`run` has the shape of `RunSummary`. Nothing is replayed: after `subscribed` and after a \
-						reconnect, read `GET /api/tests/{testId}/runs?status=running` and `GET /api/runs/{runId}`, then \
-						merge by `stepIndex`."""))
+						**Live run status** is a WebSocket at `/ws/runs`, outside this document; its messages are \
+						`schemas/ws-runs.schema.json` (ADR runs-api-and-live-updates). The upgrade request carries the \
+						same Bearer token; without a valid one it gets 401, and a token that expires or is revoked \
+						closes the connection with 1008 within 60 s. Subscribe with \
+						`{"type":"subscribe","testId":"…"}`; the server then sends `subscribed`, `run.started`, \
+						`run.stepResult` and `run.finished` for that test, and `error` for a message it cannot use. \
+						Nothing is replayed: after `subscribed` and after a reconnect, read \
+						`GET /api/tests/{testId}/runs?status=running` and `GET /api/runs/{runId}`, then merge by \
+						`stepIndex`."""))
 			.servers(List.of(new Server().url("/")))
 			.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
 			.components(new Components()

@@ -117,6 +117,14 @@ export interface AgentManagerOptions {
   log?: (line: string) => void
 }
 
+/**
+ * The JSON-RPC request `call()` sends, as `schemas/agent-rpc.schema.json` defines it (#52);
+ * a method without parameters leaves `params` out.
+ */
+export function rpcRequest(id: number, method: string, params?: Record<string, unknown>): Record<string, unknown> {
+  return { jsonrpc: '2.0', id, method, ...(params && { params }) }
+}
+
 /** `call()` failed because no agent is connected, or it stopped before answering. */
 export class AgentNotConnectedError extends Error {
   constructor(message = 'the agent is not connected') {
@@ -268,7 +276,7 @@ export class AgentManager {
         reject(new AgentTimeoutError(method, timeoutMs))
       }, timeoutMs)
       this.pending.set(id, { resolve, reject, timer })
-      socket.send(JSON.stringify({ jsonrpc: '2.0', id, method, ...(params && { params }) }))
+      socket.send(JSON.stringify(rpcRequest(id, method, params)))
     })
   }
 

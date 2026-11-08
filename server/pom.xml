@@ -108,6 +108,14 @@
 				<directory>${project.basedir}/../schemas/examples</directory>
 				<targetPath>schemas/examples</targetPath>
 			</testResource>
+			<!-- The live run contract (#52): the tests check every /ws/runs message against it. -->
+			<testResource>
+				<directory>${project.basedir}/../schemas</directory>
+				<targetPath>schemas</targetPath>
+				<includes>
+					<include>ws-runs.schema.json</include>
+				</includes>
+			</testResource>
 		</testResources>
 		<plugins>
 			<plugin>

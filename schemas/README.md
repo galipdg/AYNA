@@ -1,6 +1,8 @@
 # schemas/
 
-JSON Schemas shared by every component: test steps, repository elements and UI snapshots. These are frozen contracts; changing one needs an ADR and approval from all three members.
+JSON Schemas shared by every component: test steps, repository elements, UI snapshots and healing proposals, and the messages of the live run status and agent JSON-RPC contracts. These are frozen contracts; changing one needs an ADR and approval from all three members.
+
+**Frozen at G1 (#52, ADR [`2026-11-08-contracts-v1-freeze`](../memory-bank/decisions/2026-11-08-contracts-v1-freeze.md)).** Every change to a schema's rules bumps its version: minor for additions (a new optional property, enum value or rule for a new value), major for anything that removes or narrows. Readers ignore what they do not know. The `contracts` CI job compares every schema with the base branch and fails on a breaking change without a new major version; run it locally from the repository root with `python .github/contracts/schema_compat.py --base origin/main`.
 
 Owners: all three. Rules: [AGENTS.md](AGENTS.md).
 
@@ -56,3 +58,11 @@ One window's whole subtree at one moment: `{version, snapshotId, capture, app, w
 Decision: [`2026-11-01-snapshot-schema-v0`](../memory-bank/decisions/2026-11-01-snapshot-schema-v0.md). Transport: `docs/agent-rpc.md`, method `snapshot`. Code: `agent/ayna_agent/recognition/snapshot.py` (`build`, `dumps`, `loads`, `read`, `write`). Tests: `agent/tests/test_snapshot.py`.
 
 Examples: [`examples/snapshot/trial-login.json`](examples/snapshot/trial-login.json) (the trial app's login window, 14 elements, rebuilt by the tests from the tree captured on Windows for #11, so the example cannot drift from the agent) and [`examples/snapshot/cases.json`](examples/snapshot/cases.json).
+
+## Live run status (`ws-runs.schema.json`, version 1.0)
+
+Every message on the WebSocket `/ws/runs`: `subscribe` and `unsubscribe` from the client; `subscribed`, `run.started`, `run.stepResult`, `run.finished` and `error` from the server, told apart by `type`. The root schema accepts any one of them; each is also a `$defs` entry. The version is `$defs/version`; it is not sent on the wire. Decision: [`2026-11-05-runs-api-and-live-updates`](../memory-bank/decisions/2026-11-05-runs-api-and-live-updates.md). Code: `server/src/main/java/com/ayna/server/runs/RunEvents.java`. Tests: `RunEventsIntegrationTest` checks every message it sends and receives against this file.
+
+## Agent JSON-RPC (`agent-rpc.schema.json`, version 1.0)
+
+The shapes of the client ↔ agent messages: the four requests (`ping`, `listWindows`, `snapshot`, `runSteps`), success and error replies, a `<method>Result` per method (a reply does not name its method), the error codes, and the agent's `listening` line on stdout. `snapshotResult` only names the snapshot document's top level; the document itself is `snapshot.schema.json`. Version 1.0 is v0.1 as built plus `runSteps`; `ping` answers `rpcVersion`, and a 1.x client accepts any 1.y agent. The prose contract (start-up, token, ordering, behaviour) stays in [`docs/agent-rpc.md`](../docs/agent-rpc.md). Tests: `client/src/main/__tests__/agentContract.test.ts` (client side).

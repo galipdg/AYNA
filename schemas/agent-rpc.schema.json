@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:schema:agent-rpc",
+  "title": "AYNA agent JSON-RPC messages",
+  "description": "Every message between the client's main process and the automation agent: JSON-RPC 2.0 over one WebSocket on 127.0.0.1, plus the one line the agent prints on stdout once it listens. The prose contract (start-up, token, ordering, what each method does) is docs/agent-rpc.md; this file fixes the shapes, so both sides can be tested against it. A response does not name its method: check a result against the method's `<method>Result` definition. A reader ignores properties, notifications and error codes it does not know, so additions are not breaking. Version 1.0 is v0.1 as built plus runSteps (#26), frozen with the other contracts (#52, ADR contracts-v1-freeze); `ping` answers rpcVersion with the version the agent speaks. Changing this file needs an ADR and all three owners' approval (schemas/AGENTS.md).",
+  "oneOf": [
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/success" },
+    { "$ref": "#/$defs/failure" },
+    { "$ref": "#/$defs/listening" }
+  ],
+  "$defs": {
+    "version": {
+      "description": "Version of this contract, the rpcVersion an agent that implements exactly this file answers. Bump it on every change: minor for additions, major for a breaking change.",
+      "const": "1.0"
+    },
+    "id": {
+      "description": "Request id, chosen by the caller; replies come in any order and are matched by it.",
+      "type": ["string", "integer", "null"]
+    },
+    "positiveInt": { "type": "integer", "minimum": 1 },
+    "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 600000 },
+    "listening": {
+      "description": "The one line the agent prints on stdout once it listens on 127.0.0.1:port.",
+      "type": "object",
+      "required": ["event", "port"],
+      "additionalProperties": false,
+      "properties": {
+        "event": { "const": "listening" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "request": {
+      "description": "Client to agent. A request without id is a notification and gets no reply.",
+      "oneOf": [
+        { "$ref": "#/$defs/pingRequest" },
+        { "$ref": "#/$defs/listWindowsRequest" },
+        { "$ref": "#/$defs/snapshotRequest" },
+        { "$ref": "#/$defs/runStepsRequest" }
+      ]
+    },
+    "noParams": {
+      "description": "A method without parameters: params left out, or empty.",
+      "oneOf": [
+        { "type": "object", "maxProperties": 0 },
+        { "type": "array", "maxItems": 0 }
+      ]
+    },
+    "pingRequest": {
+      "type": "object",
+      "required": ["jsonrpc", "method"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "method": { "const": "ping" },
+        "params": { "$ref": "#/$defs/noParams" }
+      }
+    },
+    "listWindowsRequest": {
+      "type": "object",
+      "required": ["jsonrpc", "method"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "method": { "const": "listWindows" },
+        "params": { "$ref": "#/$defs/noParams" }
+      }
+    },
+    "snapshotRequest": {
+      "type": "object",
+      "required": ["jsonrpc", "method", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "method": { "const": "snapshot" },
+        "params": {
+          "type": "object",
+          "required": ["handle"],
+          "additionalProperties": false,
+          "properties": {
+            "handle": { "$ref": "#/$defs/positiveInt" },
+            "timeoutMs": { "$ref": "#/$defs/timeoutMs" }
+          }
+        }
+      }
+    },
+    "runStepsRequest": {
+      "type": "object",
+      "required": ["jsonrpc", "method", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "method": { "const": "runSteps" },
+        "params": {
+          "type": "object",
+          "required": ["handle", "steps", "targets"],
+          "additionalProperties": false,
+          "properties": {
+            "handle": { "$ref": "#/$defs/positiveInt" },
+            "steps": {
+              "description": "A step document, {version, steps}, as schemas/step.schema.json defines it (versions 0.1 and 0.2 are read).",
+              "type": "object",
+              "required": ["version", "steps"]
+            },
+            "targets": {
+              "description": "Per logical name, the repository object's property sets.",
+              "type": "object",
+              "additionalProperties": { "$ref": "#/$defs/target" }
+            },
+            "runId": { "type": "string" },
+            "appVersionId": { "type": "string" },
+            "defaultTimeoutMs": { "$ref": "#/$defs/timeoutMs" }
+          }
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["properties"],
+      "additionalProperties": false,
+      "properties": {
+        "properties": {
+          "description": "The primary property set (\"Find by\"): element descriptor properties (schemas/element.schema.json) and their values.",
+          "type": "object"
+        },
+        "fallback": {
+          "description": "The backup property set, tried only when the primary set matches nothing.",
+          "type": "object"
+        },
+        "serverElementId": { "type": "string" },
+        "featureVersion": { "type": "string" }
+      }
+    },
+    "success": {
+      "description": "Agent to client: the answer to a request. Check `result` against the method's `<method>Result`.",
+      "type": "object",
+      "required": ["jsonrpc", "id", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "result": { "type": "object" }
+      }
+    },
+    "failure": {
+      "description": "Agent to client: the request failed. `id` is null when the request could not be read.",
+      "type": "object",
+      "required": ["jsonrpc", "id", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "$ref": "#/$defs/errorCode" },
+            "message": { "type": "string" },
+            "data": true
+          }
+        }
+      }
+    },
+    "errorCode": {
+      "description": "-32700 parse error, -32600 invalid request, -32601 method not found, -32602 invalid params, -32603 internal error, -32000 window not found, -32001 UI Automation unavailable, -32002 snapshot timeout. New codes may be added in a minor version; treat an unknown one as a failure with its message.",
+      "enum": [-32700, -32600, -32601, -32602, -32603, -32000, -32001, -32002]
+    },
+    "pingResult": {
+      "type": "object",
+      "required": ["agentVersion", "rpcVersion"],
+      "additionalProperties": false,
+      "properties": {
+        "agentVersion": { "type": "string" },
+        "rpcVersion": {
+          "description": "The contract version the agent speaks. A client built for 1.x works with any 1.y agent: a later minor version only adds.",
+          "type": "string",
+          "pattern": "^1\\.[0-9]+$"
+        }
+      }
+    },
+    "listWindowsResult": {
+      "type": "object",
+      "required": ["windows"],
+      "additionalProperties": false,
+      "properties": {
+        "windows": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/window" }
+        }
+      }
+    },
+    "window": {
+      "description": "One visible top-level window. Null where UI Automation or Windows could not read the value (e.g. an elevated process).",
+      "type": "object",
+      "required": ["handle", "title", "className", "processId", "processName", "bounds"],
+      "additionalProperties": false,
+      "properties": {
+        "handle": { "$ref": "#/$defs/positiveInt" },
+        "title": { "type": ["string", "null"] },
+        "className": { "type": ["string", "null"] },
+        "processId": { "type": ["integer", "null"] },
+        "processName": { "type": ["string", "null"] },
+        "bounds": {
+          "description": "[left, top, right, bottom], physical virtual-screen pixels, the DWM extended frame bounds (docs/agent-rpc.md).",
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      }
+    },
+    "snapshotResult": {
+      "description": "One window snapshot document, as schemas/snapshot.schema.json defines it; check it against that file.",
+      "type": "object",
+      "required": ["version", "snapshotId", "capture", "app", "window", "elements"]
+    },
+    "runStepsResult": {
+      "type": "object",
+      "required": ["results"],
+      "additionalProperties": false,
+      "properties": {
+        "results": {
+          "description": "One result per step, in order. A failed step stops the run; every later step is notRun.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/stepResult" }
+        }
+      }
+    },
+    "stepResult": {
+      "description": "Absent values are left out.",
+      "type": "object",
+      "required": ["stepIndex", "status", "durationMs"],
+      "additionalProperties": false,
+      "properties": {
+        "stepIndex": { "type": "integer", "minimum": 0 },
+        "status": {
+          "description": "New values may be added in a minor version (#73 adds repairProposed).",
+          "enum": ["passed", "failed", "notRun"]
+        },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "stepId": { "type": "string" },
+        "message": { "type": "string" },
+        "matched": { "enum": ["primary", "fallback"] },
+        "performedWith": { "type": "string" }
+      }
+    }
+  }
+}
