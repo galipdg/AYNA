@@ -20,8 +20,8 @@ One pass over `client/src/renderer/src/i18n/{en,tr}.ts`, the glossary in `docs/u
 ## Status
 - [x] Dictionaries, Spy tooltip on "Text", glossary, DEMO guides
 - [x] `npm run lint && npm run typecheck && npm test` (203 pass)
-- [ ] Push, PR `Closes #203` (on omer's OK); answer every point on the issue
-- Next step: after omer's OK, push and open the PR; post the point-by-point answer on #203.
+- [x] PR #218 (`Closes #203`), reviewers galip and hasan; point-by-point answer posted on #203 (2026-11-08)
+- Next step: wait for the #218 reviews and CI; after #217 merges, fix `DEMO.md` line 109 (see Open issues).
 
 ## Manual checks
 - Not needed beyond a look at the Spy and Repository in `npm run dev:mock` (wording only, no layout change). "Nesne Deposu" is longer than "Depo": check the nav at 1280 px (below 1180 it collapses to icons).
