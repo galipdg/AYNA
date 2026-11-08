@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
+import com.ayna.server.tests.StepSchema;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -55,6 +56,9 @@ class RepoObjectIntegrationTest {
 
 	@Autowired
 	ObjectMapper mapper;
+
+	@Autowired
+	StepSchema stepSchema;
 
 	String appId;
 
@@ -201,7 +205,7 @@ class RepoObjectIntegrationTest {
 			.getContentAsString(), "$.id");
 
 		mvc.perform(put("/api/tests/{testId}/steps", testId).contentType(MediaType.APPLICATION_JSON)
-			.content(mapper.writeValueAsString(Map.of("version", "0.1", "steps",
+			.content(mapper.writeValueAsString(Map.of("version", stepSchema.version(), "steps",
 					List.of(Map.of("keyword", "Type", "target", "login.userNameInput", "value", "admin"))))))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.document.steps[0].target").value("login.userNameInput"));
