@@ -92,3 +92,8 @@ Append-only. One entry per session, newest at the bottom:
 - #150: `main` merged (`0f78c4c`), ai 510 and agent 276 tests pass, and hasan's review is re-requested. #181: RS 0.8 (documents table, NFR-32 public endpoints) plus the descriptor and snapshot ADRs flipped to Accepted after galip's decider approvals on #175 and #180.
 - Reviews: #179 APPROVE (accounts ADR approved); #169 APPROVE with one label-precedence sentence to fix; #170 APPROVE.
 - iCloud evicted files in `agent/.venv` and `.git`. Ran the agent tests from a scratchpad venv and recorded it in `learnings.md`.
+
+## 2026-11-08 · review round for the client stack (main-checkout session)
+- Reviews, all APPROVE: #154 (agent manager; real agent from `main` on macOS: connect, -32001, SIGKILL → restart, `stop()` by EOF in 11 ms; warned that a squash-merge gives the stack add/add conflicts whose "take ours" resolution drops `stop()`'s deadline), #210 (eval rename), #192 (step editor; 183 tests also pass with #150's 0.2 schema; in-flight save drops edits; 0.2 row steps open as "Kontrol eksik" until #205), #197 (undo; key-by-index id mismatch after a save, with a fix; `DEMO.md` status rows out of date: #26/#193/#182/#194/#170 merged).
+- #150: `main` merged (clean locally), ADR v0.2 Accepted, hasan's two KeePass 2 corrections. Found: three server tests on `main` PUT `"version": "0.1"` (omer's files), so they fail once the schema is 0.2.
+- `galip/71-request-log-race`: the `request` log line is written before the answer (omer's 11-05 inbox fix); 6/6 fail → 6/6 pass with a 50 ms delay injected after the write.
