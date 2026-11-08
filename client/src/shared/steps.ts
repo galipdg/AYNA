@@ -109,8 +109,11 @@ export function withStoredIds(drafts: DraftStep[], ids: Map<string, string | und
   return drafts.map((draft) => ({ ...draft, id: ids.get(draft.key) }))
 }
 
-/** The rows for a stored document's steps. */
-export function draftsFrom(document: StepDocument): DraftStep[] {
+/**
+ * The rows for a stored document's steps; `locale` (the UI language's, e.g. `tr-TR`) writes
+ * "wait up to" with its decimal separator.
+ */
+export function draftsFrom(document: StepDocument, locale: string): DraftStep[] {
   return document.steps.map((step) => {
     const draft = newDraft()
     const { checkpoint } = step
@@ -128,8 +131,50 @@ export function draftsFrom(document: StepDocument): DraftStep[] {
             expectedFlag: typeof checkpoint.expected === 'boolean' ? checkpoint.expected : true,
           }
         : {}),
-      timeout: step.timeoutMs === undefined ? '' : secondsText(step.timeoutMs),
+      timeout: step.timeoutMs === undefined ? '' : secondsText(step.timeoutMs, locale),
     }
+  })
+}
+
+/**
+ * The rows with every "wait up to" that is a number written in `locale`, after a language
+ * change; a text that is not a number stays as typed so its problem stays visible.
+ */
+export function withTimeoutsIn(drafts: DraftStep[], locale: string): DraftStep[] {
+  return drafts.map((draft) => {
+    const ms = parseSeconds(draft.timeout)
+    if (typeof ms !== 'number') return draft
+    const timeout = secondsText(ms, locale)
+    return timeout === draft.timeout ? draft : { ...draft, timeout }
+  })
+}
+
+/**
+ * Old logical name → new one for every object whose name changed between two loads of the
+ * element list (renamed in the Repository), matched by object id.
+ */
+export function renamedTargets(
+  before: { id: string; name: string }[],
+  after: { id: string; name: string }[],
+): Map<string, string> {
+  const old = new Map(before.map((object) => [object.id, object.name]))
+  const renames = new Map<string, string>()
+  for (const { id, name } of after) {
+    const previous = old.get(id)
+    if (previous !== undefined && previous !== name) renames.set(previous, name)
+  }
+  return renames
+}
+
+/**
+ * The rows with their elements' new names. The server renames the stored steps itself
+ * (FR-08), so an open test that kept the old names would mark them unknown and write them
+ * back on save.
+ */
+export function withRenamedTargets(drafts: DraftStep[], renames: Map<string, string>): DraftStep[] {
+  return drafts.map((draft) => {
+    const target = renames.get(draft.target)
+    return target === undefined ? draft : { ...draft, target }
   })
 }
 
@@ -171,8 +216,13 @@ export function parseSeconds(text: string): number | undefined | null {
   return Math.round(Number(trimmed.replace(',', '.')) * 1000)
 }
 
-function secondsText(ms: number): string {
-  return String(ms / 1000)
+/**
+ * Milliseconds as seconds in the UI language: `2,5` in Turkish, `2.5` in English (ADR
+ * client-ui-language: numbers follow the language). No digit grouping, since `parseSeconds`
+ * would read Turkish `1.000` as one second.
+ */
+export function secondsText(ms: number, locale: string): string {
+  return (ms / 1000).toLocaleString(locale, { maximumFractionDigits: 3, useGrouping: false })
 }
 
 /** Why a step cannot be saved; each code has one sentence in the UI. */

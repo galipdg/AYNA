@@ -11,8 +11,12 @@ import {
   move,
   newDraft,
   parseSeconds,
+  renamedTargets,
+  secondsText,
   serverProblems,
   STEP_SCHEMA_VERSION,
+  withRenamedTargets,
+  withTimeoutsIn,
   type StepDocument,
 } from '../../shared/steps.ts'
 import { validateSteps } from '../testCases.ts'
@@ -50,11 +54,11 @@ const editable = (document: StepDocument) =>
 
 describe('step rows', () => {
   it('turn a stored document into rows and back without a change', () => {
-    assert.deepEqual(documentFrom(draftsFrom(example)), example)
+    assert.deepEqual(documentFrom(draftsFrom(example, 'tr-TR')), example)
     for (const c of cases.valid) {
       const document = documentOf(c) as StepDocument
       if (!editable(document)) continue
-      assert.deepEqual(documentFrom(draftsFrom(document)), document, c.name)
+      assert.deepEqual(documentFrom(draftsFrom(document, 'tr-TR')), document, c.name)
     }
   })
 
@@ -101,6 +105,72 @@ describe('step rows', () => {
     assert.equal(parseSeconds('1.0001'), null)
   })
 
+  it('show "wait up to" with the language\'s decimal separator, and read both back (#206)', () => {
+    assert.equal(secondsText(2500, 'tr-TR'), '2,5')
+    assert.equal(secondsText(2500, 'en-GB'), '2.5')
+    assert.equal(secondsText(1, 'tr-TR'), '0,001')
+    // No grouping: Turkish "1.000" would read back as one second.
+    assert.equal(secondsText(1_000_000, 'tr-TR'), '1000')
+    for (const locale of ['tr-TR', 'en-GB']) {
+      for (const ms of [0, 1, 250, 2500, 20000, 1_000_000]) {
+        assert.equal(parseSeconds(secondsText(ms, locale)), ms, `${ms} in ${locale}`)
+      }
+    }
+    const stored: StepDocument = {
+      version: STEP_SCHEMA_VERSION,
+      steps: [{ keyword: 'Click', target: 'login.okButton', timeoutMs: 2500 }],
+    }
+    assert.equal(draftsFrom(stored, 'tr-TR')[0].timeout, '2,5')
+    assert.equal(draftsFrom(stored, 'en-GB')[0].timeout, '2.5')
+  })
+
+  it('rewrite "wait up to" numbers in a new language and leave the rest as typed', () => {
+    const rows = ['2,5', '20', '', '2s'].map((timeout) => ({ ...newDraft(), timeout }))
+    const english = withTimeoutsIn(rows, 'en-GB')
+    assert.deepEqual(
+      english.map((draft) => draft.timeout),
+      ['2.5', '20', '', '2s'],
+    )
+    assert.equal(english[1], rows[1], 'an unchanged row stays the same object')
+    assert.deepEqual(documentFrom(english), documentFrom(rows))
+    assert.deepEqual(
+      withTimeoutsIn(english, 'tr-TR').map((draft) => draft.timeout),
+      ['2,5', '20', '', '2s'],
+    )
+  })
+
+  it('carry an element renamed in the Repository into the rows (#206)', () => {
+    const before = [
+      { id: 'a', name: 'login.okButton' },
+      { id: 'b', name: 'login.user' },
+      { id: 'c', name: 'login.cancel' },
+    ]
+    const after = [
+      { id: 'a', name: 'login.submit' },
+      { id: 'b', name: 'login.user' },
+      { id: 'd', name: 'login.new' },
+    ]
+    const renames = renamedTargets(before, after)
+    assert.deepEqual([...renames], [['login.okButton', 'login.submit']])
+    // Two names swapped in one reload are both carried, not chained.
+    const swapped = renamedTargets(before.slice(0, 2), [
+      { id: 'a', name: 'login.user' },
+      { id: 'b', name: 'login.okButton' },
+    ])
+    const rows = ['login.okButton', 'login.user', 'login.cancel', ''].map((target) => ({
+      ...newDraft(),
+      target,
+    }))
+    assert.deepEqual(
+      withRenamedTargets(rows, renames).map((draft) => draft.target),
+      ['login.submit', 'login.user', 'login.cancel', ''],
+    )
+    assert.deepEqual(
+      withRenamedTargets(rows, swapped).map((draft) => draft.target),
+      ['login.user', 'login.okButton', 'login.cancel', ''],
+    )
+  })
+
   it('write the version of the schema file, the one the server checks', () => {
     assert.equal(STEP_SCHEMA_VERSION, read('step.schema.json').properties.version.const)
     assert.equal(documentFrom([]).version, STEP_SCHEMA_VERSION)
@@ -117,7 +187,7 @@ describe('step rows', () => {
         { ...verify, checkpoint },
       ],
     }
-    const drafts = draftsFrom(stored)
+    const drafts = draftsFrom(stored, 'tr-TR')
     assert.deepEqual(
       drafts.map((draft) => draft.timeout),
       ['0', ''],
