@@ -13,9 +13,12 @@ import {
   PICK_ACCELERATOR,
   PickHotkey,
   pickHotkeyLabel,
+  MAX_SNAPSHOT_BUDGET_MS,
   snapshot,
+  SNAPSHOT_MARGIN_MS,
   SNAPSHOT_TIMEOUT_MS,
 } from '../spy.ts'
+import { DEFAULT_SNAPSHOT_BUDGET_MS } from '../../shared/snapshot.ts'
 
 const notepad = {
   handle: 395942,
@@ -93,10 +96,19 @@ describe('describeFailure', () => {
   })
 })
 
-// The fake agent's tree: a copy of schemas/examples/snapshot/trial-login.json (#12).
-const trialLogin = JSON.parse(
-  readFileSync(join(import.meta.dirname, '..', '..', '..', 'dev', 'mock', 'snapshot.json'), 'utf8'),
-) as { elements: Record<string, unknown>[] } & Record<string, unknown>
+// `dev/` is plain JavaScript outside the type-checked tree, so it is loaded by URL.
+const fakeAgentEnvUrl = new URL('../../../dev/mock/fake-agent-env.mjs', import.meta.url).href
+const { defaultSnapshot } = (await import(fakeAgentEnvUrl)) as { defaultSnapshot: string }
+
+// The fake agent's tree: the schema's own example (#12), read where it lives (#204).
+const trialLoginPath = join(
+  import.meta.dirname,
+  ...['..', '..', '..', '..'],
+  ...['schemas', 'examples', 'snapshot', 'trial-login.json'],
+)
+const trialLogin = JSON.parse(readFileSync(trialLoginPath, 'utf8')) as {
+  elements: Record<string, unknown>[]
+} & Record<string, unknown>
 
 describe('snapshot', () => {
   it('asks for the window and returns its snapshot', async () => {
@@ -106,8 +118,43 @@ describe('snapshot', () => {
     assert.deepEqual(calls[0], ['snapshot', { handle: 657704 }, SNAPSHOT_TIMEOUT_MS])
   })
 
-  it('reports a result that is not a snapshot', async () => {
+  it('serves the schema example in dev:mock, so there is no copy to drift (#204)', () => {
+    assert.equal(defaultSnapshot, trialLoginPath)
+  })
+
+  it('sends a longer budget and waits for it (#204)', async () => {
+    const calls: unknown[][] = []
+    await snapshot(agentAnswering(trialLogin, calls), 657704, 30_000)
+    assert.deepEqual(calls[0], [
+      'snapshot',
+      { handle: 657704, timeoutMs: 30_000 },
+      30_000 + SNAPSHOT_MARGIN_MS,
+    ])
+    assert.ok(SNAPSHOT_TIMEOUT_MS > DEFAULT_SNAPSHOT_BUDGET_MS)
+  })
+
+  it('sends no budget the agent would refuse', async () => {
+    for (const budget of [0, -1, 1.5, MAX_SNAPSHOT_BUDGET_MS + 1, '30000', null]) {
+      const calls: unknown[][] = []
+      await snapshot(agentAnswering(trialLogin, calls), 657704, budget)
+      assert.deepEqual(calls[0], ['snapshot', { handle: 657704 }, SNAPSHOT_TIMEOUT_MS], `${budget}`)
+    }
+  })
+
+  it('names the format of a newer snapshot instead of calling it unexpected (#204)', async () => {
     assert.deepEqual(await snapshot(agentAnswering({ ...trialLogin, version: '0.2' }), 1), {
+      ok: false,
+      reason: 'snapshot-version',
+      detail: '0.2',
+    })
+  })
+
+  it('reports a result that is not a snapshot', async () => {
+    assert.deepEqual(await snapshot(agentAnswering({ ...trialLogin, elements: [] }), 1), {
+      ok: false,
+      reason: 'bad-response',
+    })
+    assert.deepEqual(await snapshot(agentAnswering({ ...trialLogin, version: 2 }), 1), {
       ok: false,
       reason: 'bad-response',
     })

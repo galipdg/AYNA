@@ -13,6 +13,7 @@ import type {
 import type { ElementDescriptor, ElementField } from '../../../shared/element.ts'
 import type { NameProblem, PropertyUse } from '../../../shared/repository.ts'
 import type { CheckProperty, Keyword, Operator, StepProblemCode } from '../../../shared/steps.ts'
+import { SNAPSHOT_VERSION } from '../../../shared/snapshot.ts'
 
 // The client's English texts. `Strings` is their shape: every other language has the same keys
 // (checked by the type and by `i18n.test.ts`). Dates and numbers use `locale`.
@@ -215,6 +216,10 @@ export const en = {
   spyUnknownProcess: 'unknown process',
   spyTreeTitle: 'Elements',
   spyCapturing: 'Capturing the window…',
+  spyCapturingLonger: (seconds: number) =>
+    `Capturing the window; this time the agent may take up to ${count(seconds)} seconds…`,
+  spyCaptureLonger: (seconds: number) =>
+    `Capture again lets the agent take up to ${count(seconds)} seconds.`,
   spyBack: 'Back to the properties',
   spyCaptureAgain: 'Capture again',
   /** `app` is the exe name and file version, when the agent could read them. */
@@ -270,6 +275,8 @@ export const en = {
     'bad-response': () => 'The agent answered with something unexpected.',
     'agent-error': (detail?: string) =>
       detail ? `The agent reported an error: ${detail}` : 'The agent reported an error.',
+    'snapshot-version': (detail?: string) =>
+      `The agent sends captures in format ${detail}, and this client reads format ${SNAPSHOT_VERSION}. Use an agent and a client from the same release.`,
   } satisfies Record<AgentFailure, (detail?: string) => string>,
 
   repoAdd: 'Add to repository',

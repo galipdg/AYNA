@@ -6,8 +6,9 @@ AYNA_AGENT_TOKEN); `npm run dev:mock` puts this folder's parent first on PYTHONP
 Answers `ping`, `listWindows` (windows from AYNA_MOCK_WINDOWS, a JSON file) and
 `snapshot` (the document in AYNA_MOCK_SNAPSHOT for every listed window, with that
 window's handle and a fresh id and time). With AYNA_MOCK_UIA=off both answer -32001, as on
-a machine without UI Automation; with AYNA_MOCK_SNAPSHOT_TIMEOUT=on `snapshot` answers
--32002. Exits on stdin EOF, like the real agent.
+a machine without UI Automation; with AYNA_MOCK_SNAPSHOT_TIMEOUT=on every walk takes 20 s, so
+`snapshot` answers -32002 unless its `timeoutMs` allows that long. Exits on stdin EOF, like the
+real agent.
 """
 
 import base64
@@ -19,6 +20,7 @@ import socket
 import struct
 import sys
 import threading
+import time
 import uuid
 from datetime import datetime
 
@@ -26,11 +28,16 @@ WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 TOKEN = os.environ.get("AYNA_AGENT_TOKEN", "")
 UIA = os.environ.get("AYNA_MOCK_UIA", "on") != "off"
 SNAPSHOT_TIMEOUT = os.environ.get("AYNA_MOCK_SNAPSHOT_TIMEOUT", "off") == "on"
+DEFAULT_BUDGET_MS = 5000  # the real agent's default walk budget
+SLOW_WALK_MS = 20000  # how long a walk "takes" with AYNA_MOCK_SNAPSHOT_TIMEOUT=on
 WINDOWS_FILE = os.environ.get(
     "AYNA_MOCK_WINDOWS", os.path.join(os.path.dirname(__file__), "..", "windows.json")
 )
+# The schema's own example (#12), read where it lives so it cannot drift (#204).
+REPO_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
 SNAPSHOT_FILE = os.environ.get(
-    "AYNA_MOCK_SNAPSHOT", os.path.join(os.path.dirname(__file__), "..", "snapshot.json")
+    "AYNA_MOCK_SNAPSHOT",
+    os.path.join(REPO_ROOT, "schemas", "examples", "snapshot", "trial-login.json"),
 )
 
 
@@ -61,8 +68,12 @@ def snapshot(rid, params):
         return no_uia(rid)
     if not any(window["handle"] == handle for window in load_json(WINDOWS_FILE)):
         return error(rid, -32000, f"Window not found: {handle}")
+    budget = params.get("timeoutMs", DEFAULT_BUDGET_MS)
+    if SNAPSHOT_TIMEOUT and budget < SLOW_WALK_MS:
+        time.sleep(1)  # long enough to see the "Capturing" line
+        return error(rid, -32002, f"Snapshot timeout: walk exceeded {budget} ms (fake agent)")
     if SNAPSHOT_TIMEOUT:
-        return error(rid, -32002, "Snapshot timeout: walk exceeded 5000 ms (fake agent)")
+        time.sleep(2)
     document = load_json(SNAPSHOT_FILE)
     document["snapshotId"] = str(uuid.uuid4())
     document["capture"]["startedAt"] = datetime.now().astimezone().isoformat(timespec="seconds")

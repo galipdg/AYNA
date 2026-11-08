@@ -13,7 +13,7 @@ const APP = { name: 'AYNA Deneme Uygulaması', technology: 'PySide6' }
 const VERSIONS = ['1.0', '1.1']
 const CAPTURED_VERSION = '1.0'
 
-// Logical name → the element of `dev/mock/snapshot.json` it stands for.
+// Logical name → the element of the fake agent's capture (`defaultSnapshot`) it stands for.
 const OBJECTS = {
   'login.userNameInput': 'e8',
   'login.passwordInput': 'e10',

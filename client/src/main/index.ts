@@ -237,7 +237,7 @@ function registerIpc() {
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
   handle(IPC.listWindows, () => listWindows(agent))
-  handle(IPC.snapshot, (_event, windowHandle) => snapshot(agent, windowHandle))
+  handle(IPC.snapshot, (_event, windowHandle, budgetMs) => snapshot(agent, windowHandle, budgetMs))
   // Anything that is not a valid rectangle (null included) removes the frame.
   handle(IPC.highlight, (_event, bounds) =>
     isBounds(bounds) ? highlighter.show(bounds) : highlighter.hide(),

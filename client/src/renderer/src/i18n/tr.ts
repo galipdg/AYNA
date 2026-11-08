@@ -1,4 +1,5 @@
 import type { Strings } from './en.ts'
+import { SNAPSHOT_VERSION } from '../../../shared/snapshot.ts'
 
 // The client's Turkish texts, with the same keys as `en.ts`. Terms follow the glossary in
 // docs/ui/style-guide.md. A value is never put before a Turkish suffix ("${url}'ye"): the
@@ -199,6 +200,10 @@ export const tr: Strings = {
   spyUnknownProcess: 'bilinmeyen süreç',
   spyTreeTitle: 'Ögeler',
   spyCapturing: 'Pencere yakalanıyor…',
+  spyCapturingLonger: (seconds: number) =>
+    `Pencere yakalanıyor; ajan bu kez ${count(seconds)} saniyeye kadar sürebilir…`,
+  spyCaptureLonger: (seconds: number) =>
+    `Yeniden yakalarken ajana ${count(seconds)} saniyeye kadar süre tanınır.`,
   spyBack: 'Özelliklere dön',
   spyCaptureAgain: 'Yeniden yakala',
   spyCaptured: (time: string, app: string | undefined, elements: number, durationMs: number) =>
@@ -254,6 +259,8 @@ export const tr: Strings = {
     'bad-response': () => 'Ajan beklenmeyen bir yanıt verdi.',
     'agent-error': (detail?: string) =>
       detail ? `Ajan bir hata bildirdi: ${detail}` : 'Ajan bir hata bildirdi.',
+    'snapshot-version': (detail?: string) =>
+      `Ajan yakalamaları ${detail} biçiminde gönderiyor, bu istemci ise ${SNAPSHOT_VERSION} biçimini okuyor. Ajanı ve istemciyi aynı sürümden kullanın.`,
   },
 
   repoAdd: 'Depoya ekle',
