@@ -8,6 +8,8 @@ interface Props {
   /** The saved application was not found on the server. */
   missing?: boolean
   onChosen(app: Application): void
+  /** The server answered 401: the session is gone, so the login screen takes over. */
+  onSessionEnded(): void
   /** Offered only when there is a chosen application to go back to. */
   onCancel?(): void
 }
@@ -31,7 +33,13 @@ async function fetchList(): Promise<List> {
 }
 
 /** Lists the server's applications; choosing one (or adding a new one) saves it for this machine. */
-export default function AppPicker({ selectedId, missing, onChosen, onCancel }: Props) {
+export default function AppPicker({
+  selectedId,
+  missing,
+  onChosen,
+  onSessionEnded,
+  onCancel,
+}: Props) {
   const [list, setList] = useState<List>({ state: 'loading' })
   const [name, setName] = useState('')
   const [technology, setTechnology] = useState('')
@@ -40,15 +48,22 @@ export default function AppPicker({ selectedId, missing, onChosen, onCancel }: P
 
   useEffect(() => {
     let cancelled = false
-    fetchList().then((next) => !cancelled && setList(next))
+    fetchList().then((next) => !cancelled && show(next))
     return () => {
       cancelled = true
     }
+    // `show` only reads props that do not change while the picker is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function show(next: List) {
+    if (next.state === 'failed' && next.reason === 'unauthorized') onSessionEnded()
+    else setList(next)
+  }
 
   function retry() {
     setList({ state: 'loading' })
-    fetchList().then(setList)
+    fetchList().then(show)
   }
 
   async function choose(app: Application) {
@@ -67,6 +82,7 @@ export default function AppPicker({ selectedId, missing, onChosen, onCancel }: P
     setCreateFailure(undefined)
     try {
       const result = await window.ayna.createApplication(name, technology)
+      if (!result.ok && result.reason === 'unauthorized') return onSessionEnded()
       if (!result.ok) return setCreateFailure(result.reason)
       await window.ayna.chooseApplication(result.app.id)
       onChosen(result.app)

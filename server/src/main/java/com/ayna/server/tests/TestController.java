@@ -8,6 +8,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ayna.server.auth.AynaPrincipal;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ErrorResponses;
 import com.ayna.server.tests.TestDtos.CreateTestRequest;
@@ -41,8 +43,9 @@ public class TestController {
 	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT })
 	@PostMapping("/api/apps/{appId}/tests")
 	@ResponseStatus(HttpStatus.CREATED)
-	public ResponseEntity<TestResponse> createTest(@PathVariable String appId, @RequestBody CreateTestRequest request) {
-		TestResponse test = service.createTest(appId, required(request.name(), "name"));
+	public ResponseEntity<TestResponse> createTest(@PathVariable String appId, @RequestBody CreateTestRequest request,
+			@AuthenticationPrincipal AynaPrincipal me) {
+		TestResponse test = service.createTest(appId, required(request.name(), "name"), me.userId());
 		return ResponseEntity.created(URI.create("/api/tests/" + test.id())).body(test);
 	}
 
@@ -60,8 +63,9 @@ public class TestController {
 
 	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT })
 	@PatchMapping("/api/tests/{testId}")
-	public TestResponse renameTest(@PathVariable String testId, @RequestBody RenameTestRequest request) {
-		return service.renameTest(testId, required(request.name(), "name"));
+	public TestResponse renameTest(@PathVariable String testId, @RequestBody RenameTestRequest request,
+			@AuthenticationPrincipal AynaPrincipal me) {
+		return service.renameTest(testId, required(request.name(), "name"), me.userId());
 	}
 
 	@ErrorResponses({ HttpStatus.NOT_FOUND })
@@ -75,8 +79,9 @@ public class TestController {
 	/** Body: a step document. Steps with an `id` keep it; the rest get new ids. */
 	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND })
 	@PutMapping("/api/tests/{testId}/steps")
-	public TestResponse replaceSteps(@PathVariable String testId, @RequestBody JsonNode document) {
-		return service.replaceSteps(testId, document);
+	public TestResponse replaceSteps(@PathVariable String testId, @RequestBody JsonNode document,
+			@AuthenticationPrincipal AynaPrincipal me) {
+		return service.replaceSteps(testId, document, me.userId());
 	}
 
 	@ErrorResponses({ HttpStatus.NOT_FOUND })
@@ -92,8 +97,9 @@ public class TestController {
 	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT })
 	@PostMapping("/api/apps/{appId}/tests/import")
 	@ResponseStatus(HttpStatus.CREATED)
-	public ResponseEntity<TestResponse> importTest(@PathVariable String appId, @RequestBody JsonNode file) {
-		TestResponse test = service.importTest(appId, file);
+	public ResponseEntity<TestResponse> importTest(@PathVariable String appId, @RequestBody JsonNode file,
+			@AuthenticationPrincipal AynaPrincipal me) {
+		TestResponse test = service.importTest(appId, file, me.userId());
 		return ResponseEntity.created(URI.create("/api/tests/" + test.id())).body(test);
 	}
 

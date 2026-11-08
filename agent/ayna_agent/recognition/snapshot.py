@@ -10,8 +10,10 @@ Three things about the document are normative, because other components depend o
 schema cannot express them:
 
 - **Element order is pre-order**, the window's own root element first, a parent always before
-  its children. One pass then builds the tree, which is what the server's import (#15) and the
-  Spy's tree (#24) do.
+  its children *and each subtree contiguous*. One pass then builds the tree, which is what the
+  server's import (#15) and the Spy's tree (#24) do. "A parent appeared earlier" is not enough:
+  it also admits a level-order list, and the server refuses one (#182 review), so :func:`loads`
+  checks that a parent is still on the current path.
 - **Element ids are ``e<position>``** in that order, and they are *opaque*: a healing proposal
   names one (#149), so it must be stable inside a document, but nothing may parse or order it.
 - **A snapshot only exists for a walk that covered the whole window.** A walk that ran out of
@@ -257,23 +259,43 @@ def loads(text: str) -> dict[str, Any]:
             f"capture.elementCount is {count!r}, but there are {len(elements)} elements"
         )
     seen: set[str] = set()
+    # The ids from the root down to the element before this one, and the same as a set.
+    # "A parent appeared earlier" is weaker than pre-order: it also admits a level-order
+    # list, which the server refuses (`SnapshotSchema.treeError`, #182 review). Pre-order
+    # means each subtree is contiguous, so a parent must still be *on the current path*.
+    ancestors: list[str] = []
+    on_path: set[str] = set()
     for position, node in enumerate(elements):
+        node_id = node.get("id")
+        if node_id in seen:
+            raise ValueError(f"element id {node_id!r} appears twice")
         parent = node.get("parentId")
         if position == 0:
             if parent is not None:
                 raise ValueError(
                     "the first element is the window's root and has no parent"
                 )
-        elif parent not in seen:
-            # Checked before this element's own id joins `seen`, so an element cannot be its
-            # own parent and a forward reference cannot pass as pre-order.
+        elif parent is None:
             raise ValueError(
-                f"element {node.get('id')!r} names parent {parent!r}, which is not above it"
+                f"element {node_id!r} is a second root: a snapshot is one window"
             )
-        node_id = node.get("id")
-        if node_id in seen:
-            raise ValueError(f"element id {node_id!r} appears twice")
+        elif parent not in seen:
+            # `seen` does not hold this element yet, so an element cannot be its own parent
+            # and a forward reference cannot pass as pre-order either.
+            raise ValueError(
+                f"element {node_id!r} names parent {parent!r}, which is not above it"
+            )
+        elif parent not in on_path:
+            raise ValueError(
+                f"elements are not in pre-order: the subtree of {parent!r} ended before "
+                f"element {node_id!r}"
+            )
+        else:
+            while ancestors[-1] != parent:
+                on_path.discard(ancestors.pop())
         seen.add(node_id)
+        ancestors.append(node_id)
+        on_path.add(node_id)
     return canonical(document)
 
 

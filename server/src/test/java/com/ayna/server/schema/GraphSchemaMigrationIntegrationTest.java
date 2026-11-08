@@ -20,7 +20,7 @@ import com.ayna.server.TestcontainersConfiguration;
 class GraphSchemaMigrationIntegrationTest {
 
 	static final List<String> LABELS = List.of("Application", "AppVersion", "Window", "Element", "RepoObject",
-			"TestCase", "Step", "Run", "StepResult", "HealingProposal", "Rule");
+			"TestCase", "Step", "Run", "StepResult", "HealingProposal", "Rule", "User", "AuthToken");
 
 	@Autowired
 	Driver driver;
@@ -63,7 +63,24 @@ class GraphSchemaMigrationIntegrationTest {
 				RETURN m.version AS version, m.description AS description ORDER BY version""").execute().records();
 
 		assertThat(applied).extracting(r -> r.get("version").asString() + " " + r.get("description").asString())
-			.containsExactly("0001 graph schema v0", "0002 tests and objects belong to an application");
+			.containsExactly("0001 graph schema v0", "0002 tests and objects belong to an application",
+					"0003 accounts and tokens", "0004 runs and step results", "0005 one window per snapshot");
+	}
+
+	@Test
+	void usernamesTokenHashesStepResultKeysAndSnapshotIdsAreUnique() {
+		List<String> constraints = driver.executableQuery("""
+				SHOW CONSTRAINTS YIELD type, labelsOrTypes, properties
+				WHERE type = 'UNIQUENESS' AND properties <> ['id'] AND NOT labelsOrTypes[0] STARTS WITH '__'
+				RETURN labelsOrTypes[0] + '.' + reduce(key = properties[0], p IN properties[1..] | key + '+' + p) AS key""")
+			.execute()
+			.records()
+			.stream()
+			.map(r -> r.get("key").asString())
+			.toList();
+
+		assertThat(constraints).containsExactlyInAnyOrder("User.username", "AuthToken.tokenHash",
+				"StepResult.runId+stepIndex", "Window.snapshotId");
 	}
 
 }

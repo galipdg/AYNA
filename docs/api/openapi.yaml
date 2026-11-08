@@ -1,11 +1,24 @@
 openapi: 3.1.0
 info:
-  description: REST API between the AYNA client and server. Generated from the code;
-    do not edit by hand.
+  description: |-
+    REST API between the AYNA client and server. Generated from the code; do not edit by hand.
+
+    **Live run status** is a WebSocket at `/ws/runs`, outside this document (ADR runs-api-and-live-updates). The upgrade request carries the same Bearer token; without a valid one it gets 401, and a token that expires or is revoked closes the connection with 1008 within 60 s. All messages are JSON objects.
+
+    - Client to server: `{"type":"subscribe","testId":"…"}`, `{"type":"unsubscribe","testId":"…"}`
+    - `subscribed`: `testId`
+    - `run.started`: `testId`, `run`
+    - `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `durationMs`, `message`
+    - `run.finished`: `testId`, `run`
+    - `error`: `detail`
+
+    `run` has the shape of `RunSummary`. Nothing is replayed: after `subscribed` and after a reconnect, read `GET /api/tests/{testId}/runs?status=running` and `GET /api/runs/{runId}`, then merge by `stepIndex`.
   title: AYNA server API
   version: v0
 servers:
 - url: /
+security:
+- bearerAuth: []
 paths:
   /api/apps:
     get:
@@ -19,6 +32,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/AppResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
       tags:
       - app-controller
     post:
@@ -38,6 +53,8 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "409":
           $ref: "#/components/responses/Conflict"
       tags:
@@ -60,6 +77,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/TestSummary"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -87,6 +106,8 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -107,7 +128,8 @@ paths:
           application/json:
             schema:
               type: object
-              description: JSON document; steps are validated against schemas/step.schema.json
+              description: "JSON document, validated against its schema in schemas/\
+                \ (steps: step.schema.json, snapshots: snapshot.schema.json)"
         required: true
       responses:
         "201":
@@ -118,6 +140,8 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -142,6 +166,8 @@ paths:
                 items:
                   $ref: "#/components/schemas/VersionResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -169,12 +195,104 @@ paths:
           description: Created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
       tags:
       - app-controller
+  /api/apps/{appId}/versions/{versionId}/snapshots:
+    post:
+      operationId: importSnapshot
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: versionId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: "JSON document, validated against its schema in schemas/\
+                \ (steps: step.schema.json, snapshots: snapshot.schema.json)"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnapshotResponse"
+          description: Already imported into this version; nothing was written
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnapshotResponse"
+          description: Imported
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - snapshot-controller
+  /api/auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security: []
+      tags:
+      - auth-controller
+  /api/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      tags:
+      - auth-controller
+  /api/auth/me:
+    get:
+      operationId: me
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      tags:
+      - auth-controller
   /api/health:
     get:
       operationId: health
@@ -187,8 +305,133 @@ paths:
                 additionalProperties:
                   type: string
           description: OK
+      security: []
       tags:
       - health-controller
+  /api/runs:
+    post:
+      operationId: createRun
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRunRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDetail"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
+  /api/runs/{runId}:
+    get:
+      operationId: getRun
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunDetail"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
+  /api/runs/{runId}/finish:
+    post:
+      operationId: finishRun
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinishRunRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunSummary"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - run-controller
+  /api/runs/{runId}/results/{stepIndex}:
+    put:
+      operationId: writeResult
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: stepIndex
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: "JSON document, validated against its schema in schemas/\
+                \ (steps: step.schema.json, snapshots: snapshot.schema.json)"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultWritten"
+          description: Identical repeat; nothing was written
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultWritten"
+          description: Stored
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - run-controller
   /api/tests/{testId}:
     delete:
       operationId: deleteTest
@@ -201,6 +444,8 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -220,6 +465,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestResponse"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
@@ -247,6 +494,8 @@ paths:
           description: OK
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -269,10 +518,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/TestExport"
           description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
+  /api/tests/{testId}/runs:
+    get:
+      operationId: listRuns
+      parameters:
+      - in: path
+        name: testId
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RunSummary"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
   /api/tests/{testId}/steps:
     put:
       operationId: replaceSteps
@@ -287,7 +569,8 @@ paths:
           application/json:
             schema:
               type: object
-              description: JSON document; steps are validated against schemas/step.schema.json
+              description: "JSON document, validated against its schema in schemas/\
+                \ (steps: step.schema.json, snapshots: snapshot.schema.json)"
         required: true
       responses:
         "200":
@@ -298,10 +581,187 @@ paths:
           description: OK
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
       tags:
       - test-controller
+  /api/tokens/{tokenId}:
+    delete:
+      operationId: revokeToken
+      parameters:
+      - in: path
+        name: tokenId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - user-controller
+  /api/users:
+    get:
+      operationId: listUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+      tags:
+      - user-controller
+    post:
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - user-controller
+  /api/users/{userId}:
+    delete:
+      operationId: removeUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - user-controller
+    patch:
+      operationId: updateUser
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - user-controller
+  /api/users/{userId}/tokens:
+    get:
+      operationId: listTokens
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TokenResponse"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - user-controller
+    post:
+      operationId: createToken
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTokenRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedTokenResponse"
+          description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - user-controller
 components:
   responses:
     BadRequest:
@@ -315,13 +775,27 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
-      description: A name is already taken
+      description: "The request conflicts with what is stored, such as a name already\
+        \ taken"
+    Forbidden:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The account's role may not do this
     NotFound:
       content:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
       description: An id in the path names nothing
+    Unauthorized:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: "No valid session or API token; on login, a wrong user name or\
+        \ password"
   schemas:
     AppResponse:
       type: object
@@ -339,15 +813,48 @@ components:
           type: string
         technology:
           type: string
+    CreateRunRequest:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        testId:
+          type: string
     CreateTestRequest:
       type: object
       properties:
         name:
           type: string
+    CreateTokenRequest:
+      type: object
+      properties:
+        name:
+          type: string
+    CreateUserRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        role:
+          type: string
+        username:
+          type: string
     CreateVersionRequest:
       type: object
       properties:
         version:
+          type: string
+    CreatedTokenResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        name:
+          type: string
+        token:
           type: string
     FieldError:
       type: object
@@ -361,6 +868,28 @@ components:
       required:
       - message
       - path
+    FinishRunRequest:
+      type: object
+      properties:
+        status:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        username:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserResponse"
     Problem:
       type: object
       description: RFC 9457 problem details; the body of every 4xx response
@@ -401,12 +930,117 @@ components:
       properties:
         name:
           type: string
+    RunDetail:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        document:
+          type: object
+          description: "JSON document, validated against its schema in schemas/ (steps:\
+            \ step.schema.json, snapshots: snapshot.schema.json)"
+        durationMs:
+          type: integer
+          format: int64
+        finishedAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepResultResponse"
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          $ref: "#/components/schemas/UserRef"
+        status:
+          type: string
+        stepCount:
+          type: integer
+          format: int32
+        testId:
+          type: string
+    RunSummary:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        durationMs:
+          type: integer
+          format: int64
+        finishedAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        startedBy:
+          $ref: "#/components/schemas/UserRef"
+        status:
+          type: string
+        stepCount:
+          type: integer
+          format: int32
+        testId:
+          type: string
+    SnapshotResponse:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        className:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/UserRef"
+        elementCount:
+          type: integer
+          format: int32
+        name:
+          type: string
+        snapshotId:
+          type: string
+        windowId:
+          type: string
+    StepResultResponse:
+      type: object
+      properties:
+        durationMs:
+          type: integer
+          format: int64
+        id:
+          type: string
+        message:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        stepId:
+          type: string
+        stepIndex:
+          type: integer
+          format: int32
+    StepResultWritten:
+      type: object
+      properties:
+        stepResultId:
+          type: string
     TestExport:
       type: object
       properties:
         document:
           type: object
-          description: JSON document; steps are validated against schemas/step.schema.json
+          description: "JSON document, validated against its schema in schemas/ (steps:\
+            \ step.schema.json, snapshots: snapshot.schema.json)"
         format:
           type: string
         name:
@@ -416,13 +1050,24 @@ components:
       properties:
         appId:
           type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/UserRef"
         document:
           type: object
-          description: JSON document; steps are validated against schemas/step.schema.json
+          description: "JSON document, validated against its schema in schemas/ (steps:\
+            \ step.schema.json, snapshots: snapshot.schema.json)"
         id:
           type: string
         name:
           type: string
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: "#/components/schemas/UserRef"
     TestSummary:
       type: object
       properties:
@@ -433,6 +1078,42 @@ components:
         stepCount:
           type: integer
           format: int32
+    TokenResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        name:
+          type: string
+    UpdateUserRequest:
+      type: object
+      properties:
+        password:
+          type: string
+        role:
+          type: string
+    UserRef:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+    UserResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+        role:
+          type: string
+        username:
+          type: string
     VersionResponse:
       type: object
       properties:
@@ -440,3 +1121,8 @@ components:
           type: string
         version:
           type: string
+  securitySchemes:
+    bearerAuth:
+      description: "Session token from POST /api/auth/login, or a CI API token (AYNA_SERVER_TOKEN)"
+      scheme: bearer
+      type: http

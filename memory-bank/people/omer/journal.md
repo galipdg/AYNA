@@ -91,9 +91,53 @@ Append-only. One entry per session, newest at the bottom:
 - #160: `errors[]` capped at 50 + `errorCount` (new `ApiErrorHandlerTest`, 40/40 server tests), ADR clarified and Accepted, graph v0.1 ADR Accepted. #155/#157: galip's and hasan's review points applied. #154: heartbeat during long calls (52/52 client tests).
 - Approved #164 (RS 0.6) and #165 (AI token, retrieval split). galip owns #58's server query, omer reviews.
 - Next: merges; then #25 if #12/#22 move, else #122 or #51.
+
+## 2026-10-31 · #166 review, #60 accounts
+- Pushed the #122 session note. #160/#155 still unmerged, nothing new from hasan on #167.
+- Reviewed #166 (comment): one-sided `dpi` makes the same control score location 0 (ran it), `healing-proposal.schema.json` rejects `dpi`, graph must store the target's `dpi` (#25/#74).
+- #60 (omer's choices: opaque Bearer tokens in Neo4j, `spring-boot-starter-security`, first admin from env vars, runs/approvals criterion moved to #44/#74). ADR Proposed. Server: `auth/`, V0003, users/tokens API, createdBy/updatedBy on tests, OpenAPI regenerated, graph-model v0.2; 54 tests + Compose smoke test. Client: login screen, token in main memory, 401 → login; 40 tests, build green.
+- Next: user management screen, manual check, PR.
+
+## 2026-10-31 · #60 user management, PR
+- Nothing new on `main`; no PRs waiting for my review.
+- Client: Manage users screen (`Users.tsx`, `ApiTokens.tsx`, main `users.ts`): list/add/role/password/remove + API tokens; tester or 403 → "only admins manage users". Server `detail` shown as is. 51 tests, lint, typecheck, build green.
+- Checked against a fresh Compose stack: `users.ts` against the real API, and the built app driven over CDP with screenshots (fixed button wrapping and notice placement).
+- `server/AGENTS.md` who-did-it rule (omer's OK). Pushed over HTTPS; PR #168, reviewers galip + hasan.
+- Next: omer's manual look, reviews, retarget after #160.
+
+## 2026-10-31 (fifth session) · #60
+- Found PR #168 squash-merged into `omer/31-openapi-contract` with no reviews; #60 code would have reached `main` inside #160. Reverted on the #31 branch (`48dfd5a`, tree identical to `9e2f51a`) and pushed, omer's choice.
+- GitHub showed #160 as CONFLICTING; `git merge-tree` with `origin/main` was clean.
+- Next: after #160 merges, new #60 PR to `main` from this branch.
 ## 2026-10-31 · #122 eval CI
 - #160/#155 not merged yet, #12/#22 still open → took #122. hasan had not done his `eval/` part, so omer did both halves (user's choice; hasan told in his inbox, reviewer on the PR).
 - `eval/pyproject.toml` (deps only, `packages = []`; pywinauto win32-only; jsonschema for `nl/check_pairs.py`), `requirements.txt` removed, ruff 0.17 clean with `spikes/` excluded, `eval` CI job on `windows-latest`. `eval/AGENTS.md` and CI changes approved by the user.
 - CI green: the 5 `test_uia.py` UIA tests run on the hosted Windows runner (learnings entry, useful for #67). PR #167.
 - Slip: first push went out before merging the new `origin/main` (#164); merged, re-tested and pushed again, no force.
 - Next: after #160/#155 merge, close-out checks; then #60.
+
+## 2026-11-05 · #53 SDD final (first PR)
+- Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
+- galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
+- Open: removal of `SDD-ai.md`, the `User` row's conflict with #193, push and PR; all wait for omer. Task note lists the follow-ups.
+- Next: PR, then §8 and the PDF after the final RS (#41).
+## 2026-11-05 (eleventh session) · stack reviews, #44 server half
+- Stack #182 → #192: no human review yet, all BLOCKED on one approval (`protect-main`, squash only); Copilot reviews fail on quota. Nothing merged. #154 sits inside the stack: draft, Windows re-run pending since 2026-11-01. G0 (#28, 9 Nov) at risk: #26 has no branch, #169 has conflicts.
+- #44 cannot start whole (#40 and #26 have no branch), so omer chose the server half from `main`: `runs/`, `V0004`, `/ws/runs`, `spring-boot-starter-websocket`, ADR `2026-11-05-runs-api-and-live-updates` (Proposed). 86 server tests.
+- Docker image smoke with Node's WebSocket on a throwaway stack: 15/15, step to watcher 69 ms, logout closes with 1008 after 58.7 s. omer's `ayna` stack left running.
+- SDD: "never 409" corrected to the schema 0.2 ADR; open item 5 settled.
+- Next: push and PR on omer's OK; reviews; client half after #38 and #40.
+
+## 2026-11-07 (thirteenth session) · review fixes on the stack, first merges
+- Read every review on #182–#194 and #197 (no inline threads, all top-level). Triage with omer: fix what reviewers flagged (#182, #186, #189, #190, #192, #193, #194), the rest to issues #203–#207.
+- #182: `V0005` uniqueness constraint on `Window.snapshotId` (8 Windows without it under 8 concurrent imports, 1 with it) + ADR, and the capture's `durationMs`/`readErrors`/`agentVersion`. #192: the editor saves the schema file's version; checked with #150's 0.2 schemas. #193: `durationMs`, `repairProposed` run status in the ADR.
+- Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
+- Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
+- Next: #154's approval, then #186 → #192, #197 one by one.
+
+## 2026-11-08 · #208 Compose port and Neo4j password hint (side session)
+- hasan's 2026-11-07 inbox item (#28 Windows session) had no issue: opened #208 on omer's OK (Week 3, owner:omer, area:devops, area:server, board In progress).
+- Compose publishes `${AYNA_SERVER_PORT:-8080}`; `.env.example` and `server/AGENTS.md` say so. `docker compose config` checked with the variable unset and set to 18080.
+- Reproduced the crash with the built jar against a separate Neo4j (111 lines, `AuthenticationException` at line 55). `Neo4jAuthFailureHint` (registered in `spring.factories`) now logs one ERROR line with the URI, the user and `docker compose down -v`; Boot's trace still follows. Unit + integration test (own Neo4j container).
+- Server suite 106/106; the rebuilt jar logs the hint at line 25 of 112 and nothing when Neo4j is simply down. A `@Component` variant logged the line twice, so `spring.factories` stays (learnings).
+- Next: push and PR with `Closes #208` on omer's OK.
