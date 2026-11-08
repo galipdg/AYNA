@@ -1,4 +1,4 @@
-import type { UsersError } from '../../shared/api.ts'
+import type { RepoObjectError, TestError, UsersError } from '../../shared/api.ts'
 import type { Language } from '../../shared/language.ts'
 import { en, type Strings } from './i18n/en.ts'
 import { tr } from './i18n/tr.ts'
@@ -63,6 +63,21 @@ const SERVER_MESSAGES: [RegExp, (texts: Strings['serverMessages'], match: string
   ],
   [/^At least one primary property is needed/, (t) => t.primaryNeeded],
   [/^The repository object is not valid$/, (t) => t.objectInvalid],
+  [
+    /^(\S+) is used by (\d+) tests?: (.+)\. Change those steps first$/,
+    (t, m) => t.objectInUse(m[1], m[2], m[3]),
+  ],
+  [/^Repository object not found: /, (t) => t.objectGone],
+  [
+    /^A test with this name already exists in the application: (.+)$/,
+    (t, m) => t.testNameTaken(m[1]),
+  ],
+  [/^Test not found: /, (t) => t.testGone],
+  [
+    /^The steps (?:do not match step schema|refer to unknown step ids or repository objects)/,
+    (t) => t.stepsRefused,
+  ],
+  [/^Step \S+ is not a step of this test$/, (t) => t.stepNotInTest],
 ]
 
 /** A server message in the current language when the client knows it, otherwise as sent. */
@@ -77,6 +92,17 @@ export function serverText(message: string): string {
 /** The server's own message when it sent one (e.g. which field is wrong), else ours. */
 export function usersErrorText(error: UsersError): string {
   return error.detail ? serverText(error.detail) : strings.usersErrors[error.reason]
+}
+
+/** The server's message when it sent one, then the refused fields; else ours. */
+export function repoObjectErrorText(error: RepoObjectError): string[] {
+  const main = error.detail ? serverText(error.detail) : strings.repoViewErrors[error.reason]
+  return [main, ...(error.fields ?? []).map((field) => serverText(field.message))]
+}
+
+/** The server's message when it sent one, else ours. Step fields are shown on their rows. */
+export function testErrorText(error: TestError): string {
+  return error.detail ? serverText(error.detail) : strings.testsErrors[error.reason]
 }
 
 /** A control type in plain words ("Edit" → "Text box"). */

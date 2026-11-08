@@ -4,12 +4,15 @@ import type {
   AgentState,
   ConnectionFailure,
   LoginResult,
+  RepoObjectError,
   RequestFailure,
   Role,
+  TestError,
   UsersError,
 } from '../../../shared/api.ts'
 import type { ElementDescriptor, ElementField } from '../../../shared/element.ts'
 import type { NameProblem, PropertyUse } from '../../../shared/repository.ts'
+import type { CheckProperty, Keyword, Operator, StepProblemCode } from '../../../shared/steps.ts'
 
 // The client's English texts. `Strings` is their shape: every other language has the same keys
 // (checked by the type and by `i18n.test.ts`). Dates and numbers use `locale`.
@@ -41,10 +44,6 @@ export const en = {
   laterIssue: (issue: number) => `This screen comes in a later version (#${issue}).`,
   // What each place will do, shown until its issue is built.
   laterPlaces: {
-    repository:
-      'Search, rename and edit the saved elements of the application, and see which tests use each one.',
-    tests:
-      'Build tests step by step without code: choose an action and an element, add checks, import and export.',
     runs: 'See every run with its result, filter them, and open or download the report.',
     repairs:
       'When AYNA cannot find an element during a run, it suggests similar ones here. You choose one, or none.',
@@ -313,6 +312,8 @@ export const en = {
   repoSaving: 'Saving…',
   repoCancel: 'Cancel',
   repoSaved: (name: string) => `Saved ${name} in the object repository.`,
+  repoAlreadySaved: (names: string[]) =>
+    `This element looks saved already, as ${names.join(', ')}. You can still save it under another name.`,
   repoErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
@@ -325,6 +326,152 @@ export const en = {
     'snapshot-conflict':
       'This capture is already stored under another version. Capture the window again to store it under this one.',
   } satisfies Record<Extract<AddToRepositoryResult, { ok: false }>['reason'], string>,
+
+  // The Repository screen (#30, docs/ui/wireframes.md §5).
+  repoViewHelp: (app: string) => `Elements of ${app} that tests use by name.`,
+  repoViewOpenSpy: 'Open Object Spy',
+  repoViewSearch: 'Search saved elements',
+  repoViewCount: (elements: number) =>
+    elements === 1 ? '1 element' : `${count(elements)} elements`,
+  repoViewTests: (tests: number) => (tests === 1 ? '1 test' : `${count(tests)} tests`),
+  repoViewNoMatch: (query: string) => `No saved element matches "${query}".`,
+  repoViewEmpty: 'No saved elements yet. Pick an element in the Object Spy and add it here.',
+  repoViewChoose: 'Choose a saved element to see its details.',
+  repoViewReload: 'Reload',
+  repoViewRename: 'Rename',
+  repoViewRenameLabel: 'New name',
+  repoViewRenameHint: 'Tests that use this element keep working under the new name.',
+  repoViewRenamed: (name: string) => `Renamed to ${name}. Tests that use it keep working.`,
+  repoViewEdit: 'Edit',
+  repoViewEditHint:
+    'Values start from the last capture of the element. AYNA looks for it with the "Find by" properties, then tries the "Backup" ones.',
+  repoViewUpdated: (name: string) => `Saved how AYNA finds ${name}.`,
+  repoViewUsedBy: (tests: number) =>
+    tests === 0
+      ? 'Not used by any test yet'
+      : tests === 1
+        ? 'Used by 1 test'
+        : `Used by ${count(tests)} tests`,
+  repoViewSeenIn: 'Seen in versions',
+  repoViewSeen: 'found in this version',
+  repoViewNotSeen: 'not captured in this version',
+  repoViewCaptured: 'Element as last captured',
+  repoViewRemove: 'Remove',
+  repoViewRemoveConfirm: (name: string) =>
+    `Remove ${name} from the repository? This cannot be undone.`,
+  repoViewRemoved: (name: string) => `Removed ${name} from the repository.`,
+  repoViewErrors: {
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer in time.',
+    unauthorized: 'Your session has ended. Log in again.',
+    'bad-response': 'The server answered with something unexpected.',
+    'not-found': 'This element is no longer in the repository. Reload the list.',
+    invalid: 'The server did not accept the change.',
+    duplicate: 'This name is already used in this application.',
+    'in-use': 'Tests still use this element. Change those steps first.',
+  } satisfies Record<RepoObjectError['reason'], string>,
+  testsHelp: (app: string) => `Tests of ${app}, built step by step without code.`,
+  testsSearch: 'Search tests',
+  testsNew: 'New test',
+  testsNewLabel: 'Name of the new test',
+  testsNewPlaceholder: 'e.g. Login works with a valid user',
+  testsCreate: 'Create',
+  testsNameBlank: 'Enter a name for the test.',
+  testsEmpty: 'No tests yet. Create one and add its steps.',
+  testsChoose: 'Choose a test to see its steps.',
+  testsNoMatch: (query: string) => `No test matches "${query}".`,
+  testsCount: (tests: number) => (tests === 1 ? '1 test' : `${count(tests)} tests`),
+  testsSteps: (steps: number) => (steps === 1 ? '1 step' : `${count(steps)} steps`),
+  testsReload: 'Reload',
+  testsRename: 'Rename',
+  testsRenameLabel: 'New name',
+  testsDelete: 'Delete test',
+  testsDeleteConfirm: (name: string) =>
+    `Delete the test ${name} with all its steps? This cannot be undone.`,
+  testsDeleted: (name: string) => `Deleted the test ${name}.`,
+  testsSave: 'Save',
+  testsSaving: 'Saving…',
+  testsSaved: 'Saved.',
+  testsCancel: 'Cancel',
+  testsUnsaved: 'Unsaved changes',
+  testsUpdated: (user: string, date: string) => `Last changed by ${user}, ${date}`,
+  testsLeaveConfirm: (name: string) => `${name} has unsaved changes. Leave without saving them?`,
+  testsLeave: 'Leave without saving',
+  testsStay: 'Keep editing',
+  testsFixFirst: (step: number) => `Step ${count(step)} needs a fix before you can save.`,
+  testsErrors: {
+    'no-server': 'No server is set. Connect to a server first.',
+    unreachable: 'Could not reach the server. Check that it is running.',
+    timeout: 'The server did not answer in time.',
+    unauthorized: 'Your session has ended. Log in again.',
+    'bad-response': 'The server answered with something unexpected.',
+    'not-found': 'This test no longer exists. Reload the list.',
+    invalid: 'The server did not accept the change.',
+    duplicate: 'A test with this name already exists in this application.',
+  } satisfies Record<TestError['reason'], string>,
+  stepsLabel: 'Steps',
+  stepsHeaderStep: 'Step',
+  stepsHeaderAction: 'Action',
+  stepsHeaderElement: 'Element',
+  stepsHeaderValue: 'Value',
+  stepsHeaderTimeout: 'Wait up to',
+  stepsEmpty: 'No steps yet. Add the first one.',
+  stepsAdd: 'Add step',
+  stepsDrag: 'Drag to move the step, or use Alt+↑ and Alt+↓',
+  stepsResize: (column: string) => `Width of the ${column} column`,
+  stepsResizeHint: 'Drag, or use ← and →, to change the width. Double-click for the default.',
+  stepsMoveUp: 'Move up',
+  stepsMoveDown: 'Move down',
+  stepsRemove: 'Delete step',
+  stepsChooseAction: 'Choose an action',
+  stepsChooseElement: 'Choose an element',
+  stepsMissingElement: (name: string) => `${name} (not in the repository)`,
+  stepsNoElements: 'No saved elements yet: add them in the Object Spy first.',
+  stepsElementsFailed: 'The saved elements could not be loaded, so steps cannot be checked.',
+  stepsValuePlaceholder: 'Text to type',
+  stepsItemPlaceholder: 'Item to choose',
+  stepsExpectedPlaceholder: 'Expected text',
+  stepsTimeoutPlaceholder: 'default',
+  stepsSeconds: 's',
+  stepsNoValue: 'No value for this action',
+  stepsCell: (column: string, step: number) => `${column}, step ${count(step)}`,
+  stepsKeywords: {
+    Click: 'Click',
+    Type: 'Type text',
+    Select: 'Choose item',
+    Verify: 'Check',
+    Wait: 'Wait for',
+  } satisfies Record<Keyword, string>,
+  stepsProperties: {
+    name: 'Text',
+    value: 'Field content',
+    enabled: 'Enabled',
+    visible: 'Visible',
+    checked: 'Checked',
+    selected: 'Selected',
+  } satisfies Record<CheckProperty, string>,
+  stepsOperators: {
+    equals: 'is',
+    notEquals: 'is not',
+    contains: 'contains',
+  } satisfies Record<Operator, string>,
+  stepsYes: 'yes',
+  stepsNo: 'no',
+  stepsProblems: {
+    'keyword-missing': 'Choose an action.',
+    'target-missing': 'Choose an element.',
+    'target-unknown': 'This element is not in the repository any more. Choose another one.',
+    'target-invalid': 'This is not the name of a saved element.',
+    'value-missing': 'Enter the text.',
+    'value-empty': 'Enter the item to choose.',
+    'value-too-long': 'The text is too long: at most 1,000 characters.',
+    'value-not-allowed': 'This action takes no value.',
+    'checkpoint-invalid': 'The check is not complete.',
+    'timeout-number': 'Enter the wait in seconds, e.g. 20 or 2.5.',
+    'timeout-range': 'The wait can be at most 600 seconds.',
+    invalid: 'This step is not valid.',
+  } satisfies Record<StepProblemCode, string>,
   versionLabel: 'Application version',
   versionNone:
     'Which version of the application are you testing? Add it, and saved elements are stored under it.',
@@ -427,6 +574,14 @@ export const en = {
       `The element name ${name} is already used in this application. Choose another name.`,
     primaryNeeded: 'Choose at least one property to find the element by.',
     objectInvalid: 'The server did not accept the element.',
+    objectInUse: (name: string, tests: string, names: string) =>
+      `${name} is used by ${tests === '1' ? '1 test' : `${tests} tests`}: ${names}. Change those steps first.`,
+    objectGone: 'This element is no longer in the repository. Reload the list.',
+    testNameTaken: (name: string) => `A test named ${name} already exists in this application.`,
+    testGone: 'This test no longer exists. Reload the list.',
+    stepsRefused: 'Some steps were not accepted. See the marked steps.',
+    stepNotInTest:
+      'Someone else changed this test meanwhile. Reload it and make your change again.',
   },
 }
 

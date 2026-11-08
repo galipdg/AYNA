@@ -9,7 +9,7 @@ import {
 import { controlTypeLabel, strings } from './strings.ts'
 
 /** A descriptor field as the tester reads it in Advanced (UIA names, exact values). */
-function formatValue(element: ElementDescriptor, field: ElementField): string | undefined {
+function formatValue(element: Partial<ElementDescriptor>, field: ElementField): string | undefined {
   switch (field) {
     case 'bounds':
       return element.bounds && formatBounds(element.bounds)
@@ -48,6 +48,27 @@ function Group({ title, items }: { title: string; items: [string, ReactNode | un
         ))}
       </dl>
     </section>
+  )
+}
+
+/** Every descriptor field with its UI Automation name and exact value. */
+export function ElementFacts({ element }: { element: Partial<ElementDescriptor> }) {
+  return (
+    <dl className="facts">
+      {ELEMENT_FIELDS.map((field) => {
+        const value = formatValue(element, field)
+        return (
+          <div key={field} className="property" title={field}>
+            <dt>{strings.spyProperties[field]}</dt>
+            {value === undefined ? (
+              <dd className="not-captured">{strings.spyNotCaptured}</dd>
+            ) : (
+              <dd className="mono">{value}</dd>
+            )}
+          </div>
+        )
+      })}
+    </dl>
   )
 }
 
@@ -104,21 +125,7 @@ export default function PropertyPanel({
         <summary>
           {strings.spyAdvanced} <span className="hint">{strings.spyAdvancedSummary}</span>
         </summary>
-        <dl className="facts">
-          {ELEMENT_FIELDS.map((field) => {
-            const value = formatValue(element, field)
-            return (
-              <div key={field} className="property" title={field}>
-                <dt>{strings.spyProperties[field]}</dt>
-                {value === undefined ? (
-                  <dd className="not-captured">{strings.spyNotCaptured}</dd>
-                ) : (
-                  <dd className="mono">{value}</dd>
-                )}
-              </div>
-            )
-          })}
-        </dl>
+        <ElementFacts element={element} />
       </details>
     </section>
   )

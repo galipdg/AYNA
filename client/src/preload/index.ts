@@ -15,6 +15,17 @@ const api: AynaApi = {
   listVersions: (appId) => ipcRenderer.invoke(IPC.listVersions, appId),
   createVersion: (appId, version) => ipcRenderer.invoke(IPC.createVersion, appId, version),
   addToRepository: (object) => ipcRenderer.invoke(IPC.addToRepository, object),
+  listRepoObjects: (appId) => ipcRenderer.invoke(IPC.listRepoObjects, appId),
+  getRepoObject: (id) => ipcRenderer.invoke(IPC.getRepoObject, id),
+  updateRepoObject: (id, change) => ipcRenderer.invoke(IPC.updateRepoObject, id, change),
+  deleteRepoObject: (id) => ipcRenderer.invoke(IPC.deleteRepoObject, id),
+  listTests: (appId) => ipcRenderer.invoke(IPC.listTests, appId),
+  createTest: (appId, name) => ipcRenderer.invoke(IPC.createTest, appId, name),
+  getTest: (id) => ipcRenderer.invoke(IPC.getTest, id),
+  renameTest: (id, name) => ipcRenderer.invoke(IPC.renameTest, id, name),
+  deleteTest: (id) => ipcRenderer.invoke(IPC.deleteTest, id),
+  saveSteps: (id, document) => ipcRenderer.invoke(IPC.saveSteps, id, document),
+  validateSteps: (document) => ipcRenderer.invoke(IPC.validateSteps, document),
   getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
   onAgentStatus: (listener) => {
     const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)

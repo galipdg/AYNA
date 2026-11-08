@@ -1,63 +1,33 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import type {
   AddToRepositoryResult,
   AppVersion,
   Application,
   RepoObject,
+  RepoObjectSummary,
 } from '../../shared/api.ts'
 import {
-  IDENTIFYING_FIELDS,
   logicalNameProblem,
   matchCount,
+  objectsMatching,
   suggestUses,
   type IdentifyingField,
-  type PropertySet,
-  type PropertyUse,
 } from '../../shared/repository.ts'
 import type { Snapshot, TreeNode } from '../../shared/snapshot.ts'
-import { controlTypeLabel, serverText, strings } from './strings.ts'
-
-interface Row {
-  field: IdentifyingField
-  value: string
-  use: PropertyUse
-}
+import {
+  FoundBy,
+  PropertyTable,
+  elementRows,
+  propertySet,
+  rowProblems,
+  type Row,
+} from './PropertySetEditor.tsx'
+import { serverText, strings } from './strings.ts'
 
 /** The element's identifying properties, best first, with the suggested use of each. */
 function initialRows(node: TreeNode, snapshot: Snapshot): Row[] {
   const uses = suggestUses(node.element, snapshot.elements)
-  return IDENTIFYING_FIELDS.flatMap((field) => {
-    const value = node.element[field]
-    return value === undefined ? [] : [{ field, value: String(value), use: uses[field]! }]
-  })
-}
-
-/** The rows of one use as a property set, or the first problem with their values. */
-function propertySet(rows: Row[], use: PropertyUse): PropertySet | string {
-  const set: Record<string, string | number> = {}
-  for (const row of rows.filter((candidate) => candidate.use === use)) {
-    const label = strings.spyProperties[row.field]
-    if (row.field === 'siblingIndex') {
-      if (!/^\d+$/.test(row.value.trim())) return strings.repoNotInteger(label)
-      set[row.field] = Number(row.value.trim())
-    } else {
-      // Kept as typed: a value with surrounding spaces is still a real UIA value.
-      if (!row.value) return strings.repoEmptyValue(label)
-      set[row.field] = row.value
-    }
-  }
-  return set as PropertySet
-}
-
-/** The summary's words: plain labels where the glossary has one, plain control types. */
-function summaryLabel(field: IdentifyingField): string {
-  return field in strings.spyPlain
-    ? strings.spyPlain[field as keyof typeof strings.spyPlain]
-    : strings.spyProperties[field]
-}
-
-function summaryValue(row: Row): string {
-  return row.field === 'controlType' ? controlTypeLabel(row.value) : row.value
+  return elementRows(node.element, (field) => uses[field]!)
 }
 
 function failureText(result: Extract<AddToRepositoryResult, { ok: false }>): string[] {
@@ -97,6 +67,21 @@ export default function AddToRepository({
   const [advanced, setAdvanced] = useState(false)
   const [saving, setSaving] = useState(false)
   const [problems, setProblems] = useState<string[]>([])
+  const [savedAs, setSavedAs] = useState<RepoObjectSummary[]>([])
+
+  // Is this element saved already? Only a hint: saving it again under another name is allowed.
+  useEffect(() => {
+    let cancelled = false
+    window.ayna
+      .listRepoObjects(app.id)
+      .then((result) => {
+        if (!cancelled && result.ok) setSavedAs(objectsMatching(result.objects, node.element))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [app.id, node])
 
   function change(field: IdentifyingField, update: Partial<Row>) {
     setRows((current) => current.map((row) => (row.field === field ? { ...row, ...update } : row)))
@@ -104,18 +89,12 @@ export default function AddToRepository({
 
   const primary = propertySet(rows, 'primary')
   const matches = typeof primary === 'string' ? undefined : matchCount(primary, snapshot.elements)
-  const findBy = rows.filter((row) => row.use === 'primary')
-  const backup = rows.filter((row) => row.use === 'fallback')
 
   async function save(event: FormEvent) {
     event.preventDefault()
     const fallback = propertySet(rows, 'fallback')
     const nameProblem = logicalNameProblem(name)
-    const propertyProblems = [
-      typeof primary === 'string' && primary,
-      typeof primary !== 'string' && Object.keys(primary).length === 0 && strings.repoNoPrimary,
-      typeof fallback === 'string' && fallback,
-    ].filter((problem): problem is string => !!problem)
+    const propertyProblems = rowProblems(rows)
     const found = nameProblem
       ? [strings.repoNameProblems[nameProblem], ...propertyProblems]
       : propertyProblems
@@ -171,31 +150,14 @@ export default function AddToRepository({
             {strings.repoNameHint}
           </p>
 
+          {savedAs.length > 0 && (
+            <p className="message message-warning" role="status">
+              {strings.repoAlreadySaved(savedAs.map((object) => object.name))}
+            </p>
+          )}
+
           <h4>{strings.repoFoundBy}</h4>
-          <div className="repo-summary">
-            {findBy.length === 0 ? (
-              <p className="field-error">{strings.repoNoPrimary}</p>
-            ) : (
-              <dl>
-                {findBy.map((row) => (
-                  <div key={row.field}>
-                    <dt>{summaryLabel(row.field)}</dt>
-                    <dd>{summaryValue(row)}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-            {matches !== undefined && findBy.length > 0 && (
-              <p className={matches === 1 ? 'tone-success' : 'field-error'} role="status">
-                {strings.repoMatches(matches)}
-              </p>
-            )}
-            {backup.length > 0 && (
-              <p className="hint">
-                {strings.repoBackup(backup.map((row) => summaryLabel(row.field)))}
-              </p>
-            )}
-          </div>
+          <FoundBy rows={rows} matches={matches} />
 
           <details
             className="advanced"
@@ -204,50 +166,7 @@ export default function AddToRepository({
           >
             <summary>{strings.repoAdvanced}</summary>
             <p className="hint">{strings.repoAdvancedHint}</p>
-            <table className="repo-properties">
-              <thead>
-                <tr>
-                  <th scope="col">{strings.repoPropertyHeader}</th>
-                  <th scope="col">{strings.repoValueHeader}</th>
-                  <th scope="col">{strings.repoUseHeader}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const label = strings.spyProperties[row.field]
-                  return (
-                    <tr key={row.field}>
-                      <th scope="row" title={row.field}>
-                        {label}
-                      </th>
-                      <td>
-                        <input
-                          aria-label={`${label}: ${strings.repoValueHeader}`}
-                          value={row.value}
-                          inputMode={row.field === 'siblingIndex' ? 'numeric' : undefined}
-                          onChange={(event) => change(row.field, { value: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          aria-label={`${label}: ${strings.repoUseHeader}`}
-                          value={row.use}
-                          onChange={(event) =>
-                            change(row.field, { use: event.target.value as PropertyUse })
-                          }
-                        >
-                          {(['primary', 'fallback', 'unused'] as const).map((use) => (
-                            <option key={use} value={use}>
-                              {strings.repoUses[use]}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <PropertyTable rows={rows} onChange={change} />
           </details>
 
           {problems.length > 0 && (

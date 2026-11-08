@@ -9,8 +9,15 @@ import {
   session,
   type IpcMainInvokeEvent,
 } from 'electron'
-import { IPC, type AppInfo, type NewRepoObject, type Role } from '../shared/api.ts'
+import {
+  IPC,
+  type AppInfo,
+  type NewRepoObject,
+  type RepoObjectChange,
+  type Role,
+} from '../shared/api.ts'
 import { isLanguage, languageFor } from '../shared/language.ts'
+import type { StepDocument } from '../shared/steps.ts'
 import { AgentManager, resolveAgentCommand } from './agent.ts'
 import {
   isAllowedNavigation,
@@ -20,8 +27,25 @@ import {
 } from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
 import { login, logout, type Session } from './auth.ts'
-import { addToRepository, createVersion, listVersions } from './repository.ts'
+import {
+  addToRepository,
+  createVersion,
+  deleteRepoObject,
+  getRepoObject,
+  listRepoObjects,
+  listVersions,
+  updateRepoObject,
+} from './repository.ts'
 import { checkServer } from './server.ts'
+import {
+  createTest,
+  deleteTest,
+  getTest,
+  listTests,
+  renameTest,
+  saveSteps,
+  validateSteps,
+} from './testCases.ts'
 import {
   createToken,
   createUser,
@@ -165,6 +189,51 @@ function registerIpc() {
     const { serverUrl, token } = await server()
     return track(await addToRepository(serverUrl, object as NewRepoObject, { token }))
   })
+  handle(IPC.listRepoObjects, async (_event, appId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listRepoObjects(serverUrl, String(appId), { token }))
+  })
+  handle(IPC.getRepoObject, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await getRepoObject(serverUrl, String(id), { token }))
+  })
+  // As for adding, the server checks the change.
+  handle(IPC.updateRepoObject, async (_event, id: unknown, change: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(
+      await updateRepoObject(serverUrl, String(id), change as RepoObjectChange, { token }),
+    )
+  })
+  handle(IPC.deleteRepoObject, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await deleteRepoObject(serverUrl, String(id), { token }))
+  })
+  handle(IPC.listTests, async (_event, appId: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listTests(serverUrl, String(appId), { token }))
+  })
+  handle(IPC.createTest, async (_event, appId: unknown, name: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await createTest(serverUrl, String(appId), String(name), { token }))
+  })
+  handle(IPC.getTest, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await getTest(serverUrl, String(id), { token }))
+  })
+  handle(IPC.renameTest, async (_event, id: unknown, name: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await renameTest(serverUrl, String(id), String(name), { token }))
+  })
+  handle(IPC.deleteTest, async (_event, id: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await deleteTest(serverUrl, String(id), { token }))
+  })
+  // The server checks the steps again against the same schema and the repository.
+  handle(IPC.saveSteps, async (_event, id: unknown, document: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await saveSteps(serverUrl, String(id), document as StepDocument, { token }))
+  })
+  handle(IPC.validateSteps, (_event, document: unknown) => validateSteps(document))
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
   handle(IPC.listWindows, () => listWindows(agent))

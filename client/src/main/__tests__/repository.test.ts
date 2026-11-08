@@ -6,7 +6,15 @@ import { join } from 'node:path'
 import { after, before, describe, it } from 'node:test'
 import type { NewRepoObject } from '../../shared/api.ts'
 import type { Snapshot } from '../../shared/snapshot.ts'
-import { addToRepository, createVersion, listVersions } from '../repository.ts'
+import {
+  addToRepository,
+  createVersion,
+  deleteRepoObject,
+  getRepoObject,
+  listRepoObjects,
+  listVersions,
+  updateRepoObject,
+} from '../repository.ts'
 
 const snapshot: Snapshot = JSON.parse(
   readFileSync(
@@ -210,6 +218,118 @@ describe('versions and repository API', () => {
       handle = (req, _body, res) =>
         req.url!.endsWith('/snapshots') ? json(res, 201, {}) : json(res, 201, { id: 'o1' })
       assert.deepEqual(await addToRepository(base, object), { ok: false, reason: 'bad-response' })
+    })
+  })
+
+  describe('repository view (#30)', () => {
+    const twoVersions = [
+      ...stored.resolvesTo,
+      { ...stored.resolvesTo[0], appVersionId: 'v2' },
+      { ...stored.resolvesTo[0], appVersionId: 'v2', elementId: 'y' },
+    ]
+
+    it('lists the objects with their test counts and the versions they are in', async () => {
+      let request = ''
+      handle = (req, _body, res) => {
+        request = `${req.method} ${req.url} ${req.headers.authorization}`
+        json(res, 200, [
+          {
+            ...stored,
+            controlType: 'Edit',
+            nearestLabel: null,
+            testCount: 2,
+            resolvesTo: twoVersions,
+          },
+        ])
+      }
+      assert.deepEqual(await listRepoObjects(base, 'a 1', { token: 't' }), {
+        ok: true,
+        objects: [
+          {
+            id: 'o1',
+            name: 'login.userNameInput',
+            primary: object.primary,
+            fallback: object.fallback,
+            controlType: 'Edit',
+            testCount: 2,
+            versionIds: ['v1', 'v2'],
+          },
+        ],
+      })
+      assert.equal(request, 'GET /api/apps/a%201/repo-objects Bearer t')
+
+      handle = (_req, _body, res) => json(res, 200, [{ ...stored }])
+      assert.deepEqual(await listRepoObjects(base, 'a1'), { ok: false, reason: 'bad-response' })
+      handle = (_req, _body, res) => json(res, 404, problem(404, 'Application not found: a1'))
+      assert.deepEqual(await listRepoObjects(base, 'a1'), {
+        ok: false,
+        reason: 'not-found',
+        detail: 'Application not found: a1',
+      })
+    })
+
+    const details = {
+      ...stored,
+      usedBy: [{ id: 't1', name: 'Login works' }],
+      element: { automationId: 'QApplication.loginWindow.usernameInput', controlType: 'Edit' },
+    }
+
+    it('gets one object with the tests that use it and the captured element', async () => {
+      let request = ''
+      handle = (req, _body, res) => {
+        request = `${req.method} ${req.url}`
+        json(res, 200, details)
+      }
+      assert.deepEqual(await getRepoObject(base, 'o/1'), {
+        ok: true,
+        object: {
+          id: 'o1',
+          name: 'login.userNameInput',
+          primary: object.primary,
+          fallback: object.fallback,
+          versionIds: ['v1'],
+          usedBy: [{ id: 't1', name: 'Login works' }],
+          element: details.element,
+        },
+      })
+      assert.equal(request, 'GET /api/repo-objects/o%2F1')
+    })
+
+    it('sends a rename as PATCH and maps a taken name to duplicate', async () => {
+      let request = ''
+      handle = (req, body, res) => {
+        request = `${req.method} ${req.url} ${body}`
+        json(res, 200, { ...details, name: 'login.kullaniciAdiInput' })
+      }
+      const renamed = await updateRepoObject(base, 'o1', { name: 'login.kullaniciAdiInput' })
+      assert.equal(renamed.ok && renamed.object.name, 'login.kullaniciAdiInput')
+      assert.equal(request, 'PATCH /api/repo-objects/o1 {"name":"login.kullaniciAdiInput"}')
+
+      const detail =
+        'The logical name login.passwordInput is already used by repository object o2 in this application'
+      handle = (_req, _body, res) => json(res, 409, problem(409, detail))
+      assert.deepEqual(await updateRepoObject(base, 'o1', { name: 'login.passwordInput' }), {
+        ok: false,
+        reason: 'duplicate',
+        detail,
+      })
+    })
+
+    it('deletes an unused object and maps a used one to in-use with the tests named', async () => {
+      let request = ''
+      handle = (req, _body, res) => {
+        request = `${req.method} ${req.url}`
+        res.writeHead(204).end()
+      }
+      assert.deepEqual(await deleteRepoObject(base, 'o1'), { ok: true })
+      assert.equal(request, 'DELETE /api/repo-objects/o1')
+
+      const detail =
+        'login.girisButton is used by 2 tests: Login rejects empty password, Login works. Change those steps first'
+      handle = (_req, _body, res) => json(res, 409, problem(409, detail))
+      assert.deepEqual(await deleteRepoObject(base, 'o1'), { ok: false, reason: 'in-use', detail })
+      handle = (_req, _body, res) => json(res, 404, problem(404, 'Repository object not found: o1'))
+      assert.equal((await deleteRepoObject(base, 'o1')).ok, false)
     })
   })
 })
