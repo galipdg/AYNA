@@ -2,16 +2,16 @@
 
 Bu rehber, AYNA'nın bugüne kadarki arayüzünü tek komutla açmak ve danışman hocamıza adım adım göstermek içindir. Demo macOS'ta hazırlandı ve denendi.
 
-> **Önemli:** Arayüzün son hali henüz `main` dalında değil, inceleme bekleyen PR'larda. Demo bu yüzden `omer/195-advisor-demo` dalından çalışır.
+> Arayüzün bugünkü hali `main` dalındadır (2026-11-08). Windows'ta gerçek ajanla kurulum ve adım adım deneme için [DEMO-windows.md](DEMO-windows.md) rehberine bakın.
 
 ## Tek komutla başlatma
 
 Gerekenler: açık bir Docker Desktop, Node 22.12 veya üstü, Python 3 ve depo kökünde bir `.env` dosyası. `.env` yoksa `.env.example` dosyasını kopyalayıp doldurun.
 
-Depo kökünde dala geçin:
+Depo kökünde `main` dalını güncelleyin:
 
 ```bash
-git switch omer/195-advisor-demo
+git switch main && git pull --ff-only
 ```
 
 Sonra `client` klasöründe tek komutu çalıştırın:
@@ -29,7 +29,7 @@ Komut sırayla şunları yapar:
 
 Pencere açılınca `.env` dosyasındaki `AYNA_ADMIN_USERNAME` ve `AYNA_ADMIN_PASSWORD` ile oturum açın. Oturum açma ekranı da gösterimin parçası olduğu için otomatik geçilmez.
 
-**Hangi bilgisayardan?** Ana gösterimi Mac'ten yapın, çünkü bu akış baştan sona denendi. Yeni arayüz gerçek ajanla Windows'ta henüz çalıştırılmadı ve `npm run demo` Windows'ta denenmedi. Toplantıdan önce #184 ve #38 Windows kontrolleri geçerse, gerçek pencere yakalamayı Windows'ta kısa bir ek olarak gösterebilirsiniz.
+**Hangi bilgisayardan?** `npm run demo` her zaman sahte ajanla açılır ve Mac'te baştan sona denendi; Windows'ta denenmedi. Yeni arayüz gerçek ajanla Windows'ta 2026-11-07'de çalıştırıldı: Nesne Gözcüsü kontrolünde 8 adımın 6'sı (#184), editör kontrolünde 14 adımın 12'si geçti (#38). Gerçek pencere yakalamayı göstermek için Windows'ta [DEMO-windows.md](DEMO-windows.md) rehberini izleyin.
 
 **Toplantıdan önce:**
 
@@ -128,48 +128,27 @@ Sonra depo kökünde çalıştırın (kullanıcı adı ve parola `admin`):
 | Öge ağacı | Kayıtlı yakalama | Seçilen pencere o anda okunur (`snapshot`, #12) |
 | Konum ve boyut | Yakalamadaki sabit değerler | O anki gerçek değerler |
 
-Dinamik yakalamanın ajan kodu `main` dalında hazır ve Windows'ta çalışıyor: deneme penceresi 28–32 ms'de yakalandı. Eksik olan iki şey var: yeni Nesne Gözcüsü ekranı gerçek ajanla henüz Windows'ta denenmedi (#184, haftalık Windows oturumu), imleçle öge seçme ise henüz yapılmadı (#22). Mac'te dinamik yakalama planlanmıyor, çünkü UI Automation bir Windows özelliğidir ve birinci dönem hedefi Windows masaüstüdür.
+Dinamik yakalamanın ajan kodu `main` dalında hazır ve Windows'ta çalışıyor: deneme penceresi 28–32 ms'de yakalandı. Yeni Nesne Gözcüsü ekranı gerçek ajanla Windows'ta 2026-11-07'de denendi (#184): 285 ögeli bir pencere 723 ms'de yakalandı, kırmızı çerçeve %150 ölçekte de ögeyi tam sardı. Eksik olan imleçle öge seçmedir (#22). Mac'te dinamik yakalama planlanmıyor, çünkü UI Automation bir Windows özelliğidir ve birinci dönem hedefi Windows masaüstüdür.
 
 ## Bugüne kadar yapılanlar
 
-**`main` dalında:**
+Hepsi `main` dalında (2026-11-08):
 
 | Alan | İş |
 |---|---|
-| Sunucu | Neo4j grafik şeması ve migration'lar (#14), uygulama ve sürüm API'si (#128), test ve adım API'si (#39), hesaplar, roller ve API anahtarları (#60), OpenAPI sözleşmesi (#31), ortak hata biçimi (#158) |
-| Ajan | İstemciyle JSON-RPC bağlantısı (#16), öge tanımı (#11), UI Automation ile pencere yakalama (#12) |
+| Sunucu | Neo4j grafik şeması ve migration'lar (#14), uygulama ve sürüm API'si (#128), test ve adım API'si (#39), hesaplar, roller ve API anahtarları (#60), OpenAPI sözleşmesi (#31), ortak hata biçimi (#158), anlık görüntü içe aktarma (#15), depoya öge ekleme (#25), depo ekranının API'si (#30), koşu kayıtları ve canlı durum, sunucu tarafı (#44) |
+| Ajan | İstemciyle JSON-RPC bağlantısı (#16), öge tanımı (#11), UI Automation ile pencere yakalama (#12), mantıksal adla Click ve Type oynatma (#26) |
+| İstemci | Ajanı yönetme (#17), Nesne Gözcüsü (#24, #184), arayüz tasarımı ve uygulama kabuğu (#183), Türkçe ve İngilizce arayüz (#185), depo ekranı (#30), kodsuz test editörü (#38), tek komutla demo (#195, #196) |
 | Yapay zekâ | Yerel modelle Türkçe komuttan test adımı üreten servis (#71), self-healing puanlayıcısı (#49), yerel model denemesi (#7) |
-| Karar ve belgeler | Deneme uygulaması ve pilot uygulama kararı (#21), gereksinim senaryoları ve RS taslağı (#34, #35), SDD mimari, test ve yapay zekâ bölümleri (#45, #48, #50) |
-
-**PR'da, inceleme bekliyor (bu demoda görünenler):**
-
-| İş | PR |
-|---|---|
-| Ajanı istemciden yönetme | #154 |
-| Anlık görüntü içe aktarma | #182 |
-| Nesne Gözcüsü | #186 |
-| Ögeyi depoya ekleme | #187 |
-| Arayüz tasarımı ve uygulama kabuğu | #188 |
-| Üç panelli Nesne Gözcüsü | #189 |
-| Türkçe ve İngilizce arayüz | #190 |
-| Depo ekranı | #191 |
-| Kodsuz test editörü | #192 |
-
-**PR'da, inceleme bekliyor (demoda görünmeyenler):**
-
-| İş | PR |
-|---|---|
-| Koşu kayıtları ve canlı durum, sunucu tarafı (#44) | #193 |
-| SDD yapay zekâ bölümü ve tasarım gerekçeleri (#53) | #194 |
-| WinForms yavaşlığının ölçümü (#161) | #170 |
+| Karar ve belgeler | Deneme uygulaması ve pilot uygulama kararı (#21), gereksinim senaryoları ve RS taslağı (#34, #35), SDD bölümleri (#45, #48, #50, #53) |
 
 ## Henüz gösterilemeyenler
 
 | Özellik | Durum |
 |---|---|
-| Testi çalıştırma | Sunucu tarafı PR'da (#193). Oynatma motoru (#26, #40) başlamadı; istemci ekranı ona bağlı. |
-| Gerçek Windows penceresi yakalama | Ajan kodu hazır (#12), Windows'ta çalışıyor. Bu demo Mac'te olduğu için kullanılmıyor. |
-| İmleçle öge seçme | Ajan tarafı (#22) başlamadı. Ekrandaki kısayol ipucu bu yüzden henüz çalışmaz. |
+| Testi istemciden çalıştırma | Sunucu tarafı (#44) ve ajanın Click/Type oynatması (#26) hazır. İstemci ekranı tüm anahtar kelimeleri oynatan ajanı (#40) bekliyor. Oynatma bugün ajan testleriyle görülebilir ([DEMO-windows.md](DEMO-windows.md#6-testi-çalıştırma-bugün)). |
+| Gerçek Windows penceresi yakalama | Windows'ta gerçek ajanla çalışıyor ([DEMO-windows.md](DEMO-windows.md)). Bu demo Mac'te olduğu için sahte ajan kullanıyor. |
+| İmleçle öge seçme | Ajan tarafı (#22) bitmedi. Ekrandaki kısayol ipucu bu yüzden henüz çalışmaz. |
 | Türkçe komutla test üretme | Servis hazır, editördeki panel (#78) başlamadı. |
 | Otomatik onarım, raporlar, değişiklik etkisi | Plandaki sonraki haftalarda. |
 
