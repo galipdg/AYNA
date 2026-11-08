@@ -392,3 +392,79 @@ def test_a_budget_too_small_for_any_window_is_a_snapshot_timeout(desktop):
     windows = desktop.list_windows()
     with pytest.raises(SnapshotTimeout, match="walk stopped"):
         desktop.snapshot(windows[0]["handle"], 1)
+
+
+# --- DPI awareness -----------------------------------------------------------------------
+
+
+def test_the_awareness_names_cover_every_context():
+    """One name per `DPI_AWARENESS_CONTEXT`, so a warning can say what the process got."""
+    from ayna_agent.recognition.uia import _AWARENESS_CONTEXTS, _PER_MONITOR_AWARE_V2
+
+    assert _AWARENESS_CONTEXTS["per-monitor-v2"] == _PER_MONITOR_AWARE_V2
+    assert sorted(_AWARENESS_CONTEXTS.values()) == [-5, -4, -3, -2, -1]
+
+
+@pytest.mark.windows
+def test_setup_leaves_the_process_per_monitor_v2():
+    """The bounds contract, as a test rather than as a comment.
+
+    `docs/agent-rpc.md` and `schemas/snapshot.schema.json` promise bounds "as UI Automation
+    reports them to a per-monitor-v2 DPI aware agent". Awareness can be set only once per
+    process and pytest has long since imported pywinauto by the time this runs, so the check
+    has to happen in a **fresh interpreter** -- which is also how the agent really starts.
+
+    This failed before 2026-11-07: `DPI_AWARENESS_CONTEXT` is pointer-sized, ctypes truncated
+    the negative constant, the call returned `ERROR_INVALID_PARAMETER`, the code treated that
+    as "already set", and pywinauto's import then made the process per-monitor-**v1**.
+    """
+    import subprocess
+    import sys
+
+    probe = (
+        "from ayna_agent.recognition.uia import UiaDesktop, dpi_awareness\n"
+        "d = UiaDesktop()\n"
+        "d.setup()\n"
+        "print(dpi_awareness())\n"
+        "d.close()\n"
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", probe],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=True,
+    )
+    assert done.stdout.strip().splitlines()[-1] == "per-monitor-v2", done.stderr
+
+
+@pytest.mark.windows
+def test_window_bounds_exclude_the_invisible_resize_border(desktop):
+    """`listWindows` reports the window as a person sees it, not as `GetWindowRect` does.
+
+    Since Windows 10 a resizable window has an *invisible* resize border outside its visible
+    frame, and `GetWindowRect` includes it -- which is why a maximised browser reports a
+    negative origin. The Spy drew its red frame from this rectangle, so the frame landed
+    outside the window (#184, found at 150 % scaling on 2026-11-07).
+
+    The assertion is a relation rather than a number, because the border is DPI-scaled and
+    differs per window: the reported rectangle must sit **inside** `GetWindowRect`, and for at
+    least one window on a real desktop it must be strictly smaller -- otherwise the fix is not
+    doing anything and the test would pass against the old code.
+    """
+    import win32gui
+
+    windows = desktop.list_windows()
+    assert windows, "a session with no visible window at all is not a session"
+    smaller = 0
+    for window in windows:
+        left, top, right, bottom = window["bounds"]
+        outer = win32gui.GetWindowRect(window["handle"])
+        assert left >= outer[0] and top >= outer[1], window["title"]
+        assert right <= outer[2] and bottom <= outer[3], window["title"]
+        if (right - left) < (outer[2] - outer[0]):
+            smaller += 1
+    assert smaller, (
+        "no window's frame bounds were narrower than GetWindowRect; either every window on "
+        "this desktop is borderless or the DWM call is not being used"
+    )

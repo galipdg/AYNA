@@ -82,6 +82,11 @@ public class AccountService {
 		}
 	}
 
+	/** The account an `Authorization` header stands for now; an open WebSocket is re-checked with this (#44). */
+	public Optional<AynaPrincipal> authenticateHeader(String authorization) {
+		return BearerTokenFilter.bearerToken(authorization).flatMap(this::authenticate);
+	}
+
 	/** A new session token; the same 401 for an unknown user and a wrong password. */
 	public LoginResponse login(String username, String password) {
 		try (Session session = driver.session()) {

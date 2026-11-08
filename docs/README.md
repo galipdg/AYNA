@@ -2,4 +2,5 @@
 
 Course documents (Requirements Specification, Software Design Document), generated API docs and user guides. Architectural decisions live in [`memory-bank/decisions/`](../memory-bank/decisions/README.md), not here.
 
-Owner: hasan (SDD sections by component owner). Rules: [AGENTS.md](AGENTS.md).
+Owner: hasan, except `rs/` and `report/` (galip) and `sdd/` and `ui/` (omer); each component
+owner writes their own SDD section. Rules: [AGENTS.md](AGENTS.md).

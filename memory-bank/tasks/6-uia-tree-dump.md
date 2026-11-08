@@ -73,7 +73,7 @@ One script, `eval/spikes/uia_dump.py`, with two subcommands. `dump` (Windows onl
   - Ran on the real Windows machine before the pilot apps were downloaded, because
     the note said the pywinauto/COM path had never executed. Used the repo `.venv`
     (Python 3.13.0, pywinauto 0.6.9 — the pinned version) instead of a throwaway
-    `%TEMP%yna-uia` venv; same pywinauto, one less step.
+    `%TEMP%\ayna-uia` venv; same pywinauto, one less step.
   - `pytest eval/spikes/test_uia_dump.py` → **24 passed** on Windows as well
     (galip had only run them on macOS).
   - One-off dump against the already-open Notepad:

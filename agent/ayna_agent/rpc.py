@@ -64,6 +64,13 @@ class SnapshotTimeout(Exception):
     """The snapshot walk ran out of its time budget before it finished."""
 
 
+class BadStepDocument(Exception):
+    """`runSteps` was given something that is not a step document it can read (#26).
+
+    Only for a document that cannot be read *at all* -- an unknown version, a missing `steps`.
+    Everything a single step can get wrong is that step's `failed` result instead."""
+
+
 class Desktop(Protocol):
     """What the server needs from the recognition layer.
 
@@ -81,6 +88,20 @@ class Desktop(Protocol):
         when the budget runs out."""
         ...
 
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Play a step document against one window; one result per step, in order (#26).
+
+        Reading the window is how a target is resolved, so this raises the same errors as
+        `snapshot`. A step that merely fails is a `failed` result, not an error: a run that
+        returns results is more useful than one that raises."""
+        ...
+
 
 class UnavailableDesktop:
     """A desktop that answers -32001 to everything. Used by the tests, and a deliberate
@@ -93,6 +114,15 @@ class UnavailableDesktop:
         raise UiaUnavailable(self.reason)
 
     def snapshot(self, handle: int, timeout_ms: int | None) -> dict[str, Any]:
+        raise UiaUnavailable(self.reason)
+
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+    ) -> list[dict[str, Any]]:
         raise UiaUnavailable(self.reason)
 
 
@@ -116,6 +146,7 @@ class Dispatcher:
             "ping": self._ping,
             "listWindows": self._list_windows,
             "snapshot": self._snapshot,
+            "runSteps": self._run_steps,
         }
 
     async def handle(self, text: str) -> str | None:
@@ -183,6 +214,57 @@ class Dispatcher:
             )
         return await self._run(self._desktop.snapshot, handle, timeout_ms)
 
+    async def _run_steps(self, params: Params) -> dict[str, Any]:
+        """`runSteps` (#26, the request `docs/agent-rpc.md` leaves to #40).
+
+        `runId` and `appVersionId` are accepted and ignored: they are what the healing
+        transport needs (#149) and carrying them from the start means the client can send one
+        shape before and after #40. Unknown keys are still refused, so a typo is not silently
+        dropped.
+        """
+        required = {"handle", "steps", "targets"}
+        if not isinstance(params, dict) or not required <= set(params):
+            raise RpcError(
+                INVALID_PARAMS,
+                'Invalid params: expected {"handle": <int>, "steps": {...}, "targets": {...}}',
+            )
+        unknown = set(params) - required - {"runId", "appVersionId", "defaultTimeoutMs"}
+        if unknown:
+            raise RpcError(INVALID_PARAMS, f"Invalid params: unknown {sorted(unknown)}")
+        handle = params["handle"]
+        if not _positive_int(handle):
+            raise RpcError(
+                INVALID_PARAMS, "Invalid params: handle must be a positive int"
+            )
+        if not isinstance(params["steps"], dict):
+            raise RpcError(
+                INVALID_PARAMS, "Invalid params: steps must be a step document object"
+            )
+        targets = params["targets"]
+        if not isinstance(targets, dict) or not all(
+            isinstance(target, dict) for target in targets.values()
+        ):
+            raise RpcError(
+                INVALID_PARAMS,
+                "Invalid params: targets must map a logical name to its property sets",
+            )
+        default_timeout_ms = params.get("defaultTimeoutMs")
+        if "defaultTimeoutMs" in params and not (
+            _positive_int(default_timeout_ms) and default_timeout_ms <= MAX_TIMEOUT_MS
+        ):
+            raise RpcError(
+                INVALID_PARAMS,
+                f"Invalid params: defaultTimeoutMs must be an int from 1 to {MAX_TIMEOUT_MS}",
+            )
+        results = await self._run(
+            self._desktop.run_steps,
+            handle,
+            params["steps"],
+            targets,
+            default_timeout_ms,
+        )
+        return {"results": results}
+
     async def _run(self, call: Callable[..., Any], *args: Any) -> Any:
         loop = asyncio.get_running_loop()
         try:
@@ -195,6 +277,10 @@ class Dispatcher:
             ) from exc
         except SnapshotTimeout as exc:
             raise RpcError(SNAPSHOT_TIMEOUT, f"Snapshot timeout: {exc}") from exc
+        except BadStepDocument as exc:
+            # A document the runner cannot read at all is a caller mistake, so -32602 rather
+            # than -32603. Everything a single *step* can get wrong is a `failed` result.
+            raise RpcError(INVALID_PARAMS, f"Invalid params: {exc}") from exc
 
 
 def _positive_int(value: Any) -> bool:
