@@ -186,6 +186,23 @@ Append-only. One entry per session, newest at the bottom:
 - API smoke against the real server passed; omer's manual check found truncated Action/Element columns → fixed layout + resizable columns (`3d532a1`); re-check passed 2026-11-05.
 - Pushed `omer/30-repo-view` (session-notes commit) and `omer/38-step-editor`; PR #192 (base `omer/30-repo-view`), CI 5/5. Not merged: all stack PRs need an approving review.
 - Next: reviews of the stack; next issue (#44 waits for #40).
+
+## 2026-11-05 (eleventh session, evening) · #169, #170, #195
+- Merged #169 at omer's request after syncing hasan's branch; #21 closed. #170 synced, blocked by a race in galip's `_send` (9 of 1 500 on `main`, 0 with a tested fix; in galip's inbox).
+- #195 for the advisor: `npm run demo` starts Docker, seeds through the API and opens the client; `DEMO.md` in Turkish. Tested end to end on a throwaway stack over CDP.
+- The run found unreadable check steps in the editor (35 px controls): `.step-check` now wraps. Also corrected two wrong steps in the Windows check on #38.
+- Next: omer's manual check, then push and PR.
+
+## 2026-11-05 (eleventh session, late) · #195 fixes, #196 undo
+- omer's first manual check of `npm run demo` failed with a 409: the fixture's snapshot id was already in the real volume. The sample capture now has an id from its version. My test had used only fresh volumes.
+- Running the trial app on macOS showed the sample tests expected texts the app never shows; fixed, and every run now restores the two sample tests.
+- #196: undo and redo in the step editor, on the window so it works after a delete, and safe across a save. 189 client tests, 27 of 27 in Electron.
+- Next: the table shift omer saw (screenshot unreadable here), physical ⌘Z check, push and PRs.
+
+## 2026-11-05 (twelfth session) · #38 layout for the demo
+- omer: the check rows wrap to two and three lines. A check is now a one-line summary with a popover, every row 41 px. The test list resizes between 150 and 420 px (`Resizer.tsx`, shared with the column handles).
+- 26 of 28 checks in Electron on the first run; the other two were test assumptions (a scripted click does not focus; an empty expected text is valid), re-checked with a real click and the schema.
+- Next: omer confirms the table and ⌘Z in the main folder, then push and PRs.
 ## 2026-11-05 · #53 SDD final (first PR)
 - Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
 - galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.

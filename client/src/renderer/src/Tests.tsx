@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react'
 import type {
   Application,
   RepoObjectSummary,
@@ -12,12 +20,22 @@ import {
   localProblems,
   serverProblems,
   unique,
+  withStoredIds,
   type DraftStep,
   type StepDocument,
   type StepProblem,
 } from '../../shared/steps.ts'
+import {
+  historyCommand,
+  mapHistory,
+  record,
+  redo,
+  startHistory,
+  undo,
+} from '../../shared/history.ts'
 import { foldText } from '../../shared/tree.ts'
 import Page from './Page.tsx'
+import Resizer from './Resizer.tsx'
 import StepTable, { problemText } from './StepTable.tsx'
 import { formatDate, formatTime, strings, testErrorText } from './strings.ts'
 
@@ -34,6 +52,12 @@ type Objects =
  * in a codeless table on the right. Steps are checked against the step schema while they are
  * edited and saved as a whole.
  */
+/** The test list can be narrowed to give the steps more room. */
+const LIST_WIDTH = { initial: 220, min: 150, max: 420 }
+
+/** The last width chosen, kept while the app runs, as for the step table's columns. */
+let chosenListWidth: number = LIST_WIDTH.initial
+
 export default function Tests({
   app,
   active,
@@ -45,6 +69,7 @@ export default function Tests({
   onSessionEnded: () => void
 }) {
   const [list, setList] = useState<List>({ state: 'loading' })
+  const [listWidth, setListWidth] = useState(chosenListWidth)
   const [objects, setObjects] = useState<Objects>({ state: 'loading' })
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string>()
@@ -152,9 +177,14 @@ export default function Tests({
     </button>
   )
 
+  function resizeList(width: number) {
+    chosenListWidth = Math.round(Math.min(LIST_WIDTH.max, Math.max(LIST_WIDTH.min, width)))
+    setListWidth(chosenListWidth)
+  }
+
   return (
     <Page title={strings.nav.tests} help={strings.testsHelp(app.name)} actions={newTest}>
-      <div className="tests">
+      <div className="tests" style={{ '--test-list-width': `${listWidth}px` } as CSSProperties}>
         <section className="panel spy-panel" aria-label={strings.nav.tests}>
           {creating && (
             <form className="form" onSubmit={create}>
@@ -242,6 +272,16 @@ export default function Tests({
           )}
         </section>
 
+        <Resizer
+          className="pane-resizer"
+          label={strings.testsListResize}
+          width={listWidth}
+          initial={LIST_WIDTH.initial}
+          min={LIST_WIDTH.min}
+          max={LIST_WIDTH.max}
+          onResize={resizeList}
+        />
+
         <section className="panel spy-panel" aria-label={strings.stepsLabel}>
           {leaveTo && (
             <div className="message message-warning" role="alertdialog">
@@ -313,7 +353,9 @@ function TestEditor({
   onSessionEnded: () => void
 }) {
   const [detail, setDetail] = useState<Detail>({ state: 'loading' })
-  const [drafts, setDrafts] = useState<DraftStep[]>([])
+  const [history, setHistory] = useState(() => startHistory<DraftStep[]>([]))
+  const drafts = history.present
+  const editor = useRef<HTMLDivElement>(null)
   const [saved, setSaved] = useState('')
   const [schemaIssues, setSchemaIssues] = useState<StepProblem[]>([])
   /** What the server refused at the last save; cleared by the next edit. */
@@ -333,7 +375,7 @@ function TestEditor({
         if (!result.ok && result.reason === 'unauthorized') return onSessionEnded()
         if (!result.ok) return setDetail({ state: 'failed', problem: testErrorText(result) })
         setDetail({ state: 'loaded', test: result.test })
-        setDrafts(draftsFrom(result.test.document))
+        setHistory(startHistory(draftsFrom(result.test.document)))
         setSaved(fingerprint(result.test.document))
       })
       .catch(() => {
@@ -343,6 +385,24 @@ function TestEditor({
       cancelled = true
     }
   }, [id, onSessionEnded])
+
+  // On the window, not on the editor: deleting a step removes the button that had the focus,
+  // and that is when undo is wanted most. Tests stays mounted while another place is shown.
+  useEffect(() => {
+    function keyDown(event: globalThis.KeyboardEvent) {
+      const command = historyCommand(event)
+      const root = editor.current
+      if (!command || !root || root.offsetParent === null || mode !== 'view') return
+      const target = event.target as Node
+      if (target !== globalThis.document.body && !root.contains(target)) return
+      event.preventDefault()
+      setHistory(command === 'undo' ? undo : redo)
+      setServerIssues([])
+      setNotice(undefined)
+    }
+    window.addEventListener('keydown', keyDown)
+    return () => window.removeEventListener('keydown', keyDown)
+  }, [mode])
 
   const document = useMemo(() => documentFrom(drafts), [drafts])
   const text = JSON.stringify(document)
@@ -385,8 +445,14 @@ function TestEditor({
   }
   const { test } = detail
 
-  function edit(next: DraftStep[]) {
-    setDrafts(next)
+  function edit(next: DraftStep[], typedField?: string) {
+    setHistory((current) => record(current, next, typedField))
+    setServerIssues([])
+    setNotice(undefined)
+  }
+
+  function travel(step: typeof undo) {
+    setHistory((current) => step(current))
     setServerIssues([])
     setNotice(undefined)
   }
@@ -419,12 +485,14 @@ function TestEditor({
         if (result.ok) {
           // Show the steps as stored (with their new ids); rows keep their place and focus.
           setDetail({ state: 'loaded', test: result.test })
-          setDrafts((current) =>
-            draftsFrom(result.test.document).map((draft, i) => ({
+          setHistory((current) => {
+            const stored = draftsFrom(result.test.document).map((draft, i) => ({
               ...draft,
-              key: current[i]?.key ?? draft.key,
-            })),
-          )
+              key: current.present[i]?.key ?? draft.key,
+            }))
+            const ids = new Map(stored.map((draft) => [draft.key, draft.id]))
+            return { ...mapHistory(current, (rows) => withStoredIds(rows, ids)), present: stored }
+          })
           setSaved(fingerprint(result.test.document))
         }
         return result
@@ -478,7 +546,7 @@ function TestEditor({
   const documentProblems = problems.filter((problem) => problem.index < 0)
 
   return (
-    <div className="test-editor" onKeyDown={keyDown}>
+    <div className="test-editor" ref={editor} onKeyDown={keyDown}>
       <header className="panel-header">
         {mode === 'rename' ? (
           <form className="inline-form" onSubmit={rename}>
@@ -521,6 +589,22 @@ function TestEditor({
               </p>
             </div>
             <div className="actions">
+              <button
+                type="button"
+                title={strings.testsUndoHint}
+                disabled={history.past.length === 0}
+                onClick={() => travel(undo)}
+              >
+                {strings.testsUndo}
+              </button>
+              <button
+                type="button"
+                title={strings.testsRedoHint}
+                disabled={history.future.length === 0}
+                onClick={() => travel(redo)}
+              >
+                {strings.testsRedo}
+              </button>
               <button
                 type="button"
                 onClick={() => {
