@@ -39,7 +39,12 @@ from typing import Any
 
 from ayna_agent import __version__
 from ayna_agent.recognition import snapshot as snap
-from ayna_agent.rpc import SnapshotTimeout, UiaUnavailable, WindowNotFound
+from ayna_agent.rpc import (
+    BadStepDocument,
+    SnapshotTimeout,
+    UiaUnavailable,
+    WindowNotFound,
+)
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +69,10 @@ _WS_CHILD = 0x4000_0000
 #: 11 keep several per session (suspended UWP apps, the "Windows Input Experience"), and a Spy
 #: picker that lists them is listing windows a tester cannot see.
 _DWMWA_CLOAKED = 14
+
+#: DWMWA_EXTENDED_FRAME_BOUNDS: the rectangle the window *appears* to occupy. See
+#: `_frame_bounds` for why `GetWindowRect` is the wrong answer.
+_DWMWA_EXTENDED_FRAME_BOUNDS = 9
 
 
 class UiaDesktop:
@@ -161,7 +170,6 @@ class UiaDesktop:
             if not _is_pickable_window(handle):
                 return True
             info = _quiet(lambda: UIAElementInfo(handle))
-            left, top, right, bottom = win32gui.GetWindowRect(handle)
             process_id = _window_process(handle)
             windows.append(
                 {
@@ -170,7 +178,7 @@ class UiaDesktop:
                     "className": _quiet(lambda: info.class_name) if info else None,
                     "processId": process_id,
                     "processName": _exe_name(process_id),
-                    "bounds": [left, top, right, bottom],
+                    "bounds": _frame_bounds(handle),
                 }
             )
             return True
@@ -185,6 +193,90 @@ class UiaDesktop:
         SnapshotTimeout when the walk did not finish inside its budget -- then there is no
         partial document, because candidates ranked from a partial tree would give a confident
         but unfounded proposal (RS 0.6 FR-29/FR-35).
+        """
+        progress, started_at, duration_ms, budget_ms = self._walk_window(
+            handle, timeout_ms
+        )
+        return snap.build(
+            progress.nodes,
+            window=progress.window,
+            app=progress.app,
+            started_at=started_at,
+            duration_ms=duration_ms,
+            budget_ms=budget_ms,
+            read_errors=progress.read_errors,
+            agent_version=__version__,
+        )
+
+    def read_tree(
+        self, handle: int, timeout_ms: int | None = None
+    ) -> tuple[list[dict[str, Any]], list[Any]]:
+        """The window's raw nodes in pre-order and the live element behind each one.
+
+        What `snapshot` reads, before it becomes a document: `(nodes, infos)` of equal length,
+        where a node is the snake_case mapping `ayna_agent.model.describe_tree` takes. Playback
+        (#26) resolves a target by deriving descriptors from `nodes` -- the *same* derivation a
+        snapshot uses, so a repository object matches the values it was stored with -- and then
+        acts on the element at the same index.
+
+        Raises the same errors as `snapshot` for the same reasons, timeout included: a target
+        resolved from a partial tree could be the wrong element, which is worse than no answer.
+        """
+        progress, _started_at, _duration_ms, _budget_ms = self._walk_window(
+            handle, timeout_ms
+        )
+        return progress.nodes, progress.infos
+
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Play a step document against one window and return one result per step (#26).
+
+        Lives on this class rather than in `playback/` because **every UI Automation call has
+        to happen on the server's single `ayna-uia` thread**, in its COM apartment, and this
+        object is what owns that thread. The rules themselves are in
+        `ayna_agent.playback.runner`, which knows nothing about UIA; this method is only the
+        place where the window reading and the step playing meet.
+
+        Raises `UiaUnavailable` when there is no backend here, `WindowNotFound` for a handle
+        that is not a top-level window, and `SnapshotTimeout` when a window cannot be read
+        inside its budget -- the same three as `snapshot`, because reading the window is how a
+        target is resolved -- plus `BadStepDocument` for a document that cannot be read at all.
+        A step that simply fails comes back as a `failed` result instead.
+        """
+        from ayna_agent.playback.runner import DEFAULT_TIMEOUT_MS, StepDocumentError
+        from ayna_agent.playback.runner import run_steps as play
+
+        self._require_ready()
+        try:
+            results = play(
+                steps,
+                targets,
+                lambda: self.read_tree(handle),
+                default_timeout_ms=(
+                    DEFAULT_TIMEOUT_MS
+                    if default_timeout_ms is None
+                    else default_timeout_ms
+                ),
+            )
+        except StepDocumentError as exc:
+            # The server owns the error vocabulary and imports nothing from a backend, so the
+            # translation happens here rather than in `rpc.py`.
+            raise BadStepDocument(str(exc)) from exc
+        return [result.to_json() for result in results]
+
+    def _walk_window(
+        self, handle: int, timeout_ms: int | None
+    ) -> tuple[_Progress, datetime, int, int]:
+        """Walk one window inside its budget, on a thread that can be abandoned.
+
+        Shared by `snapshot` and `read_tree`, because the budget, the abandoned-thread case and
+        the "no partial tree" rule are properties of reading a window, not of what the caller
+        does with the result.
         """
         self._require_ready()
         budget_ms = timeout_ms or self.default_budget_ms
@@ -225,18 +317,7 @@ class UiaDesktop:
                 f"having reached {progress.reached} element(s); the window needs more time "
                 f"than the budget allows"
             )
-
-        nodes = progress.nodes
-        return snap.build(
-            nodes,
-            window=progress.window,
-            app=progress.app,
-            started_at=started_at,
-            duration_ms=duration_ms,
-            budget_ms=budget_ms,
-            read_errors=progress.read_errors,
-            agent_version=__version__,
-        )
+        return progress, started_at, duration_ms, budget_ms
 
     # --- the walk itself, on its own thread ----------------------------------------------
 
@@ -321,6 +402,7 @@ class UiaDesktop:
                 }
             )
             progress.nodes.append(node)
+            progress.infos.append(info)
             progress.reached = len(progress.nodes)
             # Set from values already read, so naming the element a walk got stuck on costs
             # no extra cross-process call. Blocking happens in `children()` far more often
@@ -403,6 +485,7 @@ class _Progress:
         "app",
         "blocked_on",
         "error",
+        "infos",
         "nodes",
         "reached",
         "read_errors",
@@ -412,6 +495,11 @@ class _Progress:
 
     def __init__(self) -> None:
         self.nodes: list[dict[str, Any]] = []
+        #: The live element behind each node, same order and length as `nodes`. A snapshot
+        #: throws these away, but playback (#26, #40) has to act on the element it resolved,
+        #: and re-finding it by position afterwards would be a second walk and a second
+        #: chance to pick the wrong one.
+        self.infos: list[Any] = []
         self.window: dict[str, Any] = {}
         self.app: dict[str, Any] = {}
         self.read_errors = 0
@@ -451,26 +539,123 @@ def _bounds(info: Any) -> list[int] | None:
     return [rect.left, rect.top, rect.right, rect.bottom]
 
 
-def _set_dpi_awareness() -> None:
-    """Per-monitor-v2, so every coordinate is in physical pixels.
+#: The five `DPI_AWARENESS_CONTEXT` pseudo-handles, by name, for saying what the process got.
+_AWARENESS_CONTEXTS: dict[str, int] = {
+    "unaware": -1,
+    "system-aware": -2,
+    "per-monitor-v1": -3,
+    "per-monitor-v2": _PER_MONITOR_AWARE_V2,
+    "unaware-gdi-scaled": -5,
+}
 
-    Already being DPI aware (an application manifest, or a second call) is success, not
-    failure: the only thing that matters is that the process is not scaled by Windows.
+
+def dpi_awareness() -> str:
+    """What this process's DPI awareness actually is, by name.
+
+    `GetAwarenessFromDpiAwarenessContext` cannot answer this: the `DPI_AWARENESS` enum has no
+    value of its own for per-monitor-v2, so v1 and v2 both read as `PER_MONITOR_AWARE`. The
+    contexts have to be compared instead, which is what `AreDpiAwarenessContextsEqual` is for.
     """
     user32 = ctypes.WinDLL("user32", use_last_error=True)
     try:
-        if user32.SetProcessDpiAwarenessContext(_PER_MONITOR_AWARE_V2):
-            return
+        current = user32.GetThreadDpiAwarenessContext
+        equal = user32.AreDpiAwarenessContextsEqual
+    except (AttributeError, OSError):  # needs Windows 10 1607+
+        return "unknown"
+    current.restype = ctypes.c_void_p
+    equal.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    equal.restype = ctypes.wintypes.BOOL
+    handle = current()
+    for name, context in _AWARENESS_CONTEXTS.items():
+        if equal(ctypes.c_void_p(handle), ctypes.c_void_p(context)):
+            return name
+    return "unknown"
+
+
+def _set_dpi_awareness() -> None:
+    """Per-monitor-v2, so every coordinate is in physical pixels.
+
+    `docs/agent-rpc.md` and `schemas/snapshot.schema.json` both promise bounds "as UI
+    Automation reports them to a **per-monitor-v2** DPI aware agent", so this is a contract,
+    not a preference, and the function says out loud when it cannot keep it.
+
+    **Measured 2026-11-07, which is why this is written out:** `DPI_AWARENESS_CONTEXT` is a
+    pointer-sized handle, and ctypes' default conversion of a negative Python int truncates it
+    to 32 bits, so the call failed with `ERROR_INVALID_PARAMETER` (87) on 64-bit Windows. The
+    old code treated 87 like 5 ("already set") and logged success, while pywinauto's import --
+    the next statement in `setup()` -- quietly set the process to **per-monitor-v1**. The agent
+    had therefore never been v2 on any machine. Hence the explicit `argtypes`, and hence 87 is
+    now a warning rather than a shrug.
+    """
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    try:
+        set_context = user32.SetProcessDpiAwarenessContext
     except (AttributeError, OSError):  # needs Windows 10 1703+
         log.warning(
             "SetProcessDpiAwarenessContext is missing; coordinates may be scaled"
         )
         return
+    set_context.argtypes = [ctypes.c_void_p]
+    set_context.restype = ctypes.wintypes.BOOL
+    ctypes.set_last_error(0)
+    if set_context(ctypes.c_void_p(_PER_MONITOR_AWARE_V2)):
+        return
     error = ctypes.get_last_error()
-    if error in (5, 87):  # ERROR_ACCESS_DENIED: already set. ERROR_INVALID_PARAMETER.
-        log.info("DPI awareness was already set before the backend started")
+    got = dpi_awareness()
+    if error == 5:  # ERROR_ACCESS_DENIED: awareness can only be set once per process.
+        # An application manifest or an earlier import got there first. Fine if it chose v2,
+        # worth saying if it did not, because the bounds contract is what suffers.
+        if got == "per-monitor-v2":
+            log.info(
+                "DPI awareness was already per-monitor-v2 before the backend started"
+            )
+        else:
+            log.warning(
+                "DPI awareness was already set to %s before the backend started and cannot "
+                "be changed; bounds are unscaled but the per-monitor-v2 behaviour "
+                "docs/agent-rpc.md describes is not in force",
+                got,
+            )
     else:
-        log.warning("could not set per-monitor-v2 DPI awareness (error %d)", error)
+        log.warning(
+            "could not set per-monitor-v2 DPI awareness (error %d); this process is %s",
+            error,
+            got,
+        )
+
+
+def _frame_bounds(handle: int) -> list[int]:
+    """The rectangle the window appears to occupy, in physical pixels.
+
+    **Not `GetWindowRect`.** Since Windows 10 a resizable window carries an *invisible* resize
+    border outside its visible frame, and `GetWindowRect` includes it -- which is why a
+    maximised browser reports a negative origin. Measured on this window at 150 % scaling:
+
+        GetWindowRect              472 x 261   (8 px of nothing on the left, right and bottom)
+        DWM extended frame bounds  456 x 253   <- what a person sees
+        UIA BoundingRectangle      450 x 213   (38 px short at the top: no title bar)
+
+    So the Spy's red frame around a *window* used to be drawn outside the window, which is what
+    a tester notices first (#184, 2026-11-07). DWM's extended frame bounds is the only one of
+    the three that means "the window as it looks": it drops the invisible border and keeps the
+    title bar. UIA's rectangle stays the right answer for an *element*, and that is what a
+    snapshot reports.
+
+    Falls back to `GetWindowRect` when DWM declines, which it does for a window that is already
+    gone -- a wrong-by-8-pixels rectangle beats no window in the list.
+    """
+    rect = ctypes.wintypes.RECT()
+    status = ctypes.WinDLL("dwmapi").DwmGetWindowAttribute(
+        ctypes.wintypes.HWND(handle),
+        ctypes.c_uint(_DWMWA_EXTENDED_FRAME_BOUNDS),
+        ctypes.byref(rect),
+        ctypes.sizeof(rect),
+    )
+    if status == 0:
+        return [rect.left, rect.top, rect.right, rect.bottom]
+    import win32gui
+
+    return list(win32gui.GetWindowRect(handle))
 
 
 def _is_window(handle: int) -> bool:

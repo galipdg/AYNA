@@ -333,6 +333,31 @@ describe('AgentManager', () => {
     assert.equal(isRunning(pid), false)
   })
 
+  it('settles stop() even when the kill does not take, so quitting cannot hang', async () => {
+    const lines: string[] = []
+    const agent = manager('ignore-stdin', {
+      kill: () => {}, // taskkill denied, or a process stuck in the kernel (hasan, #154)
+      killGraceMs: 200,
+      log: (line) => lines.push(line),
+    })
+    const connected = waitFor(agent, 'connected')
+    agent.start()
+    await connected
+    const pid = agent.pid!
+    try {
+      const started = Date.now()
+      await agent.stop()
+      assert.ok(Date.now() - started < 2_000, 'stopTimeoutMs (300) + killGraceMs (200)')
+      assert.equal(agent.getStatus().state, 'stopped')
+      assert.equal(agent.pid, undefined)
+      assert.ok(lines.some((line) => line.includes(`could not stop the agent (pid ${pid})`)))
+    } finally {
+      process.kill(pid, 'SIGKILL')
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    assert.equal(agent.getStatus().state, 'stopped', "the late 'exit' changes nothing")
+  })
+
   it('does not restart while stopping, and stop is idempotent', async () => {
     const agent = manager('exit')
     const restarting = waitFor(agent, 'restarting')
