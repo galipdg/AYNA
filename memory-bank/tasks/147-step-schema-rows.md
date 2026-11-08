@@ -27,10 +27,12 @@ Smallest additive change that the #37 derivation accepts unchanged: a new keywor
 - [x] `schemas/step.schema.json` 0.2, `schemas/README.md`, examples (`customer-search-grid.json`: 9 steps; `cases.json`: 7 + 12 valid, 29 + 37 invalid), `ai/tests/test_step_schema.py` (117 tests; 16 mutations drop a 0.2 rule each and a named invalid case gets through)
 - [x] #37 compatibility (below)
 - [x] PR https://github.com/galipdg/AYNA/pull/150 opened 2026-10-28 (`Refs #147`, stacked on #134, merge after it), reviewers hasan and omer
-- [ ] All three approve (criterion 1)
+- [x] All three approve (criterion 1): omer 2026-10-29, hasan 2026-11-07
 - [ ] After approval: #37, #36, #40, #38 adopt it (criterion 3)
 - [x] 2026-10-29: merged main (conflict only in `decisions/README.md`), relabelled to 0.2 everywhere #142/#145/#146 had hard-coded 0.1, applied the review wording (454 ai tests pass)
-- Next step: hasan re-reviews (text rule explained on the PR); when all three approve, set the ADR to Accepted in the same PR; then the #37 prompt/`column` follow-up and the #36 labelling rules.
+- [x] 2026-11-08: merged main again (clean locally; GitHub's "conflict" was the union-merged memory files), ADR set to Accepted, hasan's two #150 corrections applied (KeePass 2 ListItems have per-column `Text` children; `cell` is grid-only because `column` is a TablePattern header Name, not because a list has no columns) and the DataGridView note added. 550 ai tests pass.
+- Merge blocker found 2026-11-08: since the 11-02 merge, `main` gained server tests that PUT step documents with a hard-coded `"version": "0.1"` (`AuthIntegrationTest:151`, `RunIntegrationTest:483`, `RunEventsIntegrationTest:227`, omer's files). The server reads `version.const`, so after this PR they get 400. They must read the version from the schema (as the client and ai tests now do) before or with this merge.
+- Next step: the server-test fix (omer, or here with his OK), push, merge; then the #37 prompt/`column` follow-up and the #36 labelling rules.
 
 ## #37 compatibility check (2026-10-28, `origin/galip/37-constrained-generation` 95de284, scratch copy)
 - `generation_schema()` derives the 0.2 schema with **no code change**: 6 keyword branches (SelectRow: keyword, target, row, timeoutMs), 5 checkpoint variants (name/value, booleans, cell, rowExists, rowCount), `row` as a nested `anyOf` of two closed objects, strings capped, no `if`/`then`/`allOf`/boolean subschemas left.
