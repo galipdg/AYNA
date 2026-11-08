@@ -172,3 +172,35 @@ Append-only. One entry per session, newest at the bottom:
 - Checked over CDP with the real server and the fake agent. Vite hot-reloaded the branch into two older dev instances (blank windows) → learnings entry.
 - Next: omer reads both languages; wording fixes from the team; ADR → Accepted after approval.
 
+## 2026-11-05 · #53 SDD final (first PR)
+- Branch `omer/53-sdd-final`. §5 moved in from `SDD-ai.md` by script (headings and references only; the reverse transform equals the original block), §7 written from all 22 ADRs, status rows checked against the code, version 0.3.
+- galip's inbox: references in `docs/rs/RS.md`, `ai/API.md`, `ai/ayna_ai/validate.py`, and the §5 rows now out of date. hasan has none.
+- Open: removal of `SDD-ai.md`, the `User` row's conflict with #193, push and PR; all wait for omer. Task note lists the follow-ups.
+- Next: PR, then §8 and the PDF after the final RS (#41).
+## 2026-11-05 (eleventh session) · stack reviews, #44 server half
+- Stack #182 → #192: no human review yet, all BLOCKED on one approval (`protect-main`, squash only); Copilot reviews fail on quota. Nothing merged. #154 sits inside the stack: draft, Windows re-run pending since 2026-11-01. G0 (#28, 9 Nov) at risk: #26 has no branch, #169 has conflicts.
+- #44 cannot start whole (#40 and #26 have no branch), so omer chose the server half from `main`: `runs/`, `V0004`, `/ws/runs`, `spring-boot-starter-websocket`, ADR `2026-11-05-runs-api-and-live-updates` (Proposed). 86 server tests.
+- Docker image smoke with Node's WebSocket on a throwaway stack: 15/15, step to watcher 69 ms, logout closes with 1008 after 58.7 s. omer's `ayna` stack left running.
+- SDD: "never 409" corrected to the schema 0.2 ADR; open item 5 settled.
+- Next: push and PR on omer's OK; reviews; client half after #38 and #40.
+
+## 2026-11-07 (thirteenth session) · review fixes on the stack, first merges
+- Read every review on #182–#194 and #197 (no inline threads, all top-level). Triage with omer: fix what reviewers flagged (#182, #186, #189, #190, #192, #193, #194), the rest to issues #203–#207.
+- #182: `V0005` uniqueness constraint on `Window.snapshotId` (8 Windows without it under 8 concurrent imports, 1 with it) + ADR, and the capture's `durationMs`/`readErrors`/`agentVersion`. #192: the editor saves the schema file's version; checked with #150's 0.2 schemas. #193: `durationMs`, `repairProposed` run status in the ADR.
+- Merged forward through the stack (one README conflict); the local `omer/30-repo-view` was stale behind a GitHub web merge, caught by a rejected push.
+- Merged #193 (`4d0c98a`) first, then #182 (`1e4000a`, #15 closed), then #194, each on omer's yes. #154 undrafted, waiting for a review; the rest of the client stack waits on it.
+- Next: #154's approval, then #186 → #192, #197 one by one.
+
+## 2026-11-08 (fourteenth session) · #154 up to date, still no approval
+- `main` unchanged since 2026-11-07 (`2e27199`). #154 still has no human review; Copilot fails on quota. Every client stack PR (#186–#197) carries #17's commits, so all wait on #154.
+- Merged `origin/main` into `omer/17-agent-process-manager` (`a09d801`, clean), client lint/typecheck/format and 75/75 tests green, pushed on omer's yes. Fixed the PR body's stale heartbeat note.
+- `protect-main` ruleset: 1 approval, squash only, threads resolved, approvals not dismissed on push.
+- hasan's docker port / Neo4j password note handed to a separate session (new issue + branch).
+- Next: #154's approval → merge → #186 → #192, #197.
+## 2026-11-08 · #208 Compose port and Neo4j password hint (side session)
+- hasan's 2026-11-07 inbox item (#28 Windows session) had no issue: opened #208 on omer's OK (Week 3, owner:omer, area:devops, area:server, board In progress).
+- Compose publishes `${AYNA_SERVER_PORT:-8080}`; `.env.example` and `server/AGENTS.md` say so. `docker compose config` checked with the variable unset and set to 18080.
+- Reproduced the crash with the built jar against a separate Neo4j (111 lines, `AuthenticationException` at line 55). `Neo4jAuthFailureHint` (registered in `spring.factories`) now logs one ERROR line with the URI, the user and `docker compose down -v`; Boot's trace still follows. Unit + integration test (own Neo4j container).
+- Server suite 106/106; the rebuilt jar logs the hint at line 25 of 112 and nothing when Neo4j is simply down. A `@Component` variant logged the line twice, so `spring.factories` stays (learnings).
+- Next: push and PR with `Closes #208` on omer's OK.
+- Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.
