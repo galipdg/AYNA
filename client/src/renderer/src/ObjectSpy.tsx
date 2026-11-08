@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
-import type { AgentFailure, PickHotkeyState, ScreenPoint, WindowInfo } from '../../shared/api.ts'
+import type {
+  AgentFailure,
+  AppVersion,
+  Application,
+  PickHotkeyState,
+  ScreenPoint,
+  WindowInfo,
+} from '../../shared/api.ts'
 import { windowDescriptor } from '../../shared/element.ts'
 import { buildTree, type Snapshot, type TreeNode } from '../../shared/snapshot.ts'
 import AddToRepository from './AddToRepository.tsx'
 import ElementTree from './ElementTree.tsx'
+import Page from './Page.tsx'
 import PropertyPanel from './PropertyPanel.tsx'
 import { strings } from './strings.ts'
-import VersionBar from './VersionBar.tsx'
 
 type List =
   | { state: 'loading' }
@@ -55,10 +62,10 @@ function processLabel(win: WindowInfo): string {
 /**
  * Lists the desktop's top-level windows; choosing one flashes a frame around it on screen
  * and captures its element tree. Choosing an element in the tree frames it and shows its
- * properties; "Add to repository" stores it in the application `appId`, under the version
- * chosen in the version bar (#25).
+ * properties; "Add to repository" stores it in `app`, under the version chosen in the top
+ * bar (#25, #183).
  */
-export default function ObjectSpy({ appId }: { appId: string }) {
+export default function ObjectSpy({ app, version }: { app: Application; version?: AppVersion }) {
   const [list, setList] = useState<List>({ state: 'loading' })
   const [selected, setSelected] = useState<WindowInfo>()
   const [hotkey, setHotkey] = useState<PickHotkeyState>()
@@ -66,7 +73,6 @@ export default function ObjectSpy({ appId }: { appId: string }) {
   const [capture, setCapture] = useState<Capture>()
   const [node, setNode] = useState<TreeNode>()
   const [adding, setAdding] = useState(false)
-  const [versionId, setVersionId] = useState<string>()
   const [saved, setSaved] = useState<string>()
 
   // Entering `loading` (first render, Refresh, agent reconnected) fetches the list.
@@ -160,112 +166,137 @@ export default function ObjectSpy({ appId }: { appId: string }) {
   }
 
   return (
-    <section className="card spy">
-      <div className="spy-header">
-        <h2>{strings.spyTitle}</h2>
-        <button type="button" onClick={() => setList({ state: 'loading' })} disabled={loading}>
-          {strings.spyRefresh}
-        </button>
-      </div>
-      <VersionBar appId={appId} versionId={versionId} onChange={setVersionId} />
-      {loading && <p>{strings.loading}</p>}
-      {list.state === 'failed' && (
-        <p className="error">{strings.agentErrors[list.reason](list.detail)}</p>
-      )}
-      {list.state === 'loaded' && list.windows.length === 0 && <p>{strings.spyEmpty}</p>}
-      {list.state === 'loaded' && list.windows.length > 0 && (
-        <>
-          <p>{strings.spyIntro}</p>
-          <ul className="app-list">
-            {list.windows.map((win) => (
-              <li key={win.handle}>
-                <button
-                  type="button"
-                  className={win.handle === selected?.handle ? 'selected' : undefined}
-                  aria-pressed={win.handle === selected?.handle}
-                  onClick={() => choose(win)}
-                >
-                  <span>{win.title || strings.spyNoTitle}</span>
-                  <span className="technology">{processLabel(win)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      {selected && capture && (
-        <section className="spy-elements" aria-label={strings.spyTreeTitle}>
-          <div className="spy-header">
-            <h3>{strings.spyTreeTitle}</h3>
-            <button type="button" onClick={captureAgain} disabled={capturing}>
-              {strings.spyCaptureAgain}
+    <Page
+      title={strings.spyTitle}
+      help={strings.pageHelp.spy}
+      actions={
+        hotkey && (
+          <span className={hotkey.active ? 'hint' : 'field-error'}>
+            {hotkey.active
+              ? strings.spyHotkeyHint(hotkey.label)
+              : strings.spyHotkeyTaken(hotkey.label)}
+          </span>
+        )
+      }
+    >
+      <div className="spy">
+        <section className="panel" aria-label={strings.spyWindowsTitle}>
+          <header className="panel-header">
+            <h2>{strings.spyWindowsTitle}</h2>
+            <button type="button" onClick={() => setList({ state: 'loading' })} disabled={loading}>
+              {strings.spyRefresh}
             </button>
-          </div>
-          {capturing && <p>{strings.spyCapturing}</p>}
-          {capture.state === 'failed' && (
-            <p className="error">{strings.agentErrors[capture.reason](capture.detail)}</p>
+          </header>
+          {loading && <p className="hint">{strings.loading}</p>}
+          {list.state === 'failed' && (
+            <p className="message message-danger" role="alert">
+              {strings.agentErrors[list.reason](list.detail)}
+            </p>
           )}
-          {capture.state === 'loaded' && (
+          {list.state === 'loaded' && list.windows.length === 0 && (
+            <div className="empty">
+              <p className="empty-title">{strings.spyEmpty}</p>
+            </div>
+          )}
+          {list.state === 'loaded' && list.windows.length > 0 && (
             <>
-              <p className="spy-pending">{capturedLine(capture.snapshot)}</p>
-              {!!capture.snapshot.capture.readErrors && (
-                <p className="spy-pending">
-                  {strings.spyReadErrors(capture.snapshot.capture.readErrors)}
-                </p>
-              )}
-              <ElementTree
-                key={capture.snapshot.snapshotId}
-                root={capture.root}
-                selectedId={node?.id}
-                onSelect={chooseNode}
-              />
+              <p className="hint">{strings.spyIntro}</p>
+              <ul className="choice-list">
+                {list.windows.map((win) => (
+                  <li key={win.handle}>
+                    <button
+                      type="button"
+                      className={win.handle === selected?.handle ? 'selected' : undefined}
+                      aria-pressed={win.handle === selected?.handle}
+                      onClick={() => choose(win)}
+                    >
+                      <span>{win.title || strings.spyNoTitle}</span>
+                      <span className="hint">{processLabel(win)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </section>
-      )}
-      {selected &&
-        (capture?.state === 'loaded' && node ? (
-          <>
-            <PropertyPanel element={node.element} />
-            {adding ? (
-              <AddToRepository
-                // Another element or capture starts a fresh form.
-                key={`${capture.snapshot.snapshotId}/${node.id}`}
-                appId={appId}
-                snapshot={capture.snapshot}
-                node={node}
-                versionId={versionId}
-                onSaved={(object) => {
-                  setAdding(false)
-                  setSaved(object.name)
-                }}
-                onCancel={() => setAdding(false)}
-              />
-            ) : (
-              <button type="button" onClick={() => setAdding(true)}>
-                {strings.repoAdd}
+        {selected && capture && (
+          <section className="panel spy-elements" aria-label={strings.spyTreeTitle}>
+            <header className="panel-header">
+              <h2>{strings.spyTreeTitle}</h2>
+              <button type="button" onClick={captureAgain} disabled={capturing}>
+                {strings.spyCaptureAgain}
               </button>
-            )}
-            {saved && (
-              <p className="ok" role="status">
-                {strings.repoSaved(saved)}
+            </header>
+            {capturing && <p className="hint">{strings.spyCapturing}</p>}
+            {capture.state === 'failed' && (
+              <p className="message message-danger" role="alert">
+                {strings.agentErrors[capture.reason](capture.detail)}
               </p>
             )}
-          </>
-        ) : (
-          <PropertyPanel
-            element={windowDescriptor(selected)}
-            note={capture?.state === 'failed' ? strings.spyWindowOnly : undefined}
-          />
-        ))}
-      {hotkey && (
-        <p className={hotkey.active ? 'spy-pending' : 'error'}>
-          {hotkey.active
-            ? strings.spyHotkeyHint(hotkey.label)
-            : strings.spyHotkeyTaken(hotkey.label)}
-        </p>
-      )}
-      {picked && <p role="status">{strings.spyPicked(picked.x, picked.y)}</p>}
-    </section>
+            {capture.state === 'loaded' && (
+              <>
+                <p className="hint">{capturedLine(capture.snapshot)}</p>
+                {!!capture.snapshot.capture.readErrors && (
+                  <p className="message message-warning">
+                    {strings.spyReadErrors(capture.snapshot.capture.readErrors)}
+                  </p>
+                )}
+                <ElementTree
+                  key={capture.snapshot.snapshotId}
+                  root={capture.root}
+                  selectedId={node?.id}
+                  onSelect={chooseNode}
+                />
+              </>
+            )}
+          </section>
+        )}
+        {selected && (
+          <section className="panel">
+            {capture?.state === 'loaded' && node ? (
+              adding ? (
+                <AddToRepository
+                  // Another element or capture starts a fresh form.
+                  key={`${capture.snapshot.snapshotId}/${node.id}`}
+                  app={app}
+                  snapshot={capture.snapshot}
+                  node={node}
+                  version={version}
+                  onSaved={(object) => {
+                    setAdding(false)
+                    setSaved(object.name)
+                  }}
+                  onCancel={() => setAdding(false)}
+                />
+              ) : (
+                <>
+                  <PropertyPanel element={node.element} />
+                  {saved && (
+                    <p className="message message-success" role="status">
+                      {strings.repoSaved(saved)}
+                    </p>
+                  )}
+                  <div className="form-actions">
+                    <button type="button" className="btn-main" onClick={() => setAdding(true)}>
+                      {strings.repoAdd}
+                    </button>
+                  </div>
+                </>
+              )
+            ) : (
+              <PropertyPanel
+                element={windowDescriptor(selected)}
+                note={capture?.state === 'failed' ? strings.spyWindowOnly : undefined}
+              />
+            )}
+          </section>
+        )}
+        {picked && (
+          <p className="message message-info" role="status">
+            {strings.spyPicked(picked.x, picked.y)}
+          </p>
+        )}
+      </div>
+    </Page>
   )
 }

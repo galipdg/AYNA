@@ -37,9 +37,11 @@ export default function PropertyPanel({
 }) {
   return (
     <section className="spy-properties" aria-label={strings.spyPropertiesTitle}>
-      <h3>{strings.spyPropertiesTitle}</h3>
-      {note && <p className="spy-pending">{note}</p>}
-      <dl>
+      <header className="panel-header">
+        <h2>{strings.spyPropertiesTitle}</h2>
+      </header>
+      {note && <p className="message message-warning">{note}</p>}
+      <dl className="facts">
         {ELEMENT_FIELDS.map((field) => {
           const value = formatValue(element, field)
           return (
