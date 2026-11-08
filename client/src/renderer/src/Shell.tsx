@@ -10,6 +10,7 @@ import Page from './Page.tsx'
 import Repository from './Repository.tsx'
 import SettingsPage from './SettingsPage.tsx'
 import { strings } from './strings.ts'
+import Tests from './Tests.tsx'
 import Users from './Users.tsx'
 import VersionMenu from './VersionMenu.tsx'
 
@@ -20,7 +21,7 @@ type LaterPlace = keyof typeof strings.laterPlaces
 const PLACES: { place: Place; icon: IconName; issue?: number }[] = [
   { place: 'spy', icon: 'spy' },
   { place: 'repository', icon: 'repository' },
-  { place: 'tests', icon: 'tests', issue: 38 },
+  { place: 'tests', icon: 'tests' },
   { place: 'runs', icon: 'runs', issue: 68 },
   { place: 'repairs', icon: 'repairs', issue: 75 },
   { place: 'changes', icon: 'changes', issue: 81 },
@@ -146,6 +147,15 @@ export default function Shell(props: Props) {
             onSessionEnded={onSessionEnded}
           />
         )}
+        {/* Kept mounted while hidden, so unsaved steps survive a visit to another place. */}
+        <div className="place" hidden={place !== 'tests'}>
+          <Tests
+            key={app.id}
+            app={app}
+            active={place === 'tests'}
+            onSessionEnded={onSessionEnded}
+          />
+        </div>
         {later && <Later place={place as LaterPlace} issue={later} />}
         {place === 'users' && (
           <Users user={user} onSessionEnded={onSessionEnded} onUserChanged={props.onUserChanged} />

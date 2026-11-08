@@ -149,6 +149,17 @@ describe('serverText', () => {
       (t) => t.objectInUse('login.okButton', '1', 'Login works'),
     ],
     ['Repository object not found: 6f1c2e9a-0000-4000-8000-000000000003', (t) => t.objectGone],
+    [
+      'A test with this name already exists in the application: Giriş çalışır',
+      (t) => t.testNameTaken('Giriş çalışır'),
+    ],
+    ['Test not found: 6f1c2e9a-0000-4000-8000-000000000004', (t) => t.testGone],
+    ['The steps do not match step schema 0.1', (t) => t.stepsRefused],
+    ['The steps refer to unknown step ids or repository objects', (t) => t.stepsRefused],
+    [
+      'Step 6f1c2e9a-0000-4000-8000-000000000005 is not a step of this test',
+      (t) => t.stepNotInTest,
+    ],
   ]
 
   for (const language of LANGUAGES) {
