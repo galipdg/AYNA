@@ -1,4 +1,5 @@
 import {
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -18,9 +19,12 @@ import {
   documentFrom,
   draftsFrom,
   localProblems,
+  renamedTargets,
   serverProblems,
   unique,
+  withRenamedTargets,
   withStoredIds,
+  withTimeoutsIn,
   type DraftStep,
   type StepDocument,
   type StepProblem,
@@ -34,6 +38,7 @@ import {
   undo,
 } from '../../shared/history.ts'
 import { foldText } from '../../shared/tree.ts'
+import { LanguageContext } from './Language.tsx'
 import Page from './Page.tsx'
 import Resizer from './Resizer.tsx'
 import StepTable, { problemText } from './StepTable.tsx'
@@ -333,7 +338,18 @@ type Mode = 'view' | 'rename' | 'delete'
 
 /** The document as the editor would save it, as text, to see whether anything changed. */
 function fingerprint(document: StepDocument): string {
-  return JSON.stringify(documentFrom(draftsFrom(document)))
+  return JSON.stringify(documentFrom(draftsFrom(document, strings.locale)))
+}
+
+/** A fingerprint with its steps' elements renamed, as the server renamed the stored steps. */
+function renamedFingerprint(text: string, renames: Map<string, string>): string {
+  if (!text) return text
+  const document = JSON.parse(text) as StepDocument
+  const steps = document.steps.map((step) => {
+    const target = renames.get(step.target)
+    return target === undefined ? step : { ...step, target }
+  })
+  return JSON.stringify({ ...document, steps })
 }
 
 /** One test: its name and its steps, edited in place and saved together. */
@@ -375,7 +391,7 @@ function TestEditor({
         if (!result.ok && result.reason === 'unauthorized') return onSessionEnded()
         if (!result.ok) return setDetail({ state: 'failed', problem: testErrorText(result) })
         setDetail({ state: 'loaded', test: result.test })
-        setHistory(startHistory(draftsFrom(result.test.document)))
+        setHistory(startHistory(draftsFrom(result.test.document, strings.locale)))
         setSaved(fingerprint(result.test.document))
       })
       .catch(() => {
@@ -385,6 +401,30 @@ function TestEditor({
       cancelled = true
     }
   }, [id, onSessionEnded])
+
+  // "Wait up to" follows the language's decimal separator (2,5 / 2.5) after a switch too.
+  // Only the text changes, so nothing becomes unsaved and undo has nothing new to undo.
+  // Adjusted while rendering, as React suggests for state that follows a prop.
+  const { language } = useContext(LanguageContext)
+  const [shownLanguage, setShownLanguage] = useState(language)
+  if (language !== shownLanguage) {
+    setShownLanguage(language)
+    setHistory((current) => mapHistory(current, (rows) => withTimeoutsIn(rows, strings.locale)))
+  }
+
+  // The element list is loaded again each time the place is shown. An element renamed in the
+  // Repository meanwhile is renamed in the rows (undo included) and in what counts as saved,
+  // since the server renamed the stored steps itself (FR-08); unsaved edits stay.
+  const loadedObjects = objects.state === 'loaded' ? objects.objects : undefined
+  const [knownObjects, setKnownObjects] = useState(loadedObjects)
+  if (loadedObjects && loadedObjects !== knownObjects) {
+    setKnownObjects(loadedObjects)
+    const renames = knownObjects ? renamedTargets(knownObjects, loadedObjects) : undefined
+    if (renames?.size) {
+      setHistory((current) => mapHistory(current, (rows) => withRenamedTargets(rows, renames)))
+      setSaved((text) => renamedFingerprint(text, renames))
+    }
+  }
 
   // On the window, not on the editor: deleting a step removes the button that had the focus,
   // and that is when undo is wanted most. Tests stays mounted while another place is shown.
@@ -486,7 +526,7 @@ function TestEditor({
           // Show the steps as stored (with their new ids); rows keep their place and focus.
           setDetail({ state: 'loaded', test: result.test })
           setHistory((current) => {
-            const stored = draftsFrom(result.test.document).map((draft, i) => ({
+            const stored = draftsFrom(result.test.document, strings.locale).map((draft, i) => ({
               ...draft,
               key: current.present[i]?.key ?? draft.key,
             }))
