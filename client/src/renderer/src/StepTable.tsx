@@ -1,4 +1,11 @@
-import { useRef, useState, type DragEvent, type KeyboardEvent } from 'react'
+import {
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+  type KeyboardEvent,
+} from 'react'
 import type { RepoObjectSummary } from '../../shared/api.ts'
 import {
   CHECK_PROPERTIES,
@@ -16,6 +23,7 @@ import {
   type StepField,
   type StepProblem,
 } from '../../shared/steps.ts'
+import Resizer from './Resizer.tsx'
 import { serverText, strings } from './strings.ts'
 
 /** The saved elements by screen (the part of the name before the dot), in name order. */
@@ -28,15 +36,28 @@ function byScreen(objects: RepoObjectSummary[]): [string, RepoObjectSummary[]][]
   return [...groups]
 }
 
+/** The fields filled in by typing; the others change in one go. */
+const TYPED_FIELDS = ['value', 'expectedText', 'timeout'] as const
+
 /** The columns a user can widen or narrow: default, smallest and largest width in px. */
 const COLUMNS = {
-  action: { initial: 150, min: 110, max: 280 },
+  action: { initial: 124, min: 100, max: 280 },
   element: { initial: 240, min: 140, max: 520 },
 } as const
 type Column = keyof typeof COLUMNS
 
 /** The last widths chosen, kept while the app runs so another test opens with them. */
-let chosenWidths: Record<Column, number> = { action: 150, element: 240 }
+let chosenWidths: Record<Column, number> = {
+  action: COLUMNS.action.initial,
+  element: COLUMNS.element.initial,
+}
+
+/**
+ * The handle, number, wait and row-button columns, as in `styles.css`, plus the least the value
+ * column can work with. The table fits the default window; widening a column beyond that
+ * makes it scroll instead of squeezing the values.
+ */
+const OTHER_COLUMNS_WIDTH = 20 + 44 + 120 + 96 + 96
 
 export function problemText(problem: StepProblem): string {
   return problem.message ? serverText(problem.message) : strings.stepsProblems[problem.code]
@@ -57,7 +78,8 @@ export default function StepTable({
   problems: StepProblem[]
   /** Null while the saved elements are loading or could not be loaded. */
   objects: RepoObjectSummary[] | null
-  onChange: (drafts: DraftStep[]) => void
+  /** `typedField` names a text field, so keystrokes in it undo as one change. */
+  onChange: (drafts: DraftStep[], typedField?: string) => void
 }) {
   const [dragFrom, setDragFrom] = useState<number>()
   const [dropAt, setDropAt] = useState<number>()
@@ -73,7 +95,11 @@ export default function StepTable({
   }
 
   function update(index: number, change: Partial<DraftStep>) {
-    onChange(drafts.map((draft, i) => (i === index ? { ...draft, ...change } : draft)))
+    const typed = TYPED_FIELDS.find((field) => field in change)
+    onChange(
+      drafts.map((draft, i) => (i === index ? { ...draft, ...change } : draft)),
+      typed && `${drafts[index].key}:${typed}`,
+    )
   }
 
   function add() {
@@ -127,7 +153,11 @@ export default function StepTable({
 
   return (
     <>
-      <table className="steps" aria-label={strings.stepsLabel}>
+      <table
+        className="steps"
+        aria-label={strings.stepsLabel}
+        style={{ minWidth: OTHER_COLUMNS_WIDTH + widths.action + widths.element }}
+      >
         <colgroup>
           <col className="col-handle" />
           <col className="col-number" />
@@ -145,7 +175,8 @@ export default function StepTable({
             <th scope="col">{strings.stepsHeaderStep}</th>
             <th scope="col" className="resizable">
               {strings.stepsHeaderAction}
-              <ColumnResizer
+              <Resizer
+                className="column-resizer"
                 label={strings.stepsResize(strings.stepsHeaderAction)}
                 width={widths.action}
                 {...COLUMNS.action}
@@ -154,7 +185,8 @@ export default function StepTable({
             </th>
             <th scope="col" className="resizable">
               {strings.stepsHeaderElement}
-              <ColumnResizer
+              <Resizer
+                className="column-resizer"
                 label={strings.stepsResize(strings.stepsHeaderElement)}
                 width={widths.element}
                 {...COLUMNS.element}
@@ -345,59 +377,6 @@ export default function StepTable({
   )
 }
 
-/**
- * A handle on a header's right edge: drag it, or focus it and press ← / →, to change the
- * column's width; a double click brings the default back.
- */
-function ColumnResizer({
-  label,
-  width,
-  initial,
-  min,
-  max,
-  onResize,
-}: {
-  label: string
-  width: number
-  initial: number
-  min: number
-  max: number
-  onResize: (width: number) => void
-}) {
-  const start = useRef<{ x: number; width: number }>(undefined)
-  const stop = () => (start.current = undefined)
-  return (
-    <div
-      className="column-resizer"
-      role="separator"
-      aria-orientation="vertical"
-      aria-label={label}
-      aria-valuenow={width}
-      aria-valuemin={min}
-      aria-valuemax={max}
-      title={strings.stepsResizeHint}
-      tabIndex={0}
-      onPointerDown={(event) => {
-        event.preventDefault()
-        event.currentTarget.setPointerCapture(event.pointerId)
-        start.current = { x: event.clientX, width }
-      }}
-      onPointerMove={(event) => {
-        if (start.current) onResize(start.current.width + event.clientX - start.current.x)
-      }}
-      onPointerUp={stop}
-      onPointerCancel={stop}
-      onDoubleClick={() => onResize(initial)}
-      onKeyDown={(event) => {
-        const step = { ArrowLeft: -16, ArrowRight: 16 }[event.key]
-        if (step === undefined) return
-        event.preventDefault()
-        onResize(width + step)
-      }}
-    />
-  )
-}
-
 /** What the action needs: text to type, an item to choose, a check, or nothing. */
 function ValueCell({
   draft,
@@ -429,57 +408,125 @@ function ValueCell({
   if (draft.keyword !== 'Verify') {
     return <span className="visually-hidden">{strings.stepsNoValue}</span>
   }
-  const text = isTextProperty(draft.property)
   return (
-    <div className="step-check">
-      <select
+    <CheckCell
+      draft={draft}
+      label={label}
+      invalid={invalid}
+      describedBy={describedBy}
+      onChange={onChange}
+    />
+  )
+}
+
+/** One line for a check, so a row with a check is as tall as any other. */
+export function checkSummary(draft: DraftStep): string {
+  const property = strings.stepsProperties[draft.property]
+  if (!isTextProperty(draft.property)) {
+    const expected = draft.expectedFlag ? strings.stepsYes : strings.stepsNo
+    return `${property} ${strings.stepsOperators.equals} ${expected}`
+  }
+  return `${property} ${strings.stepsOperators[draft.operator]} “${draft.expectedText}”`
+}
+
+/**
+ * A check takes three controls, too many for a table cell. The row shows a summary; a click
+ * opens the controls in a popover, which the browser draws above the table's scroll area and
+ * closes on Esc or a click outside.
+ */
+function CheckCell({
+  draft,
+  label,
+  invalid,
+  describedBy,
+  onChange,
+}: {
+  draft: DraftStep
+  label: string
+  invalid?: boolean
+  describedBy?: string
+  onChange: (change: Partial<DraftStep>) => void
+}) {
+  const id = useId()
+  const first = useRef<HTMLSelectElement>(null)
+  const anchor = `--check-${id.replace(/\W/g, '')}`
+  const common = { 'aria-invalid': invalid, 'aria-describedby': describedBy }
+  const text = isTextProperty(draft.property)
+  const summary = checkSummary(draft)
+  return (
+    <>
+      <button
+        type="button"
+        className="step-check-summary"
+        popoverTarget={id}
+        title={summary}
+        aria-label={`${label}: ${summary}`}
         {...common}
-        aria-label={label}
-        value={draft.property}
-        onChange={(event) => onChange({ property: event.target.value as CheckProperty })}
+        style={{ anchorName: anchor } as CSSProperties}
       >
-        {CHECK_PROPERTIES.map((property) => (
-          <option key={property} value={property}>
-            {strings.stepsProperties[property]}
-          </option>
-        ))}
-      </select>
-      {text ? (
-        <>
-          <select
-            {...common}
-            aria-label={label}
-            value={draft.operator}
-            onChange={(event) => onChange({ operator: event.target.value as Operator })}
-          >
-            {OPERATORS.map((operator) => (
-              <option key={operator} value={operator}>
-                {strings.stepsOperators[operator]}
-              </option>
-            ))}
-          </select>
-          <input
-            {...common}
-            aria-label={label}
-            placeholder={strings.stepsExpectedPlaceholder}
-            value={draft.expectedText}
-            onChange={(event) => onChange({ expectedText: event.target.value })}
-          />
-        </>
-      ) : (
-        <>
-          <span className="hint">{strings.stepsOperators.equals}</span>
-          <select
-            {...common}
-            aria-label={label}
-            value={String(draft.expectedFlag)}
-            onChange={(event) => onChange({ expectedFlag: event.target.value === 'true' })}
-          >
-            <option value="true">{strings.stepsYes}</option>
-            <option value="false">{strings.stepsNo}</option>
-          </select>
-        </>
-      )}
-    </div>
+        <span>{summary}</span>
+      </button>
+      <div
+        id={id}
+        popover="auto"
+        className="step-check"
+        role="group"
+        aria-label={label}
+        style={{ positionAnchor: anchor } as CSSProperties}
+        onToggle={(event) => {
+          if (event.newState === 'open') first.current?.focus()
+        }}
+      >
+        <select
+          ref={first}
+          {...common}
+          aria-label={label}
+          value={draft.property}
+          onChange={(event) => onChange({ property: event.target.value as CheckProperty })}
+        >
+          {CHECK_PROPERTIES.map((property) => (
+            <option key={property} value={property}>
+              {strings.stepsProperties[property]}
+            </option>
+          ))}
+        </select>
+        {text ? (
+          <>
+            <select
+              {...common}
+              aria-label={label}
+              value={draft.operator}
+              onChange={(event) => onChange({ operator: event.target.value as Operator })}
+            >
+              {OPERATORS.map((operator) => (
+                <option key={operator} value={operator}>
+                  {strings.stepsOperators[operator]}
+                </option>
+              ))}
+            </select>
+            <input
+              {...common}
+              aria-label={label}
+              placeholder={strings.stepsExpectedPlaceholder}
+              value={draft.expectedText}
+              onChange={(event) => onChange({ expectedText: event.target.value })}
+            />
+          </>
+        ) : (
+          <>
+            <span className="hint">{strings.stepsOperators.equals}</span>
+            <select
+              {...common}
+              aria-label={label}
+              value={String(draft.expectedFlag)}
+              onChange={(event) => onChange({ expectedFlag: event.target.value === 'true' })}
+            >
+              <option value="true">{strings.stepsYes}</option>
+              <option value="false">{strings.stepsNo}</option>
+            </select>
+          </>
+        )}
+      </div>
+    </>
   )
 }
