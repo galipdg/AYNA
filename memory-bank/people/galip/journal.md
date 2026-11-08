@@ -56,7 +56,44 @@ Append-only. One entry per session, newest at the bottom:
 - Subagents opened PR #150 (#147: `SelectRow`, row by index or key-cell value, `cell`/`rowExists`/`rowCount` checks, v0.2 keeps every 0.1 step valid, #37 derivation needs no change) and PR #151 (#149: one `run.stepResult` payload for client and CLI, first-write-wins per (runId, stepIndex), exact fractions as strings). Both ADRs are Proposed.
 - Next: reviews; the follow-ups listed in active.md once the ADRs are approved.
 
+## 2026-10-29 · review round (no issue started)
+- Pulled main (nothing new locally; #134–#146, #151 merged today). Inbox: hasan asked to flip the step schema v0 ADR; done on #150 (`a759985`, pushed).
+- Approved #160 (OpenAPI + problem details), #159 (UIA dumps, pilots KeePass 2 + HandBrake), #155 (SDD §1–4), #157 (SDD §6). Approved as decider: the problem-details ADR and the graph schema v0.1 ADR (#156).
+- Cross-PR finding raised on #155/#160: the server cannot pass AI 4xx bodies through unchanged under the problem-details ADR (`status` is a string there); proposed mapping with `code` + extension members.
+- galip decided retrieval: the server picks the candidate objects, AI service gets no Bolt edge (#58 to update).
+- Collected the review follow-ups left on merged PRs into `active.md`. PR-body edits (DoD ticks) are blocked by auto mode.
+- Next: RS follow-ups from the #143 reviews (FR-30 first), then the `ai/API.md` / scorer items.
+
+## 2026-10-30 · #71, #49 review follow-ups
+- PR #165 (`galip/71-ai-api-followups`): `AYNA_AI_TOKEN` bearer token, required with `--allow-remote`, checked before routing (12 new tests, 355 ai tests pass); `app`/`version`/`screen` documented as the server sends them; retrieval decision recorded in `ai/API.md`, README, `retrieve.py`, SDD-ai. omer told via inbox (contract change).
+- PR #166 (`galip/49-dpi-location`): per-element `dpi`, location and area in DIP, exact arithmetic kept; `parentPath` contract; U+0307 note corrected (hasan's `ż` example keeps its dot under NFC). 129 agent tests pass.
+- Next: reviews on #164–#166; #58 issue text; remaining small asks in `active.md`.
 ## 2026-10-29 · #35 review follow-ups
 - Folded omer's and hasan's #143 reviews into RS 0.6 on `galip/35-rs-review-followups`: FR-30/FR-23 follow the healing-transport ADR, TBD-5/6/9/10 closed, FR-35 "search incomplete", NFR-45 and NFR-46 added. SDD-ai AI-5.1/AI-6.1 aligned.
 - Consistency check rerun (scratch script): 0 errors; 40 FR, 46 NFR, 16 UC, 36 SC.
 - Next: PR review by omer and hasan; tick #35 criterion 2 after merge.
+
+## 2026-10-31 · review round (orchestrator; no new issue)
+- Pulled main (#159, #164, #165, plus teammates' merges). Found the main checkout on another session's branch and iCloud " 2" duplicates; a parallel session ("Proje kuralları ve inbox görevleri") is doing #166 in the main checkout, so my agents worked only in their own worktrees.
+- #150: merged main (GitHub flagged union-driver memory files; no real conflict), 466 ai tests pass. Fixed two ADR notes from the #170 findings.
+- New PRs from subagents: #173 (#71 loopback by resolved address, `stepLimitReached`), #174 (#149 healing-proposal schema 0.2, ADR Proposed), #176 (#36 quoting and check-box rules).
+- Ticked the "ADR added" DoD box in the bodies of #141, #142, #145, #146 (hasan's ask).
+- Drafted reviews for #167, #169, #170, #172; posting and the #58 body edit were blocked by auto mode, so galip posts them by hand.
+- Next: post the reviews; push the #166 fix from the main checkout; hasan's re-review of #150.
+
+## 2026-10-31 · review replies (main-checkout session)
+- #164, #165, #159 merged. On #166 (omer, hasan): a `dpi` on one side only made an unchanged control off 100 % look moved; fixed by using the known `dpi` for both (`0da0c92`, 132 agent tests). The schema `dpi` change is in the orchestrator's #174, not duplicated.
+- Opened #177 (RS 0.7, NFR-45 dead-letter clause from omer's #164 review).
+- Coordinated with the orchestrator session over `SendMessage`: it took #150, #173, #174, #176, the four reviews and #58; this session took #166 and #177.
+- Moved two identical " 2" duplicate files (iCloud Desktop) to the session scratchpad; two transient `.git` lock errors during fetch, gone on retry.
+
+## 2026-11-02 · open PRs, conflicts and reviews (main-checkout session, with the orchestrator)
+- Split the work over `SendMessage`: the orchestrator took #176 and the issue audit (#16 closed, #35/#36/#37/#71/#149 boxes); this session took #150, the RS, ADR statuses and the reviews.
+- #150: `main` merged (`0f78c4c`), ai 510 and agent 276 tests pass, and hasan's review is re-requested. #181: RS 0.8 (documents table, NFR-32 public endpoints) plus the descriptor and snapshot ADRs flipped to Accepted after galip's decider approvals on #175 and #180.
+- Reviews: #179 APPROVE (accounts ADR approved); #169 APPROVE with one label-precedence sentence to fix; #170 APPROVE.
+- iCloud evicted files in `agent/.venv` and `.git`. Ran the agent tests from a scratchpad venv and recorded it in `learnings.md`.
+
+## 2026-11-08 · review round for the client stack (main-checkout session)
+- Reviews, all APPROVE: #154 (agent manager; real agent from `main` on macOS: connect, -32001, SIGKILL → restart, `stop()` by EOF in 11 ms; warned that a squash-merge gives the stack add/add conflicts whose "take ours" resolution drops `stop()`'s deadline), #210 (eval rename), #192 (step editor; 183 tests also pass with #150's 0.2 schema; in-flight save drops edits; 0.2 row steps open as "Kontrol eksik" until #205), #197 (undo; key-by-index id mismatch after a save, with a fix; `DEMO.md` status rows out of date: #26/#193/#182/#194/#170 merged).
+- #150: `main` merged (clean locally), ADR v0.2 Accepted, hasan's two KeePass 2 corrections. Found: three server tests on `main` PUT `"version": "0.1"` (omer's files), so they fail once the schema is 0.2.
+- `galip/71-request-log-race`: the `request` log line is written before the answer (omer's 11-05 inbox fix); 6/6 fail → 6/6 pass with a 50 ms delay injected after the write.

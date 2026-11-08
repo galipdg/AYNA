@@ -5,6 +5,8 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { defaultSnapshot } from '../mock/fake-agent-env.mjs'
 
+const STEP_SCHEMA = new URL('../../../schemas/step.schema.json', import.meta.url)
+
 const APP = { name: 'AYNA Deneme Uygulaması', technology: 'PySide6' }
 
 // The client opens on the last version, which has no capture yet: the demo captures it live.
@@ -120,11 +122,14 @@ export async function seed(server, token) {
     )
   }
 
+  // The step schema's own version, not the snapshot's: the server accepts only that one.
+  const stepSchema = JSON.parse(await readFile(STEP_SCHEMA, 'utf8'))
   const testsPath = `/api/apps/${app.id}/tests`
   const tests = await api('GET', testsPath)
   for (const [name, steps] of Object.entries(TESTS)) {
     const test = await ensure(tests, 'name', name, () => api('POST', testsPath, { name }))
-    await api('PUT', `/api/tests/${test.id}/steps`, { version: snapshot.version, steps })
+    const version = stepSchema.properties.version.const
+    await api('PUT', `/api/tests/${test.id}/steps`, { version, steps })
   }
 
   return app

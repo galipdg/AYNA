@@ -17,6 +17,10 @@ from pathlib import Path
 import pytest
 
 NL_DIR = Path(__file__).resolve().parents[2] / "eval" / "nl"
+STEP_SCHEMA_PATH = NL_DIR.parents[1] / "schemas" / "step.schema.json"
+SCHEMA_VERSION = json.loads(STEP_SCHEMA_PATH.read_text(encoding="utf-8"))["properties"][
+    "version"
+]["const"]
 _spec = importlib.util.spec_from_file_location("check_pairs", NL_DIR / "check_pairs.py")
 check_pairs = importlib.util.module_from_spec(_spec)
 sys.modules["check_pairs"] = check_pairs  # dataclasses look their module up
@@ -78,7 +82,7 @@ OBJECTS = {
     },
 }
 GOLD = {
-    "version": "0.1",
+    "version": SCHEMA_VERSION,
     "steps": [
         {"keyword": "Type", "target": "form.nameInput", "value": "Ayşe"},
         {"keyword": "Select", "target": "form.cityCombo", "value": "İzmir"},

@@ -36,6 +36,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import tools.jackson.databind.ObjectMapper;
 
 import com.ayna.server.TestcontainersConfiguration;
+import com.ayna.server.tests.StepSchema;
 
 /**
  * Accounts, roles, sessions and API tokens with real logins (#60, SC-03), against Neo4j
@@ -58,6 +59,9 @@ class AuthIntegrationTest {
 
 	@Autowired
 	AccountService accounts;
+
+	@Autowired
+	StepSchema stepSchema;
 
 	String adminToken;
 
@@ -148,7 +152,7 @@ class AuthIntegrationTest {
 			.andExpect(jsonPath("$.createdBy.username").value("admin")));
 		mvc.perform(put("/api/tests/" + testId + "/steps").with(as(ayse))
 			.contentType(MediaType.APPLICATION_JSON)
-			.content("{\"version\": \"0.1\", \"steps\": []}"))
+			.content("{\"version\": \"%s\", \"steps\": []}".formatted(stepSchema.version())))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.createdBy.username").value("admin"))
 			.andExpect(jsonPath("$.updatedBy.username").value("ayse"))

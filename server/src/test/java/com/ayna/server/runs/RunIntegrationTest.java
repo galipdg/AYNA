@@ -40,6 +40,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import com.ayna.server.SignedIn;
 import com.ayna.server.TestcontainersConfiguration;
 import com.ayna.server.runs.RunService.StoredResult;
+import com.ayna.server.tests.StepSchema;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -65,6 +66,9 @@ class RunIntegrationTest {
 
 	@Autowired
 	RunService service;
+
+	@Autowired
+	StepSchema stepSchema;
 
 	String appId;
 
@@ -480,7 +484,7 @@ class RunIntegrationTest {
 	private List<String> replaceSteps(String test, Map<String, Object>... steps) throws Exception {
 		String body = mvc
 			.perform(put("/api/tests/{id}/steps", test).contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(Map.of("version", "0.1", "steps", List.of(steps)))))
+				.content(mapper.writeValueAsString(Map.of("version", stepSchema.version(), "steps", List.of(steps)))))
 			.andExpect(status().isOk())
 			.andReturn()
 			.getResponse()

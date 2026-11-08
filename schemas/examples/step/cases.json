@@ -1,14 +1,14 @@
 {
-  "$comment": "Named test cases for step.schema.json. A case gives either a whole `document` or a single `step`, which the tests wrap in {\"version\": \"0.1\", \"steps\": [step]}. Invalid cases name the JSON Schema keyword (`rule`) that must reject them; `false` means a property the keyword does not allow.",
+  "$comment": "Named test cases for step.schema.json. A case gives either a whole `document` or a single `step`, which the tests wrap in a document of the schema's version. Invalid cases name the JSON Schema keyword (`rule`) that must reject them; `false` means a property the keyword does not allow. `since` marks cases added after 0.1; the others are the 0.1 cases, kept unchanged apart from the document version.",
   "valid": [
     {
       "name": "empty test",
-      "document": { "version": "0.1", "steps": [] }
+      "document": { "version": "0.2", "steps": [] }
     },
     {
       "name": "NL suggestion without ids",
       "document": {
-        "version": "0.1",
+        "version": "0.2",
         "steps": [
           { "keyword": "Type", "target": "main.searchInput", "value": "Yılmaz" },
           { "keyword": "Click", "target": "main.searchButton" }
@@ -46,6 +46,119 @@
     {
       "name": "timeoutMs 0 does not wait",
       "step": { "keyword": "Click", "target": "login.loginButton", "timeoutMs": 0 }
+    },
+    {
+      "name": "SelectRow by position",
+      "since": "0.2",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": 1 } }
+    },
+    {
+      "name": "SelectRow by a key cell in a named column",
+      "since": "0.2",
+      "step": {
+        "keyword": "SelectRow",
+        "target": "main.customerGrid",
+        "row": { "column": "Soyad", "value": "Yılmaz" }
+      }
+    },
+    {
+      "name": "SelectRow by a cell in any column",
+      "since": "0.2",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "value": "Ayşe Yılmaz" } }
+    },
+    {
+      "name": "SelectRow in a list by position with a time limit",
+      "since": "0.2",
+      "step": {
+        "keyword": "SelectRow",
+        "target": "settings.languageList",
+        "row": { "index": 2 },
+        "timeoutMs": 5000
+      }
+    },
+    {
+      "name": "Verify a cell in a row found by key",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": {
+          "property": "cell",
+          "row": { "column": "Soyad", "value": "Yılmaz" },
+          "column": "Şehir",
+          "operator": "equals",
+          "expected": "Ankara"
+        }
+      }
+    },
+    {
+      "name": "Verify that a cell of the first row contains a text",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "cell", "row": { "index": 1 }, "column": "Ad", "operator": "contains", "expected": "Ay" }
+      }
+    },
+    {
+      "name": "Verify that a cell is not empty",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "cell", "row": { "index": 1 }, "column": "Şehir", "operator": "notEquals", "expected": "" }
+      }
+    },
+    {
+      "name": "Verify that the grid lists a value",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowExists", "row": { "value": "Yılmaz" }, "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "Verify that a row is gone",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": {
+          "property": "rowExists",
+          "row": { "column": "Müşteri No", "value": "1024" },
+          "operator": "equals",
+          "expected": false
+        }
+      }
+    },
+    {
+      "name": "Verify that the grid is not empty",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowExists", "row": { "index": 1 }, "operator": "equals", "expected": true },
+        "timeoutMs": 5000
+      }
+    },
+    {
+      "name": "Verify the number of rows",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": 2 }
+      }
+    },
+    {
+      "name": "Verify an empty list",
+      "since": "0.2",
+      "step": {
+        "keyword": "Verify",
+        "target": "settings.languageList",
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": 0 }
+      }
     }
   ],
   "invalid": [
@@ -62,12 +175,12 @@
     {
       "name": "steps is not a list",
       "rule": "type",
-      "document": { "version": "0.1", "steps": { "keyword": "Click", "target": "login.loginButton" } }
+      "document": { "version": "0.2", "steps": { "keyword": "Click", "target": "login.loginButton" } }
     },
     {
       "name": "unknown field at the root",
       "rule": "additionalProperties",
-      "document": { "version": "0.1", "steps": [], "name": "Login test" }
+      "document": { "version": "0.2", "steps": [], "name": "Login test" }
     },
     {
       "name": "unknown keyword",
@@ -222,6 +335,316 @@
       "name": "id in upper case",
       "rule": "pattern",
       "step": { "id": "DEB27841-13EA-4846-B144-07081AD912CE", "keyword": "Click", "target": "login.loginButton" }
+    },
+    {
+      "name": "a 0.1 document must be relabelled",
+      "since": "0.2",
+      "rule": "const",
+      "document": { "version": "0.1", "steps": [{ "keyword": "Click", "target": "login.loginButton" }] }
+    },
+    {
+      "name": "SelectRow without row",
+      "since": "0.2",
+      "rule": "required",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid" }
+    },
+    {
+      "name": "SelectRow with a value",
+      "since": "0.2",
+      "rule": "false",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": 1 }, "value": "Yılmaz" }
+    },
+    {
+      "name": "SelectRow with a checkpoint",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "SelectRow",
+        "target": "main.customerGrid",
+        "row": { "index": 1 },
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": 1 }
+      }
+    },
+    {
+      "name": "Click with a row",
+      "since": "0.2",
+      "rule": "false",
+      "step": { "keyword": "Click", "target": "main.customerGrid", "row": { "index": 1 } }
+    },
+    {
+      "name": "Select with a row instead of a value",
+      "since": "0.2",
+      "rule": "false",
+      "step": { "keyword": "Select", "target": "main.customerGrid", "row": { "value": "Yılmaz" } }
+    },
+    {
+      "name": "Wait with a row",
+      "since": "0.2",
+      "rule": "false",
+      "step": { "keyword": "Wait", "target": "main.customerGrid", "row": { "index": 1 } }
+    },
+    {
+      "name": "Verify with the row on the step instead of in the checkpoint",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "row": { "index": 1 },
+        "checkpoint": { "property": "cell", "row": { "index": 1 }, "column": "Ad", "operator": "equals", "expected": "Ayşe" }
+      }
+    },
+    {
+      "name": "row index 0",
+      "since": "0.2",
+      "rule": "minimum",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": 0 } }
+    },
+    {
+      "name": "row index above 100000",
+      "since": "0.2",
+      "rule": "maximum",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": 100001 } }
+    },
+    {
+      "name": "row index as a string",
+      "since": "0.2",
+      "rule": "type",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": "1" } }
+    },
+    {
+      "name": "row index as a fraction",
+      "since": "0.2",
+      "rule": "type",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": 1.5 } }
+    },
+    {
+      "name": "row as a bare number",
+      "since": "0.2",
+      "rule": "type",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": 1 }
+    },
+    {
+      "name": "empty row",
+      "since": "0.2",
+      "rule": "required",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": {} }
+    },
+    {
+      "name": "row with both an index and a value",
+      "since": "0.2",
+      "rule": "additionalProperties",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "index": 2, "value": "Yılmaz" } }
+    },
+    {
+      "name": "row with a column but no value",
+      "since": "0.2",
+      "rule": "required",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "column": "Soyad" } }
+    },
+    {
+      "name": "row with an empty value",
+      "since": "0.2",
+      "rule": "minLength",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "value": "" } }
+    },
+    {
+      "name": "row with an empty column",
+      "since": "0.2",
+      "rule": "minLength",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "column": "", "value": "Yılmaz" } }
+    },
+    {
+      "name": "row with an unknown field",
+      "since": "0.2",
+      "rule": "additionalProperties",
+      "step": { "keyword": "SelectRow", "target": "main.customerGrid", "row": { "text": "Yılmaz" } }
+    },
+    {
+      "name": "cell without row",
+      "since": "0.2",
+      "rule": "required",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "cell", "column": "Ad", "operator": "equals", "expected": "Ayşe" }
+      }
+    },
+    {
+      "name": "cell without column",
+      "since": "0.2",
+      "rule": "required",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "cell", "row": { "index": 1 }, "operator": "equals", "expected": "Ayşe" }
+      }
+    },
+    {
+      "name": "cell with a boolean expected value",
+      "since": "0.2",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "cell", "row": { "index": 1 }, "column": "Ad", "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "column given by its position",
+      "since": "0.2",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "cell", "row": { "index": 1 }, "column": 2, "operator": "equals", "expected": "Ayşe" }
+      }
+    },
+    {
+      "name": "rowExists without row",
+      "since": "0.2",
+      "rule": "required",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowExists", "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "rowExists with a column",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": {
+          "property": "rowExists",
+          "row": { "value": "Yılmaz" },
+          "column": "Soyad",
+          "operator": "equals",
+          "expected": true
+        }
+      }
+    },
+    {
+      "name": "rowExists with contains",
+      "since": "0.2",
+      "rule": "const",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowExists", "row": { "value": "Yılmaz" }, "operator": "contains", "expected": true }
+      }
+    },
+    {
+      "name": "rowExists with a string expected value",
+      "since": "0.2",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowExists", "row": { "value": "Yılmaz" }, "operator": "equals", "expected": "Yılmaz" }
+      }
+    },
+    {
+      "name": "rowCount with a row",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "row": { "value": "Yılmaz" }, "operator": "equals", "expected": 1 }
+      }
+    },
+    {
+      "name": "rowCount with a column",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "column": "Soyad", "operator": "equals", "expected": 1 }
+      }
+    },
+    {
+      "name": "rowCount with notEquals",
+      "since": "0.2",
+      "rule": "const",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "operator": "notEquals", "expected": 0 }
+      }
+    },
+    {
+      "name": "rowCount as a string",
+      "since": "0.2",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": "2" }
+      }
+    },
+    {
+      "name": "rowCount as a fraction",
+      "since": "0.2",
+      "rule": "type",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": 2.5 }
+      }
+    },
+    {
+      "name": "negative rowCount",
+      "since": "0.2",
+      "rule": "minimum",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": -1 }
+      }
+    },
+    {
+      "name": "rowCount above 100000",
+      "since": "0.2",
+      "rule": "maximum",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowCount", "operator": "equals", "expected": 100001 }
+      }
+    },
+    {
+      "name": "name check with a row",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "name", "row": { "index": 1 }, "operator": "contains", "expected": "Yılmaz" }
+      }
+    },
+    {
+      "name": "selected check with a column",
+      "since": "0.2",
+      "rule": "false",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "selected", "column": "Ad", "operator": "equals", "expected": true }
+      }
+    },
+    {
+      "name": "row selected is not a 0.2 property",
+      "since": "0.2",
+      "rule": "enum",
+      "step": {
+        "keyword": "Verify",
+        "target": "main.customerGrid",
+        "checkpoint": { "property": "rowSelected", "row": { "index": 1 }, "operator": "equals", "expected": true }
+      }
     }
   ]
 }

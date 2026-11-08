@@ -28,6 +28,7 @@ from ayna_ai.service import (
 from ayna_ai.validate import NO_MATCH, DroppedStep, load_step_schema
 
 STEP_SCHEMA = Draft202012Validator(load_step_schema())
+SCHEMA_VERSION = load_step_schema()["properties"]["version"]["const"]
 TEXT = "Kullanıcı adı alanına admin yaz ve giriş butonuna tıkla."
 TOKEN = "test-token-0123456789abcdef"
 STEPS = [
@@ -58,7 +59,7 @@ def chat_reply(content: str, done_reason: str = "stop") -> dict:
 
 
 def document(steps=STEPS) -> str:
-    return json.dumps({"version": "0.1", "steps": steps}, ensure_ascii=False)
+    return json.dumps({"version": SCHEMA_VERSION, "steps": steps}, ensure_ascii=False)
 
 
 def model_answers(
@@ -164,7 +165,7 @@ def test_generates_steps_with_a_reason_each(fake_ollama, start_service, request_
     assert body["steps"] == STEPS
     assert body["dropped"] == []
     assert body["stepLimitReached"] is False
-    assert (body["model"], body["schemaVersion"]) == ("qwen3:8b", "0.1")
+    assert (body["model"], body["schemaVersion"]) == ("qwen3:8b", SCHEMA_VERSION)
     assert body["promptVersion"] == PROMPT_VERSION + "+reason"
     assert isinstance(body["latencyMs"], int) and body["latencyMs"] >= 0
     # Without its reason, each step is a step-schema step.
@@ -322,7 +323,7 @@ class Lenient:
         self.steps, self.dropped = steps, list(dropped)
 
     def generate(self, text, objects, timeout_s=None):
-        document = {"version": "0.1", "steps": self.steps}
+        document = {"version": SCHEMA_VERSION, "steps": self.steps}
         reasons = [f"r{i}" for i in range(len(self.steps))]
         return GenerationResult(
             Status.OK, document=document, reasons=reasons, dropped=self.dropped
@@ -537,9 +538,15 @@ def test_the_reserved_name_is_refused_as_an_object(
 @pytest.mark.parametrize(
     ("content", "done_reason", "status"),
     [
-        ('{"version": "0.1", "steps": [{"keyword": "Cl', "stop", "invalid_json"),
         (
-            '{"version": "0.1", "steps": [{"keyword": "Type", "value": "}}}',
+            '{"version": "' + SCHEMA_VERSION + '", "steps": [{"keyword": "Cl',
+            "stop",
+            "invalid_json",
+        ),
+        (
+            '{"version": "'
+            + SCHEMA_VERSION
+            + '", "steps": [{"keyword": "Type", "value": "}}}',
             "length",
             "truncated",
         ),
