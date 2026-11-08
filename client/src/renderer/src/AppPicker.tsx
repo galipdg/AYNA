@@ -44,6 +44,7 @@ export default function AppPicker({
   const [name, setName] = useState('')
   const [technology, setTechnology] = useState('')
   const [createFailure, setCreateFailure] = useState<CreateFailure>()
+  const [chooseFailed, setChooseFailed] = useState(false)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -66,11 +67,22 @@ export default function AppPicker({
     fetchList().then(show)
   }
 
-  async function choose(app: Application) {
-    setBusy(true)
+  /** Saves the choice; false if the settings file could not be written. */
+  async function save(app: Application): Promise<boolean> {
     try {
       await window.ayna.chooseApplication(app.id)
-      onChosen(app)
+      return true
+    } catch {
+      setChooseFailed(true)
+      return false
+    }
+  }
+
+  async function choose(app: Application) {
+    setBusy(true)
+    setChooseFailed(false)
+    try {
+      if (await save(app)) onChosen(app)
     } finally {
       setBusy(false)
     }
@@ -80,12 +92,13 @@ export default function AppPicker({
     event.preventDefault()
     setBusy(true)
     setCreateFailure(undefined)
+    setChooseFailed(false)
     try {
       const result = await window.ayna.createApplication(name, technology)
       if (!result.ok && result.reason === 'unauthorized') return onSessionEnded()
       if (!result.ok) return setCreateFailure(result.reason)
-      await window.ayna.chooseApplication(result.app.id)
-      onChosen(result.app)
+      // The application now exists on the server; only saving the choice can still fail.
+      if (await save(result.app)) onChosen(result.app)
     } catch {
       setCreateFailure('unreachable')
     } finally {
@@ -168,6 +181,11 @@ export default function AppPicker({
       {createFailure && (
         <p className="error" role="alert">
           {strings.requestErrors[createFailure]}
+        </p>
+      )}
+      {chooseFailed && (
+        <p className="error" role="alert">
+          {strings.chooseFailed}
         </p>
       )}
     </section>
