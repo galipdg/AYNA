@@ -236,3 +236,10 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR with `Closes #208` on omer's OK.
 - Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.
 - Then (omer: dismiss hasan's change request and merge; merge every PR of ours with finished reviews): #154 merged after dismissing hasan's review (galip approved; no bypass, no auto-merge in the repo). Whole stack merged in order #186 → #197, closing #25, #30, #195, #196; #188/#190 bodies changed to "Part of" (criteria open). Client build in CI fails with a 504 from an electron-builder download on `main` too; merged on CI lint/tests + local build. Squash-stack gotcha in `learnings.md`.
+## 2026-11-08 (sixteenth session) · #204 Spy follow-ups → PR #219
+- `origin/main` unchanged (`3bf3f15`); no review requests. Branch `omer/204-spy-followups` from `origin/main`; board In progress.
+- Points 1–3 (`ec2b61c`): capture budget ladder 5 s → 30 s → 120 s after a timeout, client waits budget + 10 s; `snapshot-version` reason; fake agent reads the schema example, `--slow-snapshots` honours `timeoutMs`.
+- Points 4, 5, 7 (`c68245a`): leaf AutomationId search, type-named unnamed rows, Advanced opens on an ambiguous Find-by set; style guide reworded.
+- Point 6 (`9b5e689`): measured in a scratch Vite page — uniform 3031-element tree 1 canvas width while scrolling, Chromium-shaped 285-element tree 12 widths (`min-width: max-content` of the drawn rows). Width now from the deepest visible row; 1 width after.
+- Pushed on omer's yes, PR #219 (Part of #204, hasan + galip as reviewers), 7-step Windows check on #204, `needs-windows-test`. Point 8 left to galip.
+- Next: #205.
