@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import type { AgentFailure, PickHotkeyState, ScreenPoint, WindowInfo } from '../../shared/api.ts'
 import { windowDescriptor } from '../../shared/element.ts'
 import { buildTree, type Snapshot, type TreeNode } from '../../shared/snapshot.ts'
+import AddToRepository from './AddToRepository.tsx'
 import ElementTree from './ElementTree.tsx'
 import PropertyPanel from './PropertyPanel.tsx'
 import { strings } from './strings.ts'
+import VersionBar from './VersionBar.tsx'
 
 type List =
   | { state: 'loading' }
@@ -53,15 +55,19 @@ function processLabel(win: WindowInfo): string {
 /**
  * Lists the desktop's top-level windows; choosing one flashes a frame around it on screen
  * and captures its element tree. Choosing an element in the tree frames it and shows its
- * properties.
+ * properties; "Add to repository" stores it in the application `appId`, under the version
+ * chosen in the version bar (#25).
  */
-export default function ObjectSpy() {
+export default function ObjectSpy({ appId }: { appId: string }) {
   const [list, setList] = useState<List>({ state: 'loading' })
   const [selected, setSelected] = useState<WindowInfo>()
   const [hotkey, setHotkey] = useState<PickHotkeyState>()
   const [picked, setPicked] = useState<ScreenPoint>()
   const [capture, setCapture] = useState<Capture>()
   const [node, setNode] = useState<TreeNode>()
+  const [adding, setAdding] = useState(false)
+  const [versionId, setVersionId] = useState<string>()
+  const [saved, setSaved] = useState<string>()
 
   // Entering `loading` (first render, Refresh, agent reconnected) fetches the list.
   const loading = list.state === 'loading'
@@ -143,10 +149,13 @@ export default function ObjectSpy() {
   function captureAgain() {
     setCapture({ state: 'loading' })
     setNode(undefined)
+    setAdding(false)
+    setSaved(undefined)
   }
 
   function chooseNode(next: TreeNode) {
     setNode(next)
+    setSaved(undefined)
     window.ayna.highlight(next.element.bounds ?? null)
   }
 
@@ -158,6 +167,7 @@ export default function ObjectSpy() {
           {strings.spyRefresh}
         </button>
       </div>
+      <VersionBar appId={appId} versionId={versionId} onChange={setVersionId} />
       {loading && <p>{strings.loading}</p>}
       {list.state === 'failed' && (
         <p className="error">{strings.agentErrors[list.reason](list.detail)}</p>
@@ -215,7 +225,33 @@ export default function ObjectSpy() {
       )}
       {selected &&
         (capture?.state === 'loaded' && node ? (
-          <PropertyPanel element={node.element} />
+          <>
+            <PropertyPanel element={node.element} />
+            {adding ? (
+              <AddToRepository
+                // Another element or capture starts a fresh form.
+                key={`${capture.snapshot.snapshotId}/${node.id}`}
+                appId={appId}
+                snapshot={capture.snapshot}
+                node={node}
+                versionId={versionId}
+                onSaved={(object) => {
+                  setAdding(false)
+                  setSaved(object.name)
+                }}
+                onCancel={() => setAdding(false)}
+              />
+            ) : (
+              <button type="button" onClick={() => setAdding(true)}>
+                {strings.repoAdd}
+              </button>
+            )}
+            {saved && (
+              <p className="ok" role="status">
+                {strings.repoSaved(saved)}
+              </p>
+            )}
+          </>
         ) : (
           <PropertyPanel
             element={windowDescriptor(selected)}

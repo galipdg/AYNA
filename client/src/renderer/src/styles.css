@@ -299,3 +299,90 @@ button {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.spy-repo h4 {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+}
+
+.repo-summary {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.repo-summary p {
+  margin: 4px 0 0;
+}
+
+/* Groups a dt/dd pair without leaving the dl's grid. */
+.repo-summary dl > div {
+  display: contents;
+}
+
+.repo-summary dd {
+  overflow-wrap: anywhere;
+}
+
+.repo-advanced summary {
+  cursor: pointer;
+}
+
+.repo-advanced[open] summary {
+  margin-bottom: 4px;
+}
+
+.version-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.version-bar p {
+  margin: 0;
+}
+
+.version-bar select,
+.version-new input {
+  font: inherit;
+  padding: 4px 8px;
+}
+
+.version-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button.link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.repo-properties {
+  border-collapse: collapse;
+}
+
+.repo-properties th,
+.repo-properties td {
+  padding: 2px 8px 2px 0;
+  text-align: left;
+}
+
+.repo-properties input,
+.repo-properties select {
+  font: inherit;
+  padding: 2px 6px;
+}
+
+.repo-properties input {
+  width: 100%;
+  min-width: 16em;
+  box-sizing: border-box;
+}
