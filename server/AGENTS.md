@@ -10,7 +10,7 @@ Owner: omer. Read `/AGENTS.md` first; this file adds only what is specific to `s
 Java 21 and Docker are required. Run from `server/` unless noted; if `JAVA_HOME` is wrong, prefix with `JAVA_HOME=$(/usr/libexec/java_home -v 21)` (macOS).
 - Test (unit + Testcontainers integration, Docker must be running): `./mvnw test`
 - Build the jar: `./mvnw package`
-- Whole backend (from the repo root): `docker compose up --build`, then `curl localhost:8080/api/health`
+- Whole backend (from the repo root): `docker compose up --build`, then `curl localhost:8080/api/health`. The host port is `AYNA_SERVER_PORT` in `.env` (default 8080); if that `curl` gets anything but `{"status":"UP",…}`, another program may hold the port: Compose still publishes it, and IPv4 requests reach the other program (#208).
 
 ## Rules
 - Graph schema changes only through a new migration + ADR (contract).
@@ -18,4 +18,4 @@ Java 21 and Docker are required. Run from `server/` unless noted; if `JAVA_HOME`
 - REST errors: throw `error/ApiExceptions` (400 / 404 / 409) and list the statuses on the endpoint with `@ErrorResponses`; one global handler writes RFC 9457 problem details (ADR `2026-10-29-rest-error-problem-details`).
 - Who did it (FR-40, ADR `2026-10-31-accounts-and-tokens`): every write API takes `@AuthenticationPrincipal AynaPrincipal` and stores the acting user's id as a property on what it writes (`createdBy`/`updatedBy`, `startedBy`, `decidedBy`, with the time); responses show it as `UserRef` `{id, username}`. See `tests/TestController` for the pattern.
 - Every API needs a session or API token. Admin-only paths and the few public ones are listed in `auth/SecurityConfig`; a public endpoint also carries `@PublicEndpoint` (`AuthIntegrationTest` checks the two agree).
-- REST changes must keep `docs/api/openapi.yaml` generation green: `./mvnw test` regenerates the file (`OpenApiContractIntegrationTest`); commit it with the change, or CI fails. Swagger UI: `localhost:8080/swagger-ui.html`.
+- REST changes must keep `docs/api/openapi.yaml` generation green: `./mvnw test` regenerates the file (`OpenApiContractIntegrationTest`); commit it with the change, or CI fails. Swagger UI: `localhost:8080/swagger-ui.html` (or your `AYNA_SERVER_PORT`).
