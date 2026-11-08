@@ -77,7 +77,7 @@ NEVER_MATCH: dict[str, str] = {
 
 #: An AutomationId the framework generated rather than a developer chose: a Win32 control id
 #: ("1001"), a GUID, or Qt's class-name fallback for an unnamed widget ("…QPushButton2").
-#: Same rule as `eval/spikes/uia_dump.py`, plus the Qt case #6 finding 3 measured.
+#: Same rule as `eval/spikes/uia_tree_dump.py`, plus the Qt case #6 finding 3 measured.
 _GENERATED_ID = re.compile(
     r"^(?:\d+|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})$"
 )

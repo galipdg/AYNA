@@ -232,5 +232,19 @@ difference hide.
 
 **General point: "bounds" is not one concept on Windows.** Any new coordinate consumer (#54's
 screenshot crop, #23's win32 fallback, the overlay) has to say which of the three it means.
+
+## 2026-11-08 — `--import-mode=importlib` does not fix duplicate module names (#199)
+
+The two `uia_dump.py` modules under `eval/` (trial app and spikes) shadow each other for a whole
+`pytest eval` run. `--import-mode=importlib` looked like the one-line fix and **is not**: measured,
+`pytest eval -q --import-mode=importlib` still aborts collection with
+`ImportError: cannot import name 'MAX_DEPTH' from 'uia_dump'`. The import mode governs how pytest
+imports *test* modules; here the clash is between two *source* modules of the same name imported by
+other source modules (`spikes/uia_probe.py`, `spikes/kp_state.py`). What decides the winner is
+`apps/trial/tests/conftest.py` doing `sys.path.insert(0, …/apps/trial)`, which lasts for the whole
+process, so a `pythonpath` entry for both folders would only re-create the ambiguity. The fix is a
+unique module name (now `spikes/uia_tree_dump.py`) or real packages. Rule of thumb: inside one
+pytest run, every module name under a tree must be unique, whatever the import mode.
+
 - 2026-11-08 · omer · #208 · **On Windows, `docker compose up` publishes a host port that another program already holds, and says nothing.** hasan's machine had EnterpriseDB's Apache (`PEMHTTPD-x64`, auto-start) on IPv4 8080: the server started, the container's own `/api/health` said UP, and every `http://localhost:8080` request reached Apache (`http://[::1]:8080` reached the server, because Apache listened on IPv4 only) → set `AYNA_SERVER_PORT` in `.env` (Compose publishes `${AYNA_SERVER_PORT:-8080}`), and check who holds a port with `netstat -ano | findstr :8080` before a demo.
 - 2026-11-08 · omer · #208 · Spring Boot: an `ApplicationListener<ApplicationFailedEvent>` that is a `@Component` hears about a failed start only if its bean was created before the bean that failed, and in our test it logged its line twice → register it in `META-INF/spring.factories` under `org.springframework.context.ApplicationListener` (once, whichever bean fails). A `FailureAnalyzer` prints a tidier block but logs the original stack trace only at DEBUG.

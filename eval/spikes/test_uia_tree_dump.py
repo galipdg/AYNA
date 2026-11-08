@@ -1,4 +1,4 @@
-"""Unit tests for uia_dump.py that run on any OS (no pywinauto needed).
+"""Unit tests for uia_tree_dump.py that run on any OS (no pywinauto needed).
 
     python3 -m unittest discover -s eval/spikes -p "test_*.py" -v
 """
@@ -17,7 +17,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import uia_dump  # noqa: E402
+import uia_tree_dump  # noqa: E402
 
 
 def node(name: str, *kids: SimpleNamespace) -> SimpleNamespace:
@@ -25,7 +25,7 @@ def node(name: str, *kids: SimpleNamespace) -> SimpleNamespace:
 
 
 def flatten(roots: list, **limits: int) -> tuple[list[dict], bool]:
-    return uia_dump.walk(roots, lambda n: {"name": n.name}, lambda n: n.kids, **limits)
+    return uia_tree_dump.walk(roots, lambda n: {"name": n.name}, lambda n: n.kids, **limits)
 
 
 def element(id_: int, parent: int | None, control_type: str, automation_id: str = "",
@@ -35,7 +35,7 @@ def element(id_: int, parent: int | None, control_type: str, automation_id: str 
 
 
 def dump_doc(elements: list[dict], **target: str) -> dict:
-    return {"format": uia_dump.FORMAT, "target": {"id": "demo", **target},
+    return {"format": uia_tree_dump.FORMAT, "target": {"id": "demo", **target},
             "app": {"file_version": "1.2.3.4"}, "walk": {"seconds": 0.5}, "elements": elements}
 
 
@@ -73,7 +73,7 @@ class WalkTest(unittest.TestCase):
         # Notepad++'s Find dialog: a top-level window of its own and a child of the main window.
         dialog = SimpleNamespace(name="Find", kids=[node("Close")], handle=7)
         main = SimpleNamespace(name="Main", kids=[node("Edit"), dialog], handle=1)
-        elements, truncated = uia_dump.walk(
+        elements, truncated = uia_tree_dump.walk(
             [dialog, main], lambda n: {"name": n.name}, lambda n: n.kids,
             identity=lambda n: getattr(n, "handle", None),
         )
@@ -84,7 +84,7 @@ class WalkTest(unittest.TestCase):
         # Elements without a window handle share the identity None and must all be kept.
         kids = [SimpleNamespace(name="B", kids=[], handle=None),
                 SimpleNamespace(name="C", kids=[], handle=None)]
-        elements, _ = uia_dump.walk(
+        elements, _ = uia_tree_dump.walk(
             [SimpleNamespace(name="A", kids=kids, handle=None)],
             lambda n: {"name": n.name}, lambda n: n.kids, identity=lambda n: n.handle,
         )
@@ -144,7 +144,7 @@ class BrokenInfo(FakeInfo):
 
 class UiaReaderTest(unittest.TestCase):
     def setUp(self):
-        self.reader = uia_dump.UiaReader({50000: "Button"}, [("Invoke", 30031), ("Value", 30043)])
+        self.reader = uia_tree_dump.UiaReader({50000: "Button"}, [("Invoke", 30031), ("Value", 30043)])
 
     def test_reads_properties_bounds_and_patterns(self):
         e = self.reader.read(FakeInfo())
@@ -169,7 +169,7 @@ class UiaReaderTest(unittest.TestCase):
         info.element.CurrentLabeledBy = SimpleNamespace(CurrentName="User name:")
         e = self.reader.read(info)
         self.assertEqual(e["labeled_by"], "User name:")
-        self.assertEqual(len(e["name"]), uia_dump.MAX_TEXT + 1)
+        self.assertEqual(len(e["name"]), uia_tree_dump.MAX_TEXT + 1)
         self.assertTrue(e["name"].endswith("…"))
 
     def test_unknown_control_type_keeps_its_id(self):
@@ -178,11 +178,11 @@ class UiaReaderTest(unittest.TestCase):
         self.assertEqual(self.reader.read(info)["control_type"], 50999)
 
     def test_no_pattern_ids_means_no_patterns_key(self):
-        self.assertNotIn("patterns", uia_dump.UiaReader({}, []).read(FakeInfo()))
+        self.assertNotIn("patterns", uia_tree_dump.UiaReader({}, []).read(FakeInfo()))
 
     def test_reader_works_as_walk_callbacks(self):
         tree = [FakeInfo("Main", [FakeInfo("OK"), FakeInfo("Cancel")])]
-        elements, _ = uia_dump.walk(tree, self.reader.read, self.reader.children)
+        elements, _ = uia_tree_dump.walk(tree, self.reader.read, self.reader.children)
         self.assertEqual([e["name"] for e in elements], ["Main", "OK", "Cancel"])
 
 
@@ -191,7 +191,7 @@ class WriteDumpTest(unittest.TestCase):
         doc = dump_doc([element(0, None, "Window", "Main", "Şifre: ı"), element(1, 0, "Button")])
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "demo.json"
-            uia_dump.write_dump(doc, path)
+            uia_tree_dump.write_dump(doc, path)
             text = path.read_text(encoding="utf-8")
         self.assertEqual(json.loads(text), doc)
         self.assertEqual(sum(line.startswith('    {"id": ') for line in text.splitlines()), 2)
@@ -200,7 +200,7 @@ class WriteDumpTest(unittest.TestCase):
     def test_empty_element_list_is_valid_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "empty.json"
-            uia_dump.write_dump(dump_doc([]), path)
+            uia_tree_dump.write_dump(dump_doc([]), path)
             self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["elements"], [])
 
 
@@ -221,7 +221,7 @@ class RichnessTest(unittest.TestCase):
         ])
 
     def test_counts_over_interactive_elements(self):
-        r = uia_dump.richness(self.doc)
+        r = uia_tree_dump.richness(self.doc)
         self.assertEqual(r["elements"], 11)
         self.assertEqual(r["interactive"], 8)
         self.assertEqual(r["automation_id"], 6)
@@ -232,7 +232,7 @@ class RichnessTest(unittest.TestCase):
         self.assertEqual(r["either"], 7)
 
     def test_window_frame_controls_are_not_interactive(self):
-        r = uia_dump.richness(dump_doc([
+        r = uia_tree_dump.richness(dump_doc([
             element(0, None, "Window", "MainForm", "Main"),
             element(1, 0, "TitleBar"),
             element(2, 1, "MenuBar", "", "System Menu Bar"),
@@ -244,7 +244,7 @@ class RichnessTest(unittest.TestCase):
         self.assertEqual(r["automation_id"], 1)
 
     def test_by_type_counts_every_element(self):
-        by_type = uia_dump.richness(self.doc)["by_type"]
+        by_type = uia_tree_dump.richness(self.doc)["by_type"]
         self.assertEqual(by_type["Button"], {"count": 3, "automation_id": 2, "name": 2})
         self.assertEqual(by_type["Window"]["count"], 2)
 
@@ -253,18 +253,18 @@ class TablesTest(unittest.TestCase):
     def test_stats_table_row(self):
         doc = dump_doc([element(0, None, "Window"), element(1, 0, "Button", "ok", "")],
                        app="Demo", technology="WPF")
-        table = uia_dump.stats_table([doc])
+        table = uia_tree_dump.stats_table([doc])
         self.assertIn("| demo | Demo | WPF | 1.2.3.4 | 0.5 s | 2 | 1 | 100% (1/1) | 0% (0/1) "
                       "| 100% (1/1) | 0% (0/1) | 100% (1/1) |", table)
 
     def test_target_version_overrides_file_version_and_no_interactive_gives_dash(self):
         doc = dump_doc([element(0, None, "Window")], version="2.57")
-        self.assertIn("| 2.57 | 0.5 s | 1 | 0 | – |", uia_dump.stats_table([doc]))
+        self.assertIn("| 2.57 | 0.5 s | 1 | 0 | – |", uia_tree_dump.stats_table([doc]))
 
     def test_by_type_table_sorted_by_count(self):
         doc = dump_doc([element(0, None, "Window"), element(1, 0, "Text", "", "a"),
                         element(2, 0, "Text"), element(3, 0, "Edit", "user")])
-        rows = [line for line in uia_dump.by_type_table(doc).splitlines() if line.startswith("| ")]
+        rows = [line for line in uia_tree_dump.by_type_table(doc).splitlines() if line.startswith("| ")]
         self.assertEqual([row.split(" | ")[0] for row in rows[1:]], ["| Text", "| Edit", "| Window"])
         self.assertIn("| Edit | yes | 1 | 100% (1/1) | 0% (0/1) |", rows)
 
@@ -281,7 +281,7 @@ def dump_args(*argv: str) -> argparse.Namespace:
 
 class SelectTargetsTest(unittest.TestCase):
     def test_committed_target_list_is_complete(self):
-        targets = uia_dump.select_targets(dump_args())
+        targets = uia_tree_dump.select_targets(dump_args())
         self.assertGreaterEqual(len(targets), 3)
         self.assertEqual(len({t["id"] for t in targets}), len(targets))
         for t in targets:
@@ -290,15 +290,15 @@ class SelectTargetsTest(unittest.TestCase):
         self.assertGreaterEqual(len({t["technology"] for t in targets}), 3)
 
     def test_only_filters_and_rejects_unknown_ids(self):
-        self.assertEqual([t["id"] for t in uia_dump.select_targets(dump_args("--only", "keepassxc"))],
+        self.assertEqual([t["id"] for t in uia_tree_dump.select_targets(dump_args("--only", "keepassxc"))],
                          ["keepassxc"])
         with self.assertRaises(SystemExit):
-            uia_dump.select_targets(dump_args("--only", "nope"))
+            uia_tree_dump.select_targets(dump_args("--only", "nope"))
 
     def test_one_off_target_needs_process_or_title(self):
         with self.assertRaises(SystemExit):
-            uia_dump.select_targets(dump_args("--id", "calc"))
-        [target] = uia_dump.select_targets(dump_args("--id", "calc", "--process", "Calc.exe"))
+            uia_tree_dump.select_targets(dump_args("--id", "calc"))
+        [target] = uia_tree_dump.select_targets(dump_args("--id", "calc", "--process", "Calc.exe"))
         self.assertEqual((target["id"], target["app"], target["process"]),
                          ("calc", "calc", "Calc.exe"))
 
@@ -306,16 +306,16 @@ class SelectTargetsTest(unittest.TestCase):
 class MainTest(unittest.TestCase):
     def test_stats_reads_a_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
-            uia_dump.write_dump(dump_doc([element(0, None, "Window")]), Path(tmp) / "demo.json")
+            uia_tree_dump.write_dump(dump_doc([element(0, None, "Window")]), Path(tmp) / "demo.json")
             out = io.StringIO()
             with redirect_stdout(out):
-                self.assertEqual(uia_dump.main(["stats", "--by-type", tmp]), 0)
+                self.assertEqual(uia_tree_dump.main(["stats", "--by-type", tmp]), 0)
         self.assertIn("| demo |", out.getvalue())
         self.assertIn("### demo:", out.getvalue())
 
     def test_dump_refuses_without_windows(self):
         with mock.patch.object(sys, "platform", "darwin"), self.assertRaises(SystemExit) as cm:
-            uia_dump.main(["dump"])
+            uia_tree_dump.main(["dump"])
         self.assertIn("Windows", str(cm.exception.code))
 
 

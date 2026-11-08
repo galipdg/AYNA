@@ -6,10 +6,10 @@ Spike, started 2026-10-25, galip. Question: which open-source Windows apps expos
 
 ## Method
 
-- [`uia_dump.py`](uia_dump.py) `dump` finds every visible top-level window of a target process with pywinauto's `uia` backend and walks the raw view (pywinauto's `children()` with no filter uses a TrueCondition) depth-first, up to 20 000 elements and depth 64. It writes `uia-dumps/<id>.json`: a header with app, exe file version, Windows and pywinauto version, window DPI and walk time, then a flat element list with parent links, one element per line.
+- [`uia_tree_dump.py`](uia_tree_dump.py) `dump` finds every visible top-level window of a target process with pywinauto's `uia` backend and walks the raw view (pywinauto's `children()` with no filter uses a TrueCondition) depth-first, up to 20 000 elements and depth 64. It writes `uia-dumps/<id>.json`: a header with app, exe file version, Windows and pywinauto version, window DPI and walk time, then a flat element list with parent links, one element per line.
 - Per element it records: control type, AutomationId, Name, ClassName, FrameworkId, localized control type, HelpText, AccessKey, AcceleratorKey, the Name of the LabeledBy element, enabled, offscreen, keyboard-focusable, password, control/content element, whether it has its own HWND, bounds and ten pattern-availability flags (Invoke, Value, Toggle, SelectionItem, ExpandCollapse, RangeValue, Text, Scroll, Window, LegacyIAccessible).
 - Privacy: Value-pattern contents are never read, strings are cut at 200 characters, only the exe file name is kept (not its path), and the apps run on throwaway demo data.
-- [`uia_dump.py`](uia_dump.py) `stats` (any OS) prints the tables below. **Interactive** means one of these control types: Button, CheckBox, ComboBox, DataItem, Document, Edit, Hyperlink, ListItem, MenuItem, RadioButton, Slider, Spinner, SplitButton, TabItem, TreeItem. Containers and labels (Text) are left out because tests address their items and the controls they label. Elements inside a window's TitleBar (system menu, minimise/maximise/close) are left out too: they belong to the Windows frame and never have an AutomationId (measured in #9). AutomationId and Name count only when they are not blank. Two extra columns describe the AutomationIds: the share that look **generated** (only digits, like Win32 control ids, or a GUID) and the share that are **unique in their window**.
+- [`uia_tree_dump.py`](uia_tree_dump.py) `stats` (any OS) prints the tables below. **Interactive** means one of these control types: Button, CheckBox, ComboBox, DataItem, Document, Edit, Hyperlink, ListItem, MenuItem, RadioButton, Slider, Spinner, SplitButton, TabItem, TreeItem. Containers and labels (Text) are left out because tests address their items and the controls they label. Elements inside a window's TitleBar (system menu, minimise/maximise/close) are left out too: they belong to the Windows frame and never have an AutomationId (measured in #9). AutomationId and Name count only when they are not blank. Two extra columns describe the AutomationIds: the share that look **generated** (only digits, like Win32 control ids, or a GUID) and the share that are **unique in their window**.
 - Targets and the window state to prepare are listed in [`uia-targets.json`](uia-targets.json).
 
 ## Candidates
@@ -39,7 +39,7 @@ Python 3.13.0, pywinauto 0.6.9 (the pinned version). `read_errors: 0` and `trunc
 for every target, so no number below is the result of a failed read or a cut-off walk. The
 repo `.venv` was used instead of a throwaway `%TEMP%` venv -- same pywinauto, one step less.
 
-Output of `python eval/spikes/uia_dump.py stats`:
+Output of `python eval/spikes/uia_tree_dump.py stats`:
 
 | Dump | App | Technology | Version | Walk | Elements | Interactive | AutomationId | … generated | … unique in window | Name | AutomationId or Name |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -68,7 +68,7 @@ The windows each number was measured on, so the counts can be read in context:
 | keepassxc | `Passwords - KeePassXC` | 0.47 s | 84 |
 | notepadpp | `Find`; `new 1 - Notepad++` | 1.04 s | 109 |
 
-Per-control-type tables come from `uia_dump.py stats --by-type`; the rows that carry a
+Per-control-type tables come from `uia_tree_dump.py stats --by-type`; the rows that carry a
 finding are quoted below.
 
 ## Findings
@@ -252,7 +252,7 @@ py -m venv %TEMP%\ayna-uia
 Unzip the portable builds listed under `source` in [`uia-targets.json`](uia-targets.json) and bring each app into its `state` (see the manual check in #6). Do not minimise the windows: minimised windows count as offscreen and are skipped. Then run all targets with one command. It prints one line per target and then the results table:
 
 ```
-%TEMP%\ayna-uia\Scripts\python eval\spikes\uia_dump.py dump
+%TEMP%\ayna-uia\Scripts\python eval\spikes\uia_tree_dump.py dump
 ```
 
 Useful variants: `--only keepass2` (repeatable) re-dumps one target; `--id calc --process CalculatorApp.exe --app Calculator --technology UWP` dumps an app that is not in the list; `--no-patterns` skips the pattern checks if a walk is very slow.
