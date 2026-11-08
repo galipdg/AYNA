@@ -43,12 +43,12 @@ main-process / dev-mock changes testable with `node --test`; 4, 5, 7 are rendere
 - [x] 7 Add to repository opens "Advanced settings" when the suggested Find-by set does not find
   exactly one element; style guide §Advanced reworded (not "only test engineers").
 - [ ] 8 (optional) dev-only Desktop behind the real `rpc.py`
-- Next step: point 8 (optional) — decide with omer; then post the Windows check on #204, label
-  `needs-windows-test`, open the PR.
+- PR #219 open (Part of #204), reviews requested from hasan and galip. Point 8 left to galip.
+- Next step: wait for the Windows session result and the reviews; fix what they find on this branch.
 
 ## Manual checks
-- (planned) Windows session: point 6 on VS Code (285 elements) — scroll and search; point 1 on
-  KeePass 2 (capture again after a timeout).
+- 2026-11-08 · pending Windows session · steps 1–7 (point 6 on VS Code; 4, 7 on the trial app;
+  1 on KeePass 2) · posted on #204 (issuecomment-6725533870), label `needs-windows-test`.
 
 ## Open issues
 - Deep Chromium trees indent 16 px per level, so a row at depth 45 starts 720 px in; a smaller
