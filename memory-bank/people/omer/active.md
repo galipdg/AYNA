@@ -3,10 +3,10 @@
 Only omer's agent edits this file. Overwrite it at every session end.
 
 - Last update: 2026-11-08 (fifteenth session: #205 built)
-- **Current issue: #205** (SelectRow and row checks in the editor) on `omer/205-selectrow-rows` (worktree `.claude/worktrees/selectrow-step-schema-rows-642084`). Code, tests, en/tr and `docs/ui/` done and committed; task note `memory-bank/tasks/205-selectrow-rows.md`.
-- **Next step** (resume here): push `omer/205-selectrow-rows` and open the PR (`Closes #205`) after omer's OK; then propose the next issue (#44 client half needs #40; #53 next step; #206).
+- **Current issue: #205** (SelectRow and row checks in the editor) on `omer/205-selectrow-rows` (worktree `.claude/worktrees/selectrow-step-schema-rows-642084`). In PR #220 (reviews requested from galip and hasan); task note `memory-bank/tasks/205-selectrow-rows.md`.
+- **Next step** (resume here): answer #220's reviews; then propose the next issue (#221 column headers, Week 6) (#44 client half needs #40; #53 next step; #206).
 - **Waiting for review:** #219 (#204 Spy follow-ups, also needs the Windows check), #218 (#203 wording), #217 (#207 demo seed).
-- **Follow-ups from #205** (task note "Open issues"): column dropdown needs `columns` on a grid's RepoObject and column headers in the snapshot (hasan's schema, ADR) — suggest an issue; English action column clips "Choose item"/"Choose row"; demo seed has no grid or list object.
+- **Follow-ups from #205** (task note "Open issues"): column dropdown → #221 (snapshot ADR, agent part hasan, server+client omer); English action column clips "Choose item"/"Choose row"; demo seed has no grid or list object.
 - Issues left open on purpose: #17 (`needs-windows-test`), #24 (hotkey needs #22), #183, #184, #185, #38 (Windows findings in #206).
 - Inbox: emptied 2026-11-08 (every item handled, #150 merged).
 - **CI**: since 2026-11-08 morning the client job's `npm run build` fails on `main` and every PR with `Response code 504 (Gateway Time-out)` from a download electron-builder makes after Electron itself; lint, typecheck and tests pass in the same job. Reruns sometimes pass. If it persists, cache electron-builder's downloads in CI or skip `electron-builder --dir` on Linux (CI is `.github/`, ask first).

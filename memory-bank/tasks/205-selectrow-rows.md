@@ -18,15 +18,15 @@
 - [x] StepTable row picker and check popover, element filter by control type
 - [x] en/tr texts, `docs/ui/` vocabulary; client 207/207, lint, typecheck, format green (2026-11-08)
 - [x] tried in a throwaway Vite harness (StepTable alone, sample objects, both languages; deleted)
-- [ ] push and PR (ask omer first)
-- Next step: push `omer/205-selectrow-rows` and open the PR (Closes #205)
+- [x] pushed, PR #220 (reviews requested from galip and hasan)
+- Next step: answer the #220 reviews; then #221
 
 ## Manual checks
 - 2026-11-08 · omer's agent · StepTable in a browser harness (not the Electron app): SelectRow by text with a column, cell check popover, rowCount, element menu lists only tables/lists (cell: tables), Click→SelectRow on a button shows "needs a table or a list", "first" as a row number shows the whole-number text, en/tr summaries · pass · evidence: this session's screenshots only.
 - Not done: the real app against a server, since the demo seed has no grid or list object. Playback of SelectRow and row checks on Windows is #40 (hasan).
 
 ## Open issues
-- Column dropdown needs `columns` on the grid's RepoObject (server, #15/#25) and column headers in the snapshot (hasan's schema, ADR). Suggest a new issue.
+- Column dropdown needs `columns` on the grid's RepoObject (server, #15/#25) and column headers in the snapshot (hasan's schema, ADR): opened as #221 (Week 6, before the #52 freeze).
 - The English action column (124 px) clips "Choose item" (since #38) and now "Choose row"; Turkish labels fit. A wider default (≈136 px) or shorter labels; belongs with #203 wording or a small follow-up.
 - The demo seed (#197/#207) has no grid or list object, so SelectRow cannot be shown in `npm run demo` yet.
 
