@@ -96,10 +96,15 @@ public class TestService {
 		}
 	}
 
+	/** A run means nothing without its test, so its runs and their results go too (#44). */
 	public void deleteTest(String testId) {
 		try (Session session = driver.session()) {
 			session.executeWriteWithoutResult(tx -> {
 				appOf(tx, testId);
+				tx.run("""
+						MATCH (:TestCase {id: $id})<-[:OF]-(r:Run)
+						OPTIONAL MATCH (r)-[:HAS_RESULT]->(sr:StepResult)
+						DETACH DELETE sr, r""", Map.of("id", testId)).consume();
 				tx.run("MATCH (:TestCase {id: $id})-[:HAS_STEP]->(s:Step) DETACH DELETE s", Map.of("id", testId))
 					.consume();
 				tx.run("MATCH (t:TestCase {id: $id}) DETACH DELETE t", Map.of("id", testId)).consume();
@@ -282,6 +287,11 @@ public class TestService {
 			}
 		}
 		return props;
+	}
+
+	/** The test's steps with their ids, read inside the caller's transaction (a run copies them, #44). */
+	public JsonNode stepDocument(TransactionContext tx, String testId) {
+		return document(tx, testId, true);
 	}
 
 	/** The test's steps as a step document; `withIds` is false for exports. */
