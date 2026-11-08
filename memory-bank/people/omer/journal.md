@@ -141,3 +141,9 @@ Append-only. One entry per session, newest at the bottom:
 - `protect-main` ruleset: 1 approval, squash only, threads resolved, approvals not dismissed on push.
 - hasan's docker port / Neo4j password note handed to a separate session (new issue + branch).
 - Next: #154's approval → merge → #186 → #192, #197.
+## 2026-11-08 · #208 Compose port and Neo4j password hint (side session)
+- hasan's 2026-11-07 inbox item (#28 Windows session) had no issue: opened #208 on omer's OK (Week 3, owner:omer, area:devops, area:server, board In progress).
+- Compose publishes `${AYNA_SERVER_PORT:-8080}`; `.env.example` and `server/AGENTS.md` say so. `docker compose config` checked with the variable unset and set to 18080.
+- Reproduced the crash with the built jar against a separate Neo4j (111 lines, `AuthenticationException` at line 55). `Neo4jAuthFailureHint` (registered in `spring.factories`) now logs one ERROR line with the URI, the user and `docker compose down -v`; Boot's trace still follows. Unit + integration test (own Neo4j container).
+- Server suite 106/106; the rebuilt jar logs the hint at line 25 of 112 and nothing when Neo4j is simply down. A `@Component` variant logged the line twice, so `spring.factories` stays (learnings).
+- Next: push and PR with `Closes #208` on omer's OK.
