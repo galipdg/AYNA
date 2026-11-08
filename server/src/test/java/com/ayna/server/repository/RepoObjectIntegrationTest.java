@@ -391,7 +391,7 @@ class RepoObjectIntegrationTest {
 
 	private void putSteps(String testId, List<?> steps) throws Exception {
 		mvc.perform(put("/api/tests/{testId}/steps", testId).contentType(MediaType.APPLICATION_JSON)
-			.content(mapper.writeValueAsString(Map.of("version", "0.1", "steps", steps))))
+			.content(mapper.writeValueAsString(Map.of("version", stepSchema.version(), "steps", steps))))
 			.andExpect(status().isOk());
 	}
 
