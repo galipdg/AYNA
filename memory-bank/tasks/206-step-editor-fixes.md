@@ -19,12 +19,13 @@ Both findings come from hasan's Windows run of #38 (issue comment 2026-11-07; fa
 - [x] Rename carried into the open test, including undo history and the saved fingerprint; tests include a swap of two names in one reload.
 - [x] Client lint, typecheck, format and 201/201 tests pass on macOS.
 - [ ] Not run in the UI yet: the mock server (`dev:mock`) has no repository or tests, so only `npm run demo` (real server) can show it.
-- [ ] #38 check step 3 wording ("click into a field in row 2"): it lives in omer's #38 issue comment 2026-11-05; edit it when the PR is pushed.
-- Next step: push and open the PR on omer's OK, then post the Windows re-run (steps 7, 10 and 14 of #38's check) on #206 with `needs-windows-test`.
+- [x] #38 check step 3 now says "click into a field in row 2" (omer's #38 issue comment, edited 2026-11-08).
+- [x] PR #215 opened 2026-11-08 (Part of #206; galip and hasan requested). The Windows re-run is posted on #206 (comment 2026-11-08) with `needs-windows-test`.
+- Next step: once #215 has an approval, ask omer and merge it. After the Windows re-run passes, close #206 with the evidence.
 
 ## Manual checks
 - pending · omer on macOS (`npm run demo`) · Turkish: Wait up to `2,5` is shown as `2,5` after save, then as `2.5` after switching to English. Rename an element used by an open test in the Repository and return to Tests: the step shows the new name, there is no "not in the repository" mark, no unsaved dot, and undo does not bring the old name back.
-- pending Windows session · re-run of #38 steps 7 and 10 (#206 criterion 3)
+- pending Windows session · 6-step re-run posted on #206 (#38 steps 7, 10, 14) · #206 criterion 3
 
 ## Open issues
 - The rename map only sees renames between two loads of the element list that happen while the editor is mounted. If an edit by someone else changes the steps of an open test, it is still last-write-wins (open issue already listed in `38-step-editor.md`).
