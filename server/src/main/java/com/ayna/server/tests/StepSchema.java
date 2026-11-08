@@ -37,6 +37,11 @@ public class StepSchema {
 		return fields;
 	}
 
+	/** The `screen.element` pattern of a logical name (`$defs/logicalName`); repository objects use it too (#25). */
+	public String logicalNamePattern() {
+		return file.node().path("$defs").path("logicalName").path("pattern").asString();
+	}
+
 	/** One entry per violation, sorted by path; empty when the document is valid. */
 	public List<FieldError> validate(JsonNode document) {
 		return file.validate(document);

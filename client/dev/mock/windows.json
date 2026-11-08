@@ -1,0 +1,34 @@
+[
+  {
+    "handle": 395942,
+    "title": "AYNA Trial",
+    "className": "LoginWindow",
+    "processId": 7316,
+    "processName": "python.exe",
+    "bounds": [200, 200, 840, 680]
+  },
+  {
+    "handle": 131072,
+    "title": "",
+    "className": "Shell_TrayWnd",
+    "processId": 4,
+    "processName": null,
+    "bounds": [0, 0, 400, 60]
+  },
+  {
+    "handle": 263172,
+    "title": "Purchase order PO-2026-000184 - Supplier: Anadolu Savunma Elektronik Sanayi ve Ticaret A.S. - Line items, delivery schedule and approval history (read only)",
+    "className": "WindowsForms10.Window.8.app.0.141b42a_r9_ad1",
+    "processId": 9120,
+    "processName": "ErpClient.exe",
+    "bounds": [-1280, 100, -80, 900]
+  },
+  {
+    "handle": 328710,
+    "title": "Minimized report viewer",
+    "className": "Qt5152QWindowIcon",
+    "processId": 10244,
+    "processName": "ReportViewer.exe",
+    "bounds": [-32000, -32000, -31840, -31972]
+  }
+]

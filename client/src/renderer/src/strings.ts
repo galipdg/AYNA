@@ -1,133 +1,86 @@
-import type {
-  ConnectionFailure,
-  LoginResult,
-  RequestFailure,
-  Role,
-  UsersError,
-} from '../../shared/api.ts'
+import type { UsersError } from '../../shared/api.ts'
+import type { Language } from '../../shared/language.ts'
+import { en, type Strings } from './i18n/en.ts'
+import { tr } from './i18n/tr.ts'
 
-// All UI text in one place, for later translation.
-export const strings = {
-  appName: 'AYNA',
-  tagline: 'Codeless UI test automation for Windows desktop apps',
-  loading: 'Loading…',
-  bridgeError: 'Could not reach the main process.',
-  versionsTitle: 'Runtime',
+export type { Strings }
 
-  serverTitle: 'Server connection',
-  serverIntro: 'Enter the address of the AYNA server on your network.',
-  serverUrlLabel: 'Server URL',
-  serverUrlPlaceholder: 'http://ayna-server:8080',
-  connect: 'Connect',
-  connecting: 'Connecting…',
-  changeServer: 'Change server',
-  cancel: 'Cancel',
-  checkingSaved: (url: string) => `Connecting to ${url}…`,
-  connectedTo: (url: string) => `Connected to ${url}`,
-  connectionErrors: {
-    'invalid-url': () =>
-      'Enter an http:// or https:// address, for example http://ayna-server:8080.',
-    unreachable: (url?: string) =>
-      `Could not reach ${url}. Check the address and that the server is running.`,
-    timeout: (url?: string) => `${url} did not answer within 5 seconds.`,
-    'not-ayna': (url?: string) => `${url} answered, but it is not an AYNA server.`,
-    'db-down': (url?: string) =>
-      `The AYNA server at ${url} is running but cannot reach its database.`,
-  } satisfies Record<ConnectionFailure, (url?: string) => string>,
+export const dictionaries: Record<Language, Strings> = { tr, en }
 
-  appsTitle: 'Application under test',
-  appsIntro: 'Choose the application you want to test on this machine.',
-  appsEmpty: 'There are no applications on this server yet. Add the first one below.',
-  appsMissing: 'The application chosen before no longer exists on this server. Choose another.',
-  appsRetry: 'Try again',
-  changeApplication: 'Change application',
-  testingApp: (name: string, technology: string) => `Testing ${name} (${technology})`,
-  newAppTitle: 'New application',
-  appNameLabel: 'Name',
-  appNamePlaceholder: 'Notepad',
-  appTechnologyLabel: 'Technology',
-  appTechnologyPlaceholder: 'Win32, WinForms, WPF…',
-  createApp: 'Add and choose',
-  creatingApp: 'Adding…',
-  requestErrors: {
-    'no-server': 'No server is set. Connect to a server first.',
-    unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
-    unauthorized: 'Your session has ended. Log in again.',
-    'bad-response': 'The server answered with something unexpected.',
-    duplicate: 'An application with this name already exists. Choose it from the list.',
-    invalid: 'Enter both a name and a technology.',
-  } satisfies Record<RequestFailure | 'duplicate' | 'invalid', string>,
+/** Language names in their own language, so each is found whatever the current one is. */
+export const languageNames: Record<Language, string> = { tr: 'Türkçe', en: 'English' }
 
-  loginTitle: 'Log in',
-  loginIntro: (url: string) => `Log in to the AYNA server at ${url}.`,
-  usernameLabel: 'User name',
-  passwordLabel: 'Password',
-  logIn: 'Log in',
-  loggingIn: 'Logging in…',
-  logOut: 'Log out',
-  sessionEnded: 'Your session has ended. Log in again.',
-  signedInAs: (username: string, role: string) => `Logged in as ${username} (${role})`,
-  loginErrors: {
-    'wrong-credentials': 'Wrong user name or password.',
-    'no-server': 'No server is set. Connect to a server first.',
-    unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
-    unauthorized: 'Wrong user name or password.',
-    'bad-response': 'The server answered with something unexpected.',
-  } satisfies Record<Extract<LoginResult, { ok: false }>['reason'], string>,
+/**
+ * The texts of the current language. Read at render time (`strings.x`), never copied into a
+ * module constant, so a language change shows once the tree re-renders (App does that).
+ */
+export let strings: Strings = tr
+export let language: Language = 'tr'
 
-  manageUsers: 'Manage users',
-  usersTitle: 'Users',
-  usersIntro: 'Accounts that can log in to this server. Only admins manage them.',
-  usersAdminOnly: 'Only admins manage users. Ask an admin to change your account.',
-  usersBack: 'Back',
-  usersRetry: 'Try again',
-  you: '(you)',
-  roles: { admin: 'Admin', tester: 'Tester' } satisfies Record<Role, string>,
-  roleLabel: 'Role',
-  createdOn: (date: string) => `since ${date}`,
-  newUserTitle: 'New user',
-  newUserHint: 'User names use a-z, digits, ".", "_" or "-". Passwords need at least 8 characters.',
-  createUser: 'Add user',
-  userCreated: (username: string) => `Added ${username}.`,
-  roleChanged: (username: string, role: string) => `${username} is now ${role}.`,
-  setPassword: 'Set password',
-  newPasswordLabel: (username: string) => `New password for ${username}`,
-  savePassword: 'Save password',
-  passwordChanged: (username: string) =>
-    `Password of ${username} changed. Their open sessions have ended.`,
-  removeUser: 'Remove',
-  confirmRemove: (username: string) =>
-    `Remove ${username}? They can no longer log in; their name stays on what they did.`,
-  confirmRemoveButton: 'Yes, remove',
-  userRemoved: (username: string) => `Removed ${username}.`,
-  tokens: 'API tokens',
-  tokensTitle: (username: string) => `API tokens of ${username}`,
-  tokensIntro: 'For a CI service that runs tests without logging in (Authorization: Bearer).',
-  tokensEmpty: 'No API tokens yet.',
-  tokenNameLabel: 'Token name',
-  tokenNamePlaceholder: 'jenkins',
-  createToken: 'Create token',
-  // The permission handler denies clipboard access, so the admin selects and copies by hand.
-  tokenSecret: (name: string) =>
-    `Token "${name}": select and copy it now; it will not be shown again.`,
-  revokeToken: 'Revoke',
-  hide: 'Hide',
-  usersErrors: {
-    'no-server': 'No server is set. Connect to a server first.',
-    unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
-    unauthorized: 'Your session has ended. Log in again.',
-    'bad-response': 'The server answered with something unexpected.',
-    forbidden: 'Only admins manage users.',
-    'not-found': 'This account or token no longer exists. Reload the list.',
-    invalid: 'The server did not accept these values.',
-    conflict: 'The server refused the change.',
-  } satisfies Record<UsersError['reason'], string>,
-} as const
+export function setStringsLanguage(next: Language) {
+  language = next
+  strings = dictionaries[next]
+}
+
+/** A date such as `2026-11-03T09:15:00Z` in the current language: "3 Nov 2026" / "3 Kas 2026". */
+export function formatDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleDateString(strings.locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+/** A time of day in the current language, with seconds: "14:05:09". */
+export function formatTime(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleTimeString(strings.locale)
+}
+
+/**
+ * Messages the server sends (problem-details `detail` and field messages, RFC 9457) that the
+ * client knows; they are shown in the current language. Patterns follow the server's texts in
+ * `server/src/main/java/com/ayna/server/**`; `i18n.test.ts` holds one real example of each.
+ */
+const SERVER_MESSAGES: [RegExp, (texts: Strings['serverMessages'], match: string[]) => string][] = [
+  [/^Log in first\b/, (t) => t.logInFirst],
+  [/^Only admins may do this$/, (t) => t.adminsOnly],
+  [/^'username' must be 1 to 64 characters/, (t) => t.usernameForm],
+  [/^'password' must be at least (\d+) characters$/, (t, m) => t.passwordShort(m[1])],
+  [/^'password' must be at most (\d+) bytes/, (t, m) => t.passwordLong(m[1])],
+  [/^User name already taken: (.+)$/, (t, m) => t.usernameTaken(m[1])],
+  [/^The last admin cannot become a tester$/, (t) => t.lastAdminTester],
+  [/^The last admin cannot be removed$/, (t) => t.lastAdminRemoved],
+  [/^'name' must not be blank$/, (t) => t.tokenNameBlank],
+  [/^Application already exists: (.+)$/, (t, m) => t.applicationExists(m[1])],
+  [/^Version (.+) already exists for application \S+$/, (t, m) => t.versionExists(m[1])],
+  [
+    /^The logical name (\S+) is already used by repository object/,
+    (t, m) => t.elementNameTaken(m[1]),
+  ],
+  [/^At least one primary property is needed/, (t) => t.primaryNeeded],
+  [/^The repository object is not valid$/, (t) => t.objectInvalid],
+]
+
+/** A server message in the current language when the client knows it, otherwise as sent. */
+export function serverText(message: string): string {
+  for (const [pattern, text] of SERVER_MESSAGES) {
+    const match = pattern.exec(message)
+    if (match) return text(strings.serverMessages, [...match])
+  }
+  return message
+}
 
 /** The server's own message when it sent one (e.g. which field is wrong), else ours. */
 export function usersErrorText(error: UsersError): string {
-  return error.detail ?? strings.usersErrors[error.reason]
+  return error.detail ? serverText(error.detail) : strings.usersErrors[error.reason]
+}
+
+/** A control type in plain words ("Edit" → "Text box"). */
+export function controlTypeLabel(controlType: string | undefined): string {
+  if (controlType === undefined) return strings.spyUnknownControlType
+  return strings.controlTypes[controlType] ?? controlType
 }

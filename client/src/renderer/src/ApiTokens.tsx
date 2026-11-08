@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { Account, ApiToken, UsersError } from '../../shared/api.ts'
-import { strings, usersErrorText as errorText } from './strings.ts'
+import { formatDate, strings, usersErrorText as errorText } from './strings.ts'
 
 interface Props {
   account: Account
@@ -67,18 +67,23 @@ export default function ApiTokens({ account, onSessionEnded, onClose }: Props) {
   return (
     <div className="tokens">
       <h3>{strings.tokensTitle(account.username)}</h3>
-      <p className="muted">{strings.tokensIntro}</p>
-      {!tokens && !error && <p>{strings.loading}</p>}
-      {tokens?.length === 0 && <p>{strings.tokensEmpty}</p>}
+      <p className="hint">{strings.tokensIntro}</p>
+      {!tokens && !error && <p className="hint">{strings.loading}</p>}
+      {tokens?.length === 0 && <p className="hint">{strings.tokensEmpty}</p>}
       {tokens && tokens.length > 0 && (
         <ul className="user-list">
           {tokens.map((token) => (
             <li key={token.id} className="user-row">
               <span>
                 {token.name}{' '}
-                <span className="muted">{strings.createdOn(token.createdAt.slice(0, 10))}</span>
+                <span className="hint">{strings.createdOn(formatDate(token.createdAt))}</span>
               </span>
-              <button type="button" onClick={() => revoke(token)} disabled={busy}>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => revoke(token)}
+                disabled={busy}
+              >
                 {strings.revokeToken}
               </button>
             </li>
@@ -87,7 +92,7 @@ export default function ApiTokens({ account, onSessionEnded, onClose }: Props) {
       )}
 
       {created && (
-        <div className="secret" role="status">
+        <div className="message message-success secret" role="status">
           <p>{strings.tokenSecret(created.name)}</p>
           <input
             type="text"
@@ -99,13 +104,13 @@ export default function ApiTokens({ account, onSessionEnded, onClose }: Props) {
         </div>
       )}
       {error && (
-        <p className="error" role="alert">
+        <p className="field-error" role="alert">
           {errorText(error)}
         </p>
       )}
 
       {tokens && (
-        <form className="app-form" onSubmit={create}>
+        <form className="form" onSubmit={create}>
           <label htmlFor={`token-name-${account.id}`}>{strings.tokenNameLabel}</label>
           <input
             id={`token-name-${account.id}`}

@@ -1,6 +1,10 @@
 // Contract between the preload bridge and the renderer. The renderer only ever
 // sees `window.ayna`, shaped like `AynaApi`; every method maps to one IPC channel.
 
+import type { Language } from './language.ts'
+import type { PropertySet } from './repository.ts'
+import type { Snapshot } from './snapshot.ts'
+
 export interface AppInfo {
   name: string
   version: string
@@ -16,6 +20,8 @@ export interface Settings {
   serverUrl: string | null
   /** The chosen application on that server; cleared when the server changes (ids are per server). */
   applicationId: string | null
+  /** The UI language the user chose; null until they choose (then the system's is used). */
+  language: Language | null
 }
 
 /** An application under test, as the server's `/api/apps` returns it. */
@@ -23,6 +29,12 @@ export interface Application {
   id: string
   name: string
   technology: string
+}
+
+/** A version of an application under test (`/api/apps/{appId}/versions`). */
+export interface AppVersion {
+  id: string
+  version: string
 }
 
 export type Role = 'admin' | 'tester'
@@ -64,6 +76,55 @@ export type ApplicationsResult =
 export type CreateApplicationResult =
   { ok: true; app: Application } | { ok: false; reason: RequestFailure | 'duplicate' | 'invalid' }
 
+export type VersionsResult =
+  { ok: true; versions: AppVersion[] } | { ok: false; reason: RequestFailure }
+
+export type CreateVersionResult =
+  | { ok: true; version: AppVersion }
+  | { ok: false; reason: RequestFailure | 'duplicate' | 'invalid' | 'not-found'; detail?: string }
+
+/** A picked element to store in the application's object repository (#25). */
+export interface NewRepoObject {
+  appId: string
+  /** The version the capture belongs to; the snapshot is imported under it first. */
+  versionId: string
+  snapshot: Snapshot
+  /** The picked element's id inside `snapshot`. */
+  snapshotElementId: string
+  /** Logical name, `screen.element`. */
+  name: string
+  primary: PropertySet
+  fallback: PropertySet
+}
+
+/** A stored repository object, as the server returns it. */
+export interface RepoObject {
+  id: string
+  name: string
+  primary: PropertySet
+  fallback: PropertySet
+}
+
+/** One field the server refused, e.g. `$.name` (problem details `errors`). */
+export interface FieldProblem {
+  path: string
+  message: string
+}
+
+export type AddToRepositoryResult =
+  | { ok: true; object: RepoObject }
+  | {
+      ok: false
+      reason:
+        | RequestFailure
+        | 'duplicate' // the logical name is taken in this application
+        | 'invalid' // `fields` says which
+        | 'not-found' // the application or version is gone
+        | 'snapshot-conflict' // this capture is already stored under another version
+      detail?: string
+      fields?: FieldProblem[]
+    }
+
 /** Why a user-management request failed; `detail` is the server's own message, when it sent one. */
 export interface UsersError {
   ok: false
@@ -100,9 +161,72 @@ export interface ConnectionError {
 
 export type ConnectionResult = { ok: true; url: string } | ConnectionError
 
+/**
+ * The local agent as the main process sees it:
+ * `starting` (first launch) → `connected` ⇄ `restarting` (after a crash, up to the
+ * restart limit) → `failed`; `stopped` once the app quits.
+ */
+export type AgentState = 'starting' | 'connected' | 'restarting' | 'failed' | 'stopped'
+
+export interface AgentStatus {
+  state: AgentState
+  /** Restarts used since the agent was last stable; at most `maxRestarts`. */
+  restarts: number
+  maxRestarts: number
+  /** Why the last launch failed (exit code, stderr tail, timeout), for `restarting` and `failed`. */
+  detail?: string
+}
+
+/** `[left, top, right, bottom]` in physical pixels, virtual-screen coordinates (`docs/agent-rpc.md`). */
+export type Bounds = [number, number, number, number]
+
+/** A visible top-level window, as the agent's `listWindows` reports it. */
+export interface WindowInfo {
+  /** Native window handle; valid only while the window exists. */
+  handle: number
+  title: string
+  className: string
+  processId: number
+  /** Null when the agent cannot read it (e.g. an elevated process). */
+  processName: string | null
+  bounds: Bounds
+}
+
+/** Why a call to the local agent failed. */
+export type AgentFailure =
+  | 'not-connected' // no agent running, or it stopped before answering
+  | 'uia-unavailable' // the agent has no UI Automation backend (not Windows, or before #12)
+  | 'timeout'
+  | 'window-gone' // no window has that handle any more
+  | 'snapshot-timeout' // the agent gave up the walk at its time budget
+  | 'bad-response' // the answer does not match `docs/agent-rpc.md`
+  | 'agent-error' // any other JSON-RPC error; `detail` has the agent's message
+
+export type WindowsResult =
+  { ok: true; windows: WindowInfo[] } | { ok: false; reason: AgentFailure; detail?: string }
+
+export type SnapshotResult =
+  { ok: true; snapshot: Snapshot } | { ok: false; reason: AgentFailure; detail?: string }
+
+/** A screen point in physical pixels, virtual-screen coordinates (like `Bounds`). */
+export interface ScreenPoint {
+  x: number
+  y: number
+}
+
+/** Whether the Spy's pick hotkey is active; `label` is the key combination to show. */
+export interface PickHotkeyState {
+  active: boolean
+  label: string
+}
+
 export interface AynaApi {
   getAppInfo(): Promise<AppInfo>
   getSettings(): Promise<Settings>
+  /** The UI language: the user's choice, else the first-run rule (`languageFor`). */
+  getLanguage(): Promise<Language>
+  /** Saves the user's choice of UI language, kept across restarts. */
+  setLanguage(language: Language): Promise<void>
   /** Checks `url` against the server's health endpoint without saving it. */
   checkServer(url: string): Promise<ConnectionResult>
   /** Checks `url` and, only if the server answers, saves it as this machine's server. */
@@ -113,6 +237,32 @@ export interface AynaApi {
   createApplication(name: string, technology: string): Promise<CreateApplicationResult>
   /** Saves `id` as this machine's chosen application. */
   chooseApplication(id: string): Promise<void>
+  /** Versions of the application, as the server orders them. */
+  listVersions(appId: string): Promise<VersionsResult>
+  createVersion(appId: string, version: string): Promise<CreateVersionResult>
+  /** Imports the capture under the version (once), then stores the object linked to the element. */
+  addToRepository(object: NewRepoObject): Promise<AddToRepositoryResult>
+  getAgentStatus(): Promise<AgentStatus>
+  /** Calls `listener` on every agent status change; returns a function that unsubscribes. */
+  onAgentStatus(listener: (status: AgentStatus) => void): () => void
+  /** Starts the agent again after it has `failed`, with a fresh restart budget. */
+  retryAgent(): Promise<void>
+  /** Lists the visible top-level windows through the agent, for the Spy. */
+  listWindows(): Promise<WindowsResult>
+  /** Captures the UI Automation tree of the window with `handle` (from `listWindows`). */
+  snapshot(handle: number): Promise<SnapshotResult>
+  /**
+   * Draws a frame around `bounds` on screen for a few seconds, above every window and
+   * without taking focus or clicks; `null` removes it at once.
+   */
+  highlight(bounds: Bounds | null): Promise<void>
+  /**
+   * Turns the global pick hotkey on while the Spy is shown, and off again. `active` is false
+   * when another program holds the key combination.
+   */
+  setPickHotkey(enabled: boolean): Promise<PickHotkeyState>
+  /** Calls `listener` with the cursor position each time the pick hotkey is pressed. */
+  onPick(listener: (point: ScreenPoint) => void): () => void
   /** Logs in to the saved server; the session lasts until logout, expiry or a server change. */
   login(username: string, password: string): Promise<LoginResult>
   /** Ends the session on the server (best effort) and forgets it. */
@@ -134,11 +284,26 @@ export interface AynaApi {
 export const IPC = {
   getAppInfo: 'app:get-info',
   getSettings: 'settings:get',
+  getLanguage: 'settings:get-language',
+  setLanguage: 'settings:set-language',
   checkServer: 'server:check',
   connectServer: 'server:connect',
   listApplications: 'apps:list',
   createApplication: 'apps:create',
   chooseApplication: 'apps:choose',
+  listVersions: 'versions:list',
+  createVersion: 'versions:create',
+  addToRepository: 'repository:add',
+  getAgentStatus: 'agent:get-status',
+  retryAgent: 'agent:retry',
+  listWindows: 'spy:list-windows',
+  snapshot: 'spy:snapshot',
+  highlight: 'spy:highlight',
+  setPickHotkey: 'spy:set-pick-hotkey',
+  /** Main → renderer event, not a handler. */
+  pick: 'spy:pick',
+  /** Main → renderer event, not a handler. */
+  agentStatus: 'agent:status',
   login: 'auth:login',
   logout: 'auth:logout',
   currentUser: 'auth:current-user',
