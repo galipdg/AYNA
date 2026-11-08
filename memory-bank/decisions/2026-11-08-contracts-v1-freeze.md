@@ -58,7 +58,7 @@ A breaking change needs a new **major** version: the first number goes up (1.x â
 Runs on every pull request against its base branch, and on every push to `main` against the previous `main`.
 1. `python -m unittest discover -s .github/contracts`: tests of the checker itself, plus "every schema in `schemas/` names its version".
 2. `.github/contracts/schema_compat.py`: compares each `schemas/*.schema.json` with the base. It fails on a breaking change without a new major version, on a rule change without a version bump, and on a deleted schema. It resolves local `$ref`s. Anything it cannot classify counts as breaking. Checked on every schema change so far (six commits, all additive): none flagged.
-3. `.github/contracts/rest_compat.sh`: oasdiff 1.34.1 (SHA-256 checked) `breaking --fail-on WARN`. Our generated document marks no response field as required, and oasdiff rates removing an optional response field only a WARN. With a new major `info.version`, the changes are listed but allowed.
+3. `.github/contracts/rest_compat.sh`: oasdiff 1.34.1 (SHA-256 checked) `breaking --fail-on WARN`. Our generated document marks no response field as required, and oasdiff rates removing an optional response field only INFO, so `.github/contracts/oasdiff-levels.txt` raises that check to ERR. Tried locally: a removed response field and a removed endpoint fail; an added field passes. With a new major `info.version`, the changes are listed but allowed.
 
 Each side also tests that it matches the contract:
 - Server: every `/ws/runs` message in `RunEventsIntegrationTest` is checked against `ws-runs.schema.json`. `openapi.yaml` is still generated from the code and must be committed (`server` job).
