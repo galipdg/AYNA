@@ -1,6 +1,6 @@
 """Bisect the cost of a UI Automation walk over one window (#161).
 
-`uia_dump.py` measured a property-complete walk of one KeePass 2 (WinForms) window at
+`uia_tree_dump.py` measured a property-complete walk of one KeePass 2 (WinForms) window at
 278.5 s for 106 elements, against 0.47 s for Qt's 84 and 1.97 s for WPF's 149 (#6,
 finding 7). This script answers *what that time is spent on* by walking the same window
 once per cost centre and timing every element separately:
@@ -9,14 +9,14 @@ once per cost centre and timing every element separately:
     properties  traversal + the 15 plain properties the dump reads
     patterns    traversal + the 10 pattern-availability probes
     labeledby   traversal + CurrentLabeledBy and the label's name
-    full        all of the above: the work `uia_dump.py dump` does
+    full        all of the above: the work `uia_tree_dump.py dump` does
     cached      one FindAll(subtree) with a cache request, then reads from the cache
 
 Totals alone hide the shape of the problem, so each mode also reports the per-element
 distribution and the slowest elements by name: 2.6 s per element on average is equally
 consistent with every element being slow and with three elements taking a minute each.
 
-Element counts are deduplicated by window handle like `uia_dump.py`'s, so a dialog that is
+Element counts are deduplicated by window handle like `uia_tree_dump.py`'s, so a dialog that is
 also a child of its owner is walked once, and the roots are ordered owner-first so that the
 depths are the real ones.
 
@@ -43,12 +43,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from uia_dump import MAX_DEPTH, MAX_NODES, PATTERNS, find_windows, window_dpi
+from uia_tree_dump import MAX_DEPTH, MAX_NODES, PATTERNS, find_windows, window_dpi
 
 HERE = Path(__file__).resolve().parent
 FORMAT = "ayna-uia-probe/0"
 
-# The plain properties `uia_dump.py` reads per element, in its order. LabeledBy is not here:
+# The plain properties `uia_tree_dump.py` reads per element, in its order. LabeledBy is not here:
 # it dereferences another element, so it is its own cost centre.
 PLAIN_PROPERTIES = (
     "CurrentControlType", "CurrentBoundingRectangle", "CurrentAutomationId", "CurrentName",
@@ -209,7 +209,7 @@ class Probe:
         Traversal time (asking for the children) is charged to the element whose children
         they are, so `navigate` is the cost of the walk itself with no property read.
 
-        Elements are deduplicated by window handle, exactly as `uia_dump.walk` does: a dialog
+        Elements are deduplicated by window handle, exactly as `uia_tree_dump.walk` does: a dialog
         that is both a top-level window and a child of its owner would otherwise be walked
         twice, once as a root and once as a descendant, and every count for that subtree
         would double (#170 review — KeePass's `Add Entry` did). The first visit wins, its

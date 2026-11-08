@@ -5,13 +5,13 @@ dump  (Windows only) walks the raw UI Automation view of every visible top-level
 stats (any OS) reads dump files and prints the property-richness tables for uia-dump.md.
 
 Usage on Windows, in a venv with `pip install pywinauto==0.6.9`, target apps open:
-    python eval\\spikes\\uia_dump.py dump
-    python eval\\spikes\\uia_dump.py dump --only keepass2 --only keepassxc
-    python eval\\spikes\\uia_dump.py dump --id calc --process CalculatorApp.exe --technology UWP
+    python eval\\spikes\\uia_tree_dump.py dump
+    python eval\\spikes\\uia_tree_dump.py dump --only keepass2 --only keepassxc
+    python eval\\spikes\\uia_tree_dump.py dump --id calc --process CalculatorApp.exe --technology UWP
 
 Usage on any OS:
-    python3 eval/spikes/uia_dump.py stats
-    python3 eval/spikes/uia_dump.py stats --by-type eval/spikes/uia-dumps/keepass2.json
+    python3 eval/spikes/uia_tree_dump.py stats
+    python3 eval/spikes/uia_tree_dump.py stats --by-type eval/spikes/uia-dumps/keepass2.json
 """
 
 from __future__ import annotations

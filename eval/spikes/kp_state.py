@@ -183,10 +183,10 @@ def windows() -> list:
     """Every visible top-level window of KeePass, by handle rather than through the UIA tree.
 
     KeePass's modal dialogs are owned by a child window of the main form, so a UIA-only
-    search misses them from both ends (the same reason `uia_dump.find_windows` enumerates
+    search misses them from both ends (the same reason `uia_tree_dump.find_windows` enumerates
     handles, #6).
     """
-    from uia_dump import find_windows
+    from uia_tree_dump import find_windows
 
     try:
         return find_windows("KeePass.exe", None)

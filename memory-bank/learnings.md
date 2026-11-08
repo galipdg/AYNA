@@ -223,3 +223,16 @@ difference hide.
 
 **General point: "bounds" is not one concept on Windows.** Any new coordinate consumer (#54's
 screenshot crop, #23's win32 fallback, the overlay) has to say which of the three it means.
+
+## 2026-11-08 — `--import-mode=importlib` does not fix duplicate module names (#199)
+
+The two `uia_dump.py` modules under `eval/` (trial app and spikes) shadow each other for a whole
+`pytest eval` run. `--import-mode=importlib` looked like the one-line fix and **is not**: measured,
+`pytest eval -q --import-mode=importlib` still aborts collection with
+`ImportError: cannot import name 'MAX_DEPTH' from 'uia_dump'`. The import mode governs how pytest
+imports *test* modules; here the clash is between two *source* modules of the same name imported by
+other source modules (`spikes/uia_probe.py`, `spikes/kp_state.py`). What decides the winner is
+`apps/trial/tests/conftest.py` doing `sys.path.insert(0, …/apps/trial)`, which lasts for the whole
+process, so a `pythonpath` entry for both folders would only re-create the ambiguity. The fix is a
+unique module name (now `spikes/uia_tree_dump.py`) or real packages. Rule of thumb: inside one
+pytest run, every module name under a tree must be unique, whatever the import mode.

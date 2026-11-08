@@ -20,12 +20,12 @@ number #6 recorded.
 
 ## Method
 
-`uia_probe.py` (new, next to `uia_dump.py`) walks the same windows once per cost centre
+`uia_probe.py` (new, next to `uia_tree_dump.py`) walks the same windows once per cost centre
 and times every element on its own, so a total can be read together with its
 distribution. Modes: `navigate` (traversal only), `properties` (the 17 plain properties
 the dump reads), `patterns` (the 10 pattern-availability probes), `labeledby`
 (`CurrentLabeledBy` plus the label's name), `full` (all of it: exactly what
-`uia_dump.py dump` does) and `cached` (one `FindAllBuildCache` over the subtree, then
+`uia_tree_dump.py dump` does) and `cached` (one `FindAllBuildCache` over the subtree, then
 every read from the cache).
 
 The state was rebuilt to the one `uia-targets.json` describes: KeePass 2.61.1.0 portable,
@@ -42,7 +42,7 @@ Documents (#170 review: `--fresh` deletes that file, so it may not sit among a p
 own). The raw result committed here was captured just before that move, so its window title
 still reads `Database.kdbx`; the tree it walked is the same one.
 
-Element counts are deduplicated by window handle, the way `uia_dump.walk` does it, and
+Element counts are deduplicated by window handle, the way `uia_tree_dump.walk` does it, and
 the windows are walked owner-first. This matters for every number below: KeePass's `Add
 Entry` is both a top-level window and a child of the main form, so the first version of
 `uia_probe.py` walked its 40 elements twice — once as a root and once as a descendant —
