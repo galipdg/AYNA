@@ -21,6 +21,7 @@ import com.ayna.server.error.ApiExceptions.ConflictException;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
 import com.ayna.server.error.FieldError;
+import com.ayna.server.runs.ScreenshotStore;
 import com.ayna.server.tests.TestDtos.TestExport;
 import com.ayna.server.tests.TestDtos.TestResponse;
 import com.ayna.server.tests.TestDtos.TestSummary;
@@ -46,10 +47,13 @@ public class TestService {
 
 	private final ObjectMapper mapper;
 
-	public TestService(Driver driver, StepSchema schema, ObjectMapper mapper) {
+	private final ScreenshotStore screenshots;
+
+	public TestService(Driver driver, StepSchema schema, ObjectMapper mapper, ScreenshotStore screenshots) {
 		this.driver = driver;
 		this.schema = schema;
 		this.mapper = mapper;
+		this.screenshots = screenshots;
 	}
 
 	/** `userId` is the account that makes the change (#60); every write stores it. */
@@ -96,20 +100,29 @@ public class TestService {
 		}
 	}
 
-	/** A run means nothing without its test, so its runs and their results go too (#44). */
+	/**
+	 * A run means nothing without its test, so its runs, their results (#44) and their screenshots
+	 * (#51) go too. The files go after the commit; a folder left behind is removed by the next sweep.
+	 */
 	public void deleteTest(String testId) {
+		List<String> runIds;
 		try (Session session = driver.session()) {
-			session.executeWriteWithoutResult(tx -> {
+			runIds = session.executeWrite(tx -> {
 				appOf(tx, testId);
-				tx.run("""
+				List<String> ids = tx.run("""
 						MATCH (:TestCase {id: $id})<-[:OF]-(r:Run)
 						OPTIONAL MATCH (r)-[:HAS_RESULT]->(sr:StepResult)
-						DETACH DELETE sr, r""", Map.of("id", testId)).consume();
+						WITH r, r.id AS runId, collect(sr) AS results
+						FOREACH (sr IN results | DETACH DELETE sr)
+						DETACH DELETE r
+						RETURN runId""", Map.of("id", testId)).list(r -> r.get("runId").asString());
 				tx.run("MATCH (:TestCase {id: $id})-[:HAS_STEP]->(s:Step) DETACH DELETE s", Map.of("id", testId))
 					.consume();
 				tx.run("MATCH (t:TestCase {id: $id}) DETACH DELETE t", Map.of("id", testId)).consume();
+				return ids;
 			});
 		}
+		screenshots.deleteRuns(runIds);
 	}
 
 	/**

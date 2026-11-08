@@ -30,6 +30,7 @@ target/
 
 # Neo4j / docker data
 docker/data/
+server/data/
 neo4j-data/
 
 # Models and large artefacts

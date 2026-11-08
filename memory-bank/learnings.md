@@ -261,3 +261,4 @@ contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), reco
 conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
 version the branch was built on). Always compare the merged tree with what you expect before
 pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
+- 2026-11-08 · omer · #51 · **A second Compose stack can run beside the one you are using**, for a smoke test on the real image without stopping it: `docker compose -p <other-name> -f docker-compose.yml -f override.yml up -d --build`, where the override has `ports: !reset []` under `neo4j` and `ports: !override ["28080:8080"]` under `server`. The project name gives it its own containers and volumes; `down -v` with the same `-p` and files removes only those.

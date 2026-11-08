@@ -245,7 +245,7 @@ flowchart LR
 | Node | What runs there | How it gets there | Status |
 |---|---|---|---|
 | Test machine | Client and agent. The client starts the agent as a child process with a fresh token and a port chosen by the OS, restarts it up to three times after a crash, and stops it on quit (FR-05). The packaged app brings its own Python interpreter (`AYNA_AGENT_PYTHON`). | One Windows installer, no internet, no development tools (NFR-36) | Planned: installer #84; agent manager built (#17, PR #154, still open; Windows check pending) |
-| Backend host | `docker compose up` starts Neo4j, the server and, from #82, the AI service with its model server. Model weights and the embedding model are inside the image; nothing is downloaded at start (NFR-30). | Images loaded from files on an air-gapped machine (#85) | **Built**: Neo4j + server (`docker-compose.yml`, #4). Planned: AI service #82, screenshot volume #51 |
+| Backend host | `docker compose up` starts Neo4j, the server and, from #82, the AI service with its model server. Model weights and the embedding model are inside the image; nothing is downloaded at start (NFR-30). | Images loaded from files on an air-gapped machine (#85) | **Built**: Neo4j + server (`docker-compose.yml`, #4). Screenshot volume `screenshots` (#51). Planned: AI service #82 |
 | CI runner | CLI runner with a headless agent on a Windows runner; pulls a suite from the server or reads it from a file, writes JUnit XML. | Same installer or a Python environment on the runner | Planned: #61, #66, #67 |
 
 **Ports.** Only the server's HTTP port is meant for the network. The AI service port (8090) is not published; the server reaches it on the Compose network, and the model server shares the AI service's network namespace because the model client accepts loopback hosts only (proposed for #82). The agent listens on 127.0.0.1 only (NFR-31). The development compose file still publishes Neo4j's ports (7474, 7687); see §2.4.4.
@@ -298,7 +298,7 @@ Neo4j Community Edition is the only database (ADR *Neo4j as the single database*
 
 - **Identity.** Every node has an `id`: a UUID string the server creates, unique per label. Neo4j's internal `elementId()` is never stored or exposed (ADR *Graph schema v0*).
 - **Schema changes** are versioned Cypher migrations in `server/src/main/resources/neo4j/migrations/`, applied by neo4j-migrations when the server starts. A change needs a new migration, an update to `docs/graph-model.md` and, after G1, an ADR.
-- **Files.** Screenshots are PNG files in a server volume; the graph stores only their path (`StepResult.screenshotPath`). Reports are generated on request (#59). The server keeps the last N runs, N configurable (NFR-28).
+- **Files.** Screenshots are PNG files in a server volume, one folder per run; the graph stores only their path (`StepResult.screenshotPath`). Reports are generated on request (#59). The server keeps the newest N runs of the whole server (`AYNA_RUN_RETENTION`, default 1000; NFR-28) and deletes older ended runs with their screenshots (NFR-40); a running run with no write for `AYNA_RUN_IDLE_TIMEOUT` (60 min) ends as aborted (ADR *Run screenshots, idle timeout and retention*).
 
 ### 3.2 Graph model v0
 
@@ -385,7 +385,7 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 | Snapshots | `POST /api/apps/{id}/versions/{v}/snapshots`, idempotent on the snapshot id | FR-04 | Planned: #15 |
 | Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests) | FR-06 – FR-09 | Planned: #25, #30 |
 | Tests and steps | create, read, replace the step list (validated against the step schema), export and import | FR-11 – FR-14 | **Built** (#39, PR #156) |
-| Runs and results | `POST /api/runs` (copies the steps), `GET /api/runs/{id}`, `GET /api/tests/{id}/runs`, `POST /api/runs/{id}/finish`; `PUT /api/runs/{runId}/results/{stepIndex}`: 201, 200 for an identical repeat, 409 for another body (ADR *Healing proposal schema 0.2*); screenshot uploaded separately | FR-20, FR-28 | **Built** (#44): plain results. Planned: #51 (`repairProposed`, screenshots, retention, idle timeout) |
+| Runs and results | `POST /api/runs` (copies the steps), `GET /api/runs/{id}`, `GET /api/tests/{id}/runs`, `POST /api/runs/{id}/finish`; `PUT /api/runs/{runId}/results/{stepIndex}`: 201, 200 for an identical repeat, 409 for another body (ADR *Healing proposal schema 0.2*); `PUT`/`GET /api/runs/{runId}/results/{stepIndex}/screenshot` (raw `image/png` after its result; 201, 200 for the same image, 409 for another, 413 over 8 MB) | FR-20, FR-21, FR-28 | **Built** (#44): plain results; (#51) screenshots, retention, idle timeout. Planned: #74 (`repairProposed`) |
 | Reports | HTML report of a run | FR-21 | Planned: #59 |
 | Healing | list proposals, approve or reject (`/api/healing/proposals…`) | FR-31, FR-32 | Planned: #74 (shape in ADR *Healing proposal transport*) |
 | NL suggestions | suggest steps for an instruction; AI errors mapped to problems with `code` | FR-25 – FR-27 | Planned: #78 |
