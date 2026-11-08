@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Import;
 import com.ayna.server.TestcontainersConfiguration;
 import com.ayna.server.auth.AccountService;
 import com.ayna.server.auth.AynaPrincipal;
+import com.ayna.server.tests.StepSchema;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -65,6 +66,9 @@ class RunEventsIntegrationTest {
 
 	@Autowired
 	ObjectMapper mapper;
+
+	@Autowired
+	StepSchema stepSchema;
 
 	final HttpClient http = HttpClient.newHttpClient();
 
@@ -224,7 +228,7 @@ class RunEventsIntegrationTest {
 
 	private String newTest(String appId, String name) throws Exception {
 		String id = post("/api/apps/" + appId + "/tests", Map.of("name", name)).path("id").asString();
-		put("/api/tests/" + id + "/steps", Map.of("version", "0.1", "steps",
+		put("/api/tests/" + id + "/steps", Map.of("version", stepSchema.version(), "steps",
 				List.of(Map.of("keyword", "Click", "target", "login.loginButton"))));
 		return id;
 	}
