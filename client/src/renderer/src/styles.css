@@ -256,6 +256,7 @@ label {
 
 .form {
   display: grid;
+  align-content: start;
   gap: 4px;
 }
 
@@ -745,74 +746,200 @@ ul.message {
   padding: 16px 24px 24px;
 }
 
-/* ---------- Object Spy (three panels come in #184) ---------- */
+/* ---------- Object Spy: windows | tree | properties (#184) ---------- */
+
+/* The Spy fills the work area; each panel scrolls on its own and keeps its place. */
+.page-body:has(> .spy) {
+  overflow: hidden;
+  padding: 12px;
+}
 
 .spy {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 280px) minmax(280px, 1fr) minmax(300px, 380px);
   gap: 8px;
-  max-width: 960px;
+  height: 100%;
 }
 
-/* Real windows have thousands of elements; the tree scrolls on its own. */
-.spy-tree {
-  max-height: 420px;
+.spy-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+}
+
+.spy-panel .panel-header {
+  margin-bottom: 0;
+}
+
+.spy-panel .panel-header h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spy-panel .empty {
+  margin: auto 0;
+}
+
+.panel-scroll {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
-  margin-top: 8px;
-  padding: 4px;
+}
+
+.panel-footer {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.panel-footer.form-actions,
+.panel-footer .form-actions {
+  display: flex;
+  margin-top: 0;
+}
+
+.choice-list button.two-line {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.two-line > span {
+  white-space: nowrap;
+}
+
+/* ---- Element tree: only visible rows are drawn (ElementTree.tsx, ROW_HEIGHT 28 px) ---- */
+
+.tree {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.tree-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tree-search input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tree-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
-.spy-tree ul {
-  padding-left: 18px;
+.tree-viewport:focus-visible {
+  outline-offset: -2px;
 }
 
-.spy-tree .row {
+.tree-canvas {
+  position: relative;
+  min-width: max-content;
+}
+
+.tree-row {
   display: flex;
   align-items: center;
-}
-
-.spy-tree button {
-  min-height: 26px;
-  border: none;
-  background: none;
-}
-
-.spy-tree .toggle {
-  flex: none;
-  width: 20px;
-  min-height: 26px;
-  padding: 0;
-  color: var(--text-muted);
-}
-
-.spy-tree .node {
-  justify-content: flex-start;
-  min-width: 0;
-  padding: 0 6px;
+  gap: 6px;
+  height: 28px;
+  padding-right: 12px;
   border-left: 3px solid transparent;
-  border-radius: 4px;
-  text-align: left;
+  white-space: nowrap;
+  cursor: default;
 }
 
-.spy-tree .node:hover {
+.tree-row:hover {
   background: var(--surface-sunken);
 }
 
-.spy-tree .node.selected {
+.tree-row.selected {
   border-left-color: var(--accent);
   background: var(--selected);
 }
 
-.spy-tree .control-type {
-  font-weight: 600;
+.tree-row.match .node-name {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
 }
 
-.spy-tree .automation-id {
+.tree-row .toggle {
+  flex: none;
+  width: 16px;
   color: var(--text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+
+.node-type {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+.automation-id,
+.mono {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 13px;
+}
+
+.tree-empty {
+  margin: 0;
+}
+
+/* ---- Properties ---- */
+
+.element-title {
+  min-width: 0;
+}
+
+.element-title h2 {
+  overflow-wrap: anywhere;
+}
+
+.prop-group + .prop-group {
+  margin-top: 16px;
+}
+
+.prop-group h3 {
+  margin-bottom: 6px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.spy-repo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.repo-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
 }
 
 /* Groups a dt/dd pair (title = descriptor key) without leaving the grid. */
@@ -867,9 +994,10 @@ ul.message {
   font-weight: 500;
 }
 
-.repo-properties input {
+.repo-properties input,
+.repo-properties select {
   width: 100%;
-  min-width: 14em;
+  min-width: 0;
 }
 
 /* ---------- Users ---------- */
@@ -937,4 +1065,9 @@ ul.message {
 
 .setting-name {
   font-weight: 600;
+}
+
+/* One label column for every group, so the values line up. */
+.spy-properties .facts {
+  grid-template-columns: 130px minmax(0, 1fr);
 }

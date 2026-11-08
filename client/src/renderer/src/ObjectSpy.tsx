@@ -7,13 +7,14 @@ import type {
   ScreenPoint,
   WindowInfo,
 } from '../../shared/api.ts'
-import { windowDescriptor } from '../../shared/element.ts'
+import { windowDescriptor, type ElementDescriptor } from '../../shared/element.ts'
+import { foldText } from '../../shared/tree.ts'
 import { buildTree, type Snapshot, type TreeNode } from '../../shared/snapshot.ts'
 import AddToRepository from './AddToRepository.tsx'
 import ElementTree from './ElementTree.tsx'
 import Page from './Page.tsx'
 import PropertyPanel from './PropertyPanel.tsx'
-import { strings } from './strings.ts'
+import { controlTypeLabel, strings } from './strings.ts'
 
 type List =
   | { state: 'loading' }
@@ -59,8 +60,25 @@ function processLabel(win: WindowInfo): string {
   return `${win.processName ?? strings.spyUnknownProcess} · ${win.processId}`
 }
 
+/** The chosen element in one line: its text (or AutomationId) and its type in plain words. */
+function ElementTitle({ element }: { element: ElementDescriptor }) {
+  const { name, automationId, controlType, windowTitle } = element
+  return (
+    <div className="element-title">
+      <h2>
+        {name ?? automationId ?? strings.spyNoName}{' '}
+        <span className="node-type">{controlTypeLabel(controlType)}</span>
+      </h2>
+      {windowTitle && controlType !== 'Window' && (
+        <p className="hint">{strings.spyInWindow(windowTitle)}</p>
+      )}
+    </div>
+  )
+}
+
 /**
- * Lists the desktop's top-level windows; choosing one flashes a frame around it on screen
+ * Three panels side by side (#184): windows | element tree | properties. Lists the desktop's
+ * top-level windows; choosing one flashes a frame around it on screen
  * and captures its element tree. Choosing an element in the tree frames it and shows its
  * properties; "Add to repository" stores it in `app`, under the version chosen in the top
  * bar (#25, #183).
@@ -74,6 +92,8 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
   const [node, setNode] = useState<TreeNode>()
   const [adding, setAdding] = useState(false)
   const [saved, setSaved] = useState<string>()
+  const [windowQuery, setWindowQuery] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   // Entering `loading` (first render, Refresh, agent reconnected) fetches the list.
   const loading = list.state === 'loading'
@@ -165,137 +185,179 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
     window.ayna.highlight(next.element.bounds ?? null)
   }
 
-  return (
-    <Page
-      title={strings.spyTitle}
-      help={strings.pageHelp.spy}
-      actions={
-        hotkey && (
-          <span className={hotkey.active ? 'hint' : 'field-error'}>
-            {hotkey.active
-              ? strings.spyHotkeyHint(hotkey.label)
-              : strings.spyHotkeyTaken(hotkey.label)}
-          </span>
+  const windows =
+    list.state === 'loaded'
+      ? list.windows.filter((win) =>
+          foldText(`${win.title} ${win.processName ?? ''}`).includes(foldText(windowQuery.trim())),
         )
-      }
-    >
+      : []
+  const element = capture?.state === 'loaded' && node ? node.element : undefined
+  return (
+    <Page title={strings.spyTitle} help={strings.pageHelp.spy}>
       <div className="spy">
-        <section className="panel" aria-label={strings.spyWindowsTitle}>
+        <section className="panel spy-panel" aria-label={strings.spyWindowsTitle}>
           <header className="panel-header">
             <h2>{strings.spyWindowsTitle}</h2>
             <button type="button" onClick={() => setList({ state: 'loading' })} disabled={loading}>
               {strings.spyRefresh}
             </button>
           </header>
-          {loading && <p className="hint">{strings.loading}</p>}
-          {list.state === 'failed' && (
-            <p className="message message-danger" role="alert">
-              {strings.agentErrors[list.reason](list.detail)}
-            </p>
-          )}
-          {list.state === 'loaded' && list.windows.length === 0 && (
-            <div className="empty">
-              <p className="empty-title">{strings.spyEmpty}</p>
-            </div>
-          )}
           {list.state === 'loaded' && list.windows.length > 0 && (
-            <>
-              <p className="hint">{strings.spyIntro}</p>
-              <ul className="choice-list">
-                {list.windows.map((win) => (
-                  <li key={win.handle}>
-                    <button
-                      type="button"
-                      className={win.handle === selected?.handle ? 'selected' : undefined}
-                      aria-pressed={win.handle === selected?.handle}
-                      onClick={() => choose(win)}
-                    >
-                      <span>{win.title || strings.spyNoTitle}</span>
-                      <span className="hint">{processLabel(win)}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
+            <input
+              type="search"
+              aria-label={strings.spySearchWindows}
+              placeholder={strings.spySearchWindows}
+              value={windowQuery}
+              onChange={(event) => setWindowQuery(event.target.value)}
+            />
           )}
+          <div className="panel-scroll">
+            {loading && <p className="hint">{strings.loading}</p>}
+            {list.state === 'failed' && (
+              <p className="message message-danger" role="alert">
+                {strings.agentErrors[list.reason](list.detail)}
+              </p>
+            )}
+            {list.state === 'loaded' && list.windows.length === 0 && (
+              <div className="empty">
+                <p className="empty-title">{strings.spyEmpty}</p>
+              </div>
+            )}
+            {list.state === 'loaded' && list.windows.length > 0 && windows.length === 0 && (
+              <p className="hint">{strings.spyNoWindowMatch(windowQuery.trim())}</p>
+            )}
+            <ul className="choice-list">
+              {windows.map((win) => (
+                <li key={win.handle}>
+                  <button
+                    type="button"
+                    className={win.handle === selected?.handle ? 'selected two-line' : 'two-line'}
+                    aria-pressed={win.handle === selected?.handle}
+                    title={win.title}
+                    onClick={() => choose(win)}
+                  >
+                    <span>{win.title || strings.spyNoTitle}</span>
+                    <span className="hint">{processLabel(win)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
-        {selected && capture && (
-          <section className="panel spy-elements" aria-label={strings.spyTreeTitle}>
-            <header className="panel-header">
-              <h2>{strings.spyTreeTitle}</h2>
+
+        <section className="panel spy-panel" aria-label={strings.spyTreeTitle}>
+          <header className="panel-header">
+            <h2>{selected ? selected.title || strings.spyNoTitle : strings.spyTreeTitle}</h2>
+            {selected && (
               <button type="button" onClick={captureAgain} disabled={capturing}>
                 {strings.spyCaptureAgain}
               </button>
-            </header>
-            {capturing && <p className="hint">{strings.spyCapturing}</p>}
-            {capture.state === 'failed' && (
-              <p className="message message-danger" role="alert">
-                {strings.agentErrors[capture.reason](capture.detail)}
+            )}
+          </header>
+          {!selected && (
+            <div className="empty">
+              <p className="empty-title">{strings.spyChooseWindow}</p>
+            </div>
+          )}
+          {capturing && <p className="hint">{strings.spyCapturing}</p>}
+          {capture?.state === 'failed' && (
+            <p className="message message-danger" role="alert">
+              {strings.agentErrors[capture.reason](capture.detail)}
+            </p>
+          )}
+          {selected && capture?.state === 'loaded' && (
+            <>
+              {!!capture.snapshot.capture.readErrors && (
+                <p className="message message-warning">
+                  {strings.spyReadErrors(capture.snapshot.capture.readErrors)}
+                </p>
+              )}
+              <ElementTree
+                key={capture.snapshot.snapshotId}
+                root={capture.root}
+                selectedId={node?.id}
+                onSelect={chooseNode}
+              />
+              <p className="hint">{capturedLine(capture.snapshot)}</p>
+            </>
+          )}
+          <footer className="panel-footer">
+            {hotkey && (
+              <p className={hotkey.active ? 'hint' : 'field-error'}>
+                {hotkey.active
+                  ? strings.spyHotkeyHint(hotkey.label)
+                  : strings.spyHotkeyTaken(hotkey.label)}
               </p>
             )}
-            {capture.state === 'loaded' && (
-              <>
-                <p className="hint">{capturedLine(capture.snapshot)}</p>
-                {!!capture.snapshot.capture.readErrors && (
-                  <p className="message message-warning">
-                    {strings.spyReadErrors(capture.snapshot.capture.readErrors)}
+            {picked && (
+              <p className="hint" role="status">
+                {strings.spyPicked(picked.x, picked.y)}
+              </p>
+            )}
+          </footer>
+        </section>
+
+        <section className="panel spy-panel" aria-label={strings.spyPropertiesTitle}>
+          {!selected && (
+            <div className="empty">
+              <p className="empty-title">{strings.spyChooseElement}</p>
+            </div>
+          )}
+          {selected && element && node && capture?.state === 'loaded' && adding && (
+            <AddToRepository
+              // Another element or capture starts a fresh form.
+              key={`${capture.snapshot.snapshotId}/${node.id}`}
+              app={app}
+              snapshot={capture.snapshot}
+              node={node}
+              version={version}
+              onSaved={(object) => {
+                setAdding(false)
+                setSaved(object.name)
+              }}
+              onCancel={() => setAdding(false)}
+            />
+          )}
+          {selected && element && !adding && (
+            <>
+              <header className="panel-header">
+                <ElementTitle element={element} />
+              </header>
+              <div className="panel-scroll">
+                {saved && (
+                  <p className="message message-success" role="status">
+                    {strings.repoSaved(saved)}
                   </p>
                 )}
-                <ElementTree
-                  key={capture.snapshot.snapshotId}
-                  root={capture.root}
-                  selectedId={node?.id}
-                  onSelect={chooseNode}
+                <PropertyPanel
+                  element={element}
+                  advancedOpen={advancedOpen}
+                  onAdvancedToggle={setAdvancedOpen}
                 />
-              </>
-            )}
-          </section>
-        )}
-        {selected && (
-          <section className="panel">
-            {capture?.state === 'loaded' && node ? (
-              adding ? (
-                <AddToRepository
-                  // Another element or capture starts a fresh form.
-                  key={`${capture.snapshot.snapshotId}/${node.id}`}
-                  app={app}
-                  snapshot={capture.snapshot}
-                  node={node}
-                  version={version}
-                  onSaved={(object) => {
-                    setAdding(false)
-                    setSaved(object.name)
-                  }}
-                  onCancel={() => setAdding(false)}
+              </div>
+              <footer className="panel-footer form-actions">
+                <button type="button" className="btn-main" onClick={() => setAdding(true)}>
+                  {strings.repoAdd}
+                </button>
+              </footer>
+            </>
+          )}
+          {selected && !element && (
+            <>
+              <header className="panel-header">
+                <ElementTitle element={windowDescriptor(selected)} />
+              </header>
+              <div className="panel-scroll">
+                <PropertyPanel
+                  element={windowDescriptor(selected)}
+                  note={capture?.state === 'failed' ? strings.spyWindowOnly : undefined}
+                  advancedOpen={advancedOpen}
+                  onAdvancedToggle={setAdvancedOpen}
                 />
-              ) : (
-                <>
-                  <PropertyPanel element={node.element} />
-                  {saved && (
-                    <p className="message message-success" role="status">
-                      {strings.repoSaved(saved)}
-                    </p>
-                  )}
-                  <div className="form-actions">
-                    <button type="button" className="btn-main" onClick={() => setAdding(true)}>
-                      {strings.repoAdd}
-                    </button>
-                  </div>
-                </>
-              )
-            ) : (
-              <PropertyPanel
-                element={windowDescriptor(selected)}
-                note={capture?.state === 'failed' ? strings.spyWindowOnly : undefined}
-              />
-            )}
-          </section>
-        )}
-        {picked && (
-          <p className="message message-info" role="status">
-            {strings.spyPicked(picked.x, picked.y)}
-          </p>
-        )}
+              </div>
+            </>
+          )}
+        </section>
       </div>
     </Page>
   )

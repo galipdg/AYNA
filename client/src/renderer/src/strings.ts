@@ -128,7 +128,79 @@ export const strings = {
   agentRetry: 'Start again',
 
   spyTitle: 'Object Spy',
-  spyIntro: 'Choose a window to see its properties and where it is on screen.',
+  spySearchWindows: 'Search windows',
+  spyNoWindowMatch: (query: string) => `No window matches "${query}".`,
+  spySearchTree: 'Search by name, type or AutomationId',
+  spyNoElementMatch: (query: string) => `No element matches "${query}".`,
+  spyMatchCount: (count: number) => `${count} ${count === 1 ? 'match' : 'matches'}`,
+  spyChooseWindow: 'Choose a window on the left to see its elements.',
+  spyChooseElement: 'Choose an element in the tree to see its properties.',
+  spyNoName: '(no name)',
+  spyInWindow: (title: string) => `in ${title}`,
+  spyGroups: {
+    found: 'How AYNA finds it',
+    where: 'Where it is',
+    state: 'State',
+  },
+  spyAdvanced: 'Advanced',
+  spyAdvancedSummary: 'all UI Automation properties',
+  // Plain words for the properties shown outside Advanced (docs/ui/style-guide.md glossary).
+  spyPlain: {
+    name: 'Text',
+    controlType: 'Type',
+    nearestLabel: 'Label next to it',
+    windowTitle: 'Window',
+    position: 'Position',
+    size: 'Size',
+    enabled: 'Enabled',
+    visible: 'Visible',
+  },
+  spyPosition: (x: number, y: number) => `${x}, ${y}`,
+  spySize: (width: number, height: number) => `${width} × ${height} px`,
+  /** UI Automation control types in plain words; unknown types are shown as they are. */
+  controlTypes: {
+    AppBar: 'App bar',
+    Button: 'Button',
+    Calendar: 'Calendar',
+    CheckBox: 'Check box',
+    ComboBox: 'Drop-down list',
+    Custom: 'Custom element',
+    DataGrid: 'Table',
+    DataItem: 'Table row',
+    Document: 'Document',
+    Edit: 'Text box',
+    Group: 'Group',
+    Header: 'Header',
+    HeaderItem: 'Column header',
+    Hyperlink: 'Link',
+    Image: 'Image',
+    List: 'List',
+    ListItem: 'List item',
+    Menu: 'Menu',
+    MenuBar: 'Menu bar',
+    MenuItem: 'Menu item',
+    Pane: 'Panel',
+    ProgressBar: 'Progress bar',
+    RadioButton: 'Option button',
+    ScrollBar: 'Scroll bar',
+    SemanticZoom: 'Zoom view',
+    Separator: 'Separator',
+    Slider: 'Slider',
+    Spinner: 'Number box',
+    SplitButton: 'Split button',
+    StatusBar: 'Status bar',
+    Tab: 'Tabs',
+    TabItem: 'Tab',
+    Table: 'Table',
+    Text: 'Label',
+    Thumb: 'Thumb',
+    TitleBar: 'Title bar',
+    ToolBar: 'Toolbar',
+    ToolTip: 'Tooltip',
+    Tree: 'Tree',
+    TreeItem: 'Tree item',
+    Window: 'Window',
+  } as Record<string, string>,
   spyRefresh: 'Refresh',
   spyWindowsTitle: 'Windows',
   spyEmpty: 'The agent sees no open windows.',
@@ -136,6 +208,7 @@ export const strings = {
   spyUnknownProcess: 'unknown process',
   spyTreeTitle: 'Elements',
   spyCapturing: 'Capturing the window…',
+  spyBack: 'Back to the properties',
   spyCaptureAgain: 'Capture again',
   /** `app` is the exe name and file version, when the agent could read them. */
   spyCaptured: (time: string, app: string | undefined, count: number, durationMs: number) =>
@@ -144,8 +217,6 @@ export const strings = {
   spyReadErrors: (count: number) =>
     `${count} ${count === 1 ? 'property' : 'properties'} could not be read, so some values are missing.`,
   spyUnknownControlType: 'Element',
-  spyExpand: 'Expand',
-  spyCollapse: 'Collapse',
   spyHotkeyHint: (label: string) => `Press ${label} with the mouse over an element to pick it.`,
   spyHotkeyTaken: (label: string) =>
     `${label} is in use by another program, so picking with the keyboard is off.`,
@@ -335,4 +406,10 @@ export const strings = {
 /** The server's own message when it sent one (e.g. which field is wrong), else ours. */
 export function usersErrorText(error: UsersError): string {
   return error.detail ?? strings.usersErrors[error.reason]
+}
+
+/** A control type in plain words ("Edit" → "Text box"). */
+export function controlTypeLabel(controlType: string | undefined): string {
+  if (controlType === undefined) return strings.spyUnknownControlType
+  return strings.controlTypes[controlType] ?? controlType
 }
