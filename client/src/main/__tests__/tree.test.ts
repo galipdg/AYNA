@@ -5,6 +5,7 @@ import type { TreeNode } from '../../shared/snapshot.ts'
 import {
   ancestorIds,
   automationIdLeaf,
+  deepestRow,
   elementMatches,
   foldText,
   parentMap,
@@ -157,5 +158,14 @@ describe('searchTree', () => {
     const result = searchTree(tree, 'giriş')!
     assert.deepEqual([...result.matches].sort(), ['b', 'g'])
     assert.deepEqual(ids(visibleRows(tree, new Set(), result.shown)), ['w', 'g', 'b'])
+  })
+})
+
+describe('deepestRow', () => {
+  it('counts every row, not only the ones drawn (#204)', () => {
+    const open = new Set(['w', 'g', 'm'])
+    assert.equal(deepestRow(visibleRows(tree, open)), 2)
+    assert.equal(deepestRow(visibleRows(tree, new Set())), 0)
+    assert.equal(deepestRow([]), 0)
   })
 })

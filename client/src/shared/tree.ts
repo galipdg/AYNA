@@ -126,3 +126,10 @@ export function visibleRows(root: TreeNode, open: Set<string>, shown?: Set<strin
   }
   return rows
 }
+
+/** The depth of the deepest row, 0 for none. */
+export function deepestRow(rows: readonly TreeRow[]): number {
+  let deepest = 0
+  for (const row of rows) if (row.depth > deepest) deepest = row.depth
+  return deepest
+}

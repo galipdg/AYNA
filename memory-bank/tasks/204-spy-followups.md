@@ -31,17 +31,29 @@ main-process / dev-mock changes testable with `node --test`; 4, 5, 7 are rendere
 - [x] 5 unnamed structural rows: an element with no Name and no AutomationId is captioned by its
   type alone, muted (`.node-unnamed`). Not collapsed: collapsing changes the tree's shape for
   keyboard moves and parent paths, and labelling answers "26 % of rows say nothing".
-- [ ] 6 large-tree smoothness
+- [~] 6 large-tree smoothness — cause found on macOS, fix in; **Windows measurement pending**.
+  Harness (scratch Vite page rendering `ElementTree` alone, pane hidden so only sizes are
+  trustworthy, not frame times): scrolling a 3031-element uniform tree kept **1** canvas width;
+  a 285-element Chromium-shaped tree (unnamed wrapper chains to depth ~45, captions of very
+  different lengths) went through **12** widths (581–1157 px), because `.tree-canvas` was
+  `min-width: max-content` of the rows drawn at that moment, so the horizontal scroll range and
+  offset jumped on nearly every step. Now the width is `max(100%, deepest row's indent + 300 px)`
+  over all visible rows and a longer caption ends in "…" (full text in `title`): 1 width
+  (1136 px) through the same scroll. Search on 285 elements: ~27 ms, not the cost.
 - [x] 7 Add to repository opens "Advanced settings" when the suggested Find-by set does not find
   exactly one element; style guide §Advanced reworded (not "only test engineers").
 - [ ] 8 (optional) dev-only Desktop behind the real `rpc.py`
-- Next step: point 6 — find what makes 285 real elements slower than 3031 synthetic ones.
+- Next step: point 8 (optional) — decide with omer; then post the Windows check on #204, label
+  `needs-windows-test`, open the PR.
 
 ## Manual checks
 - (planned) Windows session: point 6 on VS Code (285 elements) — scroll and search; point 1 on
   KeePass 2 (capture again after a timeout).
 
 ## Open issues
+- Deep Chromium trees indent 16 px per level, so a row at depth 45 starts 720 px in; a smaller
+  indent past some depth, or scrolling the chosen row's caption into view horizontally, would
+  help. Not in #204's points; raise it after the Windows session if it still reads badly.
 - **#217 (#207) adds `client/src/main/__tests__/demoSeed.test.ts`, which reads
   `dev/mock/snapshot.json`.** This branch deletes that file. Whichever PR merges second must point
   the test at `schemas/examples/snapshot/trial-login.json` (or `defaultSnapshot`).

@@ -899,9 +899,10 @@ ul.message {
   outline-offset: -2px;
 }
 
+/* Its width comes from ElementTree (the deepest row), not from the rows drawn at the moment:
+   with max-content, scrolling a tree of uneven depth changed the width at every step (#204). */
 .tree-canvas {
   position: relative;
-  min-width: max-content;
 }
 
 .tree-row {
@@ -911,8 +912,20 @@ ul.message {
   height: 28px;
   padding-right: 12px;
   border-left: 3px solid transparent;
+  overflow: hidden;
   white-space: nowrap;
   cursor: default;
+}
+
+/* A caption longer than the room ElementTree gives it ends in an ellipsis. */
+.tree-row .node-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-row .node-type {
+  flex: none;
 }
 
 .tree-row:hover {
