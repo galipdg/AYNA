@@ -81,7 +81,7 @@ The visible top-level windows on the desktop, for the Spy's window picker. No pa
 | `className` | string | UIA ClassName. For Qt it is the Python/C++ class name, the most stable handle for a window. |
 | `processId` | integer | Owning process. |
 | `processName` | string or null | Exe file name without path; `null` when it cannot be read (e.g. an elevated process). |
-| `bounds` | [left, top, right, bottom] | Physical pixels in virtual-screen coordinates. Values are negative on a monitor left of or above the primary one. |
+| `bounds` | [left, top, right, bottom] | Physical pixels in virtual-screen coordinates. Values are negative on a monitor left of or above the primary one. The rectangle the window **appears** to occupy (DWM extended frame bounds), not `GetWindowRect`: since Windows 10 a resizable window carries an *invisible* resize border outside its visible frame, and including it makes a highlight land outside the window (measured 8 px at 150 % scaling, #184). This is deliberately **not** the same rectangle as `snapshot`'s `window.bounds`, which is the window element's UI Automation rectangle and excludes the title bar. |
 
 Without a UI Automation backend (not Windows, or before #12) the method answers `-32001`.
 
@@ -148,6 +148,68 @@ A walk that did not finish within its budget (the message text comes from the ba
 ← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32002, "message": "Snapshot timeout: walk stopped after 2000 ms"}}
 ```
 
+### `runSteps`
+
+Plays a step document against one window and answers with one result per step, in order (#26).
+**#26 performs Click and Type.** Every other keyword comes back as that step's `failed`
+result naming #40, so a test is never reported as passed because a keyword was skipped.
+
+| Param | Type | Meaning |
+|---|---|---|
+| `handle` | integer | The window to play against, from `listWindows`. #40 makes this optional and finds the window from a target's `windowTitle`; until then an explicit handle keeps window discovery (FR-35's "unexpected window") a separate problem. |
+| `steps` | object | A step document, `{version, steps}` (`schemas/step.schema.json`). Versions **0.1 and 0.2** are both read: Click and Type are identical in them. |
+| `targets` | object | Per logical name, the repository object's property sets: `properties` (its primary, "Find by") and optional `fallback` (its "Backup", #25). `serverElementId` and `featureVersion` from the healing request below are accepted and ignored. |
+| `runId`, `appVersionId` | UUID string, optional | Accepted and ignored, so the client can send one request shape before and after #40. |
+| `defaultTimeoutMs` | integer 1–600000, optional | What a step without `timeoutMs` waits. Default **10 000 ms** (RS NFR-05). A step's own `timeoutMs: 0` means check once and never means "use this". |
+
+**How a target is resolved.** The window is read and every element is matched against
+`properties`; the result is one of three, and all three are different outcomes:
+
+- **exactly one** — the element is acted on;
+- **none** — `fallback` is tried, and if that also matches none the step keeps waiting and then
+  fails as FR-35 *element not found*;
+- **more than one** — the step fails too, and **playback never picks one**. UI Automation does
+  not promise a stable child order between runs, so a guess would act on a different element on
+  a different day; the message says how many matched and asks for another property. `fallback`
+  is tried only when `properties` matches *nothing*: a fallback replaces a primary set, it
+  cannot narrow one.
+
+Waiting is a re-read every 250 ms until the target resolves or the step's time runs out — never
+a fixed sleep.
+
+**Actions use UI Automation patterns only, never coordinates.** Click tries `Invoke`, `Toggle`,
+`SelectionItem.Select`, then `LegacyIAccessible.DoDefaultAction`; Type tries `Value.SetValue`
+and then focus-and-keys. A pattern that is present can still refuse (a disabled button has
+`Invoke`), so a refusal falls through to the next one.
+
+A result carries `stepIndex`, `status` (`passed`, `failed` or `notRun`), `durationMs`, and when
+known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback match is what #73
+heals) and `performedWith` (the pattern that did it). **A failed step stops the run** and every
+step after it is `notRun` (TBD-6).
+
+```json
+→ {"jsonrpc": "2.0", "id": 7, "method": "runSteps", "params": {
+    "handle": 657704,
+    "steps": {"version": "0.1", "steps": [
+      {"keyword": "Type", "target": "login.userNameInput", "value": "admin"},
+      {"keyword": "Click", "target": "login.loginButton"}]},
+    "targets": {
+      "login.userNameInput": {"properties": {"automationId": "QApplication.loginWindow.usernameInput"}},
+      "login.loginButton": {"properties": {"automationId": "QApplication.loginWindow.loginButton"},
+                            "fallback": {"name": "Login", "controlType": "Button"}}}}}
+← {"jsonrpc": "2.0", "id": 7, "result": {"results": [
+    {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue"},
+    {"stepIndex": 1, "status": "passed", "durationMs": 44, "matched": "primary", "performedWith": "Invoke"}]}}
+```
+
+A document the agent cannot read at all is `-32602`; a handle that is not a top-level window is
+`-32000`, and a window that cannot be read inside its budget is `-32002`, because reading the
+window is how a target is resolved.
+
+**Not yet, and all #40's:** the other keywords, checkpoints, screenshots, healing, the
+`run.stepResult` notifications below, and finding the window without a handle. `ping` therefore
+still answers `rpcVersion` `"0.1"`.
+
 ## Errors
 
 | Code | Name | When |
@@ -209,7 +271,11 @@ When no element matches a step's target after the wait, the step ends as "repair
 
 ### The run request (defined by #40)
 
-Playback's request belongs to #40. For healing it must carry these params, which the agent copies into its results:
+Playback's request belongs to #40. **Its first three params exist now** — see
+[`runSteps`](#runsteps) (#26: `handle`, `steps`, `targets`, where a target carries the object's
+primary *and* fallback property sets). `runId` and `appVersionId` are already accepted and
+ignored, so the client can send one shape throughout. For healing the request must carry these
+params, which the agent copies into its results:
 
 | Param | Type | Meaning |
 |---|---|---|

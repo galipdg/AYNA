@@ -1,5 +1,6 @@
 # Starts the whole AYNA backend: `docker compose up`.
-# Dev defaults only; set NEO4J_PASSWORD in a local .env for anything else.
+# Dev defaults only; set NEO4J_PASSWORD in a local .env for anything else,
+# and AYNA_SERVER_PORT there when another program holds 8080 (#208).
 services:
   neo4j:
     image: neo4j:5.26-community
@@ -28,7 +29,7 @@ services:
       AYNA_ADMIN_USERNAME: ${AYNA_ADMIN_USERNAME:-}
       AYNA_ADMIN_PASSWORD: ${AYNA_ADMIN_PASSWORD:-}
     ports:
-      - "8080:8080"
+      - "${AYNA_SERVER_PORT:-8080}:8080"
     depends_on:
       neo4j:
         condition: service_healthy

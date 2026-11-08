@@ -72,6 +72,7 @@ NEVER_MATCH: dict[str, str] = {
     "framework_id": "the same for every element of an application",
     "offscreen": "state, not identity: changes with scrolling and tab selection",
     "enabled": "state, not identity: changes with the application's own logic",
+    "nearest_label_source": "says how nearest_label was found, not what the element is",
 }
 
 #: An AutomationId the framework generated rather than a developer chose: a Win32 control id

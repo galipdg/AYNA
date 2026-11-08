@@ -28,4 +28,5 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-10-31 | [Accounts, roles, sessions and API tokens](2026-10-31-accounts-and-tokens.md) | Proposed (#60) |
 | 2026-11-01 | [Snapshot schema v0: flat pre-order tree, one window, no partial document](2026-11-01-snapshot-schema-v0.md) | Accepted |
 | 2026-11-03 | [Client UI language: Turkish and English, chosen by the user](2026-11-03-client-ui-language.md) | Accepted |
+| 2026-11-05 | [Runs API and live run updates](2026-11-05-runs-api-and-live-updates.md) | Proposed (#44) |
 | 2026-11-07 | [Graph schema v0.4: one Window per snapshot id](2026-11-07-window-snapshot-unique.md) | Proposed (#15) |
