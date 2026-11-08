@@ -40,13 +40,13 @@ import com.ayna.server.error.ErrorResponses;
 class OpenApiConfig {
 
 	/**
-	 * Step documents and test files travel as `JsonNode`, so the contract shows a plain object
-	 * instead of Jackson's getters; the step schema in `schemas/` stays the real contract.
+	 * Step documents, test files and snapshots travel as `JsonNode`, so the contract shows a plain
+	 * object instead of Jackson's getters; the schemas in `schemas/` stay the real contract.
 	 */
 	static {
 		SpringDocUtils.getConfig()
 			.replaceWithSchema(JsonNode.class, new ObjectSchema()
-				.description("JSON document; steps are validated against schemas/step.schema.json"));
+				.description("JSON document, validated against its schema in schemas/ (steps: step.schema.json, snapshots: snapshot.schema.json)"));
 	}
 
 	static final String BEARER_AUTH = "bearerAuth";
@@ -56,7 +56,24 @@ class OpenApiConfig {
 		return new OpenAPI()
 			.info(new Info().title("AYNA server API")
 				.version("v0")
-				.description("REST API between the AYNA client and server. Generated from the code; do not edit by hand."))
+				.description("""
+						REST API between the AYNA client and server. Generated from the code; do not edit by hand.
+
+						**Live run status** is a WebSocket at `/ws/runs`, outside this document (ADR \
+						runs-api-and-live-updates). The upgrade request carries the same Bearer token; without a valid \
+						one it gets 401, and a token that expires or is revoked closes the connection with 1008 within \
+						60 s. All messages are JSON objects.
+
+						- Client to server: `{"type":"subscribe","testId":"…"}`, `{"type":"unsubscribe","testId":"…"}`
+						- `subscribed`: `testId`
+						- `run.started`: `testId`, `run`
+						- `run.stepResult`: `testId`, `runId`, `stepIndex`, `stepId`, `status`, `durationMs`, `message`
+						- `run.finished`: `testId`, `run`
+						- `error`: `detail`
+
+						`run` has the shape of `RunSummary`. Nothing is replayed: after `subscribed` and after a \
+						reconnect, read `GET /api/tests/{testId}/runs?status=running` and `GET /api/runs/{runId}`, then \
+						merge by `stepIndex`."""))
 			.servers(List.of(new Server().url("/")))
 			.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
 			.components(new Components()
@@ -70,7 +87,8 @@ class OpenApiConfig {
 						problem("No valid session or API token; on login, a wrong user name or password"))
 				.addResponses(responseName(HttpStatus.FORBIDDEN), problem("The account's role may not do this"))
 				.addResponses(responseName(HttpStatus.NOT_FOUND), problem("An id in the path names nothing"))
-				.addResponses(responseName(HttpStatus.CONFLICT), problem("A name is already taken")));
+				.addResponses(responseName(HttpStatus.CONFLICT),
+						problem("The request conflicts with what is stored, such as a name already taken")));
 	}
 
 	/** Adds the responses of {@link ErrorResponses} next to the generated success response. */
