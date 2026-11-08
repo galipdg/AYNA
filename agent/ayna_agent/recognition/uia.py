@@ -39,7 +39,12 @@ from typing import Any
 
 from ayna_agent import __version__
 from ayna_agent.recognition import snapshot as snap
-from ayna_agent.rpc import SnapshotTimeout, UiaUnavailable, WindowNotFound
+from ayna_agent.rpc import (
+    BadStepDocument,
+    SnapshotTimeout,
+    UiaUnavailable,
+    WindowNotFound,
+)
 
 log = logging.getLogger(__name__)
 
@@ -189,6 +194,90 @@ class UiaDesktop:
         partial document, because candidates ranked from a partial tree would give a confident
         but unfounded proposal (RS 0.6 FR-29/FR-35).
         """
+        progress, started_at, duration_ms, budget_ms = self._walk_window(
+            handle, timeout_ms
+        )
+        return snap.build(
+            progress.nodes,
+            window=progress.window,
+            app=progress.app,
+            started_at=started_at,
+            duration_ms=duration_ms,
+            budget_ms=budget_ms,
+            read_errors=progress.read_errors,
+            agent_version=__version__,
+        )
+
+    def read_tree(
+        self, handle: int, timeout_ms: int | None = None
+    ) -> tuple[list[dict[str, Any]], list[Any]]:
+        """The window's raw nodes in pre-order and the live element behind each one.
+
+        What `snapshot` reads, before it becomes a document: `(nodes, infos)` of equal length,
+        where a node is the snake_case mapping `ayna_agent.model.describe_tree` takes. Playback
+        (#26) resolves a target by deriving descriptors from `nodes` -- the *same* derivation a
+        snapshot uses, so a repository object matches the values it was stored with -- and then
+        acts on the element at the same index.
+
+        Raises the same errors as `snapshot` for the same reasons, timeout included: a target
+        resolved from a partial tree could be the wrong element, which is worse than no answer.
+        """
+        progress, _started_at, _duration_ms, _budget_ms = self._walk_window(
+            handle, timeout_ms
+        )
+        return progress.nodes, progress.infos
+
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Play a step document against one window and return one result per step (#26).
+
+        Lives on this class rather than in `playback/` because **every UI Automation call has
+        to happen on the server's single `ayna-uia` thread**, in its COM apartment, and this
+        object is what owns that thread. The rules themselves are in
+        `ayna_agent.playback.runner`, which knows nothing about UIA; this method is only the
+        place where the window reading and the step playing meet.
+
+        Raises `UiaUnavailable` when there is no backend here, `WindowNotFound` for a handle
+        that is not a top-level window, and `SnapshotTimeout` when a window cannot be read
+        inside its budget -- the same three as `snapshot`, because reading the window is how a
+        target is resolved -- plus `BadStepDocument` for a document that cannot be read at all.
+        A step that simply fails comes back as a `failed` result instead.
+        """
+        from ayna_agent.playback.runner import DEFAULT_TIMEOUT_MS, StepDocumentError
+        from ayna_agent.playback.runner import run_steps as play
+
+        self._require_ready()
+        try:
+            results = play(
+                steps,
+                targets,
+                lambda: self.read_tree(handle),
+                default_timeout_ms=(
+                    DEFAULT_TIMEOUT_MS
+                    if default_timeout_ms is None
+                    else default_timeout_ms
+                ),
+            )
+        except StepDocumentError as exc:
+            # The server owns the error vocabulary and imports nothing from a backend, so the
+            # translation happens here rather than in `rpc.py`.
+            raise BadStepDocument(str(exc)) from exc
+        return [result.to_json() for result in results]
+
+    def _walk_window(
+        self, handle: int, timeout_ms: int | None
+    ) -> tuple[_Progress, datetime, int, int]:
+        """Walk one window inside its budget, on a thread that can be abandoned.
+
+        Shared by `snapshot` and `read_tree`, because the budget, the abandoned-thread case and
+        the "no partial tree" rule are properties of reading a window, not of what the caller
+        does with the result.
+        """
         self._require_ready()
         budget_ms = timeout_ms or self.default_budget_ms
         if not _is_window(handle) or _is_child(handle):
@@ -228,18 +317,7 @@ class UiaDesktop:
                 f"having reached {progress.reached} element(s); the window needs more time "
                 f"than the budget allows"
             )
-
-        nodes = progress.nodes
-        return snap.build(
-            nodes,
-            window=progress.window,
-            app=progress.app,
-            started_at=started_at,
-            duration_ms=duration_ms,
-            budget_ms=budget_ms,
-            read_errors=progress.read_errors,
-            agent_version=__version__,
-        )
+        return progress, started_at, duration_ms, budget_ms
 
     # --- the walk itself, on its own thread ----------------------------------------------
 
@@ -324,6 +402,7 @@ class UiaDesktop:
                 }
             )
             progress.nodes.append(node)
+            progress.infos.append(info)
             progress.reached = len(progress.nodes)
             # Set from values already read, so naming the element a walk got stuck on costs
             # no extra cross-process call. Blocking happens in `children()` far more often
@@ -406,6 +485,7 @@ class _Progress:
         "app",
         "blocked_on",
         "error",
+        "infos",
         "nodes",
         "reached",
         "read_errors",
@@ -415,6 +495,11 @@ class _Progress:
 
     def __init__(self) -> None:
         self.nodes: list[dict[str, Any]] = []
+        #: The live element behind each node, same order and length as `nodes`. A snapshot
+        #: throws these away, but playback (#26, #40) has to act on the element it resolved,
+        #: and re-finding it by position afterwards would be a second walk and a second
+        #: chance to pick the wrong one.
+        self.infos: list[Any] = []
         self.window: dict[str, Any] = {}
         self.app: dict[str, Any] = {}
         self.read_errors = 0
