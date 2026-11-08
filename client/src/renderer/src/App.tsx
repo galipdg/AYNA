@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AppInfo, Application, ConnectionError, CurrentUser } from '../../shared/api.ts'
+import AgentStatusBar from './AgentStatusBar.tsx'
 import AppPicker from './AppPicker.tsx'
 import Login from './Login.tsx'
 import ServerSettings from './ServerSettings.tsx'
@@ -83,6 +84,7 @@ export default function App() {
     <main className="app">
       <h1>{strings.appName}</h1>
       <p className="tagline">{strings.tagline}</p>
+      <AgentStatusBar />
 
       {view.phase === 'loading' && !error && (
         <p>{view.url ? strings.checkingSaved(view.url) : strings.loading}</p>

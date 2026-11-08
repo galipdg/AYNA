@@ -1,4 +1,5 @@
 import type {
+  AgentState,
   ConnectionFailure,
   LoginResult,
   RequestFailure,
@@ -58,6 +59,19 @@ export const strings = {
     duplicate: 'An application with this name already exists. Choose it from the list.',
     invalid: 'Enter both a name and a technology.',
   } satisfies Record<RequestFailure | 'duplicate' | 'invalid', string>,
+  chooseFailed:
+    'Could not save the choice on this machine. Check that the settings folder is writable.',
+
+  agentLabel: 'Agent',
+  agentStates: {
+    starting: 'starting…',
+    connected: 'connected',
+    restarting: 'restarting…',
+    failed: 'failed',
+    stopped: 'stopped',
+  } satisfies Record<AgentState, string>,
+  agentAttempt: (restarts: number, max: number) => `attempt ${restarts} of ${max}`,
+  agentRetry: 'Start again',
 
   loginTitle: 'Log in',
   loginIntro: (url: string) => `Log in to the AYNA server at ${url}.`,

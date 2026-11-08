@@ -4,6 +4,7 @@ import {
   contentSecurityPolicy,
   isAllowedNavigation,
   isAllowedRequest,
+  isTrustedSender,
   secureWebPreferences,
 } from '../security.ts'
 
@@ -70,6 +71,21 @@ describe('isAllowedNavigation', () => {
     assert.equal(isAllowedNavigation('https://example.com/', entry), false)
     assert.equal(isAllowedNavigation('file:///etc/passwd', entry), false)
     assert.equal(isAllowedNavigation('https://example.com/', `${DEV}/`), false)
+  })
+})
+
+describe('isTrustedSender', () => {
+  const entry = 'file:///app/out/renderer/index.html'
+
+  it("accepts only the entry page's frame", () => {
+    assert.ok(isTrustedSender(entry, entry))
+    assert.ok(isTrustedSender(`${DEV}/`, DEV))
+    assert.equal(isTrustedSender('file:///app/out/renderer/other.html', entry), false)
+    assert.equal(isTrustedSender('https://example.com/', entry), false)
+  })
+
+  it('rejects a destroyed frame', () => {
+    assert.equal(isTrustedSender(undefined, entry), false)
   })
 })
 

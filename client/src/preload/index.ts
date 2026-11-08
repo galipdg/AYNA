@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import { IPC, type AynaApi } from '../shared/api.ts'
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import { IPC, type AgentStatus, type AynaApi } from '../shared/api.ts'
 
 const api: AynaApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
@@ -10,6 +10,13 @@ const api: AynaApi = {
   createApplication: (name, technology) =>
     ipcRenderer.invoke(IPC.createApplication, name, technology),
   chooseApplication: (id) => ipcRenderer.invoke(IPC.chooseApplication, id),
+  getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
+  onAgentStatus: (listener) => {
+    const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)
+    ipcRenderer.on(IPC.agentStatus, forward)
+    return () => ipcRenderer.removeListener(IPC.agentStatus, forward)
+  },
+  retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
   login: (username, password) => ipcRenderer.invoke(IPC.login, username, password),
   logout: () => ipcRenderer.invoke(IPC.logout),
   currentUser: () => ipcRenderer.invoke(IPC.currentUser),
