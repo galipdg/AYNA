@@ -236,6 +236,12 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR with `Closes #208` on omer's OK.
 - Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.
 - Then (omer: dismiss hasan's change request and merge; merge every PR of ours with finished reviews): #154 merged after dismissing hasan's review (galip approved; no bypass, no auto-merge in the repo). Whole stack merged in order #186 → #197, closing #25, #30, #195, #196; #188/#190 bodies changed to "Part of" (criteria open). Client build in CI fails with a 504 from an electron-builder download on `main` too; merged on CI lint/tests + local build. Squash-stack gotcha in `learnings.md`.
+
+## 2026-11-08 (fifteenth session) · #51 run screenshots, idle timeout, retention
+- Session start: no human review yet on #217–#220, #222 (only Copilot's "insufficient quota" notes); nothing waiting for omer's review; `main` = `origin/main`.
+- omer chose #51. Design questions answered (all recommended): separate PNG upload, global retention 1000, abort after 60 min idle, `repairProposed` moves to #74. ADR `2026-11-08-run-screenshots-and-retention` (Proposed).
+- Built on `omer/51-screenshots-retention`: `ScreenshotStore`, upload/download endpoints, `RunHousekeeping` sweep, test delete removes folders, 413/415 problem responses, Compose volume and env vars. Server 134/134 (15 new incl. 100 runs × 3 screenshots); Compose smoke on the real image 25/25 plus retention after restart.
+- Next: push and PR (`Closes #51`) on omer's OK; comment on #74 about `repairProposed`.
 ## 2026-11-08 (fifteenth session) · #205 SelectRow and row checks in the editor
 - `main` unchanged (`3bf3f15`); SSH still times out, fetched over HTTPS. No PR waits for omer's review; #217/#218/#219 wait for reviews.
 - #205 on `omer/205-selectrow-rows` (board In progress): `SelectRow`, a row picker (number, or a cell's text with an optional column), `cell` / `rowExists` / `rowCount` checks, element menu limited to tables and lists (cell: tables) with a local problem for a wrong control type. The #192 round-trip test no longer skips any valid case. en/tr texts, `docs/ui/` vocabulary.

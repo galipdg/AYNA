@@ -88,7 +88,11 @@ class OpenApiConfig {
 				.addResponses(responseName(HttpStatus.FORBIDDEN), problem("The account's role may not do this"))
 				.addResponses(responseName(HttpStatus.NOT_FOUND), problem("An id in the path names nothing"))
 				.addResponses(responseName(HttpStatus.CONFLICT),
-						problem("The request conflicts with what is stored, such as a name already taken")));
+						problem("The request conflicts with what is stored, such as a name already taken"))
+				.addResponses(responseName(HttpStatus.CONTENT_TOO_LARGE),
+						problem("The body is larger than this endpoint takes"))
+				.addResponses(responseName(HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+						problem("The body's Content-Type is not one this endpoint takes")));
 	}
 
 	/** Adds the responses of {@link ErrorResponses} next to the generated success response. */

@@ -33,8 +33,9 @@ final class RunDtos {
 			List<StepResultResponse> results) {
 	}
 
+	/** `screenshotUrl` is where the step's PNG is read, or null while it has none (#51). */
 	record StepResultResponse(String id, int stepIndex, String stepId, String status, Long durationMs, String message,
-			Instant receivedAt) {
+			Instant receivedAt, String screenshotUrl) {
 	}
 
 	record StepResultWritten(String stepResultId) {

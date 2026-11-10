@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import com.ayna.server.error.ApiExceptions.ConflictException;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
+import com.ayna.server.error.ApiExceptions.TooLargeException;
 import com.ayna.server.error.ApiExceptions.UnauthorizedException;
 
 /**
@@ -38,6 +39,11 @@ class ApiErrorHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler
 	ProblemDetail conflict(ConflictException ex) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+	}
+
+	@ExceptionHandler
+	ProblemDetail tooLarge(TooLargeException ex) {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.CONTENT_TOO_LARGE, ex.getMessage());
 	}
 
 	@ExceptionHandler
