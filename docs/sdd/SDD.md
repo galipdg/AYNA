@@ -8,8 +8,8 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
-| Version | 0.3 — draft of sections 1–7 and 9 |
-| Date | 2026-11-07 |
+| Version | 0.4 — draft of sections 1–7 and 9 |
+| Date | 2026-11-08 |
 | Status | Sections 1–4 (#45), 5 (#50), 6 (#48) and 7 (#53) drafted. Section 8 waits for the final RS (#41). Final PDF: #53, due 7 Dec 2026 |
 
 ## Document history
@@ -20,6 +20,7 @@
 | 0.1 | 2026-10-31 | Ömerfaruk Sarıbal | Status after #135, #151, #156, #158 merged; retrieval and AI errors settled (#155 review) |
 | 0.2 | 2026-10-31 | Ömerfaruk Sarıbal | Test design (#48) |
 | 0.3 | 2026-11-07 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12, #21 and #60 merged, and PR #173, PR #174, PR #193 |
+| 0.4 | 2026-11-08 | Ömerfaruk Sarıbal | Status after the client stack (#17, #24, #25, #30, #38, #183–#185), #15 and step schema v0.2 merged; §7 rows for *Step schema v0.2*, *Client UI language* and *Graph schema v0.4*; RQ1's dump script renamed (#199) (#53) |
 
 ---
 
@@ -106,11 +107,11 @@ AYNA has six run-time components. The table gives each one's responsibility; §2
 
 | Component | Responsibility | Technology | Code | Owner | Status |
 |---|---|---|---|---|---|
-| **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); login, users and API tokens (#60, PR #179); agent process manager (#17, PR #154, still open; its Windows check is pending). Planned: the screens of #24, #30, #38, #44, #68, #75, #78 |
+| **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); login, users and API tokens (#60, PR #179); agent process manager (#17, PR #154; its last Windows check is pending); app shell and style (#183, PR #188); Turkish and English UI (#185, PR #190); Object Spy (#24, #184, PRs #186, #189; the Spy hotkey waits for #22); add to repository (#25, PR #187); repository view (#30, PR #191); codeless step editor (#38, PR #192; grid rows in PR #220, #205). Planned: the screens of #44, #68, #75, #78 |
 | **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UIA, win32 fallback) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping` (#16, PR #135); element descriptor (#11, PR #175); `listWindows` and `snapshot` on UI Automation (#12, PR #180); healing scorer v0 (#49, PR #141). Planned: #22, #23, #26, #40, #54, #63, #73 |
 | **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | Planned: #61, #66 |
-| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160); accounts, roles and API tokens (#60, PR #179); runs API and live run updates (#44, PR #193). Planned: #15, #25, #51, #59, #74 |
-| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39), v0.2 (`V0003`, #60), v0.3 (`V0004`, #44). Planned: vector index (#58) |
+| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160); accounts, roles and API tokens (#60, PR #179); runs API and live run updates (#44, PR #193); snapshot import (#15, PR #182); repository objects API (#25, #30, PRs #187, #191). Planned: #51, #59, #74 |
+| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39), v0.2 (`V0003`, #60), v0.3 (`V0004`, #44), v0.4 (`V0005`, #15). Planned: vector index (#58) |
 | **AI service** | Turkish instruction + candidate objects → suggested steps with reasons. Saves nothing. Uses a local model server. | Python; Ollama or llama.cpp with a 7–8B quantised model | `ai/` | galip | **Built**: constrained generation (#37, PR #142), HTTP service (#71, PR #146). Planned: retrieval (#58), offline packaging (#82). Design: §5 |
 
 ```mermaid
@@ -244,7 +245,7 @@ flowchart LR
 
 | Node | What runs there | How it gets there | Status |
 |---|---|---|---|
-| Test machine | Client and agent. The client starts the agent as a child process with a fresh token and a port chosen by the OS, restarts it up to three times after a crash, and stops it on quit (FR-05). The packaged app brings its own Python interpreter (`AYNA_AGENT_PYTHON`). | One Windows installer, no internet, no development tools (NFR-36) | Planned: installer #84; agent manager built (#17, PR #154, still open; Windows check pending) |
+| Test machine | Client and agent. The client starts the agent as a child process with a fresh token and a port chosen by the OS, restarts it up to three times after a crash, and stops it on quit (FR-05). The packaged app brings its own Python interpreter (`AYNA_AGENT_PYTHON`). | One Windows installer, no internet, no development tools (NFR-36) | Planned: installer #84; agent manager built (#17, PR #154; its last Windows check pending) |
 | Backend host | `docker compose up` starts Neo4j, the server and, from #82, the AI service with its model server. Model weights and the embedding model are inside the image; nothing is downloaded at start (NFR-30). | Images loaded from files on an air-gapped machine (#85) | **Built**: Neo4j + server (`docker-compose.yml`, #4). Planned: AI service #82, screenshot volume #51 |
 | CI runner | CLI runner with a headless agent on a Windows runner; pulls a suite from the server or reads it from a file, writes JUnit XML. | Same installer or a Python environment on the runner | Planned: #61, #66, #67 |
 
@@ -283,7 +284,7 @@ No component connects outside the closed network at run time: no CDN, telemetry,
 
 #### 2.4.4 Other concerns
 
-- **Turkish text.** All interfaces are JSON in UTF-8, and Neo4j stores strings as Unicode, so ç, ğ, ı, İ, ö, ş, ü pass unchanged (NFR-16). Case-insensitive search must use Turkish-aware folding (İ/i, I/ı); this is settled where search is built (#30).
+- **Turkish text.** All interfaces are JSON in UTF-8, and Neo4j stores strings as Unicode, so ç, ğ, ı, İ, ö, ş, ü pass unchanged (NFR-16). Case-insensitive search uses Turkish-aware folding: İ, I and ı fold to i and diacritics are dropped, so "giris" finds "Giriş" (**Built** in the client, `client/src/shared/tree.ts`, used by the Spy, the repository and the test list; #30, #184).
 - **Versioned contracts.** Every contract carries a version and is frozen at G1 (§4.3, NFR-34).
 - **Testability.** Each component is tested in CI on every pull request (NFR-35); the test design is §6.
 - **Development defaults.** `docker-compose.yml` publishes Neo4j's ports and has a default password, for development only. The installed backend (#84) publishes only the server port and requires `NEO4J_PASSWORD`.
@@ -339,8 +340,8 @@ Schema v0 was written before the APIs that use it. The issues below change it; e
 |---|---|---|---|
 | `(Application)-[:HAS_OBJECT]->(RepoObject)` | v0 links a RepoObject to an application only through `RESOLVES_TO`, so an object not yet resolved in any version belongs to no application, and FR-07's uniqueness check has nothing to scope by | #39, #25 | **Built**: migration `V0002` (#39, PR #156); #25 writes it. ADR *Graph schema v0.1*, accepted |
 | `(Application)-[:HAS_TEST]->(TestCase)` | Tests are listed and counted per application (NFR-08); v0 has no such link | #39 | **Built** (PR #156) |
-| Logical names unique per application, pattern of the step schema, `none.noMatch` refused | FR-07, SC-11; `none.noMatch` is reserved by the AI service | #25 | Planned. Per application, not per version (ADR *Graph schema v0.1*) |
-| `RepoObject.columns` (list of strings) | Grid column headers from the snapshot, for the editor and for `column` in generated steps | #25, #15 | Planned |
+| Logical names unique per application, pattern of the step schema, `none.noMatch` refused | FR-07, SC-11; `none.noMatch` is reserved by the AI service | #25 | **Built** in `RepoObjectService` (#25, PR #187). Per application, not per version (ADR *Graph schema v0.1*) |
+| `RepoObject.columns` (list of strings) | Grid column headers from the snapshot, for the editor and for `column` in generated steps | #221 | Planned; the snapshot schema has no column headers yet, so #221 needs an ADR |
 | `Step.checkpoint` and `Step.row` as JSON strings; `Step.timeoutMs` integer | Neo4j properties cannot hold maps; v0 lists neither `timeoutMs` nor `row` | #39 | **Built** (PR #156) |
 | `User` and `AuthToken` nodes; acting user on edits, runs and decisions | FR-39, FR-40 | #60, #44, #74 | **Built**: `V0003`, the user on test edits (#60, PR #179) and on runs (#44, PR #193). Planned: on decisions (#74) |
 | `(Run)-[:ON_VERSION]->(AppVersion)`; a copy of the steps on Run; unique `(runId, stepIndex)` on StepResult | History by version (FR-22); results keep their meaning when a test is edited; overlapping retries cannot store a result twice | #44 | **Built** (`V0004`) |
@@ -353,7 +354,7 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 
 | Document | Schema | Produced by → consumed by | Status |
 |---|---|---|---|
-| Step document `{version, steps[]}` | `schemas/step.schema.json` | editor, AI service, recorder → server → agent | **Built**: v0.1 on `main` (#13); v0.2 adds grid rows (PR #150, proposed) |
+| Step document `{version, steps[]}` | `schemas/step.schema.json` | editor, AI service, recorder → server → agent | **Built**: v0.2 on `main` (#13, #147, PR #150), which adds grid and list rows; the editor's rows in PR #220 (#205) |
 | Element descriptor | `schemas/element.schema.json` | agent → client, server | **Built**: v0.1 on `main` (#11, PR #175) |
 | Window snapshot | `schemas/snapshot.schema.json` | agent → server | **Built**: v0.1 on `main` (#12, PR #180) |
 | Healing proposal | `schemas/healing-proposal.schema.json` | agent → client or CLI runner → server | **Built**: v0.2 on `main` (#149, PR #174) |
@@ -382,8 +383,8 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 | Health | `GET /api/health` → 200 `{status, db}`, or 503 when Neo4j is down | FR-37 | **Built** (#4) |
 | Applications | `POST /api/apps` (201; 409 duplicate name; 400 invalid) · `GET /api/apps` | FR-38 | **Built** (#128) |
 | Versions | `POST /api/apps/{id}/versions` (201; 404 unknown app; 409 duplicate) · `GET /api/apps/{id}/versions` | FR-38 | **Built** (#128) |
-| Snapshots | `POST /api/apps/{id}/versions/{v}/snapshots`, idempotent on the snapshot id | FR-04 | Planned: #15 |
-| Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests) | FR-06 – FR-09 | Planned: #25, #30 |
+| Snapshots | `POST /api/apps/{id}/versions/{v}/snapshots`, idempotent on the snapshot id | FR-04 | **Built** (#15, PR #182); one Window per snapshot id (`V0005`) |
+| Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests) | FR-06 – FR-09 | **Built** (`/api/apps/{id}/repo-objects`, `/api/repo-objects/{id}`; #25, #30, PRs #187, #191) |
 | Tests and steps | create, read, replace the step list (validated against the step schema), export and import | FR-11 – FR-14 | **Built** (#39, PR #156) |
 | Runs and results | `POST /api/runs` (copies the steps), `GET /api/runs/{id}`, `GET /api/tests/{id}/runs`, `POST /api/runs/{id}/finish`; `PUT /api/runs/{runId}/results/{stepIndex}`: 201, 200 for an identical repeat, 409 for another body (ADR *Healing proposal schema 0.2*); screenshot uploaded separately | FR-20, FR-28 | **Built** (#44): plain results. Planned: #51 (`repairProposed`, screenshots, retention, idle timeout) |
 | Reports | HTML report of a run | FR-21 | Planned: #59 |
@@ -865,7 +866,7 @@ Each research question has one experiment, owned by the member who owns the comp
 
 | RQ | Question and hypothesis | Conditions | Measure | Data | Target (semester 1) | Issue · owner |
 |---|---|---|---|---|---|---|
-| **RQ1** | How many standard controls does multi-property identification recognise? | One condition, per app and control type | Recognition rate, reported as two numbers: (a) **stable identification**, the share of controls uniquely identified by AutomationId, Name, ControlType and ClassName alone, which is the number NFR-27's 90 % applies to; (b) **with positional fallback**, the share once `parentPath` and `siblingIndex` are allowed. Reported per app and control type, with no pooled number; each failure is listed with its reason | Pilot apps and the sample app with labelled ground truth; the population is the *interactive* set of `eval/spikes/uia_dump.py stats` (15 control types, excluding elements inside the window's TitleBar) | (a) ≥ 90 % (NFR-27); below 90 % with > 10 % unrecognised opens D3, a visual fallback (#65) | #64 · hasan |
+| **RQ1** | How many standard controls does multi-property identification recognise? | One condition, per app and control type | Recognition rate, reported as two numbers: (a) **stable identification**, the share of controls uniquely identified by AutomationId, Name, ControlType and ClassName alone, which is the number NFR-27's 90 % applies to; (b) **with positional fallback**, the share once `parentPath` and `siblingIndex` are allowed. Reported per app and control type, with no pooled number; each failure is listed with its reason | Pilot apps and the sample app with labelled ground truth; the population is the *interactive* set of `eval/spikes/uia_tree_dump.py stats` (15 control types, excluding elements inside the window's TitleBar) | (a) ≥ 90 % (NFR-27); below 90 % with > 10 % unrecognised opens D3, a visual fallback (#65) | #64 · hasan |
 | **RQ2** | How consistent is replay? | 10 runs of each of ≥ 10 reference scenarios on an unchanged app, reset to its baseline data before each run (#33) | Flaky rate: share of scenarios whose 10 runs do not all give the same per-step pass/fail (durations excluded); root cause per flaky scenario. A lower bound: 10 runs catch a scenario failing 26 % of the time with 95 % probability, one failing 5 % of the time only 40 % (`1 − (1 − p)¹⁰`) | Sample app v1, reference scenarios | < 10 % (NFR-25), at the flakiness 10 runs can detect | #69 · hasan |
 | **RQ3 / H2** | Does repository context improve Turkish NL → steps accuracy? | With and without repository context, same model, decoding and grammar (paired per gold step; the alignment of generated and gold steps is #77's) | Step-level accuracy against gold; secondary: pair-level exact match (every step of the pair right); latency p50 / p95 on team hardware | Held-out split of 30 pairs, frozen before tuning (#57) | ≥ 60 % step accuracy with context | #77 · galip |
 | **RQ4 / H1** | Does weighted multi-property similarity find the moved element more often than single-property lookup? | Weighted similarity vs AutomationId-only lookup, on the same candidates (paired per changed control) | Correct-match accuracy per change type; candidate recall reported separately. An ambiguous result is a miss: an AutomationId lookup that returns several elements (normal on Qt, #159), or a tie at the top score of the weighted scorer; the number of ambiguous results is reported separately | Controlled-change versions with ground truth (#46) | H1 tested offline | #76, #79 · galip |
@@ -900,9 +901,10 @@ The decisions behind this design are ADRs in `memory-bank/decisions/`. The table
 | 2026-10-25 | *Client in TypeScript* | Accepted | JavaScript with JSDoc types checked by `tsc`, the first skeleton: the same type checker with more verbose syntax. |
 | 2026-10-25 | *Windows-bound work moves to Hasan* | Accepted | Writing UI Automation code on a Mac and looping it through Hasan's inbox, the weekly session and PRs: it turned out slow. |
 | 2026-10-25 | *Graph schema v0: neo4j-migrations and UUID ids* | Accepted | An own `ApplicationRunner` with idempotent scripts: no record of what ran, no checksum, hand-written guards for data migrations. Neo4j's `elementId()` as the identity: it can be reused after a delete. |
-| 2026-10-27 | *Step schema v0* | Proposed (#13) | A version on every step: repeated in every step and in the graph. A looser `target`: relaxing later is backward compatible, tightening is not. |
+| 2026-10-27 | *Step schema v0* | Accepted | A version on every step: repeated in every step and in the graph. A looser `target`: relaxing later is backward compatible, tightening is not. |
 | 2026-10-27 | *Agent JSON-RPC v0: handshake token, env-var token, ready line* | Accepted | The token in a query parameter (it ends up in logs) or in a first `hello` message (an unauthenticated socket stays open). Named pipes instead of TCP: Windows-specific code in Node and Python, awkward to test on macOS. |
 | 2026-10-28 | *Healing proposal transport: agent → client or CLI runner → server* | Accepted | The agent posting to the server itself: the user's session in a second process and a second network client. A separate `heal.proposed` message and `POST`: two writes for one fact, with an ordering rule. Floats with a tolerance: the contributions would add up to the score only within it. |
+| 2026-10-28 | *Step schema v0.2: grid and list rows* | Accepted; extends *Step schema v0* | A `row` on any step: rules that tie two fields together, which the schema and the generator's grammar derivation (#37) cannot express. A row inside the logical name: `target` would stop being a repository object id. One repository object per row: rows are data that change between runs. |
 | 2026-10-29 | *Graph schema v0.1: tests and repository objects belong to an application* | Accepted | An `appId` property: a foreign key that graph queries such as change impact cannot see. Tests per application version: copying a test for every version breaks NFR-33. |
 | 2026-10-29 | *REST error body: RFC 9457 problem details* | Accepted | A project-specific body: every error Spring raises before a controller runs would need its own mapping. Spring Boot's default body: no field list, and it leaks the messages of unexpected exceptions. |
 | 2026-10-31 | *D1: sample app stays PySide6; pilots are KeePass 2 and HandBrake* | Accepted | A WPF sample app, the plan's exception: Qt's measured weakness is id uniqueness in other people's apps, which does not apply to one we name ourselves, the stack is Python, and HandBrake already covers WPF. Notepad++ as a pilot: 59 % id-or-Name, and UIA does not see its Scintilla editor. |
@@ -910,9 +912,11 @@ The decisions behind this design are ADRs in `memory-bank/decisions/`. The table
 | 2026-10-31 | *Healing proposal schema 0.2: per-element DPI, feature versions, #151 review follow-ups* | Proposed (#149); extends the transport ADR | One `dpi` per proposal: the target and the candidates may come from machines with different scaling. Required feature versions: 0.2 would stop being a superset of 0.1. |
 | 2026-10-31 | *Accounts, roles, sessions and API tokens* | Proposed (#60) | A servlet session cookie: sessions lost on restart, CSRF protection needed, a second path for CI tokens. JWT: a library and a signing key, and revocation needs a deny list, which is a token store again. |
 | 2026-11-01 | *Snapshot schema v0: flat pre-order tree, one window, no partial document* | Accepted | Nested children instead of parent ids: every consumer would gain a recursion it does not need. A partial document with `truncated: true`: exactly the input FR-29 forbids healing to use. |
+| 2026-11-03 | *Client UI language: Turkish and English, chosen by the user* | Accepted | Turkish only: the English material (report, advisor demo) would need translated screenshots. English only: testers who do not read English are left out. An i18n library (i18next, FormatJS): a new dependency for about 300 texts whose plurals the code already handles. |
 | 2026-11-05 | *Runs API and live run updates* | Proposed (#44) | STOMP over WebSocket: a framing layer and a client library for one kind of event on one server. Server-sent events: the RS, the SDD and the issue would change. Results that point into the test's current steps: an edit silently changes what old results mean. |
+| 2026-11-07 | *Graph schema v0.4: one Window per snapshot id* | Proposed (#15) | A plain index and a lock node: the index fixes the scans, but the race needs extra code and a second node type. Leaving it to the client's retry (#61): a client cannot know whether a timed-out write committed. |
 
-These ADRs are still listed as Proposed in the index, although the work they describe is on `main`: *Step schema v0* (#13, PR #134), *Healing proposal schema 0.2* (#149, PR #174), *Accounts, roles, sessions and API tokens* (#60, PR #179) and *Runs API and live run updates* (#44, PR #193).
+These ADRs are still listed as Proposed in the index, although the work they describe is on `main`: *Healing proposal schema 0.2* (#149, PR #174), *Accounts, roles, sessions and API tokens* (#60, PR #179), *Runs API and live run updates* (#44, PR #193) and *Graph schema v0.4* (#15, PR #182, migration `V0005`).
 
 ## 8 Traceability
 

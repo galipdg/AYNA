@@ -100,7 +100,7 @@ export default function Repository({
     }
   }, [loading, app.id, onSessionEnded])
 
-  // "Seen in versions" lists every version; a failure only leaves that row empty.
+  // "Captured in versions" lists every version; a failure only leaves that row empty.
   useEffect(() => {
     let cancelled = false
     window.ayna
@@ -460,14 +460,16 @@ function ObjectDetails({
 
         {versions.length > 0 && (
           <>
-            <h4>{strings.repoViewSeenIn}</h4>
+            <h4>{strings.repoViewCapturedIn}</h4>
             <ul className="repo-versions">
               {versions.map((version) => {
-                const seen = object.versionIds.includes(version.id)
-                const label = seen ? strings.repoViewSeen : strings.repoViewNotSeen
+                const captured = object.versionIds.includes(version.id)
+                const label = captured
+                  ? strings.repoViewCapturedHere
+                  : strings.repoViewNotCapturedHere
                 return (
-                  <li key={version.id} className={seen ? 'tone-success' : 'hint'} title={label}>
-                    {version.version} <span aria-hidden="true">{seen ? '✓' : '–'}</span>
+                  <li key={version.id} className={captured ? 'tone-success' : 'hint'} title={label}>
+                    {version.version} <span aria-hidden="true">{captured ? '✓' : '–'}</span>
                     <span className="visually-hidden">{label}</span>
                   </li>
                 )

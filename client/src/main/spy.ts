@@ -94,7 +94,9 @@ export function describeFailure(error: unknown): { reason: AgentFailure; detail?
   if (error instanceof AgentRpcError) {
     if (error.code === UIA_UNAVAILABLE) return { reason: 'uia-unavailable' }
     if (error.code === WINDOW_NOT_FOUND) return { reason: 'window-gone' }
-    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout' }
+    // The agent's message says why the walk stopped (a blocked application or a slow window);
+    // #226 will add a structured flag for the blocked case.
+    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout', detail: error.rpcMessage }
     return { reason: 'agent-error', detail: error.rpcMessage }
   }
   return { reason: 'agent-error', detail: error instanceof Error ? error.message : String(error) }

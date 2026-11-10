@@ -19,6 +19,8 @@ main-process / dev-mock changes testable with `node --test`; 4, 5, 7 are rendere
   `docs/ui/style-guide.md`, `dev/demo/seed.mjs`: new strings go in new lines, not rewrites of
   lines those PRs change, to keep the merge clean.
 
+- 2026-11-10 — From hasan's #219 review: a `-32002` failure now shows the agent's own message (it says whether the application is blocked or the window is slow); the structured `blocked` flag and "do not advise a longer budget" are #226. The budget comment credits the modal message box, not the reader, for KeePass 2's 278.5 s. New Turkish texts say "aracı" (#218's rule).
+
 ## Status
 - [x] 1 capture budget after a timeout — `nextSnapshotBudget` in `shared/snapshot.ts`: 5 s (agent
   default) → 30 s → 120 s; a window keeps the budget it needed for its next capture; choosing

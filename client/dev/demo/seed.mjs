@@ -1,6 +1,7 @@
 // Sample data for `npm run demo`. It goes through the real REST API, so it passes the same
-// checks as the client. Running it again adds what is missing and puts the two sample tests
-// back as they were, so a rehearsal leaves nothing behind in them.
+// checks as the client. Running it again adds what is missing and puts the sample objects'
+// property sets and the two sample tests back as they were, so a rehearsal leaves nothing
+// behind in them.
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { defaultSnapshot } from '../mock/fake-agent-env.mjs'
@@ -51,6 +52,27 @@ const TESTS = {
     click('login.loginButton'),
     contains('login.statusLabel', 'Invalid'),
   ],
+}
+
+/**
+ * The objects to add, as the server takes them. Primary is the AutomationId. The backup set
+ * must find exactly one element too, or using it would be a failure rather than a repair
+ * (#40, #207): `name` + `controlType` does that in the trial window. `statusLabel` has no
+ * Name, so it keeps only its primary set.
+ */
+export function repoObjects(snapshot) {
+  return Object.entries(OBJECTS).map(([name, elementId]) => {
+    const { element } = snapshot.elements.find((node) => node.id === elementId)
+    const fallback =
+      element.name === undefined ? {} : { name: element.name, controlType: element.controlType }
+    return {
+      name,
+      snapshotId: snapshot.snapshotId,
+      snapshotElementId: elementId,
+      primary: { automationId: element.automationId },
+      fallback,
+    }
+  })
 }
 
 /**
@@ -109,17 +131,15 @@ export async function seed(server, token) {
 
   const objectsPath = `/api/apps/${app.id}/repo-objects`
   const objects = await api('GET', objectsPath)
-  for (const [name, elementId] of Object.entries(OBJECTS)) {
-    const { element } = snapshot.elements.find((node) => node.id === elementId)
-    await ensure(objects, 'name', name, () =>
-      api('POST', objectsPath, {
-        name,
-        snapshotId: snapshot.snapshotId,
-        snapshotElementId: elementId,
-        primary: { automationId: element.automationId },
-        fallback: { controlType: element.controlType },
-      }),
-    )
+  for (const object of repoObjects(snapshot)) {
+    const saved = objects.find((item) => item.name === object.name)
+    if (!saved) {
+      await api('POST', objectsPath, object)
+    } else {
+      // An older seed or a rehearsal may have changed the sets: put them back.
+      const { primary, fallback } = object
+      await api('PATCH', `/api/repo-objects/${saved.id}`, { primary, fallback })
+    }
   }
 
   // The step schema's own version, not the snapshot's: the server accepts only that one.

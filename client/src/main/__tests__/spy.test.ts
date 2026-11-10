@@ -85,8 +85,9 @@ describe('describeFailure', () => {
     assert.deepEqual(describeFailure(new AgentRpcError(-32000, 'Window not found')), {
       reason: 'window-gone',
     })
-    assert.deepEqual(describeFailure(new AgentRpcError(-32002, 'Snapshot timeout')), {
+    assert.deepEqual(describeFailure(new AgentRpcError(-32002, 'Snapshot timeout: blocked')), {
       reason: 'snapshot-timeout',
+      detail: 'Snapshot timeout: blocked',
     })
     assert.deepEqual(describeFailure(new AgentRpcError(-32603, 'Internal error')), {
       reason: 'agent-error',
@@ -168,6 +169,7 @@ describe('snapshot', () => {
     assert.deepEqual(await snapshot(agentAnswering(new AgentRpcError(-32002, 'slow')), 1), {
       ok: false,
       reason: 'snapshot-timeout',
+      detail: 'slow',
     })
   })
 })
