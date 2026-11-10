@@ -17,6 +17,8 @@ read the numbers is in `server/loadtest/README.md`.
 - 2026-11-10 — No think time by default (worst case); 20 s warm-up not counted; an error counts as late; percentiles by nearest rank.
 - 2026-11-10 — Results live in `server/loadtest/results/` (omer's area), not `docs/` (hasan's); galip cites them from the RS.
 
+- 2026-11-10 — From hasan's #225 review: `run.sh` probes `PYTHON`, `python3`, `python` by running them (Windows' `python3` is the Store stub); the outlier ceiling to watch is the client's 5 s request timeout; screenshot uploads (#51) to join the load behind `--screenshots` once #51 is on `main`.
+
 ## Status
 - [x] seed, load test, one command (`server/loadtest/run.sh`)
 - [x] first run recorded: `results/2026-11-10-apple-m3.md` — 105 443 requests, 100 % within 500 ms, p95 31.9 ms, 0 errors → NFR-07 met
@@ -27,6 +29,7 @@ read the numbers is in `server/loadtest/README.md`.
 - none needed: every criterion is checked by running `run.sh` (done 2026-11-10 on omer's Mac).
 
 ## Open issues
+- After #51 merges: add `--screenshots` to `load.py` (upload a ~200 KB PNG per step result, counted in the load but not in the NFR-07 share) and run again; hasan will run it on Windows both ways.
 - SDD test-design row (`docs/sdd/SDD.md` ≈ line 823, "Planned per NFR") should say the load test is built; left for after #222 merges, which edits the same file.
 - Not measured: WebSocket live updates (NFR-06) and login; a run on the Windows demo machine would be a stronger number than a Mac running both sides.
 

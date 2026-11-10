@@ -3,6 +3,8 @@
 Checks NFR-07 (95 % of REST requests within 500 ms) under the load of NFR-08 (10 clients at the
 same time, 1 000 repository objects and 500 tests in one application). Python standard library
 only, so it runs on the closed network with nothing to install but Docker and Python 3.11+.
+On Windows run it from Git Bash; `run.sh` skips the Microsoft Store `python3` stub, and
+`PYTHON=python` chooses an interpreter by hand.
 
 ## Run it
 
@@ -64,3 +66,10 @@ the seed imports snapshots but they are not timed), WebSocket live updates (NFR-
 The slowest endpoint is the repository list (`GET /api/apps/{appId}/repo-objects`, all 1 000
 objects in one answer): p95 91 ms. The single slowest request (a step save, 1.8 s) is one of
 105 443; it was not investigated (a garbage-collection pause is the usual cause) and does not change the verdict.
+The ceiling to watch for such outliers is the client's request timeout, 5 s (`REQUEST_TIMEOUT_MS`
+in `client/src/shared/api.ts`), not 500 ms: past it the client gives up and retries. An outlier
+near 5 s in a later run needs chasing.
+
+Not in the load yet: the step screenshot upload of #51 (one `PUT` per step result). NFR-07
+excludes uploads from the 500 ms target but they share the server, so once #51 is on `main` the
+loop should get a `--screenshots` option that uploads them without counting them.

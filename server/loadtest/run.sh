@@ -6,13 +6,26 @@
 #   server/loadtest/run.sh --duration 300  # any load.py option is passed on
 #   KEEP=1 server/loadtest/run.sh          # leave the backend running afterwards
 #
-# Needs Docker and Python 3.11+ (standard library only). Results go to server/loadtest/out/.
+# Needs Docker and Python 3.11+ (standard library only; PYTHON=... to choose the interpreter).
+# Results go to server/loadtest/out/.
 set -euo pipefail
 
 cd "$(dirname "$0")"
 export AYNA_LOADTEST_PORT="${AYNA_LOADTEST_PORT:-18090}"
 url="http://127.0.0.1:${AYNA_LOADTEST_PORT}"
 compose=(docker compose -f compose.yml)
+
+# Windows has a `python3` on PATH that is only the Microsoft Store stub, so probe each
+# candidate by running it; PYTHON=... picks one by hand.
+py=""
+for candidate in "${PYTHON:-}" python3 python; do
+	[[ -n "$candidate" ]] || continue
+	command -v "$candidate" >/dev/null 2>&1 || continue
+	"$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null || continue
+	py="$candidate"
+	break
+done
+[[ -n "$py" ]] || { echo "need Python 3.11+ (set PYTHON=...)" >&2; exit 1; }
 
 teardown() {
 	if [[ "${KEEP:-}" == "1" ]]; then
@@ -28,5 +41,5 @@ trap teardown EXIT
 "${compose[@]}" up -d --build
 
 mkdir -p out
-python3 seed.py --url "$url" --out out/seed.json
-python3 load.py --seed out/seed.json --out-dir out "$@"
+"$py" seed.py --url "$url" --out out/seed.json
+"$py" load.py --seed out/seed.json --out-dir out "$@"
