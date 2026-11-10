@@ -30,7 +30,7 @@ Design first, then code. `docs/ui/` holds the design: `README.md` (principles, r
 - `docs/` is hasan's area; `docs/ui/` is created because #183 asks for it. `docs/README.md` (hasan) does not list it yet.
 
 ## Handoff
-- See the shell without the mock stub (it has no login): server from `docker compose up`, then in `client/`: `AYNA_AGENT_PYTHON=python3 PYTHONPATH=$PWD/dev/mock AYNA_MOCK_WINDOWS=$PWD/dev/mock/windows.json AYNA_MOCK_SNAPSHOT=$PWD/dev/mock/snapshot.json AYNA_MOCK_UIA=on npx electron-vite dev`.
+- See the shell without the mock stub (it has no login): server from `docker compose up`, then in `client/`: `AYNA_AGENT_PYTHON=python3 PYTHONPATH=$PWD/dev/mock AYNA_MOCK_WINDOWS=$PWD/dev/mock/windows.json AYNA_MOCK_SNAPSHOT=$PWD/../schemas/examples/snapshot/trial-login.json AYNA_MOCK_UIA=on npx electron-vite dev`.
 - The pick hotkey is `Ctrl+Shift+A` (`client/src/main/spy.ts`), not configurable; shown in the Spy header only (Settings does not show it yet, unlike wireframe 13).
 - A CI service account is an ordinary tester account with API tokens (ADR accounts and tokens), not a third role.
 

@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { TreeNode } from '../../shared/snapshot.ts'
-import { ancestorIds, parentMap, searchTree, visibleRows, type TreeRow } from '../../shared/tree.ts'
+import {
+  ancestorIds,
+  deepestRow,
+  parentMap,
+  searchTree,
+  visibleRows,
+  type TreeRow,
+} from '../../shared/tree.ts'
 import { controlTypeLabel, strings } from './strings.ts'
 
 /** Levels open when a snapshot arrives: the window and its direct children. */
@@ -9,6 +16,10 @@ const OPEN_DEPTH = 1
 const ROW_HEIGHT = 28
 /** Rows drawn above and below the visible ones, so fast scrolling shows no gaps. */
 const OVERSCAN = 10
+/** Indent per level, px. */
+const INDENT = 16
+/** Room after a row's indent for the toggle and the caption; a longer caption ends in "…". */
+const CAPTION_WIDTH = 300
 
 function openUpTo(node: TreeNode, depth: number, open = new Set<string>()): Set<string> {
   if (depth < 0 || node.children.length === 0) return open
@@ -17,19 +28,29 @@ function openUpTo(node: TreeNode, depth: number, open = new Set<string>()): Set<
   return open
 }
 
-/** The element's text, else its AutomationId, then its type in plain words. */
+/**
+ * The element's text, else its AutomationId, then its type in plain words. An element with
+ * neither is named by its type alone: a quarter of a Chromium window is unnamed Group, Pane and
+ * ToolBar wrappers (#184), and rows saying "(no name)" told the user nothing (#204).
+ */
 function Caption({ node }: { node: TreeNode }) {
   const { controlType, name, automationId } = node.element
+  const type = controlTypeLabel(controlType)
+  if (name === undefined && automationId === undefined) {
+    return <span className="node-name node-unnamed">{type}</span>
+  }
   return (
     <>
       {name !== undefined ? (
-        <span className="node-name">{name}</span>
-      ) : automationId !== undefined ? (
-        <span className="node-name automation-id">{automationId}</span>
+        <span className="node-name" title={name}>
+          {name}
+        </span>
       ) : (
-        <span className="node-name hint">{strings.spyNoName}</span>
+        <span className="node-name automation-id" title={automationId}>
+          {automationId}
+        </span>
       )}
-      <span className="node-type">{controlTypeLabel(controlType)}</span>
+      <span className="node-type">{type}</span>
     </>
   )
 }
@@ -72,6 +93,10 @@ export default function ElementTree({
     [search, selectedId, parents],
   )
   const rows = useMemo(() => visibleRows(root, open, shown), [root, open, shown])
+  // The scrollable width fits the deepest row of all, drawn or not. Taken from the rows drawn,
+  // it changed at nearly every scroll step of a real window, whose depth varies from row to
+  // row (VS Code: 285 elements, 102 nested groups, #184 step 6).
+  const width = useMemo(() => 4 + deepestRow(rows) * INDENT + CAPTION_WIDTH, [rows])
   const selectedIndex = rows.findIndex((row) => row.node.id === selectedId)
 
   // A selection made elsewhere (the pick hotkey) may sit in a folded branch: open its
@@ -171,7 +196,10 @@ export default function ElementTree({
         onKeyDown={key}
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
       >
-        <div className="tree-canvas" style={{ height: rows.length * ROW_HEIGHT }}>
+        <div
+          className="tree-canvas"
+          style={{ height: rows.length * ROW_HEIGHT, width: `max(100%, ${width}px)` }}
+        >
           <ul style={{ transform: `translateY(${first * ROW_HEIGHT}px)` }}>
             {rows.slice(first, last).map((row) => {
               const { node, depth } = row
@@ -192,7 +220,7 @@ export default function ElementTree({
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  style={{ paddingLeft: 4 + depth * 16 }}
+                  style={{ paddingLeft: 4 + depth * INDENT }}
                   onClick={() => onSelect(node)}
                 >
                   <span

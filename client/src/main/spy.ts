@@ -8,7 +8,13 @@ import type {
   WindowInfo,
   WindowsResult,
 } from '../shared/api.ts'
-import { buildTree, type Snapshot, type SnapshotNode } from '../shared/snapshot.ts'
+import {
+  buildTree,
+  DEFAULT_SNAPSHOT_BUDGET_MS,
+  SNAPSHOT_VERSION,
+  type Snapshot,
+  type SnapshotNode,
+} from '../shared/snapshot.ts'
 import { AgentNotConnectedError, AgentRpcError, AgentTimeoutError } from './agent.ts'
 
 /** The part of `AgentManager` the Spy needs. */
@@ -28,10 +34,16 @@ export const SNAPSHOT_TIMEOUT = -32002
 export const LIST_WINDOWS_TIMEOUT_MS = 10_000
 
 /**
- * The agent ends a walk at its own budget (5 s by default) and answers -32002; the margin
- * covers sending a large tree. No answer by then means the agent itself is stuck.
+ * The agent ends a walk at its budget and answers -32002; the client waits this much longer,
+ * for sending a large tree. No answer by then means the agent itself is stuck.
  */
-export const SNAPSHOT_TIMEOUT_MS = 15_000
+export const SNAPSHOT_MARGIN_MS = 10_000
+
+/** How long the client waits for a walk on the agent's default budget. */
+export const SNAPSHOT_TIMEOUT_MS = DEFAULT_SNAPSHOT_BUDGET_MS + SNAPSHOT_MARGIN_MS
+
+/** The largest `timeoutMs` the agent takes (`docs/agent-rpc.md`). */
+export const MAX_SNAPSHOT_BUDGET_MS = 600_000
 
 export async function listWindows(agent: AgentCaller): Promise<WindowsResult> {
   let result: unknown
@@ -44,12 +56,32 @@ export async function listWindows(agent: AgentCaller): Promise<WindowsResult> {
   return windows ? { ok: true, windows } : { ok: false, reason: 'bad-response' }
 }
 
-export async function snapshot(agent: AgentCaller, handle: unknown): Promise<SnapshotResult> {
+/**
+ * Captures a window. With `budgetMs` the agent may walk that long instead of its default, and
+ * the client waits for it: a budget the client does not wait out would turn a slow walk into
+ * "the agent did not answer" (#204). A budget outside the agent's range is not sent.
+ */
+export async function snapshot(
+  agent: AgentCaller,
+  handle: unknown,
+  budgetMs?: unknown,
+): Promise<SnapshotResult> {
+  const budget = isBudget(budgetMs) ? budgetMs : undefined
+  const params = budget === undefined ? { handle } : { handle, timeoutMs: budget }
+  const wait = (budget ?? DEFAULT_SNAPSHOT_BUDGET_MS) + SNAPSHOT_MARGIN_MS
   let result: unknown
   try {
-    result = await agent.call('snapshot', { handle }, SNAPSHOT_TIMEOUT_MS)
+    result = await agent.call('snapshot', params, wait)
   } catch (error) {
     return { ok: false, ...describeFailure(error) }
+  }
+  // A newer agent is not a broken one: say which format it sends.
+  if (
+    isRecord(result) &&
+    typeof result.version === 'string' &&
+    result.version !== SNAPSHOT_VERSION
+  ) {
+    return { ok: false, reason: 'snapshot-version', detail: result.version }
   }
   const parsed = parseSnapshot(result)
   return parsed ? { ok: true, snapshot: parsed } : { ok: false, reason: 'bad-response' }
@@ -62,7 +94,9 @@ export function describeFailure(error: unknown): { reason: AgentFailure; detail?
   if (error instanceof AgentRpcError) {
     if (error.code === UIA_UNAVAILABLE) return { reason: 'uia-unavailable' }
     if (error.code === WINDOW_NOT_FOUND) return { reason: 'window-gone' }
-    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout' }
+    // The agent's message says why the walk stopped (a blocked application or a slow window);
+    // #226 will add a structured flag for the blocked case.
+    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout', detail: error.rpcMessage }
     return { reason: 'agent-error', detail: error.rpcMessage }
   }
   return { reason: 'agent-error', detail: error instanceof Error ? error.message : String(error) }
@@ -116,7 +150,7 @@ function parseWindow(item: unknown): WindowInfo | null {
 export function parseSnapshot(result: unknown): Snapshot | null {
   if (
     !isRecord(result) ||
-    result.version !== '0.1' ||
+    result.version !== SNAPSHOT_VERSION ||
     typeof result.snapshotId !== 'string' ||
     !isRecord(result.capture) ||
     typeof result.capture.startedAt !== 'string' ||
@@ -153,6 +187,12 @@ export function isBounds(value: unknown): value is Bounds {
     value.every((n) => Number.isInteger(n)) &&
     value[0] <= value[2] &&
     value[1] <= value[3]
+  )
+}
+
+function isBudget(value: unknown): value is number {
+  return (
+    Number.isInteger(value) && (value as number) >= 1 && (value as number) <= MAX_SNAPSHOT_BUDGET_MS
   )
 }
 

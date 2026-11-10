@@ -1,6 +1,27 @@
 import type { Bounds } from './api.ts'
 import type { ElementDescriptor } from './element.ts'
 
+/** The snapshot format this client reads. */
+export const SNAPSHOT_VERSION = '0.1'
+
+/** The agent's walk budget when a `snapshot` request names none (`docs/agent-rpc.md`). */
+export const DEFAULT_SNAPSHOT_BUDGET_MS = 5_000
+
+/**
+ * The budgets "Capture again" sends after a walk ran out of time, one step per timeout (#204).
+ * Healthy windows fit the default: KeePass 2 took 2.1 s for 114 elements with one reader and
+ * 819 ms with the agent's; the 278.5 s of #6 needed a modal message box open (#161), and no
+ * budget we would wait for covers that. The longer steps are for a genuinely huge window. The
+ * last step repeats; the client waits for each.
+ */
+export const LONGER_SNAPSHOT_BUDGETS_MS = [30_000, 120_000] as const
+
+/** The budget to try after a walk with `previous` (undefined: the default) timed out. */
+export function nextSnapshotBudget(previous?: number): number {
+  const longer = LONGER_SNAPSHOT_BUDGETS_MS.find((budget) => budget > (previous ?? 0))
+  return longer ?? LONGER_SNAPSHOT_BUDGETS_MS[LONGER_SNAPSHOT_BUDGETS_MS.length - 1]!
+}
+
 /**
  * One window's UI Automation subtree as the agent's `snapshot` returns it:
  * `schemas/snapshot.schema.json` version 0.1 (#12, ADR 2026-11-01-snapshot-schema-v0).

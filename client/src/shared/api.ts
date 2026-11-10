@@ -7,6 +7,11 @@ import type { PropertySet } from './repository.ts'
 import type { Snapshot } from './snapshot.ts'
 import type { StepDocument, StepProblem } from './steps.ts'
 
+/** How long the connection check waits for `/api/health`; the error text names it. */
+export const CHECK_TIMEOUT_MS = 5000
+/** How long an ordinary API call waits; the error texts name it. */
+export const REQUEST_TIMEOUT_MS = 5000
+
 export interface AppInfo {
   name: string
   version: string
@@ -281,6 +286,7 @@ export type AgentFailure =
   | 'timeout'
   | 'window-gone' // no window has that handle any more
   | 'snapshot-timeout' // the agent gave up the walk at its time budget
+  | 'snapshot-version' // the snapshot is in a format this client does not read; `detail` names it
   | 'bad-response' // the answer does not match `docs/agent-rpc.md`
   | 'agent-error' // any other JSON-RPC error; `detail` has the agent's message
 
@@ -349,8 +355,11 @@ export interface AynaApi {
   retryAgent(): Promise<void>
   /** Lists the visible top-level windows through the agent, for the Spy. */
   listWindows(): Promise<WindowsResult>
-  /** Captures the UI Automation tree of the window with `handle` (from `listWindows`). */
-  snapshot(handle: number): Promise<SnapshotResult>
+  /**
+   * Captures the UI Automation tree of the window with `handle` (from `listWindows`). With
+   * `budgetMs` the agent may walk that long instead of its default 5 s.
+   */
+  snapshot(handle: number, budgetMs?: number): Promise<SnapshotResult>
   /**
    * Draws a frame around `bounds` on screen for a few seconds, above every window and
    * without taking focus or clicks; `null` removes it at once.

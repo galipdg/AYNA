@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
+import { CHECK_TIMEOUT_MS, REQUEST_TIMEOUT_MS } from '../../shared/api.ts'
 import { LANGUAGES } from '../../shared/language.ts'
 import {
   dictionaries,
@@ -82,6 +83,28 @@ describe('UI texts', () => {
       else assert.notEqual(turkish.get(path), value, `${path} is still English`)
     }
   })
+
+  it('tr: follows the glossary spellings (#203)', () => {
+    for (const [path, value] of leaves(dictionaries.tr)) {
+      const text =
+        typeof value === 'function'
+          ? (value as (...a: unknown[]) => string)(['v0'], ['v1'], ['v2'], ['v3'])
+          : String(value)
+      // TDK writes "öğe"; "ajan" reads as "spy" next to Nesne Gözcüsü, so the agent is "Aracı".
+      assert.doesNotMatch(text, /(^|[^\p{L}])[öÖ]ge/u, `${path}: öğe`)
+      assert.doesNotMatch(text, /(^|[^\p{L}])ajan/iu, `${path}: Aracı`)
+      assert.doesNotMatch(text, /"/, `${path}: Turkish quotes are “…”`)
+    }
+  })
+
+  it('timeout texts name the timeouts the main process uses', () => {
+    setStringsLanguage('en')
+    assert.ok(strings.requestErrors.timeout.includes(`within ${REQUEST_TIMEOUT_MS / 1000} seconds`))
+    const check = strings.connectionErrors.timeout('http://x')
+    assert.ok(check.includes(`within ${CHECK_TIMEOUT_MS / 1000} seconds`))
+    setStringsLanguage('tr')
+    assert.ok(strings.loginErrors.timeout.includes(`${REQUEST_TIMEOUT_MS / 1000} saniye içinde`))
+  })
 })
 
 describe('dates and numbers follow the language', () => {
@@ -89,7 +112,7 @@ describe('dates and numbers follow the language', () => {
 
   it('formats counts with the language’s digit grouping', () => {
     setStringsLanguage('tr')
-    assert.match(strings.spyCaptured('10:00', undefined, 3031, 1250), /3\.031 öge/)
+    assert.match(strings.spyCaptured('10:00', undefined, 3031, 1250), /3\.031 öğe/)
     setStringsLanguage('en')
     assert.match(strings.spyCaptured('10:00', undefined, 3031, 1250), /3,031 elements in 1,250 ms/)
   })
