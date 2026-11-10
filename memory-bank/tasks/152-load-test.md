@@ -23,14 +23,15 @@ read the numbers is in `server/loadtest/README.md`.
 - [x] seed, load test, one command (`server/loadtest/run.sh`)
 - [x] first run recorded: `results/2026-11-10-apple-m3.md` — 105 443 requests, 100 % within 500 ms, p95 31.9 ms, 0 errors → NFR-07 met
 - [ ] RS: NFR-07 / NFR-08 confirmed — galip's file; request in `people/galip/inbox.md`
-- Next step: push and open the PR on omer's OK (`Closes #152` only once galip's RS change exists; until then "Part of #152").
+- [x] PR #225 (Part of #152), approved by hasan, merged 2026-11-10 with his fixes (Python probe, 5 s ceiling note).
+- Next step: close #152 once galip's RS change (NFR-07/08 confirmed, citing the results file) is on `main`.
 
 ## Manual checks
 - none needed: every criterion is checked by running `run.sh` (done 2026-11-10 on omer's Mac).
 
 ## Open issues
 - After #51 merges: add `--screenshots` to `load.py` (upload a ~200 KB PNG per step result, counted in the load but not in the NFR-07 share) and run again; hasan will run it on Windows both ways.
-- SDD test-design row (`docs/sdd/SDD.md` ≈ line 823, "Planned per NFR") should say the load test is built; left for after #222 merges, which edits the same file.
+- SDD test-design row (`docs/sdd/SDD.md` ≈ line 823, "Planned per NFR") should say the load test is built; next SDD touch (after #224).
 - Not measured: WebSocket live updates (NFR-06) and login; a run on the Windows demo machine would be a stronger number than a Mac running both sides.
 
 ## Handoff

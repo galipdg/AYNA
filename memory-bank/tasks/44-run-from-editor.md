@@ -24,6 +24,8 @@ Acceptance criteria against the halves:
 - 2026-11-05 — No block on deleting a test with a `running` run: with no idle timeout yet, a run whose client died would block the delete forever.
 - 2026-11-07 — From hasan's #193 review: `duration` → `durationMs` everywhere (result body, `Run`, `StepResult`, event); the ADR asked him to settle the name. The ADR now says a run stopped by a repair proposal finishes as `repairProposed` (added by #51; allowed with ≥ 1 `repairProposed` result and no `failed` one), so `aborted` keeps meaning a crash (user approved the review scope).
 
+- 2026-11-08 — #51's ADR moves `repairProposed` to #74; #51 built screenshots (separate PNG upload after the result), retention and the idle timeout. The client half's outbox must send a step's screenshot after its result.
+
 ## Status
 - [x] Branch from `main`, #44 In progress on the board
 - [x] ADR, `V0004`, `spring-boot-starter-websocket` (omer's OK 2026-11-05)

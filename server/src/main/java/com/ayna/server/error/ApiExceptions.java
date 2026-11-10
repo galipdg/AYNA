@@ -38,6 +38,15 @@ public final class ApiExceptions {
 
 	}
 
+	/** 413: the body is larger than the endpoint takes, such as a screenshot over the limit. */
+	public static class TooLargeException extends RuntimeException {
+
+		public TooLargeException(String message) {
+			super(message);
+		}
+
+	}
+
 	/** 400 that names every failing field of the request body. */
 	public static class InvalidRequestException extends RuntimeException {
 

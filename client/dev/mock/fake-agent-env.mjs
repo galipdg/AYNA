@@ -7,7 +7,8 @@ const here = dirname(fileURLToPath(import.meta.url))
 
 export const python = process.platform === 'win32' ? 'python' : 'python3'
 
-export const defaultSnapshot = resolve(here, 'snapshot.json')
+/** The trial app's login window, the schema's own example (#12), read where it lives (#204). */
+export const defaultSnapshot = resolve(here, '../../../schemas/examples/snapshot/trial-login.json')
 
 export function fakeAgentEnv({ windows, snapshot, uia = true, slowSnapshots = false }) {
   return {

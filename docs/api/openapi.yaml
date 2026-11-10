@@ -559,6 +559,83 @@ paths:
           $ref: "#/components/responses/Conflict"
       tags:
       - run-controller
+  /api/runs/{runId}/results/{stepIndex}/screenshot:
+    get:
+      operationId: readScreenshot
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: stepIndex
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+          description: The PNG
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
+    put:
+      operationId: writeScreenshot
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: stepIndex
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultWritten"
+          description: The same image again; nothing was written
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepResultWritten"
+          description: Stored
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "413":
+          $ref: "#/components/responses/ContentTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+      tags:
+      - run-controller
   /api/tests/{testId}:
     delete:
       operationId: deleteTest
@@ -904,6 +981,12 @@ components:
             $ref: "#/components/schemas/Problem"
       description: "The request conflicts with what is stored, such as a name already\
         \ taken"
+    ContentTooLarge:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The body is larger than this endpoint takes
     Forbidden:
       content:
         application/problem+json:
@@ -923,6 +1006,12 @@ components:
             $ref: "#/components/schemas/Problem"
       description: "No valid session or API token; on login, a wrong user name or\
         \ password"
+    UnsupportedMediaType:
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+      description: The body's Content-Type is not one this endpoint takes
   schemas:
     AppResponse:
       type: object
@@ -1235,6 +1324,8 @@ components:
         receivedAt:
           type: string
           format: date-time
+        screenshotUrl:
+          type: string
         status:
           type: string
         stepId:

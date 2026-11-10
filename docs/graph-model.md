@@ -1,4 +1,4 @@
-# Graph model (v0.3)
+# Graph model (v0.5)
 
 The server's Neo4j schema. Part of the graph-schema contract (with `server/src/main/resources/neo4j/migrations/`), frozen at G1 (week 7). Change it only with a new migration and an ADR.
 
@@ -7,6 +7,8 @@ The server's Neo4j schema. Part of the graph-schema contract (with `server/src/m
 - v0.1 (#39, ADR `2026-10-29-graph-schema-application-links`, proposed) adds `HAS_TEST` and `HAS_OBJECT` from Application and the Step properties `timeoutMs`, `checkpoint` and `row`.
 - v0.2 (#60, ADR `2026-10-31-accounts-and-tokens`, proposed, migration `V0003`) adds `User` and `AuthToken` with `HAS_TOKEN`, and who-did-it properties: `createdBy`/`createdAt`/`updatedBy`/`updatedAt` on TestCase (user id and datetime); `startedBy` on Run (#44) and `decidedBy`/`decidedAt` on HealingProposal (#74) follow the same rule. They are properties, not relationships: audit data, never traversed.
 - v0.3 (#44, ADR `2026-11-05-runs-api-and-live-updates`, proposed, migration `V0004`) adds `ON_VERSION` from Run, a unique `(runId, stepIndex)` on StepResult, the Run properties `stepCount`, `document`, `finishedAt` and the StepResult properties that make a write repeatable.
+- v0.4 (#15, ADR `2026-11-07-window-snapshot-unique`, proposed, migration `V0005`) makes `Window.snapshotId` unique, so one snapshot import creates one Window.
+- v0.5 (#51, ADR `2026-11-08-run-screenshots-and-retention`, proposed, no migration) adds `lastActivityAt` and `endedBy` to Run and `screenshotHash`, `screenshotReceivedAt` to StepResult; `screenshotPath` is relative to the screenshot folder.
 - Migrations run automatically when the server starts ([neo4j-migrations](https://michael-simons.github.io/neo4j-migrations/); applied versions are stored as `__Neo4jMigration` nodes).
 
 ## Diagram
@@ -44,14 +46,14 @@ graph LR
 | RepoObject | `name` (logical name, `screen.element`, unique per application); `primary` and `fallback` as JSON strings (descriptor property → value, best first; only identifying properties, ADR element descriptor v0 §3); `createdBy`, `createdAt`, `updatedBy`, `updatedAt`; written by the repository API (#25); embedding (#58) | unique `id` · index `name` |
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
-| Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `durationMs` | unique `id` · index `startedAt` |
-| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `durationMs`, `message`, `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
+| Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `durationMs`, `lastActivityAt` (creation, new result or new screenshot; the idle timeout reads it), `endedBy` (`idleTimeout` when the server aborted it) | unique `id` · index `startedAt` |
+| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `durationMs`, `message`, `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` (relative to the screenshot folder, `<runId>/<stepIndex>.png`), `screenshotHash` (SHA-256 of the PNG, to recognise a repeat), `screenshotReceivedAt` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
 | HealingProposal | `score`, per-property contributions, `decision` | unique `id` |
 | Rule | learned matching rule | unique `id` |
 | User | `username` (lower-case), `passwordHash` (BCrypt), `role` (`admin` / `tester`), `createdAt`; `removedAt` once removed (the node stays) | unique `id` · unique `username` (`V0003`) |
 | AuthToken | `kind` (`session` / `api`), `tokenHash` (SHA-256 of the secret), `name` (api), `createdAt`, `expiresAt` (session) | unique `id` · unique `tokenHash` (`V0003`) |
 
-Screenshots are files on the server disk; `StepResult.screenshotPath` stores the path.
+Screenshots are PNG files on the server disk (`AYNA_SCREENSHOT_DIR`, one folder per run); `StepResult.screenshotPath` stores the path relative to that folder. Retention (`AYNA_RUN_RETENTION`) deletes old runs with their results and folders (#51).
 
 ## Relationships
 

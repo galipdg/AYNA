@@ -32,16 +32,22 @@ function formatValue(element: Partial<ElementDescriptor>, field: ElementField): 
 const yesNo = (value: boolean | undefined) =>
   value === undefined ? undefined : value ? strings.spyYes : strings.spyNo
 
-/** Label → value pairs; missing values are left out. */
-function Group({ title, items }: { title: string; items: [string, ReactNode | undefined][] }) {
+/** Label → value pairs, each with an optional tooltip; missing values are left out. */
+function Group({
+  title,
+  items,
+}: {
+  title: string
+  items: [string, ReactNode | undefined, string?][]
+}) {
   const shown = items.filter(([, value]) => value !== undefined)
   if (shown.length === 0) return null
   return (
     <section className="prop-group">
       <h3>{title}</h3>
       <dl className="facts">
-        {shown.map(([label, value]) => (
-          <div key={label} className="property">
+        {shown.map(([label, value, hint]) => (
+          <div key={label} className="property" title={hint}>
             <dt>{label}</dt>
             <dd>{value}</dd>
           </div>
@@ -97,7 +103,7 @@ export default function PropertyPanel({
       <Group
         title={strings.spyGroups.found}
         items={[
-          [plain.name, name],
+          [plain.name, name, strings.spyTextHint],
           [plain.controlType, controlType && controlTypeLabel(controlType)],
           [plain.nearestLabel, nearestLabel],
           [plain.windowTitle, windowTitle],
