@@ -236,3 +236,8 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR with `Closes #208` on omer's OK.
 - Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.
 - Then (omer: dismiss hasan's change request and merge; merge every PR of ours with finished reviews): #154 merged after dismissing hasan's review (galip approved; no bypass, no auto-merge in the repo). Whole stack merged in order #186 → #197, closing #25, #30, #195, #196; #188/#190 bodies changed to "Part of" (criteria open). Client build in CI fails with a 504 from an electron-builder download on `main` too; merged on CI lint/tests + local build. Squash-stack gotcha in `learnings.md`.
+
+## 2026-11-10 · #152
+- Session start: `main` unchanged since 2026-11-08; no review requests; none of PRs #217–#224 has a human review yet (Copilot out of quota); #224's first `contracts` run is green.
+- #152: load test with the Python standard library (omer chose it over k6). `server/loadtest/`: `seed.py` (1 000 objects, 500 tests via REST), `load.py` (10 sessions, p50/p95/p99 per endpoint), `compose.yml` + `run.sh` (one command, throwaway backend). Run: 105 443 requests, 100 % within 500 ms, p95 31.9 ms → NFR-07 met. Asked galip to confirm NFR-07/08 in the RS.
+- Next: push and PR on omer's OK.
