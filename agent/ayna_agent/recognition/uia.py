@@ -1,9 +1,10 @@
 """The UI Automation backend: the only part of recognition that needs Windows (#12, #16).
 
-This is the `Desktop` that `ayna_agent.rpc` expects. It answers `listWindows` and `snapshot`,
-turning a window handle into the document of `schemas/snapshot.schema.json`. Everything about
-the document's *shape* lives in `recognition/snapshot.py` and is tested on any OS; what lives
-here is the reading, and it can only be judged on a real desktop.
+This is the `Desktop` that `ayna_agent.rpc` expects. It answers `listWindows`, `snapshot` and
+`elementFromPoint`, turning a window handle into the document of
+`schemas/snapshot.schema.json`. Everything about the document's *shape* lives in
+`recognition/snapshot.py` and is tested on any OS; what lives here is the reading, and it can
+only be judged on a real desktop.
 
 **Nothing is imported from pywinauto at module import.** The server runs `setup()`, every call
 and `close()` on one dedicated thread (`ayna-uia`, PR #135), and COM has to be initialised on
@@ -22,6 +23,15 @@ Two things here are measurements rather than preferences, both from #161
   thread and `snapshot` stops waiting when the budget is gone, abandoning that thread. The
   clock is *also* checked between elements, which is what stops a merely huge window early and
   keeps an abandoned walk from running forever.
+
+`elementFromPoint` (#22) is the third measurement-shaped decision: it answers out of the
+snapshot this object last took of the window under the point, rather than describing the hit
+element on its own. Deriving a descriptor for one element would need its siblings, its parent
+and the parent's siblings (`nearest_label` rules 2 and 3) and the whole ancestor chain
+(`parent_path`) -- a property read per sibling, unbounded in a list, and an element whose
+siblings were not read would come back with `nearestLabel: None`, which cannot be told apart
+from "this element has no label". Answering from the snapshot returns *the same* descriptor the
+client is already showing, which is what the Spy's pick hotkey needs.
 """
 
 from __future__ import annotations
@@ -93,6 +103,10 @@ class UiaDesktop:
         #: the diagnostics of the next timeout: a provider that stays stuck leaks one thread
         #: per attempt, and that is worth saying out loud rather than hiding.
         self._abandoned = 0
+        #: The snapshot this object took last, kept so `element_from_point` can name the
+        #: element the client is already showing (#22). One window at a time: the Spy captures
+        #: a window and then picks inside it, and a new `snapshot` replaces this.
+        self._last: _LastSnapshot | None = None
 
     # --- lifecycle, on the ayna-uia thread -----------------------------------------------
 
@@ -197,7 +211,7 @@ class UiaDesktop:
         progress, started_at, duration_ms, budget_ms = self._walk_window(
             handle, timeout_ms
         )
-        return snap.build(
+        document = snap.build(
             progress.nodes,
             window=progress.window,
             app=progress.app,
@@ -207,6 +221,71 @@ class UiaDesktop:
             read_errors=progress.read_errors,
             agent_version=__version__,
         )
+        # Kept for `element_from_point`: `document["elements"][i]` and `progress.infos[i]` are
+        # the same element, because `snap.build` keeps the walk's pre-order and numbers the
+        # ids by position (`test_elements_are_in_pre_order_with_ids_by_position`).
+        self._last = _LastSnapshot(handle, document, progress.infos)
+        return document
+
+    def element_from_point(self, x: int, y: int) -> dict[str, Any]:
+        """The element at a point, named in the snapshot the client already has (#22).
+
+        `x` and `y` are **physical** pixels in virtual-desktop coordinates, which are signed:
+        a maximised window on a scaled display starts at a negative origin. The process is
+        per-monitor-v2 DPI aware (`_set_dpi_awareness`), so no conversion happens here.
+
+        The reply has one shape for every outcome and a point is never an error -- a hotkey
+        pressed over nothing should leave the Spy with one code path, not an exception:
+
+        - `handle`: the top-level window under the point, or None when there is no window.
+        - `bounds`: the hit element's rectangle, physical pixels, or None.
+        - `snapshotId`: the snapshot of that window this object still holds, else None.
+        - `elementId`, `element`: that element in that snapshot, else None.
+
+        So `snapshotId` None means "nothing captured for this window yet", while a `snapshotId`
+        with no `elementId` means "the window has changed since the capture" -- two different
+        things the Spy can offer two different answers to.
+
+        Raises `UiaUnavailable` only, and only when this host has no UI Automation.
+        """
+        self._require_ready()
+        from pywinauto.uia_element_info import UIAElementInfo
+
+        return self.answer_for_point(
+            _root_window_at(x, y), _quiet(lambda: UIAElementInfo.from_point(x, y))
+        )
+
+    def answer_for_point(self, handle: int | None, info: Any) -> dict[str, Any]:
+        """`element_from_point`'s reply for an already-made hit test.
+
+        Split from it so the three outcomes a caller has to tell apart -- nothing captured,
+        captured but changed, matched -- can be tested with fakes on any OS; the two calls it
+        is split from (`WindowFromPoint`, `ElementFromPoint`) are the only Windows-only part.
+        """
+        reply: dict[str, Any] = {
+            "handle": handle,
+            "bounds": _bounds(info) if info is not None else None,
+            "snapshotId": None,
+            "elementId": None,
+            "element": None,
+        }
+        last = self._last
+        if last is None or handle is None or last.handle != handle:
+            return reply
+        reply["snapshotId"] = last.document.get("snapshotId")
+        index = match_in_document(
+            last.document,
+            reply["bounds"],
+            lambda position: (
+                info is not None and _compares_equal(info, last.info(position))
+            ),
+        )
+        if index is None:
+            return reply
+        element = last.document["elements"][index]
+        reply["elementId"] = element.get("id")
+        reply["element"] = element.get("element")
+        return reply
 
     def read_tree(
         self, handle: int, timeout_ms: int | None = None
@@ -509,6 +588,62 @@ class _Progress:
         self.error: BaseException | None = None
 
 
+class _LastSnapshot:
+    """One window's finished snapshot and the live element behind each of its elements.
+
+    `document["elements"][i]` and `infos[i]` are the same element. Holding the COM pointers is
+    what lets `element_from_point` ask UI Automation whether two references are the same
+    element; nothing else here keeps them alive, and they stop being usable when the
+    application exits, which only makes the comparison fail and the lookup answer None.
+    """
+
+    __slots__ = ("document", "handle", "infos")
+
+    def __init__(self, handle: int, document: dict[str, Any], infos: list[Any]) -> None:
+        self.handle = handle
+        self.document = document
+        self.infos = infos
+
+    def info(self, index: int) -> Any:
+        """The live element at `index`, or None when the walk kept none for it."""
+        return self.infos[index] if 0 <= index < len(self.infos) else None
+
+
+def match_in_document(
+    document: dict[str, Any],
+    bounds: list[int] | None,
+    same_element: Callable[[int], bool],
+) -> int | None:
+    """The index in `document["elements"]` of the element at `bounds`, or None.
+
+    Pure, so the rule can be tested on any OS: `same_element(index)` is the only thing that
+    needs UI Automation, and it is called **only** when `bounds` alone cannot decide.
+
+    The rule: elements whose stored bounds equal `bounds` are the candidates. One candidate
+    wins outright, with no cross-process call at all -- the common case, because a control's
+    rectangle is unique among its window's elements unless a wrapper shares it. Several are put
+    to `same_element`, and if none of them is the element, the **last in pre-order** wins:
+    same-bounds candidates are a wrapper chain (a Pane holding one Button, both at the button's
+    rectangle), pre-order puts a child after its parent, and the deepest is what a hit test
+    returns.
+    """
+    if bounds is None:
+        return None
+    candidates = [
+        index
+        for index, element in enumerate(document.get("elements", []))
+        if element.get("element", {}).get("bounds") == bounds
+    ]
+    if not candidates:
+        return None
+    if len(candidates) == 1:
+        return candidates[0]
+    for index in candidates:
+        if same_element(index):
+            return index
+    return candidates[-1]
+
+
 # --- small Win32 helpers -------------------------------------------------------------------
 
 
@@ -670,6 +805,38 @@ def _is_child(handle: int) -> bool:
 
     style = _quiet(lambda: win32gui.GetWindowLong(handle, win32con.GWL_STYLE)) or 0
     return bool(style & _WS_CHILD)
+
+
+def _root_window_at(x: int, y: int) -> int | None:
+    """The top-level window at a point, or None when there is no window there (#22).
+
+    `WindowFromPoint` answers with the deepest *window* (HWND), which in a Qt or WPF
+    application is the top-level window itself and in WinForms or Win32 is often a child
+    control, so `GetAncestor(GA_ROOT)` finishes the job. Deliberately not a walk up the UIA
+    parents: the handle has to be the same kind `list_windows` reports, because the client
+    compares it with the window it has selected, and that list comes from `EnumWindows`.
+    """
+    import win32con
+    import win32gui
+
+    handle = _quiet(lambda: win32gui.WindowFromPoint((x, y)))
+    if not handle:
+        return None
+    # pywin32 rather than ctypes on purpose: an HWND is pointer-sized and ctypes' default
+    # `c_int` return type truncates it. That is the #201 bug, and it is not worth repeating.
+    root = _quiet(lambda: win32gui.GetAncestor(handle, win32con.GA_ROOT))
+    return int(root) if root else int(handle)
+
+
+def _compares_equal(one: Any, other: Any) -> bool:
+    """Whether two element references are the same element, per UI Automation.
+
+    pywinauto's `UIAElementInfo.__eq__` is `IUIAutomation::CompareElements`. A reference to an
+    element that has gone makes it raise, and "it is gone" answers the question well enough.
+    """
+    if other is None:
+        return False
+    return bool(_quiet(lambda: one == other))
 
 
 def _is_pickable_window(handle: int) -> bool:
