@@ -261,3 +261,4 @@ contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), reco
 conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
 version the branch was built on). Always compare the merged tree with what you expect before
 pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
+- 2026-11-10 · omer · git · **GitHub ignores `merge=union`**: after one memory PR merged, the next PR touching `journal.md` showed CONFLICTING on GitHub although `git merge origin/main` locally was clean (#217 after #222). Merging `main` into the branch locally and pushing clears it. `active.md` is overwrite-only, so every open branch of the same person conflicts on it; take `main`'s side while merging a train of PRs and write the final `active.md` on the last branch to merge.
