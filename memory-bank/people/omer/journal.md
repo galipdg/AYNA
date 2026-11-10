@@ -275,3 +275,9 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR on omer's OK, then #203/#204, #205.
 - Later the same session: #205's PR #220 opened (reviews: galip, hasan); #221 opened for table column headers (Week 6). Then #53 on `omer/53-sdd-update`: SDD v0.4 with the three missing §7 ADR rows, status rows checked against the code (#15, #24, #25, #30, #38, #183–#185 Built; `columns` → #221), RQ1 path (#199). galip asked to refresh two stale §5 lines.
 - Later the same session, on omer's "merge the reviewed ones, fix problems and conflicts": hasan had approved all eight PRs, galip none. Applied hasan's before-merge points, merged `main` into each in turn, retested the client after each conflict, and merged #222, #217, #218, #219, #220, #223 and #225. Held #224: its `schemas/` change needs galip's approval too; hasan's fixes are pushed there.
+
+## 2026-11-10 (eighteenth session) · #227 review, #59 run report, #68 run history
+- Reviewed hasan's #227 (#22 `elementFromPoint`): changes requested. A single same-bounds candidate wins without `CompareElements`, so after a tab switch or a scroll the Spy could select a stale node. Answered his three questions: the three states are enough, points are physical and signed, and whichever of #227 and #224 merges second adds the schema defs.
+- #59: `GET /api/runs/{runId}/report.html?lang=en|tr` rendered on request (inline CSS, `data:` screenshots, CSP `default-src 'none'`); a 50-step run with 222 KB screenshots in 216 ms. Server 149/149. PR #229 (reviewer hasan).
+- #68 on `omer/68-run-history`, stacked on #229: `GET /api/apps/{id}/runs` (newest 100), Runs screen with test and result filters, report in its own window with no script, Save… to file; demo seed adds three sample runs once. Client 229/229. Checked on an isolated stack (`-p ayna68`, port 28080).
+- Next: omer's hand checks (#59 offline, #68 screen), then push and PR for #68.
