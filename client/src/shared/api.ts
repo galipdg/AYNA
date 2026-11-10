@@ -117,6 +117,11 @@ export interface RepoObjectSummary extends RepoObject {
   /** From the most recent capture of the element; for search and display. */
   controlType?: string
   nearestLabel?: string
+  /**
+   * A grid's or list's column headers in that capture, in order (#221); empty when unknown.
+   * Possibly incomplete, so the editor offers them but never rejects another column.
+   */
+  columns: string[]
   /** How many tests have a step on this object (FR-08). */
   testCount: number
   /** The application versions the object is found in. */
