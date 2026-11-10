@@ -4,6 +4,8 @@ How the Electron client talks to the automation agent on the same machine. Part 
 
 Everything up to [Trying it by hand](#trying-it-by-hand) is v0.1, as built. The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-v02-draft), is a draft for v0.2 that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
 
+> **One version number is still open (galip's to settle).** `runSteps` (#26) and `elementFromPoint` (#22) are both additions to v0.1 that *are* built, so by the rule below they are a minor bump — but "v0.2" is already the name of the healing draft above. Under the contracts-v1 freeze (#52, ADR `2026-11-08-contracts-v1-freeze`) the whole contract becomes **1.0** and these two ship as **1.1**, which settles it without renaming the draft. Until that merges, `ping` still answers `"0.1"` and the number understates what the agent can do.
+
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over one WebSocket on `127.0.0.1`.
 - Only the client's main process connects. The renderer goes through the preload API, as for everything else.
 - `rpcVersion` (returned by `ping`) changes when this contract changes: minor for additions, major for anything that breaks an existing client.
@@ -148,6 +150,69 @@ A walk that did not finish within its budget (the message text comes from the ba
 ← {"jsonrpc": "2.0", "id": 6, "error": {"code": -32002, "message": "Snapshot timeout: walk stopped after 2000 ms"}}
 ```
 
+### `elementFromPoint`
+
+The element at a point, for the Spy's pick hotkey (#22).
+
+| Param | Type | Meaning |
+|---|---|---|
+| `x`, `y` | integer, required, **signed** | A point in physical pixels, in virtual-desktop coordinates. Negative values are valid: a maximised window on a scaled display starts at a negative origin. The agent is per-monitor-v2 DPI aware, so it converts nothing — send the point the OS gave you. |
+
+Unknown params are refused with `-32602`.
+
+**The answer names the element in the snapshot the client already has.** It does not describe
+the hit element on its own, because the properties that identify an element are derived from
+its surroundings: `nearestLabel` from its siblings and its parent's siblings, `parentPath` from
+its ancestors. Reading those for one element costs a property read per sibling — unbounded in a
+list — and an element whose siblings were *not* read would come back with `nearestLabel` absent,
+which cannot be told apart from "this element has no label". So one element would have two
+different descriptors depending on whether a snapshot happened to be open. Instead the agent
+keeps the snapshot it took last and answers out of it, which is also what the Spy wants: select
+the tree node it is already showing.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `handle` | integer or null | The top-level window under the point, the same kind of handle `listWindows` reports. Null when there is no window there. |
+| `bounds` | `[left, top, right, bottom]` or null | The hit element's rectangle, physical pixels. |
+| `snapshotId` | string or null | The snapshot of **that** window the agent still holds. Null when it holds none. |
+| `elementId` | string or null | The element's `id` in that snapshot. |
+| `element` | object or null | That snapshot's descriptor for it, unchanged. |
+
+**A point is never an error.** A hotkey pressed over nothing answers the same shape with nulls,
+so the client needs one code path. The three states it can tell apart:
+
+- `snapshotId` null — nothing has been captured for this window yet: offer to capture it.
+- `snapshotId` set, `elementId` null — the window has changed since the capture: offer to
+  capture it again.
+- both set — select that node.
+
+The agent holds **one** window's snapshot: a `snapshot` of another window replaces it. Only
+`-32001` is possible, when the host has no UI Automation.
+
+```json
+→ {"jsonrpc": "2.0", "id": 8, "method": "elementFromPoint", "params": {"x": 785, "y": 312}}
+← {"jsonrpc": "2.0", "id": 8, "result": {
+    "handle": 657704,
+    "bounds": [614, 300, 814, 326],
+    "snapshotId": "5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b",
+    "elementId": "e8",
+    "element": {"automationId": "QApplication.loginWindow.usernameInput", "name": "Username",
+                "controlType": "Edit", "nearestLabel": "Username", "bounds": [614, 300, 814, 326]}}}
+```
+
+A point in a window nothing has been captured for:
+
+```json
+→ {"jsonrpc": "2.0", "id": 9, "method": "elementFromPoint", "params": {"x": 40, "y": 1050}}
+← {"jsonrpc": "2.0", "id": 9, "result": {
+    "handle": 66768, "bounds": [0, 1040, 1920, 1080],
+    "snapshotId": null, "elementId": null, "element": null}}
+```
+
+Measured on Windows 11 at 120 DPI against the trial app: median **3.39 ms**, p95 5.00 ms, worst
+7.08 ms over 50 calls, taken after the capture, which is the Spy's order (#22 asks for under
+300 ms).
+
 ### `runSteps`
 
 Plays a step document against one window and answers with one result per step, in order (#26).
@@ -207,8 +272,9 @@ A document the agent cannot read at all is `-32602`; a handle that is not a top-
 window is how a target is resolved.
 
 **Not yet, and all #40's:** the other keywords, checkpoints, screenshots, healing, the
-`run.stepResult` notifications below, and finding the window without a handle. `ping` therefore
-still answers `rpcVersion` `"0.1"`.
+`run.stepResult` notifications below, and finding the window without a handle. `ping` still
+answers `rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
+`elementFromPoint` belong to.
 
 ## Errors
 
