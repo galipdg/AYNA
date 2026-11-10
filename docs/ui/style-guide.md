@@ -141,7 +141,7 @@ Small rounded label with icon and word: `● Ready`, `◌ Starting…`, `↻ Res
 
 ### Advanced sections
 
-A closed disclosure (`<details>`) at the bottom of a panel, labelled **Advanced**, with a one-line summary of what is inside. It holds internal properties (AutomationId, class name, framework, parent path, window handle, DPI), raw values and settings that only test engineers change. It remembers whether it was open, per screen.
+A closed disclosure (`<details>`) at the bottom of a panel, labelled **Advanced**, with a one-line summary of what is inside. It holds technical properties (AutomationId, class name, framework, parent path, window handle, DPI) and raw values, shown by their UI Automation names. It is not only for test engineers: AutomationId, class name and parent path are often what AYNA finds an element by, so anyone fixing a "Find by" set works there. When a screen asks the user to change something inside it, such as a suggested "Find by" set that does not find exactly one element, the section opens by itself (#204). Otherwise it remembers whether it was open, per screen.
 
 ### Tooltips
 

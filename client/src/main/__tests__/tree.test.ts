@@ -4,6 +4,8 @@ import type { ElementDescriptor } from '../../shared/element.ts'
 import type { TreeNode } from '../../shared/snapshot.ts'
 import {
   ancestorIds,
+  automationIdLeaf,
+  deepestRow,
   elementMatches,
   foldText,
   parentMap,
@@ -81,6 +83,24 @@ describe('elementMatches', () => {
     assert.ok(!elementMatches({ controlType: 'Edit' }, 'text box'))
   })
 
+  it('searches a dotted Qt AutomationId by its last part only (#204)', () => {
+    const button = { controlType: 'Button', automationId: 'QApplication.loginWindow.loginButton' }
+    const input = { controlType: 'Edit', automationId: 'QApplication.loginWindow.usernameInput' }
+    // "login" is in the window's part of every id; only the button's own part has it.
+    assert.ok(elementMatches(button, 'login'))
+    assert.ok(!elementMatches(input, 'login'))
+    assert.ok(!elementMatches(input, 'qapplication'))
+    // A pasted id, or part of one with a dot, is matched against the whole id.
+    assert.ok(elementMatches(input, 'loginWindow.username'))
+    assert.ok(elementMatches(input, 'QApplication.loginWindow.usernameInput'))
+  })
+
+  it('takes the whole id when it has no dots', () => {
+    assert.equal(automationIdLeaf('userName'), 'userName')
+    assert.equal(automationIdLeaf('a.b.c'), 'c')
+    assert.equal(automationIdLeaf(''), '')
+  })
+
   it('matches everything for a blank query', () => {
     assert.ok(elementMatches({}, '  '))
   })
@@ -138,5 +158,14 @@ describe('searchTree', () => {
     const result = searchTree(tree, 'giriş')!
     assert.deepEqual([...result.matches].sort(), ['b', 'g'])
     assert.deepEqual(ids(visibleRows(tree, new Set(), result.shown)), ['w', 'g', 'b'])
+  })
+})
+
+describe('deepestRow', () => {
+  it('counts every row, not only the ones drawn (#204)', () => {
+    const open = new Set(['w', 'g', 'm'])
+    assert.equal(deepestRow(visibleRows(tree, open)), 2)
+    assert.equal(deepestRow(visibleRows(tree, new Set())), 0)
+    assert.equal(deepestRow([]), 0)
   })
 })

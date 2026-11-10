@@ -19,7 +19,10 @@ const { repoObjects } = (await import(seedUrl)) as {
 }
 
 const snapshot: Snapshot = JSON.parse(
-  readFileSync(join(import.meta.dirname, '..', '..', '..', 'dev', 'mock', 'snapshot.json'), 'utf8'),
+  readFileSync(
+    join(import.meta.dirname, '..', '..', '..', '..', 'schemas', 'examples', 'snapshot', 'trial-login.json'),
+    'utf8',
+  ),
 )
 const objects = repoObjects(snapshot)
 

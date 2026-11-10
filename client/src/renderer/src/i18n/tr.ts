@@ -1,5 +1,6 @@
 import { CHECK_TIMEOUT_MS, REQUEST_TIMEOUT_MS } from '../../../shared/api.ts'
 import type { Strings } from './en.ts'
+import { SNAPSHOT_VERSION } from '../../../shared/snapshot.ts'
 
 // The client's Turkish texts, with the same keys as `en.ts`. Terms follow the glossary in
 // docs/ui/style-guide.md. A value is never put before a Turkish suffix ("${url}'ye"): the
@@ -202,6 +203,10 @@ export const tr: Strings = {
   spyUnknownProcess: 'bilinmeyen süreç',
   spyTreeTitle: 'Öğeler',
   spyCapturing: 'Pencere yakalanıyor…',
+  spyCapturingLonger: (seconds: number) =>
+    `Pencere yakalanıyor; aracı bu kez ${count(seconds)} saniyeye kadar sürebilir…`,
+  spyCaptureLonger: (seconds: number) =>
+    `Yeniden yakalarken aracıya ${count(seconds)} saniyeye kadar süre tanınır.`,
   spyBack: 'Özelliklere dön',
   spyCaptureAgain: 'Yeniden yakala',
   spyCaptured: (time: string, app: string | undefined, elements: number, durationMs: number) =>
@@ -252,11 +257,14 @@ export const tr: Strings = {
       'Bu bilgisayarda UI Automation yok. Nesne Gözcüsü yalnız Windows üzerinde çalışır.',
     timeout: () => 'Aracı zamanında yanıt vermedi. Yeniden denemek için yenileyin.',
     'window-gone': () => 'Pencere kapandı. Listeyi yenileyin.',
-    'snapshot-timeout': () =>
-      'Pencereyi yakalamak çok uzun sürdü, bu yüzden aracı durdu. Uygulama meşgul olabilir; yeniden yakalayın.',
+    'snapshot-timeout': (detail?: string) =>
+      'Pencereyi yakalamak çok uzun sürdü, bu yüzden aracı durdu. Uygulama meşgul olabilir; yeniden yakalayın.' +
+      (detail ? ` Aracının iletisi: ${detail}` : ''),
     'bad-response': () => 'Aracı beklenmeyen bir yanıt verdi.',
     'agent-error': (detail?: string) =>
       detail ? `Aracı bir hata bildirdi: ${detail}` : 'Aracı bir hata bildirdi.',
+    'snapshot-version': (detail?: string) =>
+      `Aracı yakalamaları ${detail} biçiminde gönderiyor, bu istemci ise ${SNAPSHOT_VERSION} biçimini okuyor. Aracıyı ve istemciyi aynı sürümden kullanın.`,
   },
 
   repoAdd: 'Depoya ekle',
