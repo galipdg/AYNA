@@ -21,7 +21,8 @@ Both findings come from hasan's Windows run of #38 (issue comment 2026-11-07; fa
 - [ ] Not run in the UI yet: the mock server (`dev:mock`) has no repository or tests, so only `npm run demo` (real server) can show it.
 - [x] #38 check step 3 now says "click into a field in row 2" (omer's #38 issue comment, edited 2026-11-08).
 - [x] PR #215 opened 2026-11-08 (Part of #206; galip and hasan requested). The Windows re-run is posted on #206 (comment 2026-11-08) with `needs-windows-test`.
-- Next step: once #215 has an approval, ask omer and merge it. After the Windows re-run passes, close #206 with the evidence.
+- [x] #215 merged 2026-11-08 (`2e3f144`).
+- Next step: after the Windows re-run on #206 passes, close #206 by hand with the evidence and remove `needs-windows-test` (and from #38 if its other steps passed).
 
 ## Manual checks
 - pending · omer on macOS (`npm run demo`) · Turkish: Wait up to `2,5` is shown as `2,5` after save, then as `2.5` after switching to English. Rename an element used by an open test in the Repository and return to Tests: the step shows the new name, there is no "not in the repository" mark, no unsaved dot, and undo does not bring the old name back.

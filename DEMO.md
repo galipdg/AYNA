@@ -106,7 +106,7 @@ Dürüstçe söylenecek nokta: Mac'te gerçek aracı pencere okuyamadığı içi
 
 ## Yakalama nasıl çalışıyor
 
-**Hangi uygulama?** Listedeki **AYNA Trial - Login**, ekibin yazdığı tek ekranlık PySide6 giriş penceresidir: `eval/apps/trial/app.py` (#9). AYNA'nın ilk hedefi olarak kullanılıyor. Ağaçtaki 14 öge, bu pencerenin Hasan'ın Windows bilgisayarında UI Automation ile alınmış yakalamasıdır (`schemas/examples/snapshot/trial-login.json`, #12).
+**Hangi uygulama?** Listedeki **AYNA Trial - Login**, ekibin yazdığı tek ekranlık PySide6 giriş penceresidir: `eval/apps/trial/app.py` (#9). AYNA'nın ilk hedefi olarak kullanılıyor. Ağaçtaki 14 ögenin her özelliği (ad, tür, AutomationId, konum, boyut, DPI ve diğerleri) bu pencereden Hasan'ın Windows bilgisayarında UI Automation ile okundu (`agent/tests/data/trial-app-tree.json`, #11). Demonun gösterdiği belge (`schemas/examples/snapshot/trial-login.json`, #12) elle yazılmadı: ajanın testleri onu her çalıştığında bu yakalamadan yeniden üretir ve dosyayla birebir karşılaştırır. Böylece örnek ile ajanın gerçek çıktısı birbirinden ayrılamaz. Yalnızca `capture` bloğunun değerleri (`snapshotId`, zaman damgası, süre, bütçe, `agentVersion`) ve `app` bloğu testin verdiği sabitlerdir; `window` bloğu ile 14 ögenin tüm özellikleri yakalamadan gelir.
 
 Pencerenin kendisi Mac'te de açılır. Hoca görmek isterse bir kez kurun:
 
