@@ -63,7 +63,7 @@ Runs on every pull request against its base branch, and on every push to `main` 
 Each side also tests that it matches the contract:
 - Server: every `/ws/runs` message in `RunEventsIntegrationTest` is checked against `ws-runs.schema.json`. `openapi.yaml` is still generated from the code and must be committed (`server` job).
 - Client: `client/src/main/__tests__/agentContract.test.ts` checks that the requests it sends are in `agent-rpc.schema.json`, and that it reads every result shape the contract allows. Writing it found a mismatch: the agent may send `processId: null`, and the Spy's window list used to drop such a window. Fixed in the same change.
-- Agent: its replies are checked against `agent-rpc.schema.json`, and `ping` answers `"1.0"` (Galip's, requested in his inbox).
+- Agent: **to do in Galip's follow-up** (requested in his inbox) — its replies checked against `agent-rpc.schema.json` and `ping` answering `"1.0"`. Until then the real agent still answers `"0.1"`; the client's fake agent (`client/dev/mock`) answers `"1.0"`.
 
 ## Consequences
 - #51, #40, #73, #74 and #78 add to the contracts without an ADR. Each bumps the version of the schema file it touches, and #73/#74 add `repairProposed` as a new enum value.

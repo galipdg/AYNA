@@ -74,7 +74,7 @@ def snapshot(rid, params):
 def handle_request(request):
     rid, method = request.get("id"), request.get("method")
     if method == "ping":
-        result = {"agentVersion": "0.0.0-mock", "rpcVersion": "0.1"}
+        result = {"agentVersion": "0.0.0-mock", "rpcVersion": "1.0"}
         return {"jsonrpc": "2.0", "id": rid, "result": result}
     if method == "listWindows":
         if not UIA:
