@@ -85,6 +85,19 @@ public class RunController {
 	}
 
 	/**
+	 * The application's runs, newest first, at most 100: the run history screen (#68).
+	 * `testId` and `status` narrow them.
+	 */
+	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND })
+	@GetMapping("/api/apps/{appId}/runs")
+	public List<RunSummary> listAppRuns(@PathVariable String appId, @RequestParam(required = false) String testId,
+			@Parameter(schema = @Schema(
+					allowableValues = { "running", "passed", "failed", "aborted" })) @RequestParam(
+							required = false) String status) {
+		return service.listAppRuns(appId, testId, status);
+	}
+
+	/**
 	 * Body: the `params` of the agent's `run.stepResult`, unchanged (`docs/agent-rpc.md`). 201 on
 	 * the first write; 200 for an identical repeat, which writes nothing.
 	 */

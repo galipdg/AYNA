@@ -418,6 +418,67 @@ class RunIntegrationTest {
 	}
 
 	@Test
+	void listsAnApplicationsRunsAcrossItsTestsNewestFirst() throws Exception {
+		String first = id(createRun(testId, versionId));
+		finish(first, "aborted");
+		String other = createTest("Başka");
+		replaceSteps(other, click());
+		String second = id(createRun(other, versionId));
+		String otherApp = createApp("Başka Uygulama");
+		String otherVersion = createVersion(otherApp, "1.0.0");
+		String elsewhere = id(mvc.perform(post("/api/apps/{id}/tests", otherApp).contentType(MediaType.APPLICATION_JSON)
+			.content(mapper.writeValueAsString(Map.of("name", "Giriş")))));
+		driver.executableQuery("""
+				MATCH (a:Application {id: $appId})
+				CREATE (a)-[:HAS_OBJECT]->(:RepoObject {id: randomUUID(), name: 'login.loginButton'})""")
+			.withParameters(Map.of("appId", otherApp))
+			.execute();
+		replaceSteps(elsewhere, click());
+		createRun(elsewhere, otherVersion).andExpect(status().isCreated());
+
+		mvc.perform(get("/api/apps/{id}/runs", appId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[*].id").value(contains(second, first)))
+			.andExpect(jsonPath("$[0].testId").value(other))
+			.andExpect(jsonPath("$[1].startedBy.id").isString())
+			.andExpect(jsonPath("$[0].document").doesNotExist());
+		mvc.perform(get("/api/apps/{id}/runs", appId).param("testId", testId))
+			.andExpect(jsonPath("$[*].id").value(contains(first)));
+		mvc.perform(get("/api/apps/{id}/runs", appId).param("status", "running"))
+			.andExpect(jsonPath("$[*].id").value(contains(second)));
+		mvc.perform(get("/api/apps/{id}/runs", appId).param("testId", testId).param("status", "running"))
+			.andExpect(jsonPath("$", hasSize(0)));
+	}
+
+	@Test
+	void theApplicationRunListStopsAtItsLimit() throws Exception {
+		driver.executableQuery("""
+				MATCH (t:TestCase {id: $testId}), (v:AppVersion {id: $versionId})
+				UNWIND range(1, $n) AS i
+				CREATE (r:Run {id: randomUUID(), status: 'passed', stepCount: 3, document: '{}', startedBy: 'nobody',
+				  startedAt: datetime() - duration({seconds: i}), lastActivityAt: datetime()})
+				CREATE (r)-[:OF]->(t)
+				CREATE (r)-[:ON_VERSION]->(v)""")
+			.withParameters(
+					Map.of("testId", testId, "versionId", versionId, "n", RunService.APP_HISTORY_LIMIT + 1))
+			.execute();
+
+		mvc.perform(get("/api/apps/{id}/runs", appId))
+			.andExpect(jsonPath("$", hasSize(RunService.APP_HISTORY_LIMIT)));
+	}
+
+	@Test
+	void theApplicationRunListChecksItsArguments() throws Exception {
+		String otherApp = createApp("Başka Uygulama");
+
+		mvc.perform(get("/api/apps/{id}/runs", UNKNOWN)).andExpect(status().isNotFound());
+		mvc.perform(get("/api/apps/{id}/runs", otherApp).param("testId", testId))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.detail").value("Test not found in this application: " + testId));
+		mvc.perform(get("/api/apps/{id}/runs", appId).param("status", "paused")).andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void deletingATestDeletesItsRunsAndResults() throws Exception {
 		String runId = id(createRun(testId, versionId));
 		writeResult(runId, 0, result(runId, 0, "passed"));
