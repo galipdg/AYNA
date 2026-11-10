@@ -3,18 +3,20 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import {
-  CHECK_PROPERTIES,
   documentFrom,
   draftsFrom,
-  KEYWORDS,
+  fitsTarget,
+  GRID_CONTROL_TYPES,
   localProblems,
   move,
   newDraft,
   parseSeconds,
   renamedTargets,
   secondsText,
+  ROW_CONTROL_TYPES,
   serverProblems,
   STEP_SCHEMA_VERSION,
+  targetTypes,
   withRenamedTargets,
   withTimeoutsIn,
   type StepDocument,
@@ -38,28 +40,68 @@ interface Case {
 const cases = read('examples', 'step', 'cases.json') as { valid: Case[]; invalid: Case[] }
 const documentOf = (c: Case) => c.document ?? { version: STEP_SCHEMA_VERSION, steps: [c.step] }
 
-/**
- * Whether the editor has rows for every step: its keywords and check properties, and no `row`.
- * Step schema 0.2 (#150) adds SelectRow, `row` and the row checks, which the editor does not
- * offer yet (follow-up issue), so those examples cannot make the round trip.
- */
-const editable = (document: StepDocument) =>
-  document.steps.every(
-    (step) =>
-      (KEYWORDS as readonly string[]).includes(step.keyword) &&
-      !('row' in step) &&
-      (!step.checkpoint ||
-        (CHECK_PROPERTIES as readonly string[]).includes(step.checkpoint.property)),
-  )
-
 describe('step rows', () => {
   it('turn a stored document into rows and back without a change', () => {
     assert.deepEqual(documentFrom(draftsFrom(example, 'tr-TR')), example)
+    // Every valid case, rows of step schema 0.2 included (#205).
     for (const c of cases.valid) {
       const document = documentOf(c) as StepDocument
-      if (!editable(document)) continue
       assert.deepEqual(documentFrom(draftsFrom(document, 'tr-TR')), document, c.name)
     }
+  })
+
+  it('keep the row when SelectRow becomes a row check and back (#205)', () => {
+    const row = { ...newDraft(), target: 'main.customerGrid', rowBy: 'value' as const }
+    const selected = {
+      ...row,
+      keyword: 'SelectRow' as const,
+      rowValue: 'Yılmaz',
+      rowColumn: 'Soyad',
+    }
+    assert.deepEqual(documentFrom([selected]).steps, [
+      {
+        keyword: 'SelectRow',
+        target: 'main.customerGrid',
+        row: { value: 'Yılmaz', column: 'Soyad' },
+      },
+    ])
+    const listed = { ...selected, keyword: 'Verify' as const, property: 'rowExists' as const }
+    assert.deepEqual(documentFrom([listed]).steps[0].checkpoint, {
+      property: 'rowExists',
+      operator: 'equals',
+      expected: true,
+      row: { value: 'Yılmaz', column: 'Soyad' },
+    })
+    // rowCount reads no row and no column; an empty row column means any column.
+    const counted = { ...listed, property: 'rowCount' as const, expectedCount: ' 2 ', column: 'Ad' }
+    assert.deepEqual(documentFrom([counted]).steps[0].checkpoint, {
+      property: 'rowCount',
+      operator: 'equals',
+      expected: 2,
+    })
+    const anyColumn = { ...selected, rowColumn: '' }
+    assert.deepEqual(documentFrom([anyColumn]).steps[0].row, { value: 'Yılmaz' })
+  })
+
+  it('send a cell check with its row, its column and any text operator', () => {
+    const cell = {
+      ...newDraft(),
+      keyword: 'Verify' as const,
+      target: 'main.customerGrid',
+      property: 'cell' as const,
+      operator: 'notEquals' as const,
+      rowIndex: '1',
+      column: 'Şehir',
+    }
+    const { checkpoint } = documentFrom([cell]).steps[0]
+    assert.deepEqual(checkpoint, {
+      property: 'cell',
+      operator: 'notEquals',
+      expected: '',
+      row: { index: 1 },
+      column: 'Şehir',
+    })
+    assert.deepEqual(validateSteps(documentFrom([cell])), [])
   })
 
   it('send only the fields the action uses, and keep the others for a switch back', () => {
@@ -240,6 +282,38 @@ describe('validateSteps', () => {
       { index: 5, code: 'value-not-allowed' },
     ])
   })
+
+  it('names the reason of each row step a user can get wrong in the editor (#205)', () => {
+    const grid = { ...newDraft(), target: 'main.customerGrid' }
+    const selectRow = { ...grid, keyword: 'SelectRow' as const }
+    const check = { ...grid, keyword: 'Verify' as const }
+    const drafts = [
+      selectRow, // no row number yet
+      { ...selectRow, rowIndex: 'first' },
+      { ...selectRow, rowIndex: '0' },
+      { ...selectRow, rowIndex: '100001' },
+      { ...selectRow, rowBy: 'value' as const, rowColumn: 'Soyad' }, // a column but no text
+      { ...check, property: 'cell' as const, rowIndex: '1' }, // no column
+      { ...check, property: 'cell' as const, column: 'Ad' }, // no row
+      { ...check, property: 'rowExists' as const, rowIndex: '1.5' },
+      { ...check, property: 'rowCount' as const }, // no count
+      { ...check, property: 'rowCount' as const, expectedCount: 'two' },
+      { ...check, property: 'rowCount' as const, expectedCount: '100001' },
+    ]
+    assert.deepEqual(validateSteps(documentFrom(drafts)), [
+      { index: 0, code: 'row-missing' },
+      { index: 1, code: 'row-invalid' },
+      { index: 2, code: 'row-invalid' },
+      { index: 3, code: 'row-invalid' },
+      { index: 4, code: 'row-missing' },
+      { index: 5, code: 'column-missing' },
+      { index: 6, code: 'row-missing' },
+      { index: 7, code: 'row-invalid' },
+      { index: 8, code: 'count-invalid' },
+      { index: 9, code: 'count-invalid' },
+      { index: 10, code: 'count-invalid' },
+    ])
+  })
 })
 
 describe('localProblems', () => {
@@ -253,8 +327,60 @@ describe('localProblems', () => {
 
   it('marks an element that is not in the repository, once the list is loaded', () => {
     assert.deepEqual(localProblems([step], null), [])
-    assert.deepEqual(localProblems([step], new Set(['login.okButton'])), [])
-    assert.deepEqual(localProblems([step], new Set()), [{ index: 0, code: 'target-unknown' }])
+    assert.deepEqual(localProblems([step], [{ name: 'login.okButton' }]), [])
+    assert.deepEqual(localProblems([step], []), [{ index: 0, code: 'target-unknown' }])
+  })
+
+  it('marks a row action on an element that is not a table or list (#205)', () => {
+    const objects = [
+      { name: 'login.okButton', controlType: 'Button' },
+      { name: 'main.customerGrid', controlType: 'DataGrid' },
+      { name: 'settings.languageList', controlType: 'List' },
+      { name: 'main.oldGrid' }, // control type never captured
+    ]
+    const selectRow = { ...step, keyword: 'SelectRow' as const }
+    const cell = { ...step, keyword: 'Verify' as const, property: 'cell' as const }
+    const count = { ...cell, property: 'rowCount' as const }
+    const drafts = [
+      selectRow,
+      { ...selectRow, target: 'settings.languageList' },
+      { ...selectRow, target: 'main.oldGrid' },
+      cell,
+      { ...cell, target: 'settings.languageList' },
+      { ...cell, target: 'main.customerGrid' },
+      count,
+      { ...count, target: 'settings.languageList' },
+      step, // Click works on any element
+    ]
+    assert.deepEqual(localProblems(drafts, objects), [
+      { index: 0, code: 'target-not-rows' },
+      { index: 3, code: 'target-not-grid' },
+      { index: 4, code: 'target-not-grid' },
+      { index: 6, code: 'target-not-rows' },
+    ])
+  })
+})
+
+describe('targetTypes', () => {
+  it('offers grids and lists for rows, grids for a cell, anything otherwise', () => {
+    const draft = newDraft()
+    assert.equal(targetTypes(draft), undefined)
+    assert.equal(targetTypes({ ...draft, keyword: 'SelectRow' }), ROW_CONTROL_TYPES)
+    const verify = { ...draft, keyword: 'Verify' as const }
+    assert.equal(targetTypes(verify), undefined)
+    assert.equal(targetTypes({ ...verify, property: 'cell' }), GRID_CONTROL_TYPES)
+    assert.equal(targetTypes({ ...verify, property: 'rowExists' }), ROW_CONTROL_TYPES)
+    assert.equal(targetTypes({ ...verify, property: 'rowCount' }), ROW_CONTROL_TYPES)
+    // A row property chosen before switching to Click does not narrow Click's elements.
+    assert.equal(targetTypes({ ...draft, property: 'cell' }), undefined)
+  })
+
+  it('offers an element only when its control type is known to fit', () => {
+    assert.ok(fitsTarget(undefined, undefined))
+    assert.ok(fitsTarget(ROW_CONTROL_TYPES, 'List'))
+    assert.ok(fitsTarget(GRID_CONTROL_TYPES, 'Table'))
+    assert.ok(!fitsTarget(GRID_CONTROL_TYPES, 'List'))
+    assert.ok(!fitsTarget(ROW_CONTROL_TYPES, undefined))
   })
 })
 

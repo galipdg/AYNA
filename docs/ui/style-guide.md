@@ -184,9 +184,12 @@ The UI word is what the user sees. The internal term may appear only under Advan
 | UIA Name | Text | Metin | "UI Automation Name; for most controls, the visible text" |
 | Control type DataGrid / DataItem | Data grid / Data item | Veri tablosu / Veri öğesi | |
 | `RESOLVES_TO` versions of a saved element | Captured in versions | Yakalandığı sürümler | The edge records a capture the tester saved from, not a search of that version |
-| Step keyword Click / Type / Select / Verify / Wait | Click / Type text / Choose item / Check / Wait for | Tıkla / Yaz / Listeden seç / Kontrol et / Bekle | Listeden seç: plain “seç” would also mean Click to the NL author |
+| Step keyword Click / Type / Select / SelectRow / Verify / Wait | Click / Type text / Choose item / Choose row / Check / Wait for | Tıkla / Yaz / Listeden seç / Satır seç / Kontrol et / Bekle | Listeden seç: plain “seç” would also mean Click to the NL author |
 | Checkpoint, Verify step | Check | Kontrol | |
 | Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / On screen / Checked / Selected | Metin / Alan içeriği / Etkin / Ekranda / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
+| Checkpoint property cell / rowExists / rowCount (grid or list) | Cell / Row is listed / Number of rows | Hücre / Satır listede / Satır sayısı | Cell: a table only; "a list has no columns" |
+| Row `{index}` / `{value, column}` | Row number / Row with the text … in column | Satır sırası / Metni olan satır … sütun | Summary: "row 2", "row with “Yılmaz” in Soyad" / "2. satır", "Soyad sütunu “Yılmaz” olan satır" |
+| Grid / DataGrid / Table, List (control types) | Table, list | Tablo, liste | |
 | Operator equals / notEquals / contains | is / is not / contains | eşittir / eşit değildir / içerir | |
 | `timeoutMs` | Wait up to (s) | En fazla bekle (sn) | |
 | Healing proposal | Repair suggestion | Onarım önerisi | "AYNA could not find the element and suggests similar ones. Nothing changes until you choose." |

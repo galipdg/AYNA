@@ -11,7 +11,7 @@ import { LOGICAL_NAME } from './repository.ts'
  */
 export const STEP_SCHEMA_VERSION: string = stepSchema.properties.version.const
 
-export const KEYWORDS = ['Click', 'Type', 'Select', 'Verify', 'Wait'] as const
+export const KEYWORDS = ['Click', 'Type', 'Select', 'SelectRow', 'Verify', 'Wait'] as const
 export type Keyword = (typeof KEYWORDS)[number]
 
 export const CHECK_PROPERTIES = [
@@ -21,17 +21,31 @@ export const CHECK_PROPERTIES = [
   'visible',
   'checked',
   'selected',
+  // Of a grid or list (step schema 0.2, ADR 2026-10-28-step-schema-v0-2-rows).
+  'cell',
+  'rowExists',
+  'rowCount',
 ] as const
 export type CheckProperty = (typeof CHECK_PROPERTIES)[number]
 
 export const OPERATORS = ['equals', 'notEquals', 'contains'] as const
 export type Operator = (typeof OPERATORS)[number]
 
+/**
+ * One row of a grid or list: its number from the top (from 1), or the first row with a cell
+ * whose text is `value`, in `column` if given.
+ */
+export type Row = { index: number } | { value: string; column?: string }
+
 export interface Checkpoint {
   property: CheckProperty
   operator: Operator
-  /** A string for `name` and `value`, a boolean for the other properties. */
-  expected: string | boolean
+  /** A string for `name`, `value` and `cell`, a number for `rowCount`, else a boolean. */
+  expected: string | boolean | number
+  /** `cell` and `rowExists` only. */
+  row?: Row
+  /** `cell` only: the column's header text. */
+  column?: string
 }
 
 export interface Step {
@@ -42,6 +56,8 @@ export interface Step {
   target: string
   /** Type and Select only. */
   value?: string
+  /** SelectRow only; a Verify gives its row in the checkpoint. */
+  row?: Row
   /** Verify only. */
   checkpoint?: Checkpoint
   timeoutMs?: number
@@ -52,9 +68,54 @@ export interface StepDocument {
   steps: Step[]
 }
 
-/** `name` and `value` compare text; the others are true or false and allow only `equals`. */
+/**
+ * What a check compares: text (`name`, `value`, `cell`, with any operator), a number of rows
+ * (`rowCount`), or true/false (the others); the last two allow only `equals`.
+ */
+export function checkKind(property: CheckProperty): 'text' | 'count' | 'flag' {
+  if (property === 'name' || property === 'value' || property === 'cell') return 'text'
+  return property === 'rowCount' ? 'count' : 'flag'
+}
+
 export function isTextProperty(property: CheckProperty): boolean {
-  return property === 'name' || property === 'value'
+  return checkKind(property) === 'text'
+}
+
+/** Checks that read one row of the target, so they need the row picker. */
+export function readsRow(property: CheckProperty): boolean {
+  return property === 'cell' || property === 'rowExists'
+}
+
+/** Whether the action addresses a row: SelectRow, or a check that reads one. */
+export function usesRow(draft: Pick<DraftStep, 'keyword' | 'property'>): boolean {
+  return draft.keyword === 'SelectRow' || (draft.keyword === 'Verify' && readsRow(draft.property))
+}
+
+/** UI Automation control types that have rows: grids and lists. */
+export const ROW_CONTROL_TYPES: readonly string[] = ['DataGrid', 'Table', 'List']
+/** Control types that also have columns, which a `cell` check needs; a list has none. */
+export const GRID_CONTROL_TYPES: readonly string[] = ['DataGrid', 'Table']
+
+/**
+ * The control types the action's element must have, or undefined for any element: grids and
+ * lists for SelectRow and the row checks, grids for `cell` (ADR step-schema-v0-2-rows).
+ */
+export function targetTypes(
+  draft: Pick<DraftStep, 'keyword' | 'property'>,
+): readonly string[] | undefined {
+  if (draft.keyword === 'SelectRow') return ROW_CONTROL_TYPES
+  if (draft.keyword !== 'Verify') return undefined
+  if (draft.property === 'cell') return GRID_CONTROL_TYPES
+  if (draft.property === 'rowExists' || draft.property === 'rowCount') return ROW_CONTROL_TYPES
+  return undefined
+}
+
+/**
+ * Whether an element with `controlType` can be the action's element. One whose control type
+ * was never captured is not offered for rows, since nothing says it has any.
+ */
+export function fitsTarget(types: readonly string[] | undefined, controlType?: string): boolean {
+  return !types || (controlType !== undefined && types.includes(controlType))
 }
 
 /** Keywords that take a value (the text to type, the item to choose). */
@@ -78,8 +139,23 @@ export interface DraftStep {
   operator: Operator
   /** The expected text for `name` and `value`. */
   expectedText: string
-  /** The expected state for the other properties. */
+  /** The expected state for the true/false properties. */
   expectedFlag: boolean
+  /** The expected number of rows for `rowCount`, as typed. */
+  expectedCount: string
+  /**
+   * The row of SelectRow and of `cell` / `rowExists`, kept in one place so a switch between
+   * them keeps it: by its number from the top, or by the text of one of its cells.
+   */
+  rowBy: 'index' | 'value'
+  /** The row's number, as typed. */
+  rowIndex: string
+  /** The text of one of the row's cells. */
+  rowValue: string
+  /** The column that text is in; empty for any column. */
+  rowColumn: string
+  /** The column of a `cell` check. */
+  column: string
   /** "Wait up to", in seconds as typed; empty means the run's default. */
   timeout: string
 }
@@ -97,6 +173,12 @@ export function newDraft(): DraftStep {
     operator: 'equals',
     expectedText: '',
     expectedFlag: true,
+    expectedCount: '',
+    rowBy: 'index',
+    rowIndex: '',
+    rowValue: '',
+    rowColumn: '',
+    column: '',
     timeout: '',
   }
 }
@@ -117,6 +199,7 @@ export function draftsFrom(document: StepDocument, locale: string): DraftStep[] 
   return document.steps.map((step) => {
     const draft = newDraft()
     const { checkpoint } = step
+    const row = step.row ?? checkpoint?.row
     return {
       ...draft,
       ...(step.id ? { id: step.id } : {}),
@@ -129,8 +212,16 @@ export function draftsFrom(document: StepDocument, locale: string): DraftStep[] 
             operator: checkpoint.operator,
             expectedText: typeof checkpoint.expected === 'string' ? checkpoint.expected : '',
             expectedFlag: typeof checkpoint.expected === 'boolean' ? checkpoint.expected : true,
+            expectedCount:
+              typeof checkpoint.expected === 'number' ? String(checkpoint.expected) : '',
+            column: checkpoint.column ?? '',
           }
         : {}),
+      ...(row === undefined
+        ? {}
+        : 'index' in row
+          ? { rowBy: 'index' as const, rowIndex: String(row.index) }
+          : { rowBy: 'value' as const, rowValue: row.value, rowColumn: row.column ?? '' }),
       timeout: step.timeoutMs === undefined ? '' : secondsText(step.timeoutMs, locale),
     }
   })
@@ -192,17 +283,48 @@ function toStep(draft: DraftStep): Step {
   if (draft.keyword) step.keyword = draft.keyword
   if (draft.target) step.target = draft.target
   if (takesValue(draft.keyword)) step.value = draft.value
+  if (draft.keyword === 'SelectRow') {
+    const row = rowOf(draft)
+    if (row) step.row = row
+  }
   if (draft.keyword === 'Verify') {
-    const text = isTextProperty(draft.property)
-    step.checkpoint = {
+    const kind = checkKind(draft.property)
+    const checkpoint: Record<string, unknown> = {
       property: draft.property,
-      operator: text ? draft.operator : 'equals',
-      expected: text ? draft.expectedText : draft.expectedFlag,
+      operator: kind === 'text' ? draft.operator : 'equals',
     }
+    if (kind === 'text') checkpoint.expected = draft.expectedText
+    if (kind === 'flag') checkpoint.expected = draft.expectedFlag
+    // An empty count goes as empty text, so the check says the count is missing.
+    if (kind === 'count') checkpoint.expected = wholeNumber(draft.expectedCount) ?? ''
+    const row = rowOf(draft)
+    if (readsRow(draft.property) && row) checkpoint.row = row
+    if (draft.property === 'cell' && draft.column) checkpoint.column = draft.column
+    step.checkpoint = checkpoint
   }
   const timeoutMs = parseSeconds(draft.timeout)
   if (typeof timeoutMs === 'number') step.timeoutMs = timeoutMs
   return step as unknown as Step
+}
+
+/** The row as the step document gives it; undefined while it is not filled in. */
+function rowOf(draft: DraftStep): Record<string, unknown> | undefined {
+  if (draft.rowBy === 'index') {
+    const index = wholeNumber(draft.rowIndex)
+    return index === undefined ? undefined : { index }
+  }
+  if (!draft.rowValue) return undefined
+  return { value: draft.rowValue, ...(draft.rowColumn ? { column: draft.rowColumn } : {}) }
+}
+
+/**
+ * A whole number as typed: the number, or the text itself when it is not one, so the schema
+ * check says what is wrong with it; undefined when nothing is typed.
+ */
+function wholeNumber(text: string): number | string | undefined {
+  const trimmed = text.trim()
+  if (!trimmed) return undefined
+  return /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed
 }
 
 /**
@@ -236,6 +358,12 @@ export type StepProblemCode =
   | 'value-too-long'
   | 'value-not-allowed'
   | 'checkpoint-invalid'
+  | 'row-missing' // SelectRow, `cell` and `rowExists` need a row
+  | 'row-invalid' // a row number that is not a whole number from 1 to 100000
+  | 'column-missing' // `cell` needs a column
+  | 'count-invalid' // `rowCount` needs a whole number from 0 to 100000
+  | 'target-not-rows' // the element is not a grid or list
+  | 'target-not-grid' // the element is not a grid (a `cell` check needs columns)
   | 'timeout-number'
   | 'timeout-range'
   | 'invalid' // anything else the schema refuses; the server's message when it sent one
@@ -253,6 +381,12 @@ export const PROBLEM_FIELD: Record<StepProblemCode, StepField> = {
   'value-too-long': 'value',
   'value-not-allowed': 'value',
   'checkpoint-invalid': 'value',
+  'row-missing': 'value',
+  'row-invalid': 'value',
+  'column-missing': 'value',
+  'count-invalid': 'value',
+  'target-not-rows': 'target',
+  'target-not-grid': 'target',
   'timeout-number': 'timeout',
   'timeout-range': 'timeout',
   invalid: 'step',
@@ -277,7 +411,14 @@ const REQUIRED: Record<string, StepProblemCode> = {
   keyword: 'keyword-missing',
   target: 'target-missing',
   value: 'value-missing',
+  row: 'row-missing',
   checkpoint: 'checkpoint-invalid',
+}
+
+/** What a check misses. */
+const CHECKPOINT_REQUIRED: Record<string, StepProblemCode> = {
+  row: 'row-missing',
+  column: 'column-missing',
 }
 
 /** Turns Ajv's errors for a step document into one problem per step and reason. */
@@ -311,10 +452,24 @@ function fieldProblem(field: string, error: SchemaError): StepProblemCode {
       if (keyword === 'minLength') return 'value-empty'
       if (keyword === 'maxLength') return 'value-too-long'
       return 'invalid'
-    case 'checkpoint':
-      return instancePath.endsWith('/expected') && keyword === 'maxLength'
-        ? 'value-too-long'
-        : 'checkpoint-invalid'
+    case 'row':
+      return keyword === 'false schema' ? 'invalid' : 'row-invalid'
+    case 'checkpoint': {
+      // `/steps/0/checkpoint/<part>/...`
+      const part = instancePath.split('/')[4]
+      if (part === undefined && keyword === 'required') {
+        return CHECKPOINT_REQUIRED[String(error.params.missingProperty)] ?? 'checkpoint-invalid'
+      }
+      if (part === 'row' && keyword !== 'false schema') return 'row-invalid'
+      if (part === 'expected') {
+        if (keyword === 'maxLength') return 'value-too-long'
+        // The editor sends text and true/false as such; only a typed count can be wrong.
+        if (keyword === 'type' || keyword === 'minimum' || keyword === 'maximum') {
+          return 'count-invalid'
+        }
+      }
+      return 'checkpoint-invalid'
+    }
     case 'timeoutMs':
       return 'timeout-range'
     default:
@@ -323,15 +478,28 @@ function fieldProblem(field: string, error: SchemaError): StepProblemCode {
 }
 
 /**
- * What the schema cannot see: a "Wait up to" that is not a number, and an element that is not
- * in the repository. `targets` is null while the repository list is not loaded.
+ * What the schema cannot see: a "Wait up to" that is not a number, an element that is not in
+ * the repository, and one whose control type does not fit the action (a row of a button).
+ * `objects` is null while the repository list is not loaded.
  */
-export function localProblems(drafts: DraftStep[], targets: Set<string> | null): StepProblem[] {
+export function localProblems(
+  drafts: DraftStep[],
+  objects: { name: string; controlType?: string }[] | null,
+): StepProblem[] {
+  const controlTypes = objects && new Map(objects.map((o) => [o.name, o.controlType]))
   return drafts.flatMap((draft, index): StepProblem[] => {
     const problems: StepProblem[] = []
     if (parseSeconds(draft.timeout) === null) problems.push({ index, code: 'timeout-number' })
-    if (targets && LOGICAL_NAME.test(draft.target) && !targets.has(draft.target)) {
-      problems.push({ index, code: 'target-unknown' })
+    if (controlTypes && LOGICAL_NAME.test(draft.target)) {
+      const types = targetTypes(draft)
+      const controlType = controlTypes.get(draft.target)
+      if (!controlTypes.has(draft.target)) {
+        problems.push({ index, code: 'target-unknown' })
+      } else if (types && controlType !== undefined && !types.includes(controlType)) {
+        // Unknown control types pass: nothing says the element has no rows.
+        const code = types === GRID_CONTROL_TYPES ? 'target-not-grid' : 'target-not-rows'
+        problems.push({ index, code })
+      }
     }
     return problems
   })
