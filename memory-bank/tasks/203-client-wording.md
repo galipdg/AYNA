@@ -15,7 +15,7 @@ One pass over `client/src/renderer/src/i18n/{en,tr}.ts`, the glossary in `docs/u
 - 2026-11-08 — Repository "Seen in" keys renamed to `repoViewCapturedIn` / `repoViewCapturedHere` / `repoViewNotCapturedHere`.
 - 2026-11-08 — "en çok" → "en fazla" in every Turkish text (not only "En fazla bekle"), so the limit texts read alike.
 - 2026-11-08 — Typographic quotes “…” in every Turkish text, not only `repoViewNoMatch`; English keeps straight quotes.
-- 2026-11-08 — The Verify check property `visible` stays "Visible / Görünür": only the Spy's `offscreen` row became "On screen / Ekranda".
+- 2026-11-10 — The Verify check property `visible` is "On screen / Ekranda" too, like the Spy's `offscreen` row: both are UIA `IsOffscreen` negated, so one property has one name (hasan's #218 review; supersedes the 2026-11-08 line that kept "Görünür").
 
 ## Status
 - [x] Dictionaries, Spy tooltip on "Text", glossary, DEMO guides

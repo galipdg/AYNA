@@ -435,7 +435,7 @@ export const tr: Strings = {
     name: 'Metin',
     value: 'Alan içeriği',
     enabled: 'Etkin',
-    visible: 'Görünür',
+    visible: 'Ekranda',
     checked: 'İşaretli',
     selected: 'Seçili',
   },

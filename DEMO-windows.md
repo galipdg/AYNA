@@ -169,7 +169,7 @@ Her adımda **Beklenen** satırına bakın. Uymayan adımı not edin ve devam ed
 3. Ağaçta **Login** düğmesini seçin. **Beklenen:** sağda "Ne olduğu" ve konum bilgisi çıkar. Deneme penceresinde düğmenin etrafında kırmızı bir çerçeve belirir ve tam düğmeyi sarar.
 4. Ok tuşlarıyla ağaçta gezin. **Beklenen:** seçim ve kırmızı çerçeve birlikte ilerler, paneller yerinden oynamaz.
 5. **Gelişmiş** bölümünü açın. **Beklenen:** tüm UI Automation özellikleri listelenir. Okunamayanlarda "yakalanmadı" yazar.
-6. Ağaçta arayın: `user` → 3 eşleşme, `Remember` → 1, `button` → 4, `zzz` → "eşleşen öğe yok". Aramayı silin, ağaç geri gelir.
+6. Ağaçta arayın: `user` → 2 eşleşme, `Remember` → 1, `button` → 4, `zzz` → "eşleşen öğe yok" (sayaç eşleşen öğeleri sayar; eşleşmelerin üstündeki pencere satırı da görünür ama sayılmaz). Aramayı silin, ağaç geri gelir.
 7. Deneme uygulamasında boş alanlarla **Login**'e basın, sonra AYNA'da **Yeniden yakala** deyin. **Beklenen:** durum etiketinin metni "Username and password are required" olarak görünür.
 
 ### 5.4 Depoya ekleme (#25)

@@ -186,7 +186,7 @@ The UI word is what the user sees. The internal term may appear only under Advan
 | `RESOLVES_TO` versions of a saved element | Captured in versions | Yakalandığı sürümler | The edge records a capture the tester saved from, not a search of that version |
 | Step keyword Click / Type / Select / Verify / Wait | Click / Type text / Choose item / Check / Wait for | Tıkla / Yaz / Listeden seç / Kontrol et / Bekle | Listeden seç: plain “seç” would also mean Click to the NL author |
 | Checkpoint, Verify step | Check | Kontrol | |
-| Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / Visible / Checked / Selected | Metin / Alan içeriği / Etkin / Görünür / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
+| Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / On screen / Checked / Selected | Metin / Alan içeriği / Etkin / Ekranda / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
 | Operator equals / notEquals / contains | is / is not / contains | eşittir / eşit değildir / içerir | |
 | `timeoutMs` | Wait up to (s) | En fazla bekle (sn) | |
 | Healing proposal | Repair suggestion | Onarım önerisi | "AYNA could not find the element and suggests similar ones. Nothing changes until you choose." |

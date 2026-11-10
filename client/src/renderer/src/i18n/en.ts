@@ -456,7 +456,7 @@ export const en = {
     name: 'Text',
     value: 'Field content',
     enabled: 'Enabled',
-    visible: 'Visible',
+    visible: 'On screen',
     checked: 'Checked',
     selected: 'Selected',
   } satisfies Record<CheckProperty, string>,
