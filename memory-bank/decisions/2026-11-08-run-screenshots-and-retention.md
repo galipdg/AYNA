@@ -1,7 +1,7 @@
 # Run screenshots, idle timeout and retention
 
 - Date: 2026-11-08
-- Status: Proposed (#51). Needs Galip's and Hasan's approval.
+- Status: Proposed (#51). Hasan approved it on #223 (2026-11-10); needs Galip's approval.
 - Deciders: Ömerfaruk (server, client, graph), Hasan (playback screenshots #54, CLI runner #61), Galip (healing transport)
 - Issue: #51 (builds on #44; consumers #54, #59, #61, #68, #74, #75)
 - Extends: ADR *Runs API and live run updates* (`2026-11-05`). Changes one point of it and of the transport ADR (`2026-10-28`): `repairProposed` moves from #51 to #74.
@@ -42,10 +42,10 @@ Every endpoint needs an account; any role may use them (ADR accounts). Errors ar
 | `PUT /api/runs/{runId}/results/{stepIndex}/screenshot` | the PNG, `Content-Type: image/png` | 201 first write · 200 the same image again, both `{stepResultId}` | 400 not a PNG (signature check) · 404 unknown run, or no result for the step yet · 409 another image for the step · 413 over the size limit · 415 another content type |
 | `GET /api/runs/{runId}/results/{stepIndex}/screenshot` | | 200 `image/png`, `Cache-Control: private, max-age=86400` | 404 unknown run, result or screenshot |
 
-- **The result comes first.** The client and the CLI runner send the screenshot after the step's result has been accepted, through the same outbox. A screenshot without a result is a 404, which the transport ADR's outbox rules treat as dead-letter, so the order matters.
+- **The result comes first.** The client and the CLI runner send the screenshot after the step's result has been accepted, through the same outbox. A screenshot without a result is a 404, which the transport ADR's outbox rules treat as dead-letter, so the order matters. 404 stays one status for both cases: #61's outbox keeps the order per `(runId, stepIndex)` and never sends a screenshot whose result has not been accepted, and a screenshot whose result was set aside goes to the undelivered file unsent (Hasan, #223 review). A separate "too early" status was considered and left out of the frozen contract (#52).
 - **A finished run still takes the screenshot of a stored result**, because the outbox may deliver it after the finish call of a run that crashed. It never takes a new result (runs ADR).
 - **Repeat.** Compared by the SHA-256 of the bytes, like a result body.
-- **Size limit** `AYNA_SCREENSHOT_MAX_SIZE`, default 8 MB (the transport ADR's figure for a result with snapshot and screenshot).
+- **Size limit** `AYNA_SCREENSHOT_MAX_SIZE`, default 8 MB. A measured 1920 × 1080 full-screen PNG is 222 KB and the incompressible ceiling at that resolution is 7.92 MB (Hasan, Windows 11, 2026-11-10), so the default covers a whole screen even in the worst case. #54 uploads the target *window*, not the desktop, which is far smaller; raise the limit if screenshots are ever taken of a display larger than 1080p.
 - `StepResultResponse` gains `screenshotUrl`: the GET path above, or `null` while the step has none. Additive.
 - A screenshot sends no WebSocket event. The client that plays the run has the image already; a watcher reads it from `screenshotUrl` when it needs it.
 
@@ -62,6 +62,7 @@ Every endpoint needs an account; any role may use them (ADR accounts). Errors ar
 - `AYNA_RUN_RETENTION` (default 1000; 0 keeps every run) keeps the newest N runs of the server by `startedAt`. Older runs that have ended are deleted with their results and screenshot folders. A running run is never deleted, but it counts toward N.
 - At 1000 runs of 50 steps and about 200 KB per PNG that is about 10 GB; the install guide (#91) states it.
 - Deleting runs sends no event; a client showing an old run gets 404 on its next read.
+- While an experiment is being measured (#69, #86), set `AYNA_RUN_RETENTION=0`. Retention is global and ordered by `startedAt`, so unrelated runs (a demo, debugging) can evict earlier experiment runs with their results.
 
 ### Housekeeping
 One sweep every 60 s: idle timeout, then retention (in transactions of 100 runs), then orphan folders. A failed sweep is logged and tried again at the next one.
