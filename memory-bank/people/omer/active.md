@@ -2,17 +2,44 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-08 (fourteenth session: the whole client stack merged)
-- **Merged 2026-11-08** (squash, on omer's instruction "merge every PR of ours whose reviews are done"): #209 (`8ad95f8`, #208 closed), #154 (`4286ee4`, Refs #17), #186 (`e6fda30`, Part of #24), #187 (`97005db`, #25 closed), #188 (`0326752`, Part of #183), #189 (`a5a9e21`, Part of #184), #190 (`1cb7075`, Part of #185), #191 (`8be2e37`, #30 closed), #192 (`4133e0d`, Part of #38), #197 (`d0cf05d`, #195/#196 closed). Final `main`: client 198/198, server 119/119 (on #191's tree, which `main` equals for `server/`), `npm run build` green on macOS.
-- **#154 merged with hasan's change request dismissed**, on omer's explicit decision: the fix he asked for (`stop()` always settles, `killGraceMs`) is in `a3d160b`, galip approved `884bfc0`, hasan had not re-reviewed. Asked him in the dismissal note to look at `a3d160b`. `protect-main` blocks while a change request stands; omer has no bypass and the repo does not allow auto-merge.
-- **Issues left open on purpose** (PR bodies changed to "Part of" before merging): #17 (`needs-windows-test`: the Electron UI — status bar, Start again, quit — not yet run on Windows), #24 (hotkey needs #22), #183 (team review of wireframes, plain-words pass, hand check outside the team), #184 (Windows steps 2 and 6), #185 (galip's RS NFR-17 / TBD-2), #38 (Windows findings in #206).
-- **CI**: since 2026-11-08 morning the client job's `npm run build` fails on `main` and every PR with `Response code 504 (Gateway Time-out)` from a download electron-builder makes after Electron itself; lint, typecheck and tests pass in the same job. Reruns sometimes pass. If it persists, cache electron-builder's downloads in CI or skip `electron-builder --dir` on Linux (CI is `.github/`, ask first).
-- **Next step** (resume here): pick the next issue (earliest milestone): #44 client half (needs #40 from hasan), #53 next step (§7 rows for the ADRs of #182, #190, #193; status rows of #15/#24/#25/#30/#38/#44; §RQ1 path `eval/spikes/uia_tree_dump.py`), or the follow-ups #203–#207.
-- **Reviewed 2026-11-08**: approved hasan's #210 (#199 eval module rename) and suggested widening `eval` `testpaths` to `spikes`; its merge is left to hasan. #150 (galip, step schema 0.2) approved but conflicting: galip's to resolve; #205 needs it.
-- **Open from #209's review** (hasan, non-blocking): `.env.example` points at `AYNA_SERVER_URL`, which nothing reads (wire it for the CLI #61 or say it is reserved); binding `127.0.0.1:` would make a taken port fail loudly (LAN trade-off). hasan runs the real port-8080 check at the next Windows session.
-- Follow-up issues (owner omer, on the board): #203 Turkish/English wording, #204 Spy (capture budget, search noise, 285-element smoothness), #205 SelectRow in the editor (needs #150), #206 #38 Windows findings, #207 demo seed / DEMO.md / min width.
-- Inbox: every item up to 2026-11-08 is handled (the #199 SDD path waits for #53). The stack has merged; delete the handled items once #150 merges, so `merge=union` does not bring them back.
-- Local branches of the merged stack (`omer/17…`, `omer/24…`, `omer/25…`, `omer/183…`, `omer/184…`, `omer/185…`, `omer/30…`, `omer/38…`, `omer/196…`) are still here; delete them only on omer's OK. Worktrees: `omer/195-advisor-demo` in the main folder, `omer/15-snapshot-import`, `omer/53-sdd-final` and `omer/44-run-api` in `.claude/worktrees/` (all merged).
-- Open questions: project licence undecided; Leotta [4] PDF unread; Electron renderer not visible to UIA on Windows (hasan, #17 comment); galip's ADR approval on runs-api-and-live-updates.
-- Network: SSH to github.com times out. Fetch and push over HTTPS: `git -c credential.helper='!gh auth git-credential' -c url."https://github.com/".insteadOf="git@github.com:" push origin <branch>` — one push per command.
-- Local env: `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./mvnw test` (regenerates `docs/api/openapi.yaml`; commit it). Stale surefire reports survive a branch switch; count only fresh ones. The `ai/.venv` and `agent/.venv` in the main folder have pytest; neither has PySide6, so the trial app's tests do not run on this Mac.
+- Last update: 2026-11-08 (fifteenth session: #207 done locally, not pushed)
+- **`main` at the end of the session** (`3bf3f15`): the whole client stack (#154, #186–#192, #197), plus:
+  - #209 (#208);
+  - #214 (CI Electron cache, #213 closed);
+  - #215 (#206 fixes);
+  - #216 (`DEMO-windows.md`, Refs #28);
+  - #150 (galip, step schema 0.2);
+  - #210 (hasan, #199 closed);
+  - #211 (galip, #71);
+  - #212 (memory).
+
+  The only open PR is #126 (literature review part 1, #10): green, no approval.
+- **CI**: on 2026-11-08 the client job's `npm run build` often failed with a 503/504 on electron-builder's `SHASUMS256.txt` request to GitHub. #214 caches `~/.cache/electron*` (key: `client/package-lock.json`). A cached zip skips that request: 0.09 s instead of 2 min. PR caches are not shared, so the cache helps every PR only once a green `main` run has saved it. A rerun of the failed job fixed #210–#212 (a rerun keeps the old merge commit's workflow).
+- **Issues open on purpose:**
+  - #17 (`needs-windows-test`: status bar, Start again, quit on Windows);
+  - #24 (hotkey needs #22);
+  - #183 (team review of the wireframes, hand check);
+  - #184 (Windows steps 2 and 6);
+  - #185 (galip's RS NFR-17 / TBD-2);
+  - #38 (Windows findings → #206);
+  - #206 (`needs-windows-test`: a 6-step re-run is posted on the issue, then close it by hand with the evidence);
+  - #28 (G0, team; the LLM criterion is galip's).
+- **Next step** (resume here): Week 4 issues, earliest first:
+  - #207 is done on `omer/207-demo-seed-window` (task note `memory-bank/tasks/207-demo-seed-window.md`): push, PR `Closes #207`, hasan as reviewer, on omer's OK. The branch also carries the 2026-11-08 session-end memory;
+  - then #203, #204;
+  - #205 (step schema 0.2 rows) is unblocked now that #150 has merged.
+
+  Also, at the next #53 step: in `docs/sdd/SDD.md` §RQ1 (line ~868), `eval/spikes/uia_dump.py` → `eval/spikes/uia_tree_dump.py` (inbox #199).
+- **Windows session**: hasan follows `DEMO-windows.md` (new, never run on Windows: fix any step that does not work as written). The queue is `gh issue list --label needs-windows-test`.
+- **Open from reviews:**
+  - #209 (hasan): `.env.example`'s `AYNA_SERVER_URL` is read by nothing (wire it for the CLI #61, or say it is reserved); binding to `127.0.0.1:` trade-off.
+  - #199 (2): `eval` `testpaths` still `["apps/trial/tests"]`, so the spikes run in no CI job (omer's call; hasan offered to widen it).
+- **Inbox** cleaned 2026-11-08: only the #199 SDD path item is left.
+- **Local branches of merged work** (`omer/17…`, `omer/24…`, `omer/25…`, `omer/183…`, `omer/184…`, `omer/185…`, `omer/30…`, `omer/38…`, `omer/196…`, `omer/206…`, `omer/213…`, `omer/28-windows-guide`): delete only on omer's OK.
+- **Worktrees:**
+  - main folder: `omer/195-advisor-demo`;
+  - `.claude/worktrees/`: `omer/15-snapshot-import`, `omer/53-sdd-final`, `omer/44-run-api`, `omer/208-compose-port` (all merged);
+  - `client-stack-merges-08a13a` (this session).
+- **Open questions:** project licence undecided; Leotta [4] PDF unread; Electron renderer not visible to UIA on Windows (hasan, #17 comment); galip's ADR approval on runs-api-and-live-updates.
+- **Network:** SSH to github.com times out. Fetch and push over HTTPS, one push per command: `git -c credential.helper='!gh auth git-credential' -c url."https://github.com/".insteadOf="git@github.com:" push origin <branch>`. `gh pr create --reviewer` fails with a GraphQL error; use `gh api -X POST repos/galipdg/AYNA/pulls/<n>/requested_reviewers -f 'reviewers[]=…'`.
+- **Local env:** `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./mvnw test` regenerates `docs/api/openapi.yaml`; commit it. Client: `npm run lint && npm run typecheck && npm test` (201 tests on `main`). Neither `ai/.venv` nor `agent/.venv` in the main folder has PySide6.

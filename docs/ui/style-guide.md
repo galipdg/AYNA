@@ -22,7 +22,7 @@ Draft for the #183 team review. One visual style for every client screen: layout
 └────────────┴─────────────────────────────────────────────────────────────────┘
 ```
 
-- **Window:** designed at 1280 × 720 (a 1920 × 1080 laptop at 150 %), minimum 960 × 600 (the main window's `minWidth`/`minHeight`). Below 1180 px wide the navigation collapses to icons with tooltips.
+- **Window:** designed at 1280 × 720 (a 1920 × 1080 laptop at 150 %), minimum 960 × 600 (the main window's `minWidth`/`minHeight`). Below 1180 px wide the navigation collapses to icons with tooltips. Between 960 and about 1280 px every screen works, but a wide table may scroll sideways inside its panel: the step table of the Tests screen does below about 1280 px (34 px at 1180), less once the test list is dragged narrower. The minimum stays at 960 on purpose: a 1366 × 768 screen at 125 % is about 1090 px wide, so a 1280 minimum would push the window off it (#207).
 - **The page never scrolls as a whole.** The top bar, navigation and page header stay; panels scroll inside.
 - **Panels:** list panels 280–360 px wide, detail panels take the rest. The user can drag a panel edge; the width is kept per screen across restarts.
 - **Before login** (server settings, login, first application choice) there is no shell: one centred card, 440 px wide, on the page background, with the AYNA name above it.

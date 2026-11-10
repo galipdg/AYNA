@@ -236,4 +236,18 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR with `Closes #208` on omer's OK.
 - Later the same day (omer: "review the PRs asking for it, merge all you can"): approved #210 (hasan, #199; left its merge to him, `testpaths` suggestion); merged #209 (`8ad95f8`, #208 closed). hasan requested changes on #154 after a Windows run with the real agent: `stop()` could hang quitting when the kill fails → `killGraceMs` deadline + test (`a3d160b`), main merged in (`76c82ed`, active.md conflict). #150 (galip) conflicting; stack still behind #154.
 - Then (omer: dismiss hasan's change request and merge; merge every PR of ours with finished reviews): #154 merged after dismissing hasan's review (galip approved; no bypass, no auto-merge in the repo). Whole stack merged in order #186 → #197, closing #25, #30, #195, #196; #188/#190 bodies changed to "Part of" (criteria open). Client build in CI fails with a 504 from an electron-builder download on `main` too; merged on CI lint/tests + local build. Squash-stack gotcha in `learnings.md`.
+
+## 2026-11-08 (fourteenth session, later) · CI cache, #206, Windows guide, everything merged
+- Client CI build failures traced to electron-builder's `SHASUMS256.txt` request (503/504 from GitHub; reproduced locally with an empty cache). #213 opened. #214 caches Electron downloads, verified on CI (cache hit, 0.09 s instead of 2 min).
+- #206: "wait up to" in the UI language, without grouping, rewritten on a language switch; a Repository rename is carried into the open test (rows, undo, saved fingerprint) by object id instead of refetching. 201 client tests. PR #215 is "Part of #206". The Windows re-run is posted on #206 with `needs-windows-test`. #38's check step 3 wording is fixed.
+- `DEMO-windows.md` (#216, Refs #28): setup to full run on Windows with the real agent; playback through the agent's trial-app tests. `DEMO.md` no longer points at the old demo branch.
+- Merged on omer's word after rerunning the 5xx client jobs: #210, #211, #212. #214–#216 and #150 merged too. Only #126 is open.
+- Inbox cleaned (only the #199 SDD path item left).
+- Next: #207, then #203/#204; #205 is unblocked.
+
+## 2026-11-08 (fifteenth session) · #207 demo seed backups, capture note, window width
+- Branched from `omer/memory-2026-11-08-end` at `ba1b0cc` (the amended tip; `7765e45` was the commit before the amend).
+- Seed: backup sets `name` + `controlType`, `statusLabel` none; a rerun PATCHes the sample objects' sets back. `demoSeed.test.ts` checks each set finds one element in the trial capture. Client 203/203. End-to-end on a throwaway Compose project on port 8097 (old → new seed, fresh database), removed afterwards.
+- DEMO.md capture note (#11 tree, rebuilt by the agent tests; fixture `snapshotId`/`agentVersion`), Chromium 125+ line in `client/AGENTS.md`, style guide keeps 960 minimum and says the step table scrolls below ~1280.
+- Next: push and PR on omer's OK, then #203/#204, #205.
 - Later the same session: #205's PR #220 opened (reviews: galip, hasan); #221 opened for table column headers (Week 6). Then #53 on `omer/53-sdd-update`: SDD v0.4 with the three missing §7 ADR rows, status rows checked against the code (#15, #24, #25, #30, #38, #183–#185 Built; `columns` → #221), RQ1 path (#199). galip asked to refresh two stale §5 lines.
