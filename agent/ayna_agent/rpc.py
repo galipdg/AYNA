@@ -88,6 +88,13 @@ class Desktop(Protocol):
         when the budget runs out."""
         ...
 
+    def element_from_point(self, x: int, y: int) -> dict[str, Any]:
+        """The element at a physical-pixel point, for the Spy's pick hotkey (#22).
+
+        Never raises for the point itself: a point with no window, or one in a window the
+        backend has not captured, is an answer with nulls, so the client has one code path."""
+        ...
+
     def run_steps(
         self,
         handle: int,
@@ -114,6 +121,9 @@ class UnavailableDesktop:
         raise UiaUnavailable(self.reason)
 
     def snapshot(self, handle: int, timeout_ms: int | None) -> dict[str, Any]:
+        raise UiaUnavailable(self.reason)
+
+    def element_from_point(self, x: int, y: int) -> dict[str, Any]:
         raise UiaUnavailable(self.reason)
 
     def run_steps(
@@ -146,6 +156,7 @@ class Dispatcher:
             "ping": self._ping,
             "listWindows": self._list_windows,
             "snapshot": self._snapshot,
+            "elementFromPoint": self._element_from_point,
             "runSteps": self._run_steps,
         }
 
@@ -213,6 +224,28 @@ class Dispatcher:
                 f"Invalid params: timeoutMs must be an int from 1 to {MAX_TIMEOUT_MS}",
             )
         return await self._run(self._desktop.snapshot, handle, timeout_ms)
+
+    async def _element_from_point(self, params: Params) -> dict[str, Any]:
+        """`elementFromPoint` (#22), for the Spy's pick hotkey.
+
+        `x` and `y` are **signed**: they are physical pixels in virtual-desktop coordinates,
+        and a maximised window on a scaled display starts at a negative origin, so the check
+        is "an int" rather than `_positive_int`.
+        """
+        required = {"x", "y"}
+        if not isinstance(params, dict) or not required <= set(params):
+            raise RpcError(
+                INVALID_PARAMS, 'Invalid params: expected {"x": <int>, "y": <int>}'
+            )
+        unknown = set(params) - required
+        if unknown:
+            raise RpcError(INVALID_PARAMS, f"Invalid params: unknown {sorted(unknown)}")
+        for name in ("x", "y"):
+            if not _an_int(params[name]):
+                raise RpcError(INVALID_PARAMS, f"Invalid params: {name} must be an int")
+        return await self._run(
+            self._desktop.element_from_point, params["x"], params["y"]
+        )
 
     async def _run_steps(self, params: Params) -> dict[str, Any]:
         """`runSteps` (#26, the request `docs/agent-rpc.md` leaves to #40).
@@ -283,8 +316,13 @@ class Dispatcher:
             raise RpcError(INVALID_PARAMS, f"Invalid params: {exc}") from exc
 
 
+def _an_int(value: Any) -> bool:
+    """An int of any sign. `True` is an `int` in Python and is not one here."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def _positive_int(value: Any) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+    return _an_int(value) and value > 0
 
 
 def _valid_id(value: Any) -> bool:
