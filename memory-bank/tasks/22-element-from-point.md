@@ -64,26 +64,65 @@ tested on macOS.
 
 ## Status
 - [x] Task note and branch
-- [ ] `recognition/uia.py`: `element_from_point`, the snapshot cache, the pure matcher
-- [ ] `rpc.py`: `elementFromPoint` (galip's file — its own commit)
-- [ ] `docs/agent-rpc.md`: the method (galip's content in my folder — its own commit)
-- [ ] Unit tests on the matcher and the reply shape (any OS)
-- [ ] `@pytest.mark.windows` test on the trial app: 10 controls, duration
-- Next step: write `element_from_point` and the matcher in `recognition/uia.py`.
+- [x] `recognition/uia.py`: `element_from_point`, the snapshot cache, the pure matcher (`d7dcf8c`)
+- [x] `rpc.py`: `elementFromPoint` — galip's file, its own commit (`bd74b7e`)
+- [x] `docs/agent-rpc.md`: the method — galip's content in my folder, its own commit (`ba86966`)
+- [x] Unit tests on the matcher and the reply shape (any OS): 19 + 12
+- [x] `@pytest.mark.windows` tests on the trial app, run here: every leaf found at its centre,
+      every element answering inside its own subtree, the budget, a point over nothing, an
+      uncaptured window. **432 agent tests pass, ruff clean, on Windows 11 at 120 DPI.**
+- [x] Criterion 1 **met**: every leaf of the trial window (11 of them, more than the ten asked
+      for) answers as itself at the centre of the rectangle the snapshot reports.
+- [x] Criterion 2 **met**: median **3.39 ms**, p95 5.00 ms, worst **7.08 ms** over 50 calls
+      against the 300 ms budget — about 90× of headroom. Numbers are in `docs/agent-rpc.md`.
+- [ ] Criterion 3 (100 % and 150 % scaling) — **not ticked**: see Manual checks.
+- [ ] Inbox notes, memory, PR
+- Next step: open the PR with `Closes #22` once the scaling check is agreed, and ask omer to
+  review the reply shape since the Spy's hotkey is what consumes it.
 
 ## Manual checks
-- Acceptance criterion 3 (100 % and 150 % scaling) cannot be a test I run here: changing the
-  display scaling needs a person at the machine. Planned as a manual check once the code is in.
+- **Pending — criterion 3, display scaling.** I cannot tick this from a test run: changing the
+  display scaling needs a person at the machine, and this machine sits at **125 % (120 DPI)**, so
+  neither of the two scalings the criterion names has been exercised. The code path itself has no
+  scaling arithmetic — the process is per-monitor-v2 aware (#201) and the point is passed through
+  untouched — so what the check proves is that the client and the agent agree about the point,
+  not that this module converts correctly.
+
+  **Setup.** Start the trial app from the repository root with its own interpreter:
+  `.venv/Scripts/python.exe eval/apps/trial/app.py`. Nothing else is needed - the test
+  brings the window to the front itself.
+  **Steps.**
+  1. Windows Settings → Display → Scale **100 %**, sign out and in if Windows asks.
+  2. `cd agent && .venv/Scripts/python.exe -m pytest tests/test_uia_element_from_point.py -q`
+  3. Set the scale to **150 %**, sign out and in, and run the same command.
+  4. Set the scale back to 125 %.
+  **Expected.** 19 passed both times. The two Windows tests are the ones that matter:
+  `test_a_leaf_of_the_trial_app_is_found_exactly_at_its_centre` and
+  `test_a_container_answers_with_something_inside_itself`.
+  **Report back.** Pass/fail per scaling. On a failure: the full pytest output, the
+  `window dpi=` line the snapshot reports, and the Windows build.
+
+  Worth running the same two scalings again end to end once omer's pick hotkey is wired up
+  (#184 step 8), because that is the half that converts DIP to physical pixels.
 
 ## Open issues
-- Acceptance criterion 2 is "response time under 300 ms". With the cached-snapshot design the call
-  is one hit test plus a Python lookup, so the number should be small; it still has to be measured
-  on Windows and recorded.
-- The Spy's own overlay is a window too. If the pick hotkey fires while the overlay is over the
-  cursor, `WindowFromPoint` returns the overlay. omer's overlay is click-through, so Win32 should
-  skip it, but this is worth one step in the manual check.
+- **`schemas/agent-rpc.schema.json` does not exist on `main` yet** (omer's PR #224). When it
+  merges, `elementFromPoint` needs a request and a result definition there as a **minor** bump
+  (1.0 → 1.1) under the freeze rule, with every reply field nullable. Asked omer on his inbox
+  whether to put it in this PR after his merges or to open a follow-up.
+- **The `rpcVersion` number is unsettled and it is galip's call.** `runSteps` and
+  `elementFromPoint` are built additions to v0.1, so by the contract's own rule they are a minor
+  bump, but "v0.2" already names the healing draft in the same file. Under #52 they become 1.1.
+  Noted at the top of `docs/agent-rpc.md` and in galip's inbox; `RPC_VERSION` left at `"0.1"`.
+- **The agent holds one window's snapshot.** Enough for the Spy (capture, then pick), but if a
+  later screen wants to pick across two captured windows this becomes a small cache. Not worth
+  building before something needs it.
 
 ## Handoff
-Nothing yet.
+- The two Windows tests force the trial window topmost on purpose (`_bring_to_front`): a hit test
+  answers with what is **visible**, and a terminal running pytest otherwise sits over the app.
+  Do not "simplify" that away — it is why the first run failed.
+- `match_in_document` is pure and makes no COM call when the bounds alone decide. If you ever
+  need to loosen it, keep that property: it is what makes the call 3 ms instead of 3 000.
 
 ## Outcome (fill when the issue closes)

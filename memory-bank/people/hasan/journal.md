@@ -426,3 +426,37 @@ two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`
 **Next step:** #17 (omer's PR #154) is the last item in the Windows queue. Its happy path ran
 incidentally all session — every client start launched the agent and every close logged
 `stdin closed, shutting down` — so the check is presumably about crash and restart.
+
+## 2026-11-10 — eight reviews, then #22 built
+
+- **Reviewed and approved all eight PRs waiting on me** (omer's #217, #218, #219, #220, #222,
+  #223, #224, #225), including the two ADRs `2026-11-08-run-screenshots-and-retention` and
+  `2026-11-08-contracts-v1-freeze`. The queue had been empty on 2026-11-07 and refilled
+  completely; it is empty again.
+- Three of the reviews needed measurements rather than opinions, so I took them here:
+  - **8 MB screenshot limit (#223):** a real 1920×1080 PNG is **222 KB**, the incompressible
+    ceiling at that resolution is **7.92 MB**. So the limit is exactly one raw 1080p frame and has
+    no headroom above that — which is fine only because I committed to #54 sending the *window*.
+  - **`schema_compat.py` (#224):** ran omer's checker myself (28/28) and put six mutations
+    through it against my own `snapshot.schema.json`. It proved that my planned whitespace
+    `pattern` change is **0.1 → 1.0, not 0.2** — a correction to my own plan.
+  - **`DEMO-windows.md` §5.3 (#218):** computed the four tree-search counts against the committed
+    capture; `user` → 2, not the 3 the guide claims. Also checked that #219's leaf-id rule does
+    not change any of them.
+- Two findings I would not have had without reading my own code: **`-32002` has two causes** and
+  the client throws the distinction away, so #219's retry ladder gives exactly the wrong advice
+  when an application is blocked by a modal message box (opened **#226** for it); and **`cell`
+  being grid-only while `rowExists {value, column}` is allowed on a list** is the same column
+  mapping forbidden in one place and required in the other (raised on #220 and #221).
+- Commented on **#221**: the column headers are already in every snapshot as `Header`/`HeaderItem`
+  elements, so its heaviest acceptance criterion — a snapshot-schema ADR with three approvals —
+  may be unnecessary, and `GetColumnHeaders` alone would miss KeePass 2.
+- **Built #22** on `hasan/22-element-from-point`, three commits (backend, galip's `rpc.py`,
+  the contract doc), 31 new tests, 432 agent tests green on real Windows. The design decision
+  worth keeping is in `learnings.md`: a descriptor for one element is not the same thing as a
+  descriptor from a walk, so `elementFromPoint` answers out of the last snapshot. Criteria 1 and 2
+  met and measured (median 3.39 ms against 300 ms); criterion 3 is a manual scaling check, written
+  up in the task note, because this display sits at 125 %.
+- Also learned the hard way that a UIA hit test answers with what is **visible**: the first
+  Windows run failed because pytest's own terminal was over the trial app.
+- Next step: the scaling manual check with the user, then the PR with `Closes #22`.

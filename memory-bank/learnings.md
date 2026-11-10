@@ -261,3 +261,41 @@ contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), reco
 conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
 version the branch was built on). Always compare the merged tree with what you expect before
 pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
+
+## 2026-11-10 — A descriptor for one element is not the same thing as a descriptor from a walk (hasan, #22)
+
+`elementFromPoint` looked like "hit-test, then describe the element". It is not, and the reason
+generalises to anything that wants a descriptor outside a snapshot walk: **three of the twelve
+descriptor properties are derived from the element's surroundings, not read from it.**
+`nearestLabel` needs its siblings and its parent's siblings (`model.nearest_label` rules 2 and
+3), `parentPath` needs the whole ancestor chain, `siblingIndex` needs its position among all its
+siblings. Fetching those for one element costs a property read per sibling, which is unbounded —
+picking a row in KeePass 2's entry list would read every other row — and far worse, an element
+whose siblings were not read gets `nearestLabel: None`, which is **indistinguishable from "this
+element has no label"**. The same element would then have two different descriptors depending on
+whether a snapshot happened to be open, and a repository object saved from one would not match
+the other.
+
+So `elementFromPoint` answers out of the snapshot the agent took last, returning *that* element,
+and the lookup is by stored bounds first (pure Python, no COM call in the common case) with
+`CompareElements` only when several elements share a rectangle. Measured: median 3.39 ms against
+#22's 300 ms budget.
+
+→ Before deriving a descriptor anywhere new (#23's win32 fallback, #54, a recorder), check which
+properties need the tree. If the tree is not there, say so in the shape of the answer instead of
+returning a quietly weaker descriptor.
+
+## 2026-11-10 — A UIA hit test answers with what is *visible*, which breaks a test runner's own window (hasan, #22)
+
+`ElementFromPoint` returns the deepest element **on screen** at the point, so the first run of
+the #22 Windows test failed with "another window answered": the trial app was behind the terminal
+running pytest, and the hit test was right. The fixture now forces the window topmost with
+`SetWindowPos(HWND_TOPMOST, …, SWP_NOACTIVATE)` — above the others without stealing the keyboard —
+and waits one frame for the compositor.
+
+Two follow-ons. **A container's centre is not its own element**: the second failure was asserting
+that every element is found at the centre of its own rectangle, which is false for anything with
+children (the window's centre answered a check box, correctly). The invariant that does hold is
+"the answer is that element or one of its descendants", with the exact answer asserted only for
+leaves. **And for the Spy:** anything the client draws under the cursor will be hit instead of the
+target, so an overlay has to be click-through.
