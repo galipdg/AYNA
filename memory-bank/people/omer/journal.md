@@ -242,6 +242,12 @@ Append-only. One entry per session, newest at the bottom:
 - omer chose #51. Design questions answered (all recommended): separate PNG upload, global retention 1000, abort after 60 min idle, `repairProposed` moves to #74. ADR `2026-11-08-run-screenshots-and-retention` (Proposed).
 - Built on `omer/51-screenshots-retention`: `ScreenshotStore`, upload/download endpoints, `RunHousekeeping` sweep, test delete removes folders, 413/415 problem responses, Compose volume and env vars. Server 134/134 (15 new incl. 100 runs × 3 screenshots); Compose smoke on the real image 25/25 plus retention after restart.
 - Next: push and PR (`Closes #51`) on omer's OK; comment on #74 about `repairProposed`.
+## 2026-11-08 (fifteenth session) · #205 SelectRow and row checks in the editor
+- `main` unchanged (`3bf3f15`); SSH still times out, fetched over HTTPS. No PR waits for omer's review; #217/#218/#219 wait for reviews.
+- #205 on `omer/205-selectrow-rows` (board In progress): `SelectRow`, a row picker (number, or a cell's text with an optional column), `cell` / `rowExists` / `rowCount` checks, element menu limited to tables and lists (cell: tables) with a local problem for a wrong control type. The #192 round-trip test no longer skips any valid case. en/tr texts, `docs/ui/` vocabulary.
+- Client 207/207, lint, typecheck, format green. Tried the StepTable in a throwaway Vite harness; not in the real app (demo seed has no grid).
+- Inbox emptied: every item was handled and #150 has merged.
+- Next: push and PR (Closes #205) on omer's OK.
 ## 2026-11-08 (sixteenth session) · #204 Spy follow-ups → PR #219
 - `origin/main` unchanged (`3bf3f15`); no review requests. Branch `omer/204-spy-followups` from `origin/main`; board In progress.
 - Points 1–3 (`ec2b61c`): capture budget ladder 5 s → 30 s → 120 s after a timeout, client waits budget + 10 s; `snapshot-version` reason; fake agent reads the schema example, `--slow-snapshots` honours `timeoutMs`.
