@@ -20,11 +20,11 @@
 - [x] Client: `columns` through `main/repository.ts`, `ColumnField`, en/tr
 - [x] SDD §3.3 row
 - [x] Issue criteria rewritten on GitHub (2026-11-10, omer's OK)
-- [ ] PR; Windows check posted on #221 with `needs-windows-test`
-- Next step: push, open the PR, post the manual check on #221 with `needs-windows-test`.
+- [x] PR #228 (reviews: hasan, galip); Windows check posted on #221 with `needs-windows-test` (2026-11-10)
+- Next step: answer the reviews; at the Windows session run the #221 check; if it has not run by merge, change the PR body to "Part of #221".
 
 ## Manual checks
-- pending Windows session · hasan + omer · KeePass 2 entry list and a Qt `QTableWidget` give the right dropdown (steps below, to be posted on the issue).
+- pending Windows session · hasan + omer · KeePass 2 entry list and a Qt `QTableWidget` give the right dropdown (posted on #221 2026-11-10; steps below).
 
 ### Check to post on #221
 
