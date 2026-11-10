@@ -30,6 +30,12 @@ function initialRows(node: TreeNode, snapshot: Snapshot): Row[] {
   return elementRows(node.element, (field) => uses[field]!)
 }
 
+/** Whether the "Find by" set finds exactly one element in the capture. */
+function findsOne(rows: Row[], snapshot: Snapshot): boolean {
+  const primary = propertySet(rows, 'primary')
+  return typeof primary !== 'string' && matchCount(primary, snapshot.elements) === 1
+}
+
 function failureText(result: Extract<AddToRepositoryResult, { ok: false }>): string[] {
   // Our text says what to do next; the server's says which object holds the name.
   const main =
@@ -64,7 +70,9 @@ export default function AddToRepository({
 }) {
   const [name, setName] = useState('')
   const [rows, setRows] = useState<Row[]>(() => initialRows(node, snapshot))
-  const [advanced, setAdvanced] = useState(false)
+  // The fix for a suggestion that does not find exactly one element is in the advanced
+  // settings, which the message points at: open them rather than make the user look (#204).
+  const [advanced, setAdvanced] = useState(() => !findsOne(rows, snapshot))
   const [saving, setSaving] = useState(false)
   const [problems, setProblems] = useState<string[]>([])
   const [savedAs, setSavedAs] = useState<RepoObjectSummary[]>([])

@@ -22,7 +22,7 @@ Draft for the #183 team review. One visual style for every client screen: layout
 └────────────┴─────────────────────────────────────────────────────────────────┘
 ```
 
-- **Window:** designed at 1280 × 720 (a 1920 × 1080 laptop at 150 %), minimum 960 × 600 (the main window's `minWidth`/`minHeight`). Below 1180 px wide the navigation collapses to icons with tooltips.
+- **Window:** designed at 1280 × 720 (a 1920 × 1080 laptop at 150 %), minimum 960 × 600 (the main window's `minWidth`/`minHeight`). Below 1180 px wide the navigation collapses to icons with tooltips. Between 960 and about 1280 px every screen works, but a wide table may scroll sideways inside its panel: the step table of the Tests screen does below about 1280 px (34 px at 1180), less once the test list is dragged narrower. The minimum stays at 960 on purpose: a 1366 × 768 screen at 125 % is about 1090 px wide, so a 1280 minimum would push the window off it (#207).
 - **The page never scrolls as a whole.** The top bar, navigation and page header stay; panels scroll inside.
 - **Panels:** list panels 280–360 px wide, detail panels take the rest. The user can drag a panel edge; the width is kept per screen across restarts.
 - **Before login** (server settings, login, first application choice) there is no shell: one centred card, 440 px wide, on the page background, with the AYNA name above it.
@@ -141,7 +141,7 @@ Small rounded label with icon and word: `● Ready`, `◌ Starting…`, `↻ Res
 
 ### Advanced sections
 
-A closed disclosure (`<details>`) at the bottom of a panel, labelled **Advanced**, with a one-line summary of what is inside. It holds internal properties (AutomationId, class name, framework, parent path, window handle, DPI), raw values and settings that only test engineers change. It remembers whether it was open, per screen.
+A closed disclosure (`<details>`) at the bottom of a panel, labelled **Advanced**, with a one-line summary of what is inside. It holds technical properties (AutomationId, class name, framework, parent path, window handle, DPI) and raw values, shown by their UI Automation names. It is not only for test engineers: AutomationId, class name and parent path are often what AYNA finds an element by, so anyone fixing a "Find by" set works there. When a screen asks the user to change something inside it, such as a suggested "Find by" set that does not find exactly one element, the section opens by itself (#204). Otherwise it remembers whether it was open, per screen.
 
 ### Tooltips
 
@@ -163,35 +163,43 @@ A navigation item whose screen is not built yet is shown in `--text-muted` with 
 
 ### Plain-language glossary
 
-The UI word is what the user sees. The internal term may appear only under Advanced or in a tooltip. The Turkish column is what the client shows since #185 (galip, hasan: please correct).
+The UI word is what the user sees. The internal term may appear only under Advanced or in a tooltip. The Turkish column is what the client shows since #185, with the review points of #188–#191 applied in #203. Turkish follows TDK spelling (öğe) and uses typographic quotes “…”.
 
-| Internal term | UI word (English) | UI word (Turkish draft) | Tooltip when needed |
+| Internal term | UI word (English) | UI word (Turkish) | Tooltip when needed |
 |---|---|---|---|
 | AUT, application under test | Application | Uygulama | |
 | Application version | Version | Sürüm | "The build of the application you are testing." |
-| Repository object | Saved element | Kayıtlı öge | "An element of the application that tests use by its name." |
-| Object repository | Repository | Depo | |
-| Logical name | Element name | Öge adı | "Tests use this name, so they keep working when the screen changes." |
-| Primary properties | Find by | Bulma özellikleri | |
+| Repository object | Saved element | Kayıtlı öğe | "An element of the application that tests use by its name." |
+| Object repository | Repository | Nesne Deposu (in buttons and messages: depo, as in “Depoya ekle”) | |
+| Logical name | Element name | Öğe adı | "Tests use this name, so they keep working when the screen changes." |
+| Primary properties | Find by | Bununla bul | |
 | Fallback properties | Backup | Yedek | "Tried when the Find-by properties no longer match." |
 | Descriptor | Properties | Özellikler | |
 | Snapshot | Capture | Yakalama | |
-| UIA element | Element | Öge | |
+| UIA element | Element | Öğe | |
 | Control type | Type | Tür | |
 | Nearest label | Label next to it | Yanındaki etiket | |
-| Step keyword Click / Type / Select / Verify / Wait | Click / Type text / Choose item / Check / Wait for | Tıkla / Yaz / Seç / Kontrol et / Bekle | |
+| Spy group for a picked element (name, type, label, window) | What it is | Ne olduğu | For a saved element the group is "How AYNA finds it" / "AYNA bu öğeyi nasıl bulur" |
+| `offscreen` = false | On screen | Ekranda | |
+| UIA Name | Text | Metin | "UI Automation Name; for most controls, the visible text" |
+| Control type DataGrid / DataItem | Data grid / Data item | Veri tablosu / Veri öğesi | |
+| `RESOLVES_TO` versions of a saved element | Captured in versions | Yakalandığı sürümler | The edge records a capture the tester saved from, not a search of that version |
+| Step keyword Click / Type / Select / SelectRow / Verify / Wait | Click / Type text / Choose item / Choose row / Check / Wait for | Tıkla / Yaz / Listeden seç / Satır seç / Kontrol et / Bekle | Listeden seç: plain “seç” would also mean Click to the NL author |
 | Checkpoint, Verify step | Check | Kontrol | |
-| Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / Visible / Checked / Selected | Metin / Alan içeriği / Etkin / Görünür / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
+| Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / On screen / Checked / Selected | Metin / Alan içeriği / Etkin / Ekranda / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
+| Checkpoint property cell / rowExists / rowCount (grid or list) | Cell / Row is listed / Number of rows | Hücre / Satır listede / Satır sayısı | Cell: a table only; "a list has no columns" |
+| Row `{index}` / `{value, column}` | Row number / Row with the text … in column | Satır sırası / Metni olan satır … sütun | Summary: "row 2", "row with “Yılmaz” in Soyad" / "2. satır", "Soyad sütunu “Yılmaz” olan satır" |
+| Grid / DataGrid / Table, List (control types) | Table, list | Tablo, liste | |
 | Operator equals / notEquals / contains | is / is not / contains | eşittir / eşit değildir / içerir | |
-| `timeoutMs` | Wait up to (s) | En çok bekle (sn) | |
+| `timeoutMs` | Wait up to (s) | En fazla bekle (sn) | |
 | Healing proposal | Repair suggestion | Onarım önerisi | "AYNA could not find the element and suggests similar ones. Nothing changes until you choose." |
-| Candidate | Suggested element | Önerilen öge | |
+| Candidate | Suggested element | Önerilen öğe | |
 | Score / contribution | Match / why it matches | Benzerlik / neden benziyor | |
-| Approve / reject | Use this element / None of these | Bu ögeyi kullan / Hiçbiri | |
+| Approve / reject | Use this element / None of these | Bu öğeyi kullan / Hiçbiri | |
 | Change impact | Changes between versions | Sürümler arası değişiklikler | |
-| Run status passed / failed / repairProposed / notRun / aborted | Passed / Failed / Needs review / Skipped / Stopped | Geçti / Kaldı / İnceleme bekliyor / Atlandı / Durduruldu | |
-| Failure category element not found / unexpected window / assertion failed / timeout / search incomplete | Element not found / Unexpected window / Check failed / Took too long / Window too slow to search | Öge bulunamadı / Beklenmeyen pencere / Kontrol başarısız / Zaman aşımı / Pencere taranamadı | |
-| Agent | Agent | Ajan (to decide: "ajan" may read as "spy") | "The AYNA program on this computer that reads and drives the application." |
+| Run status passed / failed / repairProposed / notRun / aborted | Passed / Failed / Needs review / Skipped / Stopped | Geçti / Başarısız / İnceleme bekliyor / Atlandı / Durduruldu | |
+| Failure category element not found / unexpected window / assertion failed / timeout / search incomplete | Element not found / Unexpected window / Check failed / Took too long / Window too slow to search | Öğe bulunamadı / Beklenmeyen pencere / Kontrol başarısız / Çok uzun sürdü / Pencere zamanında taranamadı | |
+| Agent | Agent | Aracı (not “ajan”, which reads as “spy”) | "The AYNA program on this computer that reads and drives the application." |
 | API token | API token | API anahtarı | "Lets a CI server run tests without logging in." |
 
 ## 6 Icons

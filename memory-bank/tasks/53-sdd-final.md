@@ -1,8 +1,8 @@
 # #53 SDD final and submission (7 Dec)
 
 - Issue: https://github.com/galipdg/AYNA/issues/53
-- Owner: omer · Branch: `omer/53-sdd-final` (first PR; the issue stays open, `Part of #53`)
-- Started: 2026-11-05 · Last update: 2026-11-07
+- Owner: omer · Branch: `omer/53-sdd-final` (first PR, merged as #194), `omer/53-sdd-update` (second); the issue stays open, `Part of #53`
+- Started: 2026-11-05 · Last update: 2026-11-08
 
 ## Approach
 Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (headings AI-n → 5.n), §7 written from the ADR index, stale status rows fixed. Second step, after the final RS (#41, 23 Nov): §8 Traceability, reference numbers, PDF in `docs/sdd/`.
@@ -25,7 +25,8 @@ Assemble `docs/sdd/SDD.md` in steps. First PR: §5 moved in from `SDD-ai.md` (he
 - [ ] PDF rendered with the diagrams, stored in `docs/sdd/`, submitted by 7 Dec
 - [x] 2026-11-07, hasan's #194 review: the Client row and the deployment row say PR #154 is still open and its Windows check pending (it read as Built); #63 added to the Agent row's Planned list; the §7 note on Proposed ADRs no longer counts them, so it does not go stale when #150 flips *Step schema v0*
 - [x] 2026-11-07, main merged with #193 (Auto-fix on #194): the `User` row conflict resolved by keeping both rows; the user on runs, the WebSocket handshake, the runs API and `V0004` marked Built in §2.2, §2.4.2, §3.3 and §4.2 (checked in `RunService`, `RunEvents`)
-- Next step: merge #194; when #182 and #190 merge, §7 needs rows for their ADRs (*Client UI language*, *Graph schema v0.4*) and the status rows of #15/#24/#25/#30/#38 need updating; then §8 and the reference numbers after the final RS (#41).
+- [x] 2026-11-08, `omer/53-sdd-update` (v0.4): §7 rows for *Step schema v0.2*, *Client UI language*, *Graph schema v0.4*; *Step schema v0* Accepted; status rows of Client, Server, Database, test machine, Turkish search, graph changes, step schema, snapshot and repository APIs checked against the code and marked Built; `RepoObject.columns` → #221; RQ1 path `uia_tree_dump.py` (#199). §5 stale lines (limits 2 and 3, open issue 4) are galip's: asked in his inbox.
+- Next step: PR for `omer/53-sdd-update` (`Part of #53`); then §8 Traceability and one reference numbering after the final RS (#41, 23 Nov); at each merge of ours, re-check §2.2/§4.2 status rows (#205 → PR #220, #221).
 
 ## Manual checks
 - 2026-11-05 · agent · Mermaid 11.17.2 parser under jsdom on `SDD.md`: 10 blocks, 0 failed; 24 fence lines; `marked` GFM: 69 headings, no level skip, no duplicate text, 31 tables, no row with a wrong cell count · pass · evidence: this note (scratch script, not in the repo)
