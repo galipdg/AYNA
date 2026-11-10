@@ -28,4 +28,5 @@ Before committing: `npm run lint && npm run typecheck && npm test` (CI also runs
 ## Rules
 - `contextIsolation: true`, `nodeIntegration: false`; renderer never imports Node modules.
 - No remote content, CDN fonts or auto-update (closed network).
+- The renderer needs Chromium 125+ (Electron 31+): the step check popover in `StepTable.tsx` uses CSS anchor positioning (`anchorName` / `positionAnchor`), which an older Chromium ignores without an error, so the popover lands in the wrong place. Keep this in mind before pinning an older Electron.
 - Every UI text exists in Turkish and English (#185, ADR `2026-11-03-client-ui-language`): add it to `src/renderer/src/i18n/en.ts` and `i18n/tr.ts`, read it as `strings.x` at render time (never copy it into a module constant); `i18n.test.ts` fails on a missing or untranslated text. Dates through `formatDate` / `formatTime`; known server messages through `serverText`. Test data is never translated (NFR-16).

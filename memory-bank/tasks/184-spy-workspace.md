@@ -34,6 +34,6 @@
 - The pick hotkey selects nothing until #22 (`elementFromPoint`) lands.
 
 ## Handoff
-- Large-tree check: generate a snapshot with many elements over `client/dev/mock/snapshot.json`, press Capture again, restore with `git checkout client/dev/mock/snapshot.json`.
+- Large-tree check: generate a snapshot with many elements into a scratch file and run `npm run dev:mock -- --snapshot <file>` (the mock's own copy is gone since #204; it reads `schemas/examples/snapshot/trial-login.json`).
 
 ## Outcome (fill when the issue closes)

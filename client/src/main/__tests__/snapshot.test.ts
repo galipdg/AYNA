@@ -4,6 +4,9 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import {
   buildTree,
+  LONGER_SNAPSHOT_BUDGETS_MS,
+  nextSnapshotBudget,
+  SNAPSHOT_VERSION,
   type Snapshot,
   type SnapshotCapture,
   type SnapshotNode,
@@ -146,5 +149,32 @@ describe('buildTree', () => {
     assert.equal(buildTree([node('w', null), node('v', null)]), null)
     assert.equal(buildTree([node('w', null), node('w', 'w')]), null)
     assert.equal(buildTree([node('w', null), node('a', 'missing')]), null)
+  })
+})
+
+describe('nextSnapshotBudget (#204)', () => {
+  it('steps up after each timeout and stays at the last step', () => {
+    assert.equal(nextSnapshotBudget(undefined), 30_000)
+    assert.equal(nextSnapshotBudget(30_000), 120_000)
+    assert.equal(nextSnapshotBudget(120_000), 120_000)
+    assert.equal(nextSnapshotBudget(45_000), 120_000)
+  })
+
+  it('stays inside what the agent takes', () => {
+    assert.ok(LONGER_SNAPSHOT_BUDGETS_MS.every((ms) => ms >= 1 && ms <= 600_000))
+  })
+
+  it('reads the version the schema pins', () => {
+    const schemaPath = join(
+      import.meta.dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'schemas',
+      'snapshot.schema.json',
+    )
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8'))
+    assert.equal(schema.properties.version.const, SNAPSHOT_VERSION)
   })
 })

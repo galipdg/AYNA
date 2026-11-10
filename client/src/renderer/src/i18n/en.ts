@@ -1,18 +1,21 @@
-import type {
-  AddToRepositoryResult,
-  AgentFailure,
-  AgentState,
-  ConnectionFailure,
-  LoginResult,
-  RepoObjectError,
-  RequestFailure,
-  Role,
-  TestError,
-  UsersError,
+import {
+  CHECK_TIMEOUT_MS,
+  REQUEST_TIMEOUT_MS,
+  type AddToRepositoryResult,
+  type AgentFailure,
+  type AgentState,
+  type ConnectionFailure,
+  type LoginResult,
+  type RepoObjectError,
+  type RequestFailure,
+  type Role,
+  type TestError,
+  type UsersError,
 } from '../../../shared/api.ts'
 import type { ElementDescriptor, ElementField } from '../../../shared/element.ts'
 import type { NameProblem, PropertyUse } from '../../../shared/repository.ts'
 import type { CheckProperty, Keyword, Operator, StepProblemCode } from '../../../shared/steps.ts'
+import { SNAPSHOT_VERSION } from '../../../shared/snapshot.ts'
 
 // The client's English texts. `Strings` is their shape: every other language has the same keys
 // (checked by the type and by `i18n.test.ts`). Dates and numbers use `locale`.
@@ -91,7 +94,8 @@ export const en = {
       'Enter an http:// or https:// address, for example http://ayna-server:8080.',
     unreachable: (url?: string) =>
       `Could not reach ${url}. Check the address and that the server is running.`,
-    timeout: (url?: string) => `${url} did not answer within 5 seconds.`,
+    timeout: (url?: string) =>
+      `${url} did not answer within ${count(CHECK_TIMEOUT_MS / 1000)} seconds.`,
     'not-ayna': (url?: string) => `${url} answered, but it is not an AYNA server.`,
     'db-down': (url?: string) =>
       `The AYNA server at ${url} is running but cannot reach its database.`,
@@ -114,7 +118,7 @@ export const en = {
   requestErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
+    timeout: `The server did not answer within ${count(REQUEST_TIMEOUT_MS / 1000)} seconds.`,
     unauthorized: 'Your session has ended. Log in again.',
     'bad-response': 'The server answered with something unexpected.',
     duplicate: 'An application with this name already exists. Choose it from the list.',
@@ -145,7 +149,7 @@ export const en = {
   spyNoName: '(no name)',
   spyInWindow: (title: string) => `in ${title}`,
   spyGroups: {
-    found: 'How AYNA finds it',
+    found: 'What it is',
     where: 'Where it is',
     state: 'State',
   },
@@ -160,8 +164,9 @@ export const en = {
     position: 'Position',
     size: 'Size',
     enabled: 'Enabled',
-    visible: 'Visible',
+    visible: 'On screen',
   },
+  spyTextHint: 'UI Automation Name; for most controls, the visible text',
   spyPosition: (x: number, y: number) => `${x}, ${y}`,
   spySize: (width: number, height: number) => `${width} × ${height} px`,
   /** UI Automation control types in plain words; unknown types are shown as they are. */
@@ -172,8 +177,8 @@ export const en = {
     CheckBox: 'Check box',
     ComboBox: 'Drop-down list',
     Custom: 'Custom element',
-    DataGrid: 'Table',
-    DataItem: 'Table row',
+    DataGrid: 'Data grid',
+    DataItem: 'Data item',
     Document: 'Document',
     Edit: 'Text box',
     Group: 'Group',
@@ -215,6 +220,10 @@ export const en = {
   spyUnknownProcess: 'unknown process',
   spyTreeTitle: 'Elements',
   spyCapturing: 'Capturing the window…',
+  spyCapturingLonger: (seconds: number) =>
+    `Capturing the window; this time the agent may take up to ${count(seconds)} seconds…`,
+  spyCaptureLonger: (seconds: number) =>
+    `Capture again lets the agent take up to ${count(seconds)} seconds.`,
   spyBack: 'Back to the properties',
   spyCaptureAgain: 'Capture again',
   /** `app` is the exe name and file version, when the agent could read them. */
@@ -265,11 +274,14 @@ export const en = {
       'UI Automation is not available on this machine. The Spy works on Windows only.',
     timeout: () => 'The agent did not answer in time. Refresh to try again.',
     'window-gone': () => 'The window has closed. Refresh the list.',
-    'snapshot-timeout': () =>
-      'Capturing the window took too long, so the agent stopped. The application may be busy; capture again.',
+    'snapshot-timeout': (detail?: string) =>
+      'Capturing the window took too long, so the agent stopped. The application may be busy; capture again.' +
+      (detail ? ` The agent said: ${detail}` : ''),
     'bad-response': () => 'The agent answered with something unexpected.',
     'agent-error': (detail?: string) =>
       detail ? `The agent reported an error: ${detail}` : 'The agent reported an error.',
+    'snapshot-version': (detail?: string) =>
+      `The agent sends captures in format ${detail}, and this client reads format ${SNAPSHOT_VERSION}. Use an agent and a client from the same release.`,
   } satisfies Record<AgentFailure, (detail?: string) => string>,
 
   repoAdd: 'Add to repository',
@@ -352,9 +364,9 @@ export const en = {
       : tests === 1
         ? 'Used by 1 test'
         : `Used by ${count(tests)} tests`,
-  repoViewSeenIn: 'Seen in versions',
-  repoViewSeen: 'found in this version',
-  repoViewNotSeen: 'not captured in this version',
+  repoViewCapturedIn: 'Captured in versions',
+  repoViewCapturedHere: 'captured in this version',
+  repoViewNotCapturedHere: 'not captured in this version',
   repoViewCaptured: 'Element as last captured',
   repoViewRemove: 'Remove',
   repoViewRemoveConfirm: (name: string) =>
@@ -452,7 +464,7 @@ export const en = {
     name: 'Text',
     value: 'Field content',
     enabled: 'Enabled',
-    visible: 'Visible',
+    visible: 'On screen',
     checked: 'Checked',
     selected: 'Selected',
   } satisfies Record<CheckProperty, string>,
@@ -488,7 +500,7 @@ export const en = {
   versionErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
+    timeout: `The server did not answer within ${count(REQUEST_TIMEOUT_MS / 1000)} seconds.`,
     unauthorized: 'Your session has ended. Log in again.',
     'bad-response': 'The server answered with something unexpected.',
     duplicate: 'This version already exists. Choose it from the list.',
@@ -509,7 +521,7 @@ export const en = {
     'wrong-credentials': 'Wrong user name or password.',
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
+    timeout: `The server did not answer within ${count(REQUEST_TIMEOUT_MS / 1000)} seconds.`,
     unauthorized: 'Wrong user name or password.',
     'bad-response': 'The server answered with something unexpected.',
   } satisfies Record<Extract<LoginResult, { ok: false }>['reason'], string>,
@@ -553,7 +565,7 @@ export const en = {
   usersErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',
-    timeout: 'The server did not answer within 5 seconds.',
+    timeout: `The server did not answer within ${count(REQUEST_TIMEOUT_MS / 1000)} seconds.`,
     unauthorized: 'Your session has ended. Log in again.',
     'bad-response': 'The server answered with something unexpected.',
     forbidden: 'Only admins manage users.',
