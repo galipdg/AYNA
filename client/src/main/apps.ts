@@ -2,15 +2,16 @@
 // call shares. Kept free of Electron imports so plain `node --test` can use it; the
 // main process passes in the real `fetch` and the session token (#60).
 
-import type {
-  Application,
-  ApplicationsResult,
-  CreateApplicationResult,
-  RequestFailure,
+import {
+  REQUEST_TIMEOUT_MS,
+  type Application,
+  type ApplicationsResult,
+  type CreateApplicationResult,
+  type RequestFailure,
 } from '../shared/api.ts'
 
 export const APPS_PATH = '/api/apps'
-export const REQUEST_TIMEOUT_MS = 5000
+export { REQUEST_TIMEOUT_MS }
 
 export interface Options {
   fetch?: typeof globalThis.fetch

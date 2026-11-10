@@ -163,35 +163,40 @@ A navigation item whose screen is not built yet is shown in `--text-muted` with 
 
 ### Plain-language glossary
 
-The UI word is what the user sees. The internal term may appear only under Advanced or in a tooltip. The Turkish column is what the client shows since #185 (galip, hasan: please correct).
+The UI word is what the user sees. The internal term may appear only under Advanced or in a tooltip. The Turkish column is what the client shows since #185, with the review points of #188–#191 applied in #203. Turkish follows TDK spelling (öğe) and uses typographic quotes “…”.
 
-| Internal term | UI word (English) | UI word (Turkish draft) | Tooltip when needed |
+| Internal term | UI word (English) | UI word (Turkish) | Tooltip when needed |
 |---|---|---|---|
 | AUT, application under test | Application | Uygulama | |
 | Application version | Version | Sürüm | "The build of the application you are testing." |
-| Repository object | Saved element | Kayıtlı öge | "An element of the application that tests use by its name." |
-| Object repository | Repository | Depo | |
-| Logical name | Element name | Öge adı | "Tests use this name, so they keep working when the screen changes." |
-| Primary properties | Find by | Bulma özellikleri | |
+| Repository object | Saved element | Kayıtlı öğe | "An element of the application that tests use by its name." |
+| Object repository | Repository | Nesne Deposu (in buttons and messages: depo, as in “Depoya ekle”) | |
+| Logical name | Element name | Öğe adı | "Tests use this name, so they keep working when the screen changes." |
+| Primary properties | Find by | Bununla bul | |
 | Fallback properties | Backup | Yedek | "Tried when the Find-by properties no longer match." |
 | Descriptor | Properties | Özellikler | |
 | Snapshot | Capture | Yakalama | |
-| UIA element | Element | Öge | |
+| UIA element | Element | Öğe | |
 | Control type | Type | Tür | |
 | Nearest label | Label next to it | Yanındaki etiket | |
-| Step keyword Click / Type / Select / Verify / Wait | Click / Type text / Choose item / Check / Wait for | Tıkla / Yaz / Seç / Kontrol et / Bekle | |
+| Spy group for a picked element (name, type, label, window) | What it is | Ne olduğu | For a saved element the group is "How AYNA finds it" / "AYNA bu öğeyi nasıl bulur" |
+| `offscreen` = false | On screen | Ekranda | |
+| UIA Name | Text | Metin | "UI Automation Name; for most controls, the visible text" |
+| Control type DataGrid / DataItem | Data grid / Data item | Veri tablosu / Veri öğesi | |
+| `RESOLVES_TO` versions of a saved element | Captured in versions | Yakalandığı sürümler | The edge records a capture the tester saved from, not a search of that version |
+| Step keyword Click / Type / Select / Verify / Wait | Click / Type text / Choose item / Check / Wait for | Tıkla / Yaz / Listeden seç / Kontrol et / Bekle | Listeden seç: plain “seç” would also mean Click to the NL author |
 | Checkpoint, Verify step | Check | Kontrol | |
-| Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / Visible / Checked / Selected | Metin / Alan içeriği / Etkin / Görünür / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
+| Checkpoint property name / value / enabled / visible / checked / selected | Text / Field content / Enabled / On screen / Checked / Selected | Metin / Alan içeriği / Etkin / Ekranda / İşaretli / Seçili | Text: "the text of a label or button"; Field content: "what is typed in a box" |
 | Operator equals / notEquals / contains | is / is not / contains | eşittir / eşit değildir / içerir | |
-| `timeoutMs` | Wait up to (s) | En çok bekle (sn) | |
+| `timeoutMs` | Wait up to (s) | En fazla bekle (sn) | |
 | Healing proposal | Repair suggestion | Onarım önerisi | "AYNA could not find the element and suggests similar ones. Nothing changes until you choose." |
-| Candidate | Suggested element | Önerilen öge | |
+| Candidate | Suggested element | Önerilen öğe | |
 | Score / contribution | Match / why it matches | Benzerlik / neden benziyor | |
-| Approve / reject | Use this element / None of these | Bu ögeyi kullan / Hiçbiri | |
+| Approve / reject | Use this element / None of these | Bu öğeyi kullan / Hiçbiri | |
 | Change impact | Changes between versions | Sürümler arası değişiklikler | |
-| Run status passed / failed / repairProposed / notRun / aborted | Passed / Failed / Needs review / Skipped / Stopped | Geçti / Kaldı / İnceleme bekliyor / Atlandı / Durduruldu | |
-| Failure category element not found / unexpected window / assertion failed / timeout / search incomplete | Element not found / Unexpected window / Check failed / Took too long / Window too slow to search | Öge bulunamadı / Beklenmeyen pencere / Kontrol başarısız / Zaman aşımı / Pencere taranamadı | |
-| Agent | Agent | Ajan (to decide: "ajan" may read as "spy") | "The AYNA program on this computer that reads and drives the application." |
+| Run status passed / failed / repairProposed / notRun / aborted | Passed / Failed / Needs review / Skipped / Stopped | Geçti / Başarısız / İnceleme bekliyor / Atlandı / Durduruldu | |
+| Failure category element not found / unexpected window / assertion failed / timeout / search incomplete | Element not found / Unexpected window / Check failed / Took too long / Window too slow to search | Öğe bulunamadı / Beklenmeyen pencere / Kontrol başarısız / Çok uzun sürdü / Pencere zamanında taranamadı | |
+| Agent | Agent | Aracı (not “ajan”, which reads as “spy”) | "The AYNA program on this computer that reads and drives the application." |
 | API token | API token | API anahtarı | "Lets a CI server run tests without logging in." |
 
 ## 6 Icons
