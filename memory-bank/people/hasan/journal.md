@@ -426,3 +426,29 @@ two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`
 **Next step:** #17 (omer's PR #154) is the last item in the Windows queue. Its happy path ran
 incidentally all session — every client start launched the agent and every close logged
 `stdin closed, shutting down` — so the check is presumably about crash and restart.
+
+## 2026-11-12 (second session) — #29 built; #231 approved; #162 unblocked
+
+- Asked the user about the overdue #162 vs #29 first, as they wanted. They chose to run both in
+  parallel: pull the models in the background and build #29 meanwhile. **Both models are now on
+  this machine** (`qwen3:8b`, `gemma4:e4b-it-qat`; Ollama 0.40.16 was already installed, which
+  #162's body does not know), so #162's remaining work is machine time, not a download.
+- **Reviewed and approved PR #231** (omer, run history + report window, #68) before starting new
+  work. Answered his two questions as commitments: #61 does not want the app-wide run list and it
+  must not be widened for it; and the failed-Verify message wording for #40 is now fixed, in
+  `resolve.py`'s house style. Asked for one fix before merge — the report's temp files are
+  deleted with a fire-and-forget `rm` in `will-quit`, so 15 MB pages carrying screenshots of the
+  app under test can survive in `%TEMP%`.
+- **#29: the harness and the labelling guide are committed** (`ae9ab25` on
+  `hasan/29-rq1-measure`). `measure.py` has `capture` (Windows, drives the agent's own
+  `UiaDesktop`) and `measure` (pure, reads committed snapshots). It imports `ayna_agent.model`
+  and `playback.resolve` rather than copying them, so "recognised" is decided by the Spy's own
+  proposal rule and playback's own comparison. `labelling.md` is the ground-truth procedure,
+  which exists because an automated denominator hides a control the walk never found. 31 new
+  tests, 43 eval tests pass, ruff clean.
+- **None of #29's three acceptance criteria is met**: all three need the pilot apps measured
+  here, and the user asked to run nothing on the machine this session. PR opened without
+  `Closes #29` on purpose, to get the definition agreed before the numbers exist.
+- Next step: with the machine idle, `kp_state.py main` → `capture keepass2 --screen main`,
+  the same for `entry`, HandBrake `main-summary`, then `measure`. Then leave the machine alone
+  for #162's idle batch.

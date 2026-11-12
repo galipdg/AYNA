@@ -56,16 +56,32 @@ registered but off by default, as D1 makes it conditional.
 ## Status
 
 - [x] Branch, task note, design settled
-- [ ] `eval/rq1/measure.py`, `apps.json`, tests, README
-- [ ] `eval/rq1/labelling.md` (ground-truth guide)
-- [ ] Capture + first numbers on the two pilots (needs this Windows machine)
+- [x] `eval/rq1/measure.py`, `apps.json`, tests (31), README — `ae9ab25`
+- [x] `eval/rq1/labelling.md` (ground-truth guide) — `ae9ab25`
+- [x] `eval/pyproject.toml`: `rq1/tests` in `testpaths`, `rq1` in ruff's `src`
+- [ ] **Capture + first numbers on the two pilots** — needs this machine free; the user asked
+      on 2026-11-12 to run nothing on it this session.
 - [ ] Post the first numbers to the team (third criterion)
-- Next step: write `eval/rq1/measure.py` with the `capture` / `measure` subcommands.
+- **Next step:** on this machine, with it otherwise idle, run
+  `.venv/Scripts/python.exe eval/spikes/kp_state.py main` then
+  `... eval/rq1/measure.py capture keepass2 --screen main`; repeat with `kp_state.py entry`
+  and `--screen entry-editor`; start HandBrake and capture `main-summary`. Then
+  `measure.py measure` for the first (unlabelled) numbers.
+
+**43 eval tests pass and ruff is clean**, run here on 2026-11-12. The whole measuring half is
+covered off Windows; nothing of the capture half has run against a real app yet, so
+`UiaDesktop.list_windows()` filtering by `processName` and the multi-window naming are the two
+places to watch on the first real run.
 
 ## Manual checks
 
-- (pending) 2026-11-12 · hasan · capture both pilots' listed screens and run `measure`, on this
-  machine · result: —
+- **(pending)** · hasan · capture the two KeePass 2 screens `kp_state.py` can reach plus
+  HandBrake's main window, then `measure` · result: — · agreed with the user 2026-11-12: I
+  capture what is scriptable, and the screens that need clicks (KeePass `options` and
+  `open-database`, HandBrake's `main-video`/`preferences`/`queue`) come from a manual check
+  posted on the issue.
+- **(pending)** · hasan + a second labeller · label one screen per pilot per `labelling.md`,
+  twice and independently, for the screen that goes into the report · result: —
 
 ## Open issues
 
@@ -78,6 +94,20 @@ registered but off by default, as D1 makes it conditional.
 - `eval/pyproject.toml`'s `testpaths` is `apps/trial/tests` only, so a new test directory is
   invisible to CI until it is added. Adding `rq1/tests` here; the next experiment folder will
   hit the same thing.
+
+## Decisions taken while building it
+
+- 2026-11-12 — **`by` prefix on the rate CSV's property columns** — `byControlType` and
+  `controlType` would otherwise be the same column name, and the row label silently lost to the
+  counter. Caught by a test; the test stayed.
+- 2026-11-12 — **`sys.stdout.reconfigure("utf-8")`** — the summary is a markdown table meant to
+  be pasted into an issue and it carries Turkish control names; this console is cp1254 and
+  turned the em dash into `?` before the fix.
+- 2026-11-12 — **The label file is separate from the controls CSV, not a column in it** — the
+  sheet is regenerated on every `measure` run, so a human's work cannot live in it.
+- 2026-11-12 — **`conftest.py` adds `agent/` to `sys.path`, not just `measure.py`** — ruff sorts
+  a test module's imports, and `from ayna_agent...` sorted *above* `import measure`, so the path
+  could not depend on `measure` being imported first. It failed exactly that way once.
 
 ## Handoff
 
