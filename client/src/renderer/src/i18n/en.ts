@@ -507,6 +507,8 @@ export const en = {
   stepsAnyColumn: 'any column',
   stepsColumn: 'Column',
   stepsColumnPlaceholder: 'Column header, as shown',
+  stepsChooseColumn: 'Choose a column',
+  stepsOtherColumn: 'Other…',
   stepsCountPlaceholder: 'e.g. 0 for an empty table',
   stepsRowNone: 'no row yet',
   stepsRowNumber: (index: string) => `row ${index}`,

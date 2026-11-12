@@ -485,6 +485,8 @@ export const tr: Strings = {
   stepsAnyColumn: 'herhangi bir sütun',
   stepsColumn: 'Sütun',
   stepsColumnPlaceholder: 'Tablodaki sütun başlığı',
+  stepsChooseColumn: 'Bir sütun seçin',
+  stepsOtherColumn: 'Diğer…',
   stepsCountPlaceholder: 'ör. boş tablo için 0',
   stepsRowNone: 'satır seçilmedi',
   stepsRowNumber: (index: string) => `${index}. satır`,

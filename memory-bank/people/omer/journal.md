@@ -282,3 +282,8 @@ Append-only. One entry per session, newest at the bottom:
 - #68 on `omer/68-run-history`, stacked on #229: `GET /api/apps/{id}/runs` (newest 100), Runs screen with test and result filters, report in its own window with no script, Save… to file; demo seed adds three sample runs once. Client 229/229. Checked on an isolated stack (`-p ayna68`, port 28080).
 - Next: omer's hand checks (#59 offline, #68 screen), then push and PR for #68.
 - 2026-11-12, same session: hasan approved #229 with three points (streaming, `repairProposed`, `TZ`); done in `77dc7c6`, merged as `413fefa`. #231 retargeted to `main`. #228: hasan's two client points fixed, `main` merged, CI rerunning. Re-reviewed #227 (approve, not posted: blocked by the classifier). Ran #230's sample app on this Mac (pass) and commented. Next: merge #228, then #224's `main` merge and contract check.
+## 2026-11-10 · #221 grid column headers
+- Session start: `main` up to date (`3df2b81`), inbox handled, no review requests. SSH to GitHub still times out; fetched over HTTPS.
+- Found that every Element keeps `siblingIndex`, so the header order survives in the graph: `columns` is read from the captured tree at request time (`GridColumns`), with no snapshot, graph or migration change and no ADR (omer had first agreed to an `Element.columns` property + ADR, which I proposed on the wrong belief that the order was lost).
+- Client: the row picker's and the `cell` check's column field is a dropdown with "Other…" when columns are known. #221's criteria rewritten on GitHub. Notes to galip (#37: `columns` can be incomplete, do not reject on it) and hasan (Windows check).
+- Next: PR on omer's OK, manual check on #221 with `needs-windows-test`; then #59.

@@ -1240,6 +1240,10 @@ components:
       properties:
         appId:
           type: string
+        columns:
+          type: array
+          items:
+            type: string
         createdAt:
           type: string
           format: date-time
@@ -1274,6 +1278,10 @@ components:
     RepoObjectSummary:
       type: object
       properties:
+        columns:
+          type: array
+          items:
+            type: string
         controlType:
           type: string
         fallback:
