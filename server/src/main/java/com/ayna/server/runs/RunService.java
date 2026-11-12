@@ -329,8 +329,9 @@ public class RunService {
 
 	/**
 	 * What the run's report shows (#59): the run, the names of its test, application and version,
-	 * and the screenshots it has. Read in one transaction; the files are read after it. A file
-	 * that has gone (retention between the two) is a step without a screenshot. 404 if no run.
+	 * and where its screenshots are. Read in one transaction, so a 404 comes before the report
+	 * starts; each file is read only when the report writes its step. A file that has gone
+	 * (retention meanwhile) is a step without a screenshot.
 	 */
 	RunReport.Input reportInput(String runId) {
 		record Read(RunDetail run, String testName, String applicationName, String version,
@@ -354,14 +355,9 @@ public class RunService {
 						names.get("version").asString(), paths);
 			});
 		}
-		Map<Integer, byte[]> images = new HashMap<>();
-		read.paths().forEach((stepIndex, path) -> {
-			byte[] png = screenshots.read(path);
-			if (png != null) {
-				images.put(stepIndex, png);
-			}
-		});
-		return new RunReport.Input(read.run(), read.testName(), read.applicationName(), read.version(), images);
+		Map<Integer, String> paths = read.paths();
+		return new RunReport.Input(read.run(), read.testName(), read.applicationName(), read.version(),
+				stepIndex -> paths.containsKey(stepIndex) ? screenshots.read(paths.get(stepIndex)) : null);
 	}
 
 	/**

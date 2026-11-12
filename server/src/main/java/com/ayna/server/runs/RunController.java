@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.ayna.server.auth.AynaPrincipal;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
@@ -158,25 +159,28 @@ public class RunController {
 
 	/**
 	 * The run's report as one self-contained HTML file (#59, FR-21), rendered from what is stored
-	 * now, so every run has one in every state. `lang` is `en` (the default) or `tr`.
+	 * now, so every run has one in every state. `lang` is `en` (the default) or `tr`. Streamed
+	 * a step at a time, so a large report never sits in memory whole.
 	 */
 	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND })
 	@ApiResponse(responseCode = "200", description = "The report",
 			content = @Content(mediaType = MediaType.TEXT_HTML_VALUE, schema = @Schema(type = "string")))
 	// No `produces`, as for the screenshot: a 404 still answers with a problem body.
 	@GetMapping("/api/runs/{runId}/report.html")
-	public ResponseEntity<String> runReport(@PathVariable String runId,
+	public ResponseEntity<StreamingResponseBody> runReport(@PathVariable String runId,
 			@Parameter(schema = @Schema(allowableValues = { "en", "tr" }, defaultValue = "en")) @RequestParam(
 					required = false) String lang) {
 		RunReport.Lang language = RunReport.Lang.parse(lang);
-		String html = RunReport.render(service.reportInput(runId), language, Instant.now(), ZoneId.systemDefault());
+		// Read before the response starts, so an unknown run is still a 404 with a problem body.
+		RunReport.Input input = service.reportInput(runId);
+		Instant generatedAt = Instant.now();
 		return ResponseEntity.ok()
 			.contentType(new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8))
 			.cacheControl(CacheControl.noStore())
 			.header(HttpHeaders.CONTENT_DISPOSITION,
 					ContentDisposition.inline().filename("ayna-run-" + runId + ".html").build().toString())
 			.header("Content-Security-Policy", RunReport.CONTENT_SECURITY_POLICY)
-			.body(html);
+			.body(out -> RunReport.render(input, language, generatedAt, ZoneId.systemDefault(), out));
 	}
 
 	/** Ends the run as passed, failed or aborted; the same status again answers 200. */
