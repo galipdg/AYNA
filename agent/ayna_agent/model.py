@@ -333,27 +333,32 @@ def describe_tree(nodes: Sequence[Mapping[str, Any]]) -> list[Element]:
             )
         out.append(
             Element(
-                automation_id=_text(node.get("automation_id")),
-                name=_text(node.get("name")),
-                control_type=_text(node.get("control_type")),
-                class_name=_text(node.get("class_name")),
-                framework_id=_text(node.get("framework_id")),
+                automation_id=text_value(node.get("automation_id")),
+                name=text_value(node.get("name")),
+                control_type=text_value(node.get("control_type")),
+                class_name=text_value(node.get("class_name")),
+                framework_id=text_value(node.get("framework_id")),
                 bounds=bounds,
                 dpi=node.get("dpi"),
                 parent_path=parent_path(reversed(ancestors)) if ancestors else None,
                 sibling_index=sibling_index,
                 nearest_label=label,
                 nearest_label_source=source,
-                window_title=_text(node.get("window_title")),
+                window_title=text_value(node.get("window_title")),
                 enabled=node.get("enabled"),
                 offscreen=node.get("offscreen"),
-                help_text=_text(node.get("help_text")),
-                access_key=_text(node.get("access_key")),
+                help_text=text_value(node.get("help_text")),
+                access_key=text_value(node.get("access_key")),
                 native_window_handle=node.get("native_window_handle"),
             )
         )
     return out
 
 
-def _text(value: Any) -> str | None:
+def text_value(value: Any) -> str | None:
+    """The form a descriptor stores a text property in: stripped, and blank is None.
+
+    Public because a property read *after* a capture has to pass through the same rule before
+    it can be compared with the stored one -- `recognition.uia`'s identity check (#22).
+    """
     return None if _blank(value) else str(value).strip()

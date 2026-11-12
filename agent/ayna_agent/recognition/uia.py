@@ -48,6 +48,7 @@ from datetime import datetime
 from typing import Any
 
 from ayna_agent import __version__
+from ayna_agent.model import text_value
 from ayna_agent.recognition import snapshot as snap
 from ayna_agent.rpc import (
     BadStepDocument,
@@ -279,6 +280,12 @@ class UiaDesktop:
             lambda position: (
                 info is not None and _compares_equal(info, last.info(position))
             ),
+            lambda position: (
+                info is not None
+                and self._same_stored_properties(
+                    info, last.document["elements"][position].get("element", {})
+                )
+            ),
         )
         if index is None:
             return reply
@@ -286,6 +293,27 @@ class UiaDesktop:
         reply["elementId"] = element.get("id")
         reply["element"] = element.get("element")
         return reply
+
+    def _same_stored_properties(self, info: Any, stored: dict[str, Any]) -> bool:
+        """Whether three cheap properties of the hit element are the ones stored at capture.
+
+        The last gate before `elementFromPoint` names a candidate that `CompareElements` did
+        not confirm (a wrapper chain the walk and the hit test see differently). Three reads,
+        all of them properties a provider answers from its own state, against the values the
+        snapshot wrote: a control replaced by another one of the same size -- another tab's
+        edit, a scrolled list's row -- fails here and the reply becomes "the window changed"
+        instead of the wrong node (#227 review).
+
+        Each value goes through `model.text_value`, because that is what the descriptor stored.
+        """
+        element = info.element
+        type_id = _quiet(lambda: element.CurrentControlType)
+        live = {
+            "controlType": self._type_names.get(type_id, type_id),
+            "name": _quiet(lambda: element.CurrentName),
+            "automationId": _quiet(lambda: element.CurrentAutomationId),
+        }
+        return all(text_value(value) == stored.get(key) for key, value in live.items())
 
     def read_tree(
         self, handle: int, timeout_ms: int | None = None
@@ -613,19 +641,28 @@ def match_in_document(
     document: dict[str, Any],
     bounds: list[int] | None,
     same_element: Callable[[int], bool],
+    same_properties: Callable[[int], bool],
 ) -> int | None:
     """The index in `document["elements"]` of the element at `bounds`, or None.
 
-    Pure, so the rule can be tested on any OS: `same_element(index)` is the only thing that
-    needs UI Automation, and it is called **only** when `bounds` alone cannot decide.
+    Pure, so the rule can be tested on any OS: the two callbacks are the only things that need
+    UI Automation.
 
-    The rule: elements whose stored bounds equal `bounds` are the candidates. One candidate
-    wins outright, with no cross-process call at all -- the common case, because a control's
-    rectangle is unique among its window's elements unless a wrapper shares it. Several are put
-    to `same_element`, and if none of them is the element, the **last in pre-order** wins:
-    same-bounds candidates are a wrapper chain (a Pane holding one Button, both at the button's
-    rectangle), pre-order puts a child after its parent, and the deepest is what a hit test
-    returns.
+    The rule: elements whose stored bounds equal `bounds` are the candidates, and **every**
+    candidate, even a single one, is put to `same_element` -- identity, not geometry, decides.
+    Bounds alone would be enough only while a window keeps the same elements inside the same
+    rectangles, and the changes that break that are ordinary: a tab switched, a list scrolled,
+    a wizard page replaced. Each of them leaves a rectangle in place and the element behind it
+    different, and answering out of a stale capture would make the Spy select the wrong node
+    silently -- worse than saying "the window changed, capture again" (#227 review).
+
+    When no candidate compares equal, the **last in pre-order** still wins, but only if
+    `same_properties` holds for it: same-bounds candidates are usually a wrapper chain (a Pane
+    holding one Button, both at the button's rectangle), pre-order puts a child after its
+    parent, and the deepest is what a hit test returns -- while the raw view the hit test
+    answers from and the control view the walk reads can disagree about *which* reference is
+    that element. So the fallback keeps the wrapper case and still refuses a candidate whose
+    cheap properties are not the hit element's.
     """
     if bounds is None:
         return None
@@ -634,14 +671,13 @@ def match_in_document(
         for index, element in enumerate(document.get("elements", []))
         if element.get("element", {}).get("bounds") == bounds
     ]
-    if not candidates:
-        return None
-    if len(candidates) == 1:
-        return candidates[0]
     for index in candidates:
         if same_element(index):
             return index
-    return candidates[-1]
+    if not candidates:
+        return None
+    deepest = candidates[-1]
+    return deepest if same_properties(deepest) else None
 
 
 # --- small Win32 helpers -------------------------------------------------------------------

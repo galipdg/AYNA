@@ -119,9 +119,14 @@ def _document(*bounds):
     }
 
 
-def test_one_candidate_wins_without_asking_ui_automation():
-    # The common case, and the reason the comparison is a callback: a control's rectangle is
-    # unique in its window unless a wrapper shares it, so the usual answer costs no COM call.
+def _match(document, bounds, same_element, same_properties=lambda index: True):
+    return match_in_document(document, bounds, same_element, same_properties)
+
+
+def test_even_a_single_candidate_is_put_to_ui_automation():
+    # Bounds locate a candidate; identity decides. A rectangle is only evidence while the
+    # window still holds the same elements in the same places (#227 review), so the one
+    # candidate is compared too -- one cross-process call against a 300 ms budget.
     asked = []
 
     def same_element(index):
@@ -129,36 +134,64 @@ def test_one_candidate_wins_without_asking_ui_automation():
         return True
 
     document = _document((0, 0, 10, 10), (20, 20, 30, 30), (40, 40, 50, 50))
-    assert match_in_document(document, [20, 20, 30, 30], same_element) == 1
-    assert asked == []
+    assert _match(document, [20, 20, 30, 30], same_element) == 1
+    assert asked == [1]
 
 
 def test_several_candidates_are_put_to_ui_automation():
     document = _document((0, 0, 10, 10), (5, 5, 15, 15), (5, 5, 15, 15), (5, 5, 15, 15))
-    assert match_in_document(document, [5, 5, 15, 15], lambda index: index == 2) == 2
+    assert _match(document, [5, 5, 15, 15], lambda index: index == 2) == 2
 
 
 def test_the_deepest_candidate_wins_when_none_compares_equal():
     # A Pane holding one Button has the Button's rectangle. Pre-order puts the child after the
-    # parent, so the last candidate is the deepest -- which is what a hit test returns.
+    # parent, so the last candidate is the deepest -- which is what a hit test returns. It is
+    # taken only because its stored properties are still the hit element's.
     document = _document((0, 0, 10, 10), (2, 2, 8, 8), (2, 2, 8, 8))
-    assert match_in_document(document, [2, 2, 8, 8], lambda index: False) == 2
+    assert _match(document, [2, 2, 8, 8], lambda index: False) == 2
+
+
+def test_a_candidate_whose_properties_changed_is_refused():
+    # The case the review named: the rectangle is still there, the element behind it is
+    # another one (a switched tab, a scrolled row). "The window changed, capture again" is the
+    # right answer; selecting the stale node silently is not.
+    document = _document((0, 0, 10, 10), (2, 2, 8, 8))
+    assert (
+        _match(
+            document,
+            [2, 2, 8, 8],
+            lambda index: False,
+            same_properties=lambda index: False,
+        )
+        is None
+    )
+
+
+def test_properties_are_only_asked_for_the_candidate_that_could_win():
+    # One read of three properties, and only when identity did not settle it: the fallback is
+    # the exception, not the usual path.
+    asked = []
+    document = _document((1, 1, 9, 9), (2, 2, 8, 8), (2, 2, 8, 8))
+    _match(
+        document, [2, 2, 8, 8], lambda index: False, lambda index: asked.append(index)
+    )
+    assert asked == [2]
 
 
 def test_an_element_that_is_not_in_the_document_matches_nothing():
     document = _document((0, 0, 10, 10))
-    assert match_in_document(document, [60, 60, 70, 70], lambda index: True) is None
+    assert _match(document, [60, 60, 70, 70], lambda index: True) is None
 
 
 def test_an_element_without_bounds_matches_nothing():
     # Not "the first element": an element UI Automation cannot place is not located, and
     # guessing would select the wrong node in the Spy's tree.
     document = _document((0, 0, 10, 10))
-    assert match_in_document(document, None, lambda index: True) is None
+    assert _match(document, None, lambda index: True) is None
 
 
 def test_a_document_with_no_elements_matches_nothing():
-    assert match_in_document({}, [0, 0, 10, 10], lambda index: True) is None
+    assert _match({}, [0, 0, 10, 10], lambda index: True) is None
 
 
 # --- the reply, on any OS ----------------------------------------------------------------
@@ -220,6 +253,42 @@ def test_a_captured_window_that_changed_keeps_its_snapshot_id():
     answer = desktop.answer_for_point(42, FakeInfo("new", bounds=(70, 70, 80, 80)))
     assert answer["snapshotId"] == document["snapshotId"]
     assert answer["elementId"] is None and answer["element"] is None
+
+
+def test_another_element_at_the_same_rectangle_is_not_named():
+    """The #227 review's case, end to end through the reply.
+
+    A tab switched, a list scrolled, a wizard page replaced: the rectangle survives and the
+    element behind it is a different one. `CompareElements` says no, the stored properties are
+    not the hit element's, and the reply is state 2 -- "the window changed, capture again" --
+    rather than the stale node with no warning.
+    """
+    button = FakeInfo("Login", bounds=(10, 20, 60, 40))
+    root = FakeInfo("Window", control_type=50032, bounds=(0, 0, 100, 100))
+    root._children = [button]
+    desktop, document, _infos = captured(root)
+
+    answer = desktop.answer_for_point(42, FakeInfo("Cancel", bounds=(10, 20, 60, 40)))
+
+    assert answer["snapshotId"] == document["snapshotId"]
+    assert answer["elementId"] is None and answer["element"] is None
+    assert answer["bounds"] == [10, 20, 60, 40], "the hit test still places the element"
+
+
+def test_a_second_reference_to_the_same_control_is_still_named():
+    """The reason the fallback stays: the hit test and the walk can hold different references.
+
+    The raw view `ElementFromPoint` answers from and the control view the walk reads are not
+    the same tree, so `CompareElements` can refuse a reference to the element the Spy means.
+    When the cheap properties are the stored ones, the deepest candidate is still the answer.
+    """
+    button = FakeInfo("Login", bounds=(10, 20, 60, 40))
+    root = FakeInfo("Window", control_type=50032, bounds=(0, 0, 100, 100))
+    root._children = [button]
+    desktop, _document, _infos = captured(root)
+
+    twin = FakeInfo("Login", bounds=(10, 20, 60, 40))  # equality here is identity
+    assert desktop.answer_for_point(42, twin)["elementId"] == "e1"
 
 
 def test_no_window_under_the_point_is_not_an_error():
@@ -463,6 +532,10 @@ def test_a_point_outside_every_window_answers_without_an_element(desktop):
 @pytest.mark.windows
 def test_a_window_that_was_never_captured_has_no_snapshot_id(desktop, trial_window):
     """The state the Spy turns into "capture this window first"."""
+    # The module fixture put this window on top once; another topmost window can have come
+    # over it by the last test, and then the hit test correctly answers with that one.
+    _bring_to_front(trial_window)
+    time.sleep(0.3)
     desktop._last = None
     document_bounds = desktop.list_windows()
     target = next(w for w in document_bounds if w["handle"] == trial_window)

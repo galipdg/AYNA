@@ -301,3 +301,23 @@ leaves. **And for the Spy:** anything the client draws under the cursor will be 
 target, so an overlay has to be click-through.
 - 2026-11-10 · omer · git · **GitHub ignores `merge=union`**: after one memory PR merged, the next PR touching `journal.md` showed CONFLICTING on GitHub although `git merge origin/main` locally was clean (#217 after #222). Merging `main` into the branch locally and pushing clears it. `active.md` is overwrite-only, so every open branch of the same person conflicts on it; take `main`'s side while merging a train of PRs and write the final `active.md` on the last branch to merge.
 - 2026-11-08 · omer · #51 · **A second Compose stack can run beside the one you are using**, for a smoke test on the real image without stopping it: `docker compose -p <other-name> -f docker-compose.yml -f override.yml up -d --build`, where the override has `ports: !reset []` under `neo4j` and `ports: !override ["28080:8080"]` under `server`. The project name gives it its own containers and volumes; `down -v` with the same `-p` and files removes only those.
+
+## 2026-11-12 — A stored rectangle is not an identity (hasan, #22, from omer's #227 review)
+
+Looking an element up in a cached snapshot by its **bounds** is sound only while the window keeps
+the same elements in the same rectangles, and the changes that break that are the ordinary ones: a
+tab switched (HandBrake's settings), a list scrolled (KeePass 2's entry list), a wizard or dialog
+page replaced by one with the same layout. Each leaves the rectangle exactly where it was with a
+different element behind it, so a lookup that trusts geometry answers with the *stale* node and
+nothing in the reply says so — the tester then saves the wrong element as a repository object.
+
+`IUIAutomation::CompareElements` (pywinauto's `UIAElementInfo.__eq__`) is the only honest answer to
+"is this the same element", and it costs about **0.2 ms**: `elementFromPoint`'s median went from
+3.39 ms to 2.2–2.5 ms across runs on the same machine, i.e. the comparison is inside the noise.
+Measure before deciding a correctness check is too expensive to make.
+
+→ Any cache keyed on geometry (the Spy's pick, a recorder, playback resolving a target against a
+previous walk) needs an identity check before it names an element, and a *refusal* ("capture
+again") is a better answer than a plausible wrong one. Where identity cannot be had, comparing the
+cheap properties a provider answers from its own state (`controlType`, `name`, `automationId`)
+catches the replaced-control cases that geometry misses.

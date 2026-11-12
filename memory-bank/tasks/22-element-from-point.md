@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/22
 - Owner: hasan · Branch: `hasan/22-element-from-point`
-- Started: 2026-11-10 · Last update: 2026-11-10
+- Started: 2026-11-10 · Last update: 2026-11-12 · PR: #227
 
 ## Approach
 
@@ -38,11 +38,12 @@ The three states the client can tell apart:
 - both set → select that node.
 
 Matching inside the document: candidates are the elements whose stored `bounds` equal the hit
-element's; one candidate wins outright with no further COM call, several are disambiguated with
-`CompareElements` (pywinauto's `UIAElementInfo.__eq__`), and if none compares equal the **last in
-pre-order** wins, because same-bounds candidates are a wrapper chain and the deepest is what
-`ElementFromPoint` returned. The matching is a pure function over the document so it can be
-tested on macOS.
+element's, and **every** candidate — even a single one — is put to `CompareElements` (pywinauto's
+`UIAElementInfo.__eq__`). If none compares equal the **last in pre-order** wins, because
+same-bounds candidates are a wrapper chain and the deepest is what `ElementFromPoint` returned,
+but only when its stored `controlType`, `name` and `automationId` are still the hit element's.
+The matching is a pure function over the document (two callbacks carry everything that needs UI
+Automation) so it can be tested on macOS.
 
 ## Decisions (small, local to this task)
 
@@ -58,6 +59,17 @@ tested on macOS.
 - 2026-11-10 — **`x` and `y` may be negative.** Virtual-desktop coordinates are signed (a maximised
   window reports `[-11, -11, …]`, `learnings.md` 2026-11-07), so the parameter check is "an int",
   not `_positive_int`.
+- 2026-11-12 — **A single candidate is compared too, and the fallback checks three properties**
+  (omer's #227 review). The first version let one same-bounds element win with no COM call,
+  which is only sound while the window keeps the same elements in the same rectangles. A
+  switched tab, a scrolled list and a replaced wizard page all keep the rectangles, so the Spy
+  would have selected a stale node silently — worse than state 2, which is what that case is.
+  Measured cost: nothing outside the noise (median 2.2 ms / 2.5 ms on two runs of 50, against
+  3.39 ms before the change on the same machine). The deepest-candidate fallback stays for the
+  raw-view/control-view disagreement, gated on `controlType`, `name` and `automationId`.
+- 2026-11-12 — **`model._text` became `model.text_value`** (public), because the live properties
+  the identity check reads have to pass through the same normalisation the descriptor stored
+  them with. One rule, one function.
 - 2026-11-10 — The top-level handle comes from **Win32 `WindowFromPoint` + `GetAncestor(GA_ROOT)`**,
   not from walking UIA parents, so it is the same kind of handle `listWindows` reports
   (`EnumWindows`) and the client can match it to the window it has selected.
@@ -73,12 +85,18 @@ tested on macOS.
       uncaptured window. **432 agent tests pass, ruff clean, on Windows 11 at 120 DPI.**
 - [x] Criterion 1 **met**: every leaf of the trial window (11 of them, more than the ten asked
       for) answers as itself at the centre of the rectangle the snapshot reports.
-- [x] Criterion 2 **met**: median **3.39 ms**, p95 5.00 ms, worst **7.08 ms** over 50 calls
-      against the 300 ms budget — about 90× of headroom. Numbers are in `docs/agent-rpc.md`.
+- [x] Criterion 2 **met**: with the identity check on, median **2.2 ms**, p95 3.0 ms, worst
+      **3.2 ms** over 50 calls (second run 2.5 / 3.7 / 4.2 ms) against the 300 ms budget — about
+      100× of headroom. Numbers are in `docs/agent-rpc.md`.
+- [x] omer's #227 review answered: identity check on every candidate, the property-gated
+      fallback, five new tests, and the doc's "one snapshot" paragraph. **436 agent tests pass
+      here, including the Windows ones, ruff clean** — and the real leaf test passes with the
+      check on, which answers his question: the hit test and the walk do agree on identity for
+      every element of the trial window (all 50 measured calls named one).
 - [ ] Criterion 3 (100 % and 150 % scaling) — **not ticked**: see Manual checks.
-- [ ] Inbox notes, memory, PR
-- Next step: open the PR with `Closes #22` once the scaling check is agreed, and ask omer to
-  review the reply shape since the Spy's hotkey is what consumes it.
+- [x] Inbox notes, memory, PR #227 (`Closes #22`)
+- Next step: wait for omer's re-review of #227. Then criterion 3 (the scaling check below) and,
+  if #224 merges first, `$defs/elementFromPointRequest` / `elementFromPointResult` here as 1.1.
 
 ## Manual checks
 - **Pending — criterion 3, display scaling.** I cannot tick this from a test run: changing the
@@ -106,10 +124,11 @@ tested on macOS.
   (#184 step 8), because that is the half that converts DIP to physical pixels.
 
 ## Open issues
-- **`schemas/agent-rpc.schema.json` does not exist on `main` yet** (omer's PR #224). When it
-  merges, `elementFromPoint` needs a request and a result definition there as a **minor** bump
-  (1.0 → 1.1) under the freeze rule, with every reply field nullable. Asked omer on his inbox
-  whether to put it in this PR after his merges or to open a follow-up.
+- **`schemas/agent-rpc.schema.json` does not exist on `main` yet** (omer's PR #224, still open,
+  waiting on galip). Settled on #227: whichever of the two merges second adds the definitions —
+  if #227 goes first, omer puts `elementFromPoint` into #224 as part of 1.0 with no bump; if
+  #224 goes first, I add `$defs/elementFromPointRequest` / `elementFromPointResult` here as a
+  minor bump to 1.1, every reply field nullable.
 - **The `rpcVersion` number is unsettled and it is galip's call.** `runSteps` and
   `elementFromPoint` are built additions to v0.1, so by the contract's own rule they are a minor
   bump, but "v0.2" already names the healing draft in the same file. Under #52 they become 1.1.
@@ -122,7 +141,13 @@ tested on macOS.
 - The two Windows tests force the trial window topmost on purpose (`_bring_to_front`): a hit test
   answers with what is **visible**, and a terminal running pytest otherwise sits over the app.
   Do not "simplify" that away — it is why the first run failed.
-- `match_in_document` is pure and makes no COM call when the bounds alone decide. If you ever
-  need to loosen it, keep that property: it is what makes the call 3 ms instead of 3 000.
+- `match_in_document` is pure: `same_element` and `same_properties` carry everything that needs
+  UI Automation, which is what lets the rule be tested on macOS. It makes **one** `CompareElements`
+  per candidate and reads three properties only in the fallback. If you ever need to loosen it,
+  keep the count bounded by the candidates — that is what makes the call 2 ms instead of 2 000.
+- `test_a_window_that_was_never_captured_has_no_snapshot_id` failed once with another window's
+  handle: the module fixture raises the trial window only once and it was covered by the last
+  test. It now re-raises the window itself. A hit test answers with what is *visible*, so any
+  Windows test about a point has to own the stacking order right before it points.
 
 ## Outcome (fill when the issue closes)

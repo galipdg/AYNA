@@ -186,8 +186,21 @@ so the client needs one code path. The three states it can tell apart:
   capture it again.
 - both set — select that node.
 
-The agent holds **one** window's snapshot: a `snapshot` of another window replaces it. Only
-`-32001` is possible, when the host has no UI Automation.
+**The element is identified, not just located.** The stored rectangle finds the candidates and
+`CompareElements` decides which one is the element — every candidate, even a single one. Bounds
+alone would be enough only while a window keeps the same elements in the same rectangles, and
+the changes that break that are ordinary: a tab switched, a list scrolled, a wizard page
+replaced. Each leaves the rectangle in place with another element behind it, so without the
+comparison the answer would be the stale node with nothing saying so. When no candidate
+compares equal, the deepest same-bounds candidate is still the answer — a wrapper chain, and
+the raw view the hit test answers from is not the control view the walk reads — but only if its
+stored `controlType`, `name` and `automationId` are still the hit element's; otherwise the reply
+is the second state above.
+
+The agent holds **one** window's snapshot: the one taken **last** by any `snapshot` call,
+whoever made it — a repository import's capture (#15) replaces the Spy's. So a `snapshotId`
+that is not the one the client is showing means the same thing as none at all, and a `snapshot`
+of another window replaces it. Only `-32001` is possible, when the host has no UI Automation.
 
 ```json
 → {"jsonrpc": "2.0", "id": 8, "method": "elementFromPoint", "params": {"x": 785, "y": 312}}
@@ -209,9 +222,10 @@ A point in a window nothing has been captured for:
     "snapshotId": null, "elementId": null, "element": null}}
 ```
 
-Measured on Windows 11 at 120 DPI against the trial app: median **3.39 ms**, p95 5.00 ms, worst
-7.08 ms over 50 calls, taken after the capture, which is the Spy's order (#22 asks for under
-300 ms).
+Measured on Windows 11 at 120 DPI against the trial app, taken after the capture, which is the
+Spy's order (#22 asks for under 300 ms): median **2.2 ms**, p95 3.0 ms, worst 3.2 ms over 50
+calls, and 2.5 / 3.7 / 4.2 ms on a second run. All 50 named an element, so the identity
+comparison the answer now makes is inside the noise of the two runs.
 
 ### `runSteps`
 
