@@ -321,3 +321,28 @@ previous walk) needs an identity check before it names an element, and a *refusa
 again") is a better answer than a plausible wrong one. Where identity cannot be had, comparing the
 cheap properties a provider answers from its own state (`controlType`, `name`, `automationId`)
 catches the replaced-control cases that geometry misses.
+
+## 2026-11-12 — Confirming the display scaling needs a DPI-aware process (hasan, #22)
+
+A `@pytest.mark.windows` criterion of the form "tested at 100 % and 150 %" is only worth anything
+if you can show the process *saw* two different scalings. Asking Windows from the wrong process
+gives a confident wrong answer: a DPI-unaware one (PowerShell, `GetDeviceCaps(LOGPIXELSX)`)
+reports **96 DPI whatever the real scale is**, because Windows virtualises it. At 125 % it also
+answered 96, which would have "confirmed" a scaling that was never set.
+
+Two ways to get the truth, both used for #22's check:
+- call `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2 = -4)` **before** `GetDpiForSystem()`
+  in the probe process (96 / 120 / 144 for 100 / 125 / 150 %);
+- better, read it from the product code: the snapshot's `window.dpi` and every element's `dpi`
+  (`GetDpiForWindow`, #43/#49), with `dpi_awareness()` reporting `per-monitor-v2`. That also shows
+  the *physical* bounds changing — the trial login window went 360 × 164 → 540 × 246, exactly 1.5×
+  — which no virtualised reading would reveal.
+
+The scale change itself needs a person in Settings, but it applies to newly started apps at once:
+no sign-out is needed as long as the test launches its own app, which is why these runs took
+minutes rather than a session.
+
+→ When a criterion names display scalings, record the DPI the product read at each one, not the
+scale you clicked. Also: `agent/.venv` has no PySide6, so a script that starts a pilot or trial
+app outside pytest must launch it with the **repository root** `.venv/Scripts/python.exe` — the
+Windows tests do exactly that via `_python_with_pyside()`.

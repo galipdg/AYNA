@@ -490,3 +490,32 @@ incidentally all session — every client start launched the agent and every clo
 - **Started #33** (sample app v1) on `hasan/33-sample-app` from `main`. Nothing built yet.
 - Next step: read `docs/rs/scenarios.md` for the behaviour the reference scenarios assume of the
   sample app, write the task note, then build the screens.
+
+## 2026-11-12 (late) — #22's scaling check: run, passed, criterion 3 ticked
+
+- **Ran #22's last acceptance criterion with the user at the machine, and it passes at both
+  scalings.** The user changed the scale in Windows Settings; I ran
+  `pytest tests/test_uia_element_from_point.py -q` at each. **23 passed at 100 % and at 150 %**
+  (and 23 at this machine's own 125 % as a baseline), with no skips, so the five
+  `@pytest.mark.windows` tests really ran against the trial app each time. **The full agent suite
+  passes at 150 % too: 436 passed in 13.65 s.**
+- **Did not take "the tests pass" as proof the scaling changed.** A DPI-unaware process reports
+  96 DPI whatever the scale is, and at 125 % it did exactly that, which would have "confirmed" a
+  scaling nobody set. So I read the DPI from the product instead: `window dpi` 96 against 144,
+  every element's `dpi` likewise, `dpi_awareness()` `per-monitor-v2` both times, and the trial
+  login window 360 × 164 against 540 × 246 physical pixels — exactly 1.5×. Then four points taken
+  at the centre of a rectangle the snapshot itself reported answered with the **same element id**
+  at both scalings (`e4`, `e5`, `e6`, `e8`), which is the property `142a6c6`'s identity check
+  needs. Gotcha written to `learnings.md`.
+- **Ticked criterion 3 on #22**, posted the numbers as an issue comment, removed
+  `needs-windows-test`, and asked omer again for the #227 re-review in a PR comment that says
+  what `142a6c6` changed and what the Spy side needs from the reply shape. #227 is CI 5/5 green
+  and `MERGEABLE`; **#224 is still open, so #227 carries no schema change today.**
+- Also learnt, and it is worth money to the Windows queue: a scale change **needs no sign-out**,
+  it applies to apps started afterwards — so #197's 100 % / 150 % pass can be batched with any
+  other scaling work in one sitting. And `agent/.venv` has no PySide6: a script starting the
+  trial app outside pytest must use the repository root `.venv`.
+- Next step: **#22 and #33 are both waiting only on other people.** Start omer's **#221** Windows
+  check (7 steps, comment on the issue of 2026-11-10: the editor's column dropdown must offer the
+  real header names, not the row headers `1`, `2`, `3`), then **#29** (RQ1 recognition harness,
+  Week 4). #162 is overdue and worth raising with the user first.

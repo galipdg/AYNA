@@ -93,35 +93,57 @@ Automation) so it can be tested on macOS.
       here, including the Windows ones, ruff clean** — and the real leaf test passes with the
       check on, which answers his question: the hit test and the walk do agree on identity for
       every element of the trial window (all 50 measured calls named one).
-- [ ] Criterion 3 (100 % and 150 % scaling) — **not ticked**: see Manual checks.
+- [x] Criterion 3 **met**: the scaling check ran here on 2026-11-12 at **100 %** and at
+      **150 %** — 23 tests pass at both, `window dpi` 96 against 144, the window 1.5× larger in
+      physical pixels, and the same element id answers every point at both scalings. Details and
+      how to repeat it are under Manual checks.
 - [x] Inbox notes, memory, PR #227 (`Closes #22`)
-- Next step: wait for omer's re-review of #227. Then criterion 3 (the scaling check below) and,
-  if #224 merges first, `$defs/elementFromPointRequest` / `elementFromPointResult` here as 1.1.
+- Next step: **all three criteria are met**; the issue's boxes are ticked and the result is a
+  comment on #22, with `needs-windows-test` removed. Waiting on omer's re-review of #227 (his
+  `CHANGES_REQUESTED` was answered in `142a6c6` on 2026-11-12). If #224 merges first, add
+  `$defs/elementFromPointRequest` / `elementFromPointResult` here as 1.1.
 
 ## Manual checks
-- **Pending — criterion 3, display scaling.** I cannot tick this from a test run: changing the
-  display scaling needs a person at the machine, and this machine sits at **125 % (120 DPI)**, so
-  neither of the two scalings the criterion names has been exercised. The code path itself has no
-  scaling arithmetic — the process is per-monitor-v2 aware (#201) and the point is passed through
-  untouched — so what the check proves is that the client and the agent agree about the point,
-  not that this module converts correctly.
+- **Done — criterion 3, display scaling. 2026-11-12, run by hasan with the user at this
+  machine. Pass at both scalings.** The user changed the scale in Windows Settings; the agent
+  ran the tests and read back what UI Automation reports.
 
-  **Setup.** Start the trial app from the repository root with its own interpreter:
-  `.venv/Scripts/python.exe eval/apps/trial/app.py`. Nothing else is needed - the test
-  brings the window to the front itself.
-  **Steps.**
-  1. Windows Settings → Display → Scale **100 %**, sign out and in if Windows asks.
-  2. `cd agent && .venv/Scripts/python.exe -m pytest tests/test_uia_element_from_point.py -q`
-  3. Set the scale to **150 %**, sign out and in, and run the same command.
-  4. Set the scale back to 125 %.
-  **Expected.** 19 passed both times. The two Windows tests are the ones that matter:
+  | Scale | `systemDpi` | `window dpi` | Login window bounds (physical px) | Result |
+  |---|---|---|---|---|
+  | 100 % | 96 | 96 | `[640, 276, 1000, 440]` — 360 × 164 | 23 passed |
+  | 125 % (this machine's own) | 120 | — | — | 23 passed (baseline) |
+  | 150 % | 144 | 144 | `[480, 144, 1020, 390]` — 540 × 246 | 23 passed |
+
+  The two scalings really were different for the agent, not only for Windows Settings: the
+  window measures 540 × 246 against 360 × 164, **exactly 1.5×**, and every element carries
+  `dpi=144` against `dpi=96`. `dpi_awareness()` reported `per-monitor-v2` in both runs.
+  At each scaling four points taken at the centre of a snapshot rectangle answered with the
+  **same element id** they were taken from (`e4`, `e5`, `e6`, `e8` — three title-bar buttons and
+  `usernameInput`), so the hit test and the walk agree on identity at both scalings.
+  **436 agent tests pass at 150 %** (13.65 s), and the five `@pytest.mark.windows` tests of this
+  module pass at both, including the two that matter:
   `test_a_leaf_of_the_trial_app_is_found_exactly_at_its_centre` and
-  `test_a_container_answers_with_something_inside_itself`.
+  `test_a_container_answers_with_something_inside_itself`. Scale set back to 125 % afterwards.
+
+  What this proves and what it does not: the code path has no scaling arithmetic — the process is
+  per-monitor-v2 aware (#201) and the point is passed through untouched — so the check shows that
+  physical pixels in and physical pixels out stay consistent at both scalings. It does **not**
+  cover the client's DIP → physical conversion. Worth running these same two scalings end to end
+  once omer's pick hotkey is wired up (#184 step 8), because that is the half that converts.
+
+  **How to repeat it** (the counts below are the current ones; the earlier note said 19, which was
+  the test count before `142a6c6` added five):
+  **Setup.** Nothing to start — the Windows tests launch the trial app themselves, with the first
+  interpreter that can import PySide6 (the repository's root `.venv`), and force its window
+  topmost before pointing at it.
+  **Steps.**
+  1. Windows Settings → Display → Scale **100 %**.
+  2. `cd agent && .venv/Scripts/python.exe -m pytest tests/test_uia_element_from_point.py -q`
+  3. Set the scale to **150 %** and run the same command.
+  4. Set the scale back to 125 %.
+  **Expected.** 23 passed both times.
   **Report back.** Pass/fail per scaling. On a failure: the full pytest output, the
   `window dpi=` line the snapshot reports, and the Windows build.
-
-  Worth running the same two scalings again end to end once omer's pick hotkey is wired up
-  (#184 step 8), because that is the half that converts DIP to physical pixels.
 
 ## Open issues
 - **`schemas/agent-rpc.schema.json` does not exist on `main` yet** (omer's PR #224, still open,

@@ -2,13 +2,22 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-12 (#227's review answered, #228 and #229 reviewed, #33 started)
-- Current issue: **#33** (sample app v1, Week 4), branch `hasan/33-sample-app` created from
-  `main`, **nothing built yet**. #22 is waiting on omer's re-review, not on me.
-- **My open PR: #227** (`Closes #22`), four commits, CI was 5/5 green before the last one.
-  omer requested changes and **the review is answered** (`142a6c6`): identity now decides, not
-  geometry. Re-review requested. Criteria 1 and 2 are **ticked on the issue** with the evidence
-  in a comment; criterion 3 is the scaling check, posted on #22 with `needs-windows-test`.
+- Last update: 2026-11-12, late (#22's scaling check run and passed; #33 built and green)
+- Current issue: **nothing in progress.** #22 and #33 are both finished on my side and each is
+  waiting only on other people's reviews. The next thing to start is omer's **#221** Windows
+  check, then **#29** (RQ1 harness, Week 4) — see the Windows queue below.
+- **#22 is complete: all three acceptance criteria are ticked.** The scaling check ran here on
+  2026-11-12 at 100 % and 150 %, passed at both, and the result with its numbers is a comment on
+  the issue; `needs-windows-test` is removed. omer's `CHANGES_REQUESTED` was answered in
+  `142a6c6` and the re-review is asked for again in a PR comment. **Nothing is left for me on
+  #22 but waiting.**
+- **My two open PRs, both CI 5/5 green, both `MERGEABLE`, neither mine to merge:**
+  **#227** (`hasan/22-element-from-point`, `Closes #22`) — decision still `CHANGES_REQUESTED`
+  until omer re-reads it, which is the only thing between it and merge.
+  **#230** (`hasan/33-sample-app`, `Closes #33`) — `REVIEW_REQUIRED` from galip and omer. Its
+  last criterion needs one of them to run `python eval/apps/sample/sample_app.py` on macOS
+  (asked for in the PR body). Note #230's branch carries its own newer `active.md`, so expect a
+  conflict in this file if both merge — keep the later facts from each, they do not disagree.
 - **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
   2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
 
@@ -39,9 +48,18 @@ against #22's 300 ms. **436 agent tests pass, including the Windows ones; ruff c
 measured calls named an element, so the hit test and the walk agree on identity for every element
 of the trial window.
 
-**Still to do:** omer's re-review, the scaling manual check (steps are on the issue and in the
-task note), and the schema `$defs` **only if #224 merges first** — settled on #227: whichever of
-the two merges second adds them (#224 first → 1.1 here; #227 first → omer folds it into 1.0).
+**Scaling, criterion 3 — done, pass at both** (2026-11-12, here, with the user changing the
+scale in Settings). 23 tests pass at 100 % and at 150 %; **436 agent tests pass at 150 %**. The
+evidence that the two scalings were real: `window dpi` 96 against 144, the login window
+360 × 164 against 540 × 246 physical pixels (exactly 1.5×), `dpi_awareness()` `per-monitor-v2`
+both times, and four points taken at a snapshot rectangle's centre answering with the **same
+element id** at both scalings. Full table in the task note and in the #22 comment. What it does
+*not* cover is the client's DIP → physical conversion (#184 step 8).
+
+**Still to do:** nothing but omer's re-review, plus the schema `$defs` **only if #224 merges
+first** — settled on #227: whichever of the two merges second adds them (#224 first → 1.1 here;
+#227 first → omer folds it into 1.0). #224 was still open on 2026-11-12, so today this PR
+carries no schema change.
 
 ## What I owe from the 2026-11-12 reviews
 
@@ -141,8 +159,12 @@ All omer's, all needing this machine:
   and **Ctrl+Z / Ctrl+Y**, which were never pressed (only ⌘Z on macOS).
 - **#221** — the column dropdown in the running app (omer's steps 3–4 and 6); the header rule
   itself is already verified against real captures, so only the UI is open.
-- **#22** — the scaling check, which is *mine* and needs the user to change the display scaling:
-  100 % and 150 %, `pytest tests/test_uia_element_from_point.py -q` at each, 23 passed expected.
+- ~~**#22** — the scaling check~~ **done 2026-11-12, pass at 100 % and 150 %.** Worth knowing for
+  everything else in this queue: a scale change in Settings **needs no sign-out** — it applies to
+  apps started afterwards, so a test that launches its own app sees the new scale at once. That
+  makes #197's "at 100 % **and** 150 %" cheap to batch with any other scaling check in one
+  session. Confirm the scale from a **DPI-aware** probe, never from plain PowerShell
+  (`learnings.md` 2026-11-12).
 - New: the **nav at 1280 px** — "Nesne Deposu" is the longest nav label now and it collapses to
   icons below 1180.
 - **A second monitor at another scaling is impossible here**: this machine has one 1920×1080
