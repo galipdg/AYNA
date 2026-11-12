@@ -21,10 +21,11 @@
 - [x] SDD §3.3 row
 - [x] Issue criteria rewritten on GitHub (2026-11-10, omer's OK)
 - [x] PR #228 (reviews: hasan, galip); Windows check posted on #221 with `needs-windows-test` (2026-11-10)
-- Next step: answer the reviews; at the Windows session run the #221 check; if it has not run by merge, change the PR body to "Part of #221".
+- [x] hasan approved (2026-11-12); his two client points done: the custom input's own `aria-label`, and "Other…" closes when the column list changes (another grid).
+- Next step: merge #228 (omer's go-ahead 2026-11-12).
 
 ## Manual checks
-- pending Windows session · hasan + omer · KeePass 2 entry list and a Qt `QTableWidget` give the right dropdown (posted on #221 2026-11-10; steps below).
+- 2026-11-12 · hasan (Windows 11, 125 %) · pass 7 of 7: KeePass 2 `['Title', 'User Name', 'Password', 'URL', 'Notes']`, Qt GridProbe `['Ad', 'Soyad', 'Şehir']` (no row headers), HandBrake queue `[]` (a List, not a WPF DataGrid, so the DataGrid path is still unexercised) · evidence: #221 comment of 2026-11-12. Step text to fix next time: the health check port may be `AYNA_SERVER_PORT` (8081 there), and the Qt window's title is "AYNA Grid Probe".
 
 ### Check to post on #221
 
@@ -57,6 +58,7 @@ Pass or fail for each step. For a failure: a screenshot, the snapshot file (Spy 
 
 
 ## Open issues
+- hasan (#228 review): a Table whose cells were not captured (virtualised, or a walk out of budget) keeps its row headers `1`, `2`… as columns; tighten to "a direct header counts only if it shares an x-range with a captured cell" if it ever shows up. The WPF `DataGrid` branch has no real capture yet.
 - #37 (galip): the ADR plans to narrow `column` to an `enum` of `columns`; with an incomplete list that rejects a correct column. Told galip (inbox).
 - Not checked on a real capture yet: whether a WPF `DataGrid` (HandBrake) exposes a `Header` with `HeaderItem`s.
 

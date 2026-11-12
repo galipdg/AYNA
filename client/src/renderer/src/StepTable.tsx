@@ -660,11 +660,15 @@ function ColumnField({
   value: string
   onChange: (value: string) => void
 }) {
-  const [typing, setTyping] = useState(false)
+  // "Other…" is open for this list of columns only, so choosing another grid closes it (#228).
+  const listKey = columns.join('\u0001')
+  const [typingFor, setTypingFor] = useState<string | null>(null)
+  const typing = typingFor === listKey
   const text = (
     <input
       {...common}
-      aria-label={label}
+      // Beside the list it needs a name of its own; alone it is the field itself (#228).
+      aria-label={columns.length === 0 ? label : `${label}: ${strings.stepsOtherColumn}`}
       maxLength={100}
       placeholder={placeholder}
       value={value}
@@ -681,7 +685,7 @@ function ColumnField({
         value={custom ? OTHER_COLUMN : value}
         onChange={(event) => {
           const chosen = event.target.value
-          setTyping(chosen === OTHER_COLUMN)
+          setTypingFor(chosen === OTHER_COLUMN ? listKey : null)
           if (chosen !== OTHER_COLUMN) onChange(chosen)
         }}
       >
