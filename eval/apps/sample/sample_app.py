@@ -10,12 +10,12 @@ is implemented deliberately -- a control that becomes ready late (SC-18), a requ
 
 Run it from the repository root, on any platform:
 
-    .venv/Scripts/python.exe eval/apps/sample/app.py          # Windows
-    .venv/bin/python eval/apps/sample/app.py                  # macOS, Linux
+    .venv/Scripts/python.exe eval/apps/sample/sample_app.py          # Windows
+    .venv/bin/python eval/apps/sample/sample_app.py                  # macOS, Linux
 
 The one option worth knowing is the search delay, which SC-18 is built on:
 
-    .venv/Scripts/python.exe eval/apps/sample/app.py --search-delay-ms 0
+    .venv/Scripts/python.exe eval/apps/sample/sample_app.py --search-delay-ms 0
 
 The rules live in `model.py` (no Qt, so they are tested anywhere), every visible string in
 `texts.py`, and the screens in `windows.py`.
@@ -27,7 +27,7 @@ import argparse
 import sys
 from pathlib import Path
 
-# Run as a script (`python eval/apps/sample/app.py`), so the app's own modules are imported
+# Run as a script (`python eval/apps/sample/sample_app.py`), so the app's own modules are imported
 # by name; this makes that work from any working directory, and the tests do the same thing
 # in their conftest.
 sys.path.insert(0, str(Path(__file__).resolve().parent))

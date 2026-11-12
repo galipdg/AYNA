@@ -19,8 +19,13 @@ The name is `uia_check.py`, not `uia_dump.py` like the trial app's: the tests im
 bare module name, and one module name may exist only once in the whole `eval/` tree -- two
 files called `uia_dump.py` shadow each other for an entire `pytest eval` run (#199,
 `memory-bank/learnings.md` 2026-11-08). The same rule is why the UIA tests here are
-`tests/test_sample_uia.py`. `app.py` keeps its name because it is only ever *run*, never
-imported.
+`tests/test_sample_uia.py` and why the app itself is `sample_app.py`: a module that is only
+ever *run* still shadows the other tree's, because both apps' conftests put their own folder
+first on `sys.path` and **which one wins depends on how pytest was started**. CI runs bare
+`pytest` from `eval/`, which loads the conftests in `testpaths` order and resolved the trial
+app's `from app import ...` to this app -- while `pytest eval` from the repository root walks
+the folders alphabetically and resolved it the other way, so the clash was invisible locally
+(2026-11-12, run 43260442861).
 
 Two Windows details, both learned on the trial app (`memory-bank/learnings.md`):
 
@@ -42,10 +47,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-APP_PATH = Path(__file__).resolve().parent / "app.py"
+APP_PATH = Path(__file__).resolve().parent / "sample_app.py"
 
 #: Qt exposes the Python class name as the UIA ClassName, which is how each screen's window
-#: is found. The keys are `app.py --screen` values.
+#: is found. The keys are `sample_app.py --screen` values.
 WINDOW_CLASSES: dict[str, str] = {
     "login": "LoginWindow",
     "main": "MainWindow",
@@ -82,7 +87,7 @@ READY_TIMEOUT = 30.0
 
 
 def launch_app(screen: str = "login", delay_ms: int = 0) -> subprocess.Popen[bytes]:
-    """Start `app.py` on one screen as a separate process.
+    """Start `sample_app.py` on one screen as a separate process.
 
     The search delay defaults to 0 here: the dump reads a window, it does not wait for a
     grid, and three seconds per screen of dumping is three seconds wasted.

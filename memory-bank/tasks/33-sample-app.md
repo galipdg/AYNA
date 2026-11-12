@@ -42,6 +42,12 @@ after a search), a required field (SC-34), a modal dialog when leaving an edited
   app), and grid cells, headers and tab items are not widgets.
 - 2026-11-12 — `eval/pyproject.toml`: `apps/sample/tests` added to `testpaths` and
   `apps/sample` to ruff's `src`, so `pytest eval` collects it and the local imports lint.
+- 2026-11-12 — **`app.py` renamed to `sample_app.py` as well, after CI.** I had argued it
+  could keep its name because it is only ever run, never imported. Wrong: it is still
+  importable, and the winner depends on the pytest invocation -- `pytest eval` from the root
+  loads sample's conftest first and trial's `from app import ...` got trial, while CI's bare
+  `pytest` from `eval/` loads them in `testpaths` order and the same import got *this* app.
+  The rule has no exception for scripts; `learnings.md` 2026-11-12 has the mechanism.
 - 2026-11-12 — **`uia_dump.py` renamed to `uia_check.py` and `tests/test_uia.py` to
   `tests/test_sample_uia.py`.** The trial app has files of both names, the tests import
   them by bare module name, and #199 already measured what that costs: `pytest eval`
@@ -70,8 +76,12 @@ after a search), a required field (SC-34), a modal dialog when leaving an edited
 - [x] `eval/AGENTS.md`: the sample app's commands, plus the one-module-name-per-tree and
       the no-Qt-env-var rules (user's OK 2026-11-12)
 - [x] Four commits, pushed, **PR #230** open with `Closes #33`, both teammates requested
-- Next step: wait for galip's and omer's macOS run (the last criterion) and their review;
-  when PR #230 is green and approved, it merges and closes #33.
+- [x] CI's `eval` job failed on the first run and is fixed: `app.py` existed in both apps,
+      and the trial app's `from app import ...` resolved to this app's. Renamed to
+      `sample_app.py`. Both invocations green now: `cd eval; pytest -q` 69 passed (what CI
+      runs) and `pytest eval` from the root 125 passed; ruff clean.
+- Next step: confirm CI is 5/5 green on PR #230 after the `sample_app.py` push, then wait
+  for galip's and omer's macOS run (the last criterion) and their review.
 
 ## Manual checks
 - 2026-11-12 · hasan · `uia_check.py` on all five screens · **pass** · evidence: the
@@ -79,9 +89,15 @@ after a search), a required field (SC-34), a modal dialog when leaving an edited
 - 2026-11-12 · hasan · the app started from the repository root and driven through all six
   screens by the UIA tests (login, grid, detail, settings, wizard, both dialogs) · **pass**
 - Criterion 3 on macOS is **pending**: galip and omer have to run
-  `python eval/apps/sample/app.py` once. Nothing in the app is Windows-only (the UIA tests
+  `python eval/apps/sample/sample_app.py` once. Nothing in the app is Windows-only (the UIA tests
   skip themselves elsewhere), but it has not been observed anywhere but here. Ask in the
   PR body.
+
+### Reproducing CI
+CI runs bare `pytest` **from `eval/`**, which is not the same run as `pytest eval` from the
+repository root: they load the two apps' conftests in a different order, and that decides
+whose module wins when a name exists twice. Run `cd eval; ../.venv/Scripts/python.exe -m
+pytest -q` (69 passed) before pushing anything that adds a module under `eval/`.
 
 ### What the UIA run cost before it was green (2026-11-12)
 First full run: **25 of 25 UIA tests errored**, 12:40 of it pure timeout, while each test

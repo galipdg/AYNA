@@ -24,10 +24,10 @@ python -m venv .venv
 ## Run it — one command, any platform
 
 ```powershell
-.venv/Scripts/python.exe eval/apps/sample/app.py      # Windows
+.venv/Scripts/python.exe eval/apps/sample/sample_app.py      # Windows
 ```
 ```bash
-.venv/bin/python eval/apps/sample/app.py              # macOS, Linux
+.venv/bin/python eval/apps/sample/sample_app.py              # macOS, Linux
 ```
 
 It opens on the login screen; `admin` / `admin` gets in and opens the customer list, which
@@ -129,11 +129,22 @@ come up with no window and never be found.
 
 ## Module names
 
-`uia_check.py` rather than `uia_dump.py`, and `tests/test_sample_uia.py` rather than
-`tests/test_uia.py`: the tests import these by bare module name, and a module name may
-exist only once in the whole `eval/` tree — two files with the same name shadow each other
-for an entire `pytest eval` run (#199). `app.py` keeps its name because it is only ever
-run, never imported.
+`sample_app.py`, `uia_check.py` and `tests/test_sample_uia.py` instead of `app.py`,
+`uia_dump.py` and `tests/test_uia.py`: the trial app has files of all three names, the tests
+import them by bare module name, and a module name may exist only once in the whole `eval/`
+tree — two files with the same name shadow each other for a whole pytest run (#199).
+
+A module that is only ever *run* is not exempt, which cost this PR a red CI run: both apps'
+conftests put their own folder first on `sys.path`, and **which one wins depends on how
+pytest was started**. `pytest eval` from the repository root walks the folders
+alphabetically and the trial app's `from app import …` resolved to the trial app; CI runs
+bare `pytest` from `eval/`, which loads the conftests in `testpaths` order, and the same
+import resolved to *this* app and broke the trial app's tests. Both invocations are green
+now — run the CI one before pushing:
+
+```powershell
+cd eval; ../.venv/Scripts/python.exe -m pytest -q    # 69 passed
+```
 
 ## The ids, as measured
 

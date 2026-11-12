@@ -462,4 +462,15 @@ fiction.
 
 **Next step:** criterion 3 ("runs with one command on every member's machine") is the only
 one left and it is not mine to tick — galip and omer have to run
-`python eval/apps/sample/app.py` once on macOS. Asked for it in PR #230's body.
+`python eval/apps/sample/sample_app.py` once on macOS. Asked for it in PR #230's body.
+
+**And a fourth fault, which CI found after I had pushed.** I kept `app.py` under its own name
+on the argument that it is only ever run, never imported — and wrote that reasoning into the
+PR and the README. It is importable, so the argument was worthless: the trial app's
+`from app import ...` resolved to *this* app's `app.py` in CI and broke two of its test
+modules. What made it invisible here is the detail worth keeping: both apps' conftests insert
+their own folder at `sys.path[0]`, so the conftest loaded **last** wins, and the order differs
+between `pytest eval` from the repository root (alphabetical) and CI's bare `pytest` from
+`eval/` (`testpaths` order). Renamed to `sample_app.py`, and from now on I reproduce CI's
+invocation (`cd eval; pytest -q`) before pushing anything that adds a module under `eval/`.
+The twice-stated rule now also says that a script is not exempt.

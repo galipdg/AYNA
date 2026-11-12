@@ -11,8 +11,10 @@ from pathlib import Path
 
 import pytest
 
-# Make `import app`, `import model`, `import texts` and `import windows` work without
-# installing the sample app as a package, exactly as `app.py` itself does.
+# Make `import model`, `import texts`, `import windows` and `import uia_check` work without
+# installing the sample app as a package, exactly as `sample_app.py` itself does. This
+# insert lasts for the whole pytest process and the trial app's conftest does the same, so
+# every module name under `eval/` has to be unique -- see `eval/AGENTS.md`.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 

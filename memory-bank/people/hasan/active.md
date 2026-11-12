@@ -12,12 +12,14 @@ Only hasan's agent edits this file. Overwrite it at every session end.
      are in galip's `rpc.py` and `docs/agent-rpc.md` on purpose, each on its own, so he can
      take, move or redirect them.
   3. **#201** (`hasan/dpi-awareness-v2`) — the two coordinate bugs from the Windows session.
-  4. **#230** (`hasan/33-sample-app`, `Closes #33`) — new today. Four commits: the app, its
-     tests, `eval/AGENTS.md`, memory.
+  4. **#230** (`hasan/33-sample-app`, `Closes #33`) — new today. The app, its tests,
+     `eval/AGENTS.md` and memory. CI's `eval` job failed on the first push (the `app.py`
+     name clash with the trial app) and was fixed with `sample_app.py`; re-check that CI is
+     5/5 before expecting a merge.
 - **#33: two of three criteria are measured, the third is not mine to tick.** 44 interactive
   controls over five screens, 0 without an AutomationId, `pytest eval` 125 green in 39 s,
   ruff clean — all on Windows. Criterion 3 says *every member's machine*, so **galip and
-  omer have to run `python eval/apps/sample/app.py` once on macOS**; the exact commands and
+  omer have to run `python eval/apps/sample/sample_app.py` once on macOS**; the exact commands and
   the expected output are in PR #230's body. Nothing in the app is Windows-only.
 - **Two things in PR #230 that are not mine to decide:**
   - For galip: `texts.py` and `uia_check.py --json` are what `eval/nl/objects/sample.json`
@@ -28,7 +30,10 @@ Only hasan's agent edits this file. Overwrite it at every session end.
     playback (#40).
 - **Review queue: empty** as of 2026-11-07; check `gh pr list --search "review-requested:@me"`
   at the next session start, because omer and galip have been merging since.
-- Two gotchas this session added to `learnings.md`, both costly: a Qt environment variable
+- **Reproduce CI before pushing anything under `eval/`:** `cd eval; ../.venv/Scripts/python.exe -m pytest -q`
+  (69 passed). CI runs that, not `pytest eval` from the root, and the two disagree about
+  which module wins when a name exists twice.
+- Three gotchas this session added to `learnings.md`, all costly: a Qt environment variable
   set in a pytest process poisons every app the run starts afterwards (12:40 of timeouts),
   and the #199 one-module-name-per-tree trap bit again — that rule now lives in
   `eval/AGENTS.md` as well.
