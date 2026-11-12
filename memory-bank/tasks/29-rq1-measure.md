@@ -1,7 +1,7 @@
 # #29 Recognition measurement harness (RQ1)
 
 - Issue: https://github.com/galipdg/AYNA/issues/29
-- Owner: hasan · Branch: `hasan/29-rq1-measure`
+- Owner: hasan · Branch: `hasan/29-rq1-measure` · PR: #233 (**no `Closes`** — see below)
 - Started: 2026-11-12 · Last update: 2026-11-12
 
 ## Approach
@@ -77,9 +77,12 @@ places to watch on the first real run.
 
 - **(pending)** · hasan · capture the two KeePass 2 screens `kp_state.py` can reach plus
   HandBrake's main window, then `measure` · result: — · agreed with the user 2026-11-12: I
-  capture what is scriptable, and the screens that need clicks (KeePass `options` and
-  `open-database`, HandBrake's `main-video`/`preferences`/`queue`) come from a manual check
-  posted on the issue.
+  capture what is scriptable; the screens that need clicks are the check below.
+- **(pending)** · the user, on this machine · the eight-step check posted as a comment on #29 on
+  2026-11-12 (https://github.com/galipdg/AYNA/issues/29#issuecomment-6835118882): KeePass 2
+  `open-database` and `options`, HandBrake `main-summary`, `main-video`, `preferences` and
+  `queue`, then `measure` · result: — · it also asks for the first numbers back, and says plainly
+  that the unlabelled rate is the optimistic one.
 - **(pending)** · hasan + a second labeller · label one screen per pilot per `labelling.md`,
   twice and independently, for the screen that goes into the report · result: —
 
@@ -116,5 +119,14 @@ packages (`[tool.setuptools] packages = []`) and the agent is not an `eval` depe
 import is by repository layout. If `agent/ayna_agent/model.py` or `playback/resolve.py` ever grow
 a pywinauto import, this harness stops working off Windows and the CI test goes with it — both
 modules say in their docstrings that they must not, and a test here pins it.
+
+## Why the PR does not close the issue
+
+PR #233 deliberately omits `Closes #29`: none of the three criteria is met, since all three need
+the pilot apps measured here. It is up for review anyway because the *definition* of "recognised"
+is what is worth agreeing before any number exists — galip wrote the SDD §6.1 sentence this makes
+exact and omer owns `suggestUses`, the rule being measured. Two questions are put to them in the
+PR body: whether the report also wants the single-property rate for comparison, and whether to
+open an issue making one of the three primary-set descriptions normative.
 
 ## Outcome (fill when the issue closes)

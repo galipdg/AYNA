@@ -246,6 +246,11 @@ five `HeaderItem`s. No pilot app has a WinForms `DataGridView`.
   `eval/nl/objects/sample.json` (#36) should be generated from.
 - **#10, my five literature entries, is still owed** (omer's inbox note of 2026-11-05); PR #126
   is still a draft and has no reviewer.
+- **#33's three checkboxes were still empty on the closed issue**, and one of them really is not
+  met: "runs with one command on every member's machine" holds for Windows and omer's macOS M3
+  but **not galip's machine**. Recorded as a comment on #33 on 2026-11-12 rather than ticked, and
+  galip is asked for one command there. Also answered omer's open question from his run: the
+  login window staying visible beside the customers window is deliberate (SC-14).
 - **#28 (G0 gate) is still open** with three of four criteria ticked; the last one is galip's #7.
 - Of the inbox's entries only two are still live (#10's entries, and now nothing of #221's).
   **I offered to delete the handled ones; the user has not said yes, so they stay.**
