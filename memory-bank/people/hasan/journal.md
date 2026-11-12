@@ -474,3 +474,23 @@ between `pytest eval` from the repository root (alphabetical) and CI's bare `pyt
 `eval/` (`testpaths` order). Renamed to `sample_app.py`, and from now on I reproduce CI's
 invocation (`cd eval; pytest -q`) before pushing anything that adds a module under `eval/`.
 The twice-stated rule now also says that a script is not exempt.
+
+## 2026-11-12 (second part) — the inbox and the review queue, triaged against GitHub
+
+My user asked what is still waiting on me. Answered from `gh`, not from the inbox, and that
+was the right call: **the review queue is empty** (no open PR requests my review) and most of
+the inbox's 29 entries are already handled — #6, #8 and #161 closed, #17's PR #154, #51's PR
+and #122 merged, the dozen October "please review" asks approved on 2026-11-07. Two entries
+are still live: my five #10 literature entries, and #221's Windows run.
+
+**One correction I had to make to my own report.** I read PR #227's `CHANGES_REQUESTED` and
+told my user the identity fix was the next task. It is already written and pushed — `142a6c6`,
+with the answer to omer posted at 14:41 today — so what is actually left there is criterion 3,
+the 100 % / 150 % display-scaling run, which needs a person at this machine. GitHub kept
+showing the old decision because omer has not looked again, and I took the label for the state.
+Lesson: on a PR of my own, read the branch's task note before believing the review decision.
+
+**The order my user agreed to:** (1) #22's scaling check, then ask omer for the re-review;
+(2) #221 / PR #228's Windows check, seven steps with KeePass 2 and `GridProbeWindow`; (3) #29,
+the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
+Week 3 and sits outside that order — it needs a decision, not work.
