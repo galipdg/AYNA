@@ -2,15 +2,15 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-10 (review round of eight PRs, #22 built)
-- Current issue: **#22**, on `hasan/22-element-from-point`, three commits, **no PR yet**.
-  Criteria 1 and 2 are met and measured; criterion 3 waits on a manual scaling check.
-  Everything else is in `memory-bank/tasks/22-element-from-point.md`.
-- **No open PRs of mine.** #170, #200, #201, #202 and #210 are all merged, so #161, #26, the
-  two coordinate bugs, the #38/#184 notes and #199 are on `main`.
-- **Review queue: empty.** Eight approved on 2026-11-10 — omer's #217, #218, #219, #220, #222,
-  #223, #224, #225 — including two ADRs: `2026-11-08-run-screenshots-and-retention` and
-  `2026-11-08-contracts-v1-freeze`.
+- Last update: 2026-11-12 (#227's review answered, #228 and #229 reviewed, #33 started)
+- Current issue: **#33** (sample app v1, Week 4), branch `hasan/33-sample-app` created from
+  `main`, **nothing built yet**. #22 is waiting on omer's re-review, not on me.
+- **My open PR: #227** (`Closes #22`), four commits, CI was 5/5 green before the last one.
+  omer requested changes and **the review is answered** (`142a6c6`): identity now decides, not
+  geometry. Re-review requested. Criteria 1 and 2 are **ticked on the issue** with the evidence
+  in a comment; criterion 3 is the scaling check, posted on #22 with `needs-windows-test`.
+- **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
+  2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
 
 ## #22, so the next session does not re-derive it
 
@@ -26,12 +26,52 @@ point is never an error. `snapshotId` null = nothing captured for this window; `
 with `elementId` null = the window changed, capture again; both set = select that node. omer has
 this in his inbox, because the Spy's pick hotkey is what consumes it (#184 step 8).
 
-Measured here at 120 DPI: median **3.39 ms**, p95 5.00 ms, worst 7.08 ms over 50 calls, against
-#22's 300 ms. 432 agent tests pass, ruff clean.
+**Identity decides, geometry only locates** (omer's #227 review, 2026-11-12). Every same-bounds
+candidate goes to `CompareElements`, including a single one: a switched tab, a scrolled list and
+a replaced wizard page all keep the rectangles, so a bounds-only lookup would have the Spy select
+a stale node silently. The deepest-candidate fallback stays for the raw-view/control-view
+disagreement but is gated on `controlType`, `name`, `automationId`. It costs nothing measurable.
+`model._text` is now public as `model.text_value` for that comparison.
 
-**Still to do:** the scaling manual check (the task note has the exact steps), the PR with
-`Closes #22`, and — once omer's #224 merges — `elementFromPoint` in
-`schemas/agent-rpc.schema.json` as a minor bump to 1.1.
+Measured here at 120 DPI, **with the check on**: median **2.2 ms**, p95 3.0 ms, worst 3.2 ms over
+50 calls; a second run 2.5 / 3.7 / 4.2 ms (3.39 ms before the change, so it is inside the noise),
+against #22's 300 ms. **436 agent tests pass, including the Windows ones; ruff clean.** All 50
+measured calls named an element, so the hit test and the walk agree on identity for every element
+of the trial window.
+
+**Still to do:** omer's re-review, the scaling manual check (steps are on the issue and in the
+task note), and the schema `$defs` **only if #224 merges first** — settled on #227: whichever of
+the two merges second adds them (#224 first → 1.1 here; #227 first → omer folds it into 1.0).
+
+## What I owe from the 2026-11-12 reviews
+
+- **#229 (run report), the one finding worth acting on:** the endpoint holds every screenshot
+  *and* the whole HTML in memory — measured arithmetic for its own NFR-09 case is ~58 MB peak in
+  English and **~90 MB in Turkish**, because `Words.TR.title` contains `ı` (U+0131) and that one
+  character flips the 15-million-char `StringBuilder` from LATIN1 to UTF-16. The ceiling is
+  `ayna.screenshots.max-size` × `stepCount` = 400 MB of PNG, and the container has no `mem_limit`
+  or `-Xmx`. Fix offered: `StreamingResponseBody` + `Base64.getEncoder().wrap(out)`. Relevant to
+  me because **#54 sends the window, not the desktop**, which is what keeps the real size small.
+- **#229 Q1 — `category` belongs in the step result before the freeze.** FR-35 names five
+  categories *and* says the client shall show them; `docs/agent-rpc.md` already reserves the
+  field for #63; the server's `StepResultResponse` has no place for it. If #224 freezes without
+  it, FR-35's client half becomes a 1.1 bump. `expected`/`actual` for a Verify can wait — I will
+  write `message` so a failed Verify names both values.
+- **#229 Q2 — the CLI (#61) may save the report, as `--report <path>`, opt-in**, fetched *after*
+  the last screenshot upload is accepted (the outbox orders result → screenshot, so a report taken
+  at `finish` time can be missing images), and **a failed fetch never changes the exit code**.
+  I offered to open it as its own issue rather than widen #61.
+- **#229 small:** `repairProposed` is a documented step status with no words and no colour in the
+  report (server 400s it until #74, so it is pre-emptive); times are UTC in Docker while the
+  tester is at UTC+03:00 → `TZ` in `docker-compose.yml`.
+- **#228 (grid columns) is verified, not just reviewed.** I ran omer's rule against real AYNA
+  captures today: Qt `QTableWidget` → `['Ad','Soyad','Şehir']` (row header `1` at
+  `[648,316,666,353]` excluded by one pixel against the first cell's left edge 667), KeePass 2
+  `m_lvEntries` → the five `HeaderItem` names, `QListWidget` → `[]`. Two notes left on the PR:
+  `<=` in the row-header test must not be tightened to `<`, and when no cell is captured
+  (virtualised or a budget-truncated walk) the row headers cannot be excluded.
+- **#221's UI half still needs the Windows session**: the dropdown in the running app with the
+  server behind it (steps 3–4 of omer's check). The rule half is done.
 
 ## What I promised in the 2026-11-10 reviews
 
@@ -99,6 +139,10 @@ All omer's, all needing this machine:
 - **#225/#152** — the load test, for a second data point. Needs omer's `python3` fix first.
 - **#197** — the check popover and the test-list resizer at 100 % **and** 150 %, `npm run demo`,
   and **Ctrl+Z / Ctrl+Y**, which were never pressed (only ⌘Z on macOS).
+- **#221** — the column dropdown in the running app (omer's steps 3–4 and 6); the header rule
+  itself is already verified against real captures, so only the UI is open.
+- **#22** — the scaling check, which is *mine* and needs the user to change the display scaling:
+  100 % and 150 %, `pytest tests/test_uia_element_from_point.py -q` at each, 23 passed expected.
 - New: the **nav at 1280 px** — "Nesne Deposu" is the longest nav label now and it collapses to
   icons below 1180.
 - **A second monitor at another scaling is impossible here**: this machine has one 1920×1080

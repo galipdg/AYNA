@@ -460,3 +460,33 @@ incidentally all session — every client start launched the agent and every clo
 - Also learned the hard way that a UIA hit test answers with what is **visible**: the first
   Windows run failed because pytest's own terminal was over the trial app.
 - Next step: the scaling manual check with the user, then the PR with `Closes #22`.
+
+## 2026-11-12 — #22's review answered, #228 and #229 reviewed, #33 started
+
+- **Answered omer's changes-requested review on PR #227** (`142a6c6`). He was right and it was
+  the dangerous case, not a rare one: `match_in_document` let a single same-bounds candidate win
+  with no COM call, which only holds while a window keeps the same elements in the same
+  rectangles. Every candidate now goes to `CompareElements`, and the deepest-candidate fallback
+  is gated on `controlType` / `name` / `automationId`. The check is free: median 2.2 ms and
+  2.5 ms over two runs of 50, against 3.39 ms *before* it. 436 agent tests pass here including
+  the Windows ones. His real question — do the hit test and the walk agree on identity for real
+  leaves — is answered yes: all 50 calls named an element, the fallback was never taken.
+- Also fixed a flake I caused: `test_a_window_that_was_never_captured_has_no_snapshot_id` failed
+  once with another window's handle, because the module fixture raises the trial window only at
+  setup. Any Windows test about a point has to own the stacking order right before it points.
+- **Ticked #22's criteria 1 and 2 on the issue** with the evidence in a comment, and posted
+  criterion 3 (display scaling) as a manual check with `needs-windows-test` — it needs the user
+  at the machine, and this display sits at 125 %.
+- **Reviewed and approved omer's #228 (#221 grid columns).** Did not take the rule on trust: ran
+  his `GridColumns.of` against real AYNA captures of the Qt probe app and KeePass 2. Both shapes
+  hold, including the part he asked about (Qt's column headers really are `Header` children named
+  with the column text, and the row header is excluded — by exactly one pixel).
+- **Reviewed and approved omer's #229 (#59 HTML run report).** The finding worth having: the
+  endpoint holds every screenshot and the whole HTML in memory, ~58 MB peak in English and ~90 MB
+  in Turkish for his own NFR-09 case, because one `ı` in the Turkish title inflates a
+  15-million-character `StringBuilder` to UTF-16. Offered the streaming fix. Answered his two
+  questions: `category` (FR-35) must be in the step result before the freeze, and the CLI may
+  save the report as an opt-in `--report`, fetched after the last screenshot upload.
+- **Started #33** (sample app v1) on `hasan/33-sample-app` from `main`. Nothing built yet.
+- Next step: read `docs/rs/scenarios.md` for the behaviour the reference scenarios assume of the
+  sample app, write the task note, then build the screens.
