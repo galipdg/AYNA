@@ -263,3 +263,30 @@ version the branch was built on). Always compare the merged tree with what you e
 pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
 - 2026-11-10 · omer · git · **GitHub ignores `merge=union`**: after one memory PR merged, the next PR touching `journal.md` showed CONFLICTING on GitHub although `git merge origin/main` locally was clean (#217 after #222). Merging `main` into the branch locally and pushing clears it. `active.md` is overwrite-only, so every open branch of the same person conflicts on it; take `main`'s side while merging a train of PRs and write the final `active.md` on the last branch to merge.
 - 2026-11-08 · omer · #51 · **A second Compose stack can run beside the one you are using**, for a smoke test on the real image without stopping it: `docker compose -p <other-name> -f docker-compose.yml -f override.yml up -d --build`, where the override has `ports: !reset []` under `neo4j` and `ports: !override ["28080:8080"]` under `server`. The project name gives it its own containers and volumes; `down -v` with the same `-p` and files removes only those.
+
+## 2026-11-12 — `Invoke` is not enough for a Click (hasan, #221's Windows check, for #40)
+
+Driving HandBrake 1.11.2 (WPF) to open its queue, `IUIAutomationInvokePattern::Invoke` on the
+toolbar **Queue** button threw `COMError -2147220992` while a real mouse click on the same
+element worked. The element reported the Invoke pattern and was visible and enabled; it simply
+refused to be invoked. Earlier in the same session the opposite happened on HandBrake's
+"Check for updates?" dialog: `click_input()` left the dialog open and `invoke()` dismissed it.
+
+→ **Playback (#40) cannot implement Click as one call.** Try the pattern, and on a `COMError`
+fall back to a real click at the element's centre (and the reverse where a click does not land),
+rather than reporting the step as failed. Two of our four pilot apps already disagree about which
+one works, so this is the common case, not an edge case. The same applies to any Spy or recorder
+action that "presses" something.
+
+## 2026-11-12 — Where a teammate's Windows check gets written down (hasan, #221)
+
+Running someone else's `needs-windows-test` check leaves notes that belong to **three** different
+places, and the rules collide: the result is an issue comment, a gotcha belongs here, but the
+session's own journal and `active.md` are mine while the branch under test is theirs — and
+nothing of mine may be committed on their branch. What works: do the run on their branch, post
+the result as an issue comment (that is the durable record and it needs no branch at all), and
+put only append-only memory (`learnings.md`, `journal.md`) on a small branch of your own cut from
+`main`, where `merge=union` keeps it conflict-free.
+
+→ Do **not** reach for `active.md` for this: it is overwrite-merged, so a third divergent copy on
+a third branch is a conflict waiting to happen. It can wait until one of your own PRs merges.

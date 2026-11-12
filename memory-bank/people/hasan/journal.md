@@ -426,3 +426,36 @@ two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`
 **Next step:** #17 (omer's PR #154) is the last item in the Windows queue. Its happy path ran
 incidentally all session — every client start launched the agent and every close logged
 `stdin closed, shutting down` — so the check is presumably about crash and restart.
+
+## 2026-11-12 (late) — omer's #221 Windows check: 7 of 7 pass
+
+- **Ran the whole check on `omer/221-grid-columns` (`c1534e3`) with the user driving the UI, and
+  it passes.** Set up the backend from that branch, `npm ci`, KeePass 2 via
+  `kp_state.py main`, the Qt probe, and HandBrake 1.11.2. Result posted as a comment on #221 and
+  `needs-windows-test` removed.
+- **Recorded it at the `columns` level, not only as "the dropdown looked right"**, because that
+  field is what feeds the dropdown and it is checkable from the API: KeePass 2 `main.entryList`
+  → `['Title','User Name','Password','URL','Notes']`; Qt `probe.customerGrid` →
+  `['Ad','Soyad','Şehir']`; HandBrake `queue.jobs` → `[]`. Three UI frameworks, which is as much
+  as this machine can offer.
+- **Step 6 is the one that mattered and it held:** no `1`, `2`, `3` among the Qt columns, even
+  though Qt publishes row and column headers as `Header` with the *same* `automationId` and the
+  only separator is one pixel (row header ends at x=666, first cell starts at x=667).
+- **Said plainly in the report that step 7 did not test what it hoped to.** HandBrake's queue is
+  a `List` (`queueJobs`) with no `Header` child at all, not a WPF `DataGrid`, so it exercised the
+  free-text fallback instead. The `DataGrid` branch is still unexercised and nothing in
+  `C:\ayna-pilots\` has one. Better to leave that gap visible than to let a `List` stand in for
+  it.
+- **Checked two suspicions before reporting them and both were wrong**, which is the useful part:
+  the mojibake in app names was my console's codepage (the server stores `ı` U+0131 and `Ş`
+  U+015E correctly), and the "empty space" the user saw next to *Metni olan satır* is the row-text
+  input with its hint. Neither became a false finding on a teammate's PR.
+- **One real finding, mine not omer's:** `Invoke` on HandBrake's WPF toolbar button throws
+  `COMError -2147220992` while a mouse click works — and on its update dialog the reverse was
+  true. #40 cannot implement Click as a single call. In `learnings.md`.
+- Two deviations from the step text worth fixing in it: the health check is on **8081** here
+  (#208's `.env` escape, another program holds 8080) and the Qt window's *title* is
+  `AYNA Grid Probe` while `GridProbeWindow` is only in the automation id.
+- Next step: **#29** (RQ1 recognition harness, Week 4, due 16 Nov) unless #162 jumps the queue —
+  it is overdue from Week 3 and by the earliest-milestone rule it should go first; worth one
+  question to the user. My own #22/#33 are both finished and waiting only on reviews.
