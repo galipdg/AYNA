@@ -40,19 +40,23 @@ final class RepoObjectDtos {
 	/**
 	 * `usedBy`: the tests whose steps target the object, by name. `element`: the descriptor of
 	 * the Element it resolves to in the most recent capture (descriptor property → value, in the
-	 * descriptor's order), the values the editor starts from.
+	 * descriptor's order), the values the editor starts from. `columns`: see {@link RepoObjectSummary}.
 	 */
 	record RepoObjectResponse(String id, String appId, String name, Map<String, Object> primary,
 			Map<String, Object> fallback, List<Resolution> resolvesTo, List<TestRef> usedBy,
-			Map<String, Object> element, UserRef createdBy, Instant createdAt, UserRef updatedBy, Instant updatedAt) {
+			Map<String, Object> element, List<String> columns, UserRef createdBy, Instant createdAt, UserRef updatedBy, Instant updatedAt) {
 	}
 
 	/**
 	 * One row of the repository list: `testCount` tests use the object (FR-08); `controlType`
-	 * and `nearestLabel` come from the most recent capture, for search and display.
+	 * and `nearestLabel` come from the most recent capture, for search and display. `columns`:
+	 * the column headers of a grid or list in that capture, in order (#221); empty when the
+	 * object is no grid or none were captured, and possibly incomplete, so never a list to
+	 * reject a column against.
 	 */
 	record RepoObjectSummary(String id, String name, Map<String, Object> primary, Map<String, Object> fallback,
-			String controlType, String nearestLabel, int testCount, List<Resolution> resolvesTo) {
+			String controlType, String nearestLabel, List<String> columns, int testCount,
+			List<Resolution> resolvesTo) {
 	}
 
 }

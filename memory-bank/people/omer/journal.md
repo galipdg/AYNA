@@ -275,3 +275,9 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR on omer's OK, then #203/#204, #205.
 - Later the same session: #205's PR #220 opened (reviews: galip, hasan); #221 opened for table column headers (Week 6). Then #53 on `omer/53-sdd-update`: SDD v0.4 with the three missing §7 ADR rows, status rows checked against the code (#15, #24, #25, #30, #38, #183–#185 Built; `columns` → #221), RQ1 path (#199). galip asked to refresh two stale §5 lines.
 - Later the same session, on omer's "merge the reviewed ones, fix problems and conflicts": hasan had approved all eight PRs, galip none. Applied hasan's before-merge points, merged `main` into each in turn, retested the client after each conflict, and merged #222, #217, #218, #219, #220, #223 and #225. Held #224: its `schemas/` change needs galip's approval too; hasan's fixes are pushed there.
+
+## 2026-11-10 · #221 grid column headers
+- Session start: `main` up to date (`3df2b81`), inbox handled, no review requests. SSH to GitHub still times out; fetched over HTTPS.
+- Found that every Element keeps `siblingIndex`, so the header order survives in the graph: `columns` is read from the captured tree at request time (`GridColumns`), with no snapshot, graph or migration change and no ADR (omer had first agreed to an `Element.columns` property + ADR, which I proposed on the wrong belief that the order was lost).
+- Client: the row picker's and the `cell` check's column field is a dropdown with "Other…" when columns are known. #221's criteria rewritten on GitHub. Notes to galip (#37: `columns` can be incomplete, do not reject on it) and hasan (Windows check).
+- Next: PR on omer's OK, manual check on #221 with `needs-windows-test`; then #59.

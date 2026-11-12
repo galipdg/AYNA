@@ -102,6 +102,7 @@ export default function StepTable({
   const [focusKey, setFocusKey] = useState<string>()
   const [widths, setWidths] = useState(chosenWidths)
   const known = new Set((objects ?? []).map((object) => object.name))
+  const columnsOf = new Map((objects ?? []).map((object) => [object.name, object.columns]))
   // The elements each kind of action can use: any, grids and lists, grids (`targetTypes`).
   const offered = new Map(
     [undefined, ROW_CONTROL_TYPES, GRID_CONTROL_TYPES].map((types) => [
@@ -335,6 +336,7 @@ export default function StepTable({
                 <td>
                   <ValueCell
                     draft={draft}
+                    columns={columnsOf.get(draft.target) ?? []}
                     label={label(strings.stepsHeaderValue)}
                     invalid={wrong('value')}
                     describedBy={describedBy}
@@ -415,12 +417,15 @@ export default function StepTable({
 /** What the action needs: text to type, an item to choose, a row, a check, or nothing. */
 function ValueCell({
   draft,
+  columns,
   label,
   invalid,
   describedBy,
   onChange,
 }: {
   draft: DraftStep
+  /** The target's captured column headers; empty when unknown. */
+  columns: string[]
   label: string
   invalid?: boolean
   describedBy?: string
@@ -448,6 +453,7 @@ function ValueCell({
             first={first}
             common={common}
             draft={draft}
+            columns={columns}
             label={label}
             onChange={onChange}
           />
@@ -465,6 +471,7 @@ function ValueCell({
           first={first}
           common={common}
           draft={draft}
+          columns={columns}
           label={label}
           onChange={onChange}
         />
@@ -562,6 +569,8 @@ interface FieldsProps {
   /** The step's problem marking, on every control. */
   common: Common
   draft: DraftStep
+  /** The target's captured column headers; empty when unknown. */
+  columns: string[]
   /** The value cell's label; each control adds its own part. */
   label: string
   onChange: (change: Partial<DraftStep>) => void
@@ -569,10 +578,9 @@ interface FieldsProps {
 
 /**
  * The row of SelectRow, `cell` and `rowExists`: its number from the top, or the text of one of
- * its cells, in a given column or any (ADR step-schema-v0-2-rows). The column is typed, since
- * the repository does not keep a grid's column headers yet.
+ * its cells, in a given column or any (ADR step-schema-v0-2-rows).
  */
-function RowPicker({ first, common, draft, label, onChange }: FieldsProps) {
+function RowPicker({ first, common, draft, columns, label, onChange }: FieldsProps) {
   return (
     <>
       <div className="step-check-line">
@@ -609,13 +617,13 @@ function RowPicker({ first, common, draft, label, onChange }: FieldsProps) {
       {draft.rowBy === 'value' && (
         <div className="step-check-line">
           <span className="hint">{strings.stepsRowInColumn}</span>
-          <input
-            {...common}
-            aria-label={`${label}: ${strings.stepsRowInColumn}`}
-            maxLength={100}
-            placeholder={strings.stepsAnyColumn}
+          <ColumnField
+            common={common}
+            columns={columns}
+            label={`${label}: ${strings.stepsRowInColumn}`}
+            empty={strings.stepsAnyColumn}
             value={draft.rowColumn}
-            onChange={(event) => onChange({ rowColumn: event.target.value })}
+            onChange={(rowColumn) => onChange({ rowColumn })}
           />
         </div>
       )}
@@ -623,8 +631,81 @@ function RowPicker({ first, common, draft, label, onChange }: FieldsProps) {
   )
 }
 
+/** The option that switches a column list to free text; no header text starts with a NUL. */
+const OTHER_COLUMN = '\u0000other'
+
+/**
+ * A column header (#221): a list of the target's captured headers when there are any, else free
+ * text. The list may miss columns (scrolled out or virtualised when captured), so "Other…"
+ * switches to typing, and a stored column that is not in the list is shown as typed text.
+ * `empty` names the empty choice: "any column" for a row's key, "choose a column" for a `cell`
+ * check, which needs one (`required`).
+ */
+function ColumnField({
+  common,
+  columns,
+  label,
+  empty,
+  placeholder = empty,
+  required = false,
+  value,
+  onChange,
+}: {
+  common: Common
+  columns: string[]
+  label: string
+  empty: string
+  placeholder?: string
+  required?: boolean
+  value: string
+  onChange: (value: string) => void
+}) {
+  // "Other…" is open for this list of columns only, so choosing another grid closes it (#228).
+  const listKey = columns.join('\u0001')
+  const [typingFor, setTypingFor] = useState<string | null>(null)
+  const typing = typingFor === listKey
+  const text = (
+    <input
+      {...common}
+      // Beside the list it needs a name of its own; alone it is the field itself (#228).
+      aria-label={columns.length === 0 ? label : `${label}: ${strings.stepsOtherColumn}`}
+      maxLength={100}
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  )
+  if (columns.length === 0) return text
+  const custom = typing || (value !== '' && !columns.includes(value))
+  return (
+    <>
+      <select
+        {...common}
+        aria-label={label}
+        value={custom ? OTHER_COLUMN : value}
+        onChange={(event) => {
+          const chosen = event.target.value
+          setTypingFor(chosen === OTHER_COLUMN ? listKey : null)
+          if (chosen !== OTHER_COLUMN) onChange(chosen)
+        }}
+      >
+        <option value="" disabled={required}>
+          {empty}
+        </option>
+        {columns.map((column) => (
+          <option key={column} value={column}>
+            {column}
+          </option>
+        ))}
+        <option value={OTHER_COLUMN}>{strings.stepsOtherColumn}</option>
+      </select>
+      {custom && text}
+    </>
+  )
+}
+
 /** The controls of a check: what to read, where (row and column), and what to expect. */
-function CheckFields({ first, common, draft, label, onChange }: FieldsProps) {
+function CheckFields({ first, common, draft, columns, label, onChange }: FieldsProps) {
   const kind = checkKind(draft.property)
   return (
     <>
@@ -644,18 +725,26 @@ function CheckFields({ first, common, draft, label, onChange }: FieldsProps) {
         </select>
       </div>
       {readsRow(draft.property) && (
-        <RowPicker common={common} draft={draft} label={label} onChange={onChange} />
+        <RowPicker
+          common={common}
+          draft={draft}
+          columns={columns}
+          label={label}
+          onChange={onChange}
+        />
       )}
       {draft.property === 'cell' && (
         <div className="step-check-line">
           <span className="hint">{strings.stepsColumn}</span>
-          <input
-            {...common}
-            aria-label={`${label}: ${strings.stepsColumn}`}
-            maxLength={100}
+          <ColumnField
+            common={common}
+            columns={columns}
+            label={`${label}: ${strings.stepsColumn}`}
+            empty={strings.stepsChooseColumn}
             placeholder={strings.stepsColumnPlaceholder}
+            required
             value={draft.column}
-            onChange={(event) => onChange({ column: event.target.value })}
+            onChange={(column) => onChange({ column })}
           />
         </div>
       )}

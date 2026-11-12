@@ -38,6 +38,7 @@ import com.ayna.server.tests.StepSchema;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 /** The object repository API (#25, #30), against a real Neo4j (Testcontainers, needs Docker). */
@@ -270,6 +271,53 @@ class RepoObjectIntegrationTest {
 		mvc.perform(get("/api/repo-objects/{id}", "no-such-object")).andExpect(status().isNotFound());
 	}
 
+	/**
+	 * #221: a grid's or list's column headers come from the captured tree, in `siblingIndex`
+	 * order: a KeePass-2-like list (a Header with HeaderItems) and a Qt-like table (direct
+	 * Headers, a row header left of the cells). Any other object has none.
+	 */
+	@Test
+	void gridsAndListsCarryTheirCapturedColumnHeaders() throws Exception {
+		ObjectNode document = trialLogin();
+		document.put("snapshotId", "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f");
+		var elements = (ArrayNode) document.get("elements");
+		addElement(elements, "g1", "e0", Map.of("automationId", "main.entries", "controlType", "List", "siblingIndex", 8));
+		addElement(elements, "g2", "g1", Map.of("name", "Header Control", "controlType", "Header", "siblingIndex", 0));
+		addElement(elements, "g3", "g2", Map.of("name", "Title", "controlType", "HeaderItem", "siblingIndex", 0));
+		addElement(elements, "g4", "g2", Map.of("name", "URL", "controlType", "HeaderItem", "siblingIndex", 2));
+		addElement(elements, "g5", "g2", Map.of("name", "User Name", "controlType", "HeaderItem", "siblingIndex", 1));
+		addElement(elements, "g6", "g1", Map.of("name", "Sample Entry", "controlType", "ListItem", "siblingIndex", 1));
+		addElement(elements, "t1", "e0", Map.of("automationId", "main.customers", "controlType", "Table", "siblingIndex", 9));
+		addElement(elements, "t2", "t1", Map.of("controlType", "Pane", "siblingIndex", 0, "bounds", List.of(10, 10, 40, 30)));
+		addElement(elements, "t3", "t1",
+				Map.of("name", "Ad", "controlType", "Header", "siblingIndex", 1, "bounds", List.of(40, 10, 140, 30)));
+		addElement(elements, "t4", "t1",
+				Map.of("name", "Soyad", "controlType", "Header", "siblingIndex", 2, "bounds", List.of(140, 10, 240, 30)));
+		addElement(elements, "t5", "t1",
+				Map.of("name", "1", "controlType", "Header", "siblingIndex", 3, "bounds", List.of(10, 30, 40, 50)));
+		addElement(elements, "t6", "t1",
+				Map.of("name", "Ayşe", "controlType", "DataItem", "siblingIndex", 4, "bounds", List.of(40, 30, 140, 50)));
+		((ObjectNode) document.get("capture")).put("elementCount", elements.size());
+		importSnapshot(appId, versionId, document);
+
+		String list = createdId(request("main.entryList", "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f", "g1",
+				Map.of("automationId", "main.entries"), null));
+		createdId(request("main.customerGrid", "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f", "t1",
+				Map.of("automationId", "main.customers"), null));
+		create(appId, userNameInput("login.userNameInput")).andExpect(status().isCreated());
+
+		mvc.perform(get("/api/apps/{appId}/repo-objects", appId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[*].name").value(contains("login.userNameInput", "main.customerGrid", "main.entryList")))
+			.andExpect(jsonPath("$[0].columns.length()").value(0))
+			.andExpect(jsonPath("$[1].columns").value(contains("Ad", "Soyad")))
+			.andExpect(jsonPath("$[2].columns").value(contains("Title", "User Name", "URL")));
+		mvc.perform(get("/api/repo-objects/{id}", list))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.columns").value(contains("Title", "User Name", "URL")))
+			.andExpect(jsonPath("$.element.columns").doesNotExist());
+	}
+
 	/** FR-08: a step points at the object, not its name, so it follows a rename. */
 	@Test
 	void aRenameKeepsTheStepsThatUseTheObject() throws Exception {
@@ -401,9 +449,14 @@ class RepoObjectIntegrationTest {
 	}
 
 	private ObjectNode request(String name, String elementId, Map<String, Object> primary, Map<String, Object> fallback) {
+		return request(name, TRIAL_SNAPSHOT_ID, elementId, primary, fallback);
+	}
+
+	private ObjectNode request(String name, String snapshotId, String elementId, Map<String, Object> primary,
+			Map<String, Object> fallback) {
 		Map<String, Object> body = new HashMap<>();
 		body.put("name", name);
-		body.put("snapshotId", TRIAL_SNAPSHOT_ID);
+		body.put("snapshotId", snapshotId);
 		body.put("snapshotElementId", elementId);
 		body.put("primary", primary);
 		body.put("fallback", fallback);
@@ -419,6 +472,11 @@ class RepoObjectIntegrationTest {
 		try (InputStream in = new ClassPathResource("schemas/examples/snapshot/trial-login.json").getInputStream()) {
 			return (ObjectNode) mapper.readTree(in);
 		}
+	}
+
+	private void addElement(ArrayNode elements, String id, String parentId,
+			Map<String, Object> element) {
+		elements.add(mapper.valueToTree(Map.of("id", id, "parentId", parentId, "element", element)));
 	}
 
 	private void importSnapshot(String app, String version, JsonNode document) throws Exception {
