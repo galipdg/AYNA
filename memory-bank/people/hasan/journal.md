@@ -452,3 +452,70 @@ incidentally all session — every client start launched the agent and every clo
 - Next step: with the machine idle, `kp_state.py main` → `capture keepass2 --screen main`,
   the same for `entry`, HandBrake `main-summary`, then `measure`. Then leave the machine alone
   for #162's idle batch.
+## 2026-11-12 — #33: the sample app finished, and three faults the first full test run found
+
+The session before this one wrote the app — six screens, `model.py` without Qt, `texts.py`
+for every string, `uia_check.py` as the acceptance check — and stopped before anything had
+been run as a whole. So this session was mostly verification, and verification earned its
+keep: **the first full `pytest` run errored in all 25 UIA tests, 12 minutes 40 of it pure
+timeout, while every one of them passed alone.**
+
+The cause was mine from two layers away. `test_screens.py` set `QT_QPA_PLATFORM=offscreen`
+at import so the widget tests need no display; the UIA tests start the real app as a child
+process, and a child inherits the environment, so the app came up with no window at all and
+`wait("visible ready")` sat there for 30 s a time. The fix is to ask Qt for the platform in
+its own argv (`QApplication(["pytest", "-platform", "offscreen"])`) and never touch the
+environment — which also fixed the trial app's five UIA tests, broken the same way the
+moment both apps were in one run.
+
+Then `pytest eval` would not even collect: two `test_uia.py` and two `uia_dump.py` under
+`eval/`. This is exactly #199 again, four days later, and I had written the learning myself.
+Renamed to `uia_check.py` and `test_sample_uia.py`, and put the rule in `eval/AGENTS.md`
+where the next person will actually meet it, not only in `learnings.md`.
+
+The third fault was a real race in my own test: two `nextButton.click()` calls in a row sent
+the second before Qt had shown page two, so the wizard stayed on page one and the summary
+label genuinely was not in the tree. `until()` now treats `ElementNotFoundError` as "not
+ready yet" and the test waits for each page by its label. The probe that found it is worth
+remembering: dump the tree after the clicks with sleeps in between, and compare.
+
+**Where #33 stands:** two of three criteria are measured, not argued — 44 interactive
+controls over five screens, zero without an AutomationId, and the same checks run in
+`test_sample_uia.py` so CI repeats them. `pytest eval` is 125 green in 39 s, ruff clean.
+The README's id tables are generated from `uia_check.py --json`, so they cannot drift into
+fiction.
+
+**Next step:** criterion 3 ("runs with one command on every member's machine") is the only
+one left and it is not mine to tick — galip and omer have to run
+`python eval/apps/sample/sample_app.py` once on macOS. Asked for it in PR #230's body.
+
+**And a fourth fault, which CI found after I had pushed.** I kept `app.py` under its own name
+on the argument that it is only ever run, never imported — and wrote that reasoning into the
+PR and the README. It is importable, so the argument was worthless: the trial app's
+`from app import ...` resolved to *this* app's `app.py` in CI and broke two of its test
+modules. What made it invisible here is the detail worth keeping: both apps' conftests insert
+their own folder at `sys.path[0]`, so the conftest loaded **last** wins, and the order differs
+between `pytest eval` from the repository root (alphabetical) and CI's bare `pytest` from
+`eval/` (`testpaths` order). Renamed to `sample_app.py`, and from now on I reproduce CI's
+invocation (`cd eval; pytest -q`) before pushing anything that adds a module under `eval/`.
+The twice-stated rule now also says that a script is not exempt.
+
+## 2026-11-12 (second part) — the inbox and the review queue, triaged against GitHub
+
+My user asked what is still waiting on me. Answered from `gh`, not from the inbox, and that
+was the right call: **the review queue is empty** (no open PR requests my review) and most of
+the inbox's 29 entries are already handled — #6, #8 and #161 closed, #17's PR #154, #51's PR
+and #122 merged, the dozen October "please review" asks approved on 2026-11-07. Two entries
+are still live: my five #10 literature entries, and #221's Windows run.
+
+**One correction I had to make to my own report.** I read PR #227's `CHANGES_REQUESTED` and
+told my user the identity fix was the next task. It is already written and pushed — `142a6c6`,
+with the answer to omer posted at 14:41 today — so what is actually left there is criterion 3,
+the 100 % / 150 % display-scaling run, which needs a person at this machine. GitHub kept
+showing the old decision because omer has not looked again, and I took the label for the state.
+Lesson: on a PR of my own, read the branch's task note before believing the review decision.
+
+**The order my user agreed to:** (1) #22's scaling check, then ask omer for the re-review;
+(2) #221 / PR #228's Windows check, seven steps with KeePass 2 and `GridProbeWindow`; (3) #29,
+the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
+Week 3 and sits outside that order — it needs a decision, not work.

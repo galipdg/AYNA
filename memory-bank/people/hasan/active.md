@@ -54,13 +54,13 @@ machine alone for #162.
   the issue; `needs-windows-test` is removed. omer's `CHANGES_REQUESTED` was answered in
   `142a6c6` and the re-review is asked for again in a PR comment. **Nothing is left for me on
   #22 but waiting.**
-- **My two open PRs, both CI 5/5 green, both `MERGEABLE`, neither mine to merge:**
-  **#227** (`hasan/22-element-from-point`, `Closes #22`) — decision still `CHANGES_REQUESTED`
-  until omer re-reads it, which is the only thing between it and merge.
-  **#230** (`hasan/33-sample-app`, `Closes #33`) — `REVIEW_REQUIRED` from galip and omer. Its
-  last criterion needs one of them to run `python eval/apps/sample/sample_app.py` on macOS
-  (asked for in the PR body). Note #230's branch carries its own newer `active.md`, so expect a
-  conflict in this file if both merge — keep the later facts from each, they do not disagree.
+- **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on
+  `main`**. Its `active.md` conflicted with this one exactly as expected; resolved on
+  `hasan/29-rq1-measure` by keeping this header and folding its unique facts in below.
+  **#228 and #231 are merged too**, so omer's grid columns and run history are on `main`.
+- **One open PR of mine is still waiting: #227** (`hasan/22-element-from-point`, `Closes #22`),
+  CI 5/5 green, `MERGEABLE`, decision still `CHANGES_REQUESTED` until omer re-reads it — the only
+  thing between it and merge. Plus **#232** (memory only, #221) and **#29's** PR.
 - **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
   2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
 - **A third branch of mine is open: `hasan/221-windows-check-notes`**, cut from `main`, memory
@@ -230,6 +230,27 @@ Keep these; they are commitments, not opinions.
 **Control types measured** (`eval/spikes/grid-probes.md`): Qt `QTableWidget` → `Table` (Grid +
 Table patterns), Qt `QListWidget` → `List`, KeePass 2 `m_lvEntries` → `List` with a `Header` of
 five `HeaderItem`s. No pilot app has a WinForms `DataGridView`.
+
+## From #33 / PR #230, so merging this file did not lose them
+
+- **UI Automation cannot choose an item in a Qt combo box.** `SelectionItem.Select`, `Invoke`
+  and `ValuePattern.SetValue` all leave it unchanged, and the items only exist after
+  `ExpandCollapse`. **SC-20 needs that, so it is an open question for #40** and the reason the
+  sample app's combo boxes cannot be driven the obvious way.
+- **Reproduce CI before pushing anything under `eval/`:** `cd eval;
+  ../.venv/Scripts/python.exe -m pytest -q`. CI runs a bare `pytest` from `eval/`, not
+  `pytest eval` from the root, and the two disagree about which module wins when a name exists
+  twice (#199, #210). This is why #29 had to add `rq1/tests` to `testpaths` — a green
+  `pytest eval/rq1/tests` says nothing about CI.
+- For galip: `eval/apps/sample/texts.py` and `uia_check.py --json` are what
+  `eval/nl/objects/sample.json` (#36) should be generated from.
+- **#10, my five literature entries, is still owed** (omer's inbox note of 2026-11-05); PR #126
+  is still a draft and has no reviewer.
+- **#28 (G0 gate) is still open** with three of four criteria ticked; the last one is galip's #7.
+- Of the inbox's entries only two are still live (#10's entries, and now nothing of #221's).
+  **I offered to delete the handled ones; the user has not said yes, so they stay.**
+- `.codex/` sits untracked in my working tree (another CLI's hooks, my user's). Deliberately not
+  committed and not ignored.
 
 ## Windows queue — the next real session
 

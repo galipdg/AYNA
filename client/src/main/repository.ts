@@ -257,6 +257,7 @@ function versionIds(resolvesTo: ServerResolution[]): string[] {
 function isSummary(value: unknown): value is RepoObject & {
   controlType?: string | null
   nearestLabel?: string | null
+  columns?: unknown
   testCount: number
   resolvesTo: ServerResolution[]
 } {
@@ -272,10 +273,12 @@ function summary(row: {
   fallback: RepoObject['fallback']
   controlType?: string | null
   nearestLabel?: string | null
+  columns?: unknown
   testCount: number
   resolvesTo: ServerResolution[]
 }): RepoObjectSummary {
-  const { id, name, primary, fallback, controlType, nearestLabel, testCount, resolvesTo } = row
+  const { id, name, primary, fallback, controlType, nearestLabel, columns, testCount, resolvesTo } =
+    row
   return {
     id,
     name,
@@ -283,9 +286,16 @@ function summary(row: {
     fallback,
     ...(controlType ? { controlType } : {}),
     ...(nearestLabel ? { nearestLabel } : {}),
+    columns: columnNames(columns),
     testCount,
     versionIds: versionIds(resolvesTo),
   }
+}
+
+/** The column headers as sent; anything else (an older server, a wrong entry) gives none or is left out. */
+function columnNames(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((name): name is string => typeof name === 'string' && name.trim() !== '')
 }
 
 function isDetails(value: unknown): value is RepoObject & {

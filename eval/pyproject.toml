@@ -24,12 +24,12 @@ packages = []
 [tool.pytest.ini_options]
 # CI runs a bare `pytest` from `eval/`, so a new experiment folder is invisible until it
 # is listed here.
-testpaths = ["apps/trial/tests", "rq1/tests"]
+testpaths = ["apps/trial/tests", "apps/sample/tests", "rq1/tests"]
 
 [tool.ruff]
 target-version = "py311"
-# The trial app's tests import `app` and `uia_dump`, and `rq1/tests` imports `measure`,
-# as local modules.
-src = [".", "apps/trial", "rq1"]
+# The apps and their tests import `app`, `model`, `texts`, `windows` and `uia_dump`, and
+# `rq1/tests` imports `measure`, as local modules, so ruff has to know they are first-party.
+src = [".", "apps/trial", "apps/sample", "rq1"]
 # Throwaway spike scripts are not held to the module lint rules.
 extend-exclude = ["spikes"]
