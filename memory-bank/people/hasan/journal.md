@@ -426,3 +426,40 @@ two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`
 **Next step:** #17 (omer's PR #154) is the last item in the Windows queue. Its happy path ran
 incidentally all session — every client start launched the agent and every close logged
 `stdin closed, shutting down` — so the check is presumably about crash and restart.
+
+## 2026-11-12 — #33: the sample app finished, and three faults the first full test run found
+
+The session before this one wrote the app — six screens, `model.py` without Qt, `texts.py`
+for every string, `uia_check.py` as the acceptance check — and stopped before anything had
+been run as a whole. So this session was mostly verification, and verification earned its
+keep: **the first full `pytest` run errored in all 25 UIA tests, 12 minutes 40 of it pure
+timeout, while every one of them passed alone.**
+
+The cause was mine from two layers away. `test_screens.py` set `QT_QPA_PLATFORM=offscreen`
+at import so the widget tests need no display; the UIA tests start the real app as a child
+process, and a child inherits the environment, so the app came up with no window at all and
+`wait("visible ready")` sat there for 30 s a time. The fix is to ask Qt for the platform in
+its own argv (`QApplication(["pytest", "-platform", "offscreen"])`) and never touch the
+environment — which also fixed the trial app's five UIA tests, broken the same way the
+moment both apps were in one run.
+
+Then `pytest eval` would not even collect: two `test_uia.py` and two `uia_dump.py` under
+`eval/`. This is exactly #199 again, four days later, and I had written the learning myself.
+Renamed to `uia_check.py` and `test_sample_uia.py`, and put the rule in `eval/AGENTS.md`
+where the next person will actually meet it, not only in `learnings.md`.
+
+The third fault was a real race in my own test: two `nextButton.click()` calls in a row sent
+the second before Qt had shown page two, so the wizard stayed on page one and the summary
+label genuinely was not in the tree. `until()` now treats `ElementNotFoundError` as "not
+ready yet" and the test waits for each page by its label. The probe that found it is worth
+remembering: dump the tree after the clicks with sleeps in between, and compare.
+
+**Where #33 stands:** two of three criteria are measured, not argued — 44 interactive
+controls over five screens, zero without an AutomationId, and the same checks run in
+`test_sample_uia.py` so CI repeats them. `pytest eval` is 125 green in 39 s, ruff clean.
+The README's id tables are generated from `uia_check.py --json`, so they cannot drift into
+fiction.
+
+**Next step:** criterion 3 ("runs with one command on every member's machine") is the only
+one left and it is not mine to tick — galip and omer have to run
+`python eval/apps/sample/app.py` once on macOS. Asked for it in PR #230's body.

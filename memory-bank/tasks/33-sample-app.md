@@ -64,14 +64,14 @@ after a search), a required field (SC-34), a modal dialog when leaving an edited
 - [x] `pytest eval/apps/sample/tests` 57/57 green in 37 s (32 display-independent + 25 UIA)
 - [x] `pytest eval` (trial and sample together) 125/125 green in 45 s, after the two
       module renames and the `QT_QPA_PLATFORM` fix
-- [ ] ruff check + format: **not run, ruff is not installed in `.venv`**
-      (`pip install -e "eval[dev]"` needs the user's OK, §7)
+- [x] ruff check and `ruff format --check` clean over `eval` (ruff installed with
+      `pip install -e "eval[dev]"`, user's OK 2026-11-12)
 - [ ] Criterion 3 (one command on *every* member's machine) -- needs galip and omer on macOS
-- [ ] `eval/AGENTS.md` "Commands" section: the sample app's commands are not in it yet
-      (editing an AGENTS.md needs the user's OK, §7)
-- [ ] Commit, push, PR with `Closes #33`
-- Next step: get the user's OK for `pip install -e "eval[dev]"`, run ruff, then commit and
-  open the PR.
+- [x] `eval/AGENTS.md`: the sample app's commands, plus the one-module-name-per-tree and
+      the no-Qt-env-var rules (user's OK 2026-11-12)
+- [x] Four commits, pushed, **PR #230** open with `Closes #33`, both teammates requested
+- Next step: wait for galip's and omer's macOS run (the last criterion) and their review;
+  when PR #230 is green and approved, it merges and closes #33.
 
 ## Manual checks
 - 2026-11-12 · hasan · `uia_check.py` on all five screens · **pass** · evidence: the
@@ -105,7 +105,9 @@ for the same offscreen reason. All three are fixed and recorded in `learnings.md
   it is one more reason logical names must not be derived from the id path alone (#11).
 - `.codex/` (hooks for another CLI) sits untracked in the working tree, unrelated to #33 and
   not part of this commit. Ask the user whether it should be ignored or committed by them.
-- `eval/AGENTS.md` lists only the trial app's commands; the sample app's belong next to them.
+- The same `eval/` module-name trap as #199 bit again four days later, which says the rule
+  was in the wrong place: it is now in `eval/AGENTS.md`, where someone working in `eval/`
+  actually reads it, not only in `learnings.md`.
 
 ## Handoff
 The ids in the README are generated from `uia_dump.py --json`, never typed by hand — rerun
@@ -113,3 +115,9 @@ it after any rename, because the AutomationId is the dotted path over the whole 
 chain, so renaming one parent changes every descendant's id (#9 finding).
 
 ## Outcome (fill when the issue closes)
+Delivered `eval/apps/sample/` v1.0: six screens, `model.py` without Qt, `texts.py` for
+every visible string, `uia_check.py` as the one-command acceptance check, a README whose id
+tables are generated from it, and 57 tests. PR: https://github.com/galipdg/AYNA/pull/230.
+Criteria 1 and 2 measured on Windows on 2026-11-12 (44 interactive controls over five
+screens, 0 without an AutomationId); criterion 3 is **not ticked** -- the app has only been
+run on Windows, and galip and omer were asked in the PR body to run it once on macOS.
