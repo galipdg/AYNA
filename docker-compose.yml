@@ -32,6 +32,8 @@ services:
       AYNA_RUN_RETENTION: ${AYNA_RUN_RETENTION:-1000}
       AYNA_RUN_IDLE_TIMEOUT: ${AYNA_RUN_IDLE_TIMEOUT:-60m}
       AYNA_SCREENSHOT_MAX_SIZE: ${AYNA_SCREENSHOT_MAX_SIZE:-8MB}
+      # The run report (#59) writes its times in this zone; the image's default is UTC.
+      TZ: ${TZ:-Europe/Istanbul}
     volumes:
       - screenshots:/data/screenshots
     ports:
