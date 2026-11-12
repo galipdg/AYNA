@@ -18,6 +18,7 @@
 - 2026-11-10 — The report's language is the UI language, read in main (`uiLanguage`), so the renderer sends only the run id.
 - 2026-11-10 — The Save dialog comes before the download, so a cancel costs nothing; the file name is "AYNA <test> <local date time>.html", made safe by `reportFileName`.
 - 2026-11-10 — "Test" is the same word in Turkish: `runsFilterTest` / `runsHeaderTest` are in `SAME_IN_EVERY_LANGUAGE`.
+- 2026-11-12 — A `running` run on the screen updates on Refresh only; subscribing to `/ws/runs` here is left for #44's client half, which builds the live view (confirmed in reply to hasan).
 - 2026-11-10 — The list is keyed by its request (`Answered`), so a filter change shows "loading" without a setState in the effect (lint rule `react-hooks/set-state-in-effect`).
 
 ## Status
@@ -27,8 +28,8 @@
 - [x] Client lint, typecheck, 229/229 tests; `electron-vite build` passes
 - [x] Real stack (`docker compose -p ayna68`, port 28080): seed twice → 3 runs, filters by test and by status, TR/EN report of the failed run with 4 screenshots
 - [ ] Hand check of the screen in the Electron app (below)
-- [ ] PR (base `main` after #229 merges, or stacked on it), reviewer hasan
-- Next step: omer runs the hand check; then push and open the PR on omer's OK.
+- [x] PR #231 (retargeted to `main` after #229 merged); hasan approved 2026-11-12. His fix before merge is done: report files are swept synchronously at quit and once at start (they hold AUT screenshots). Small points done: a locked old file no longer reports a false failure, `formatDuration` rounds before choosing the unit, the not-found text names the application too, `reportFileName` avoids Windows device names, the seed uses #40's message wording and the runner's `not run: an earlier step failed`.
+- Next step: merge #231 when CI is green; hasan checks the screen on Windows (his queue).
 
 ## Manual checks
 - pending · omer · on macOS. **Setup:** the `ayna68` stack is up on `http://localhost:28080` (admin `demo` / `demo-pass-68`, seeded); `cd client && npm run dev`; Settings → server `http://localhost:28080`, log in as `demo`, choose "AYNA Deneme Uygulaması". **Steps:** 1. open Runs (Ctrl+4); 2. choose test "Hatalı şifre uyarısı"; 3. choose result "Başarısız"; 4. Raporu aç; 5. close the report, Kaydet…, save to Desktop, open the file with Wi-Fi off; 6. switch language to English and open a report again. **Expected:** 1. three runs, newest first, with pills Başarılı / Başarısız / Yarıda kesildi; 2. one run; 3. still one; 4. a window with the Turkish report and four screenshots; 5. "Rapor kaydedildi: …" and the file opens offline; 6. the report is in English. Teardown: `docker compose -p ayna68 down -v`.

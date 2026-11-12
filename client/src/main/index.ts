@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { rmSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -395,7 +396,9 @@ async function showReport(runId: string, html: string) {
     const previous = open.file
     open.file = file
     await open.window.loadFile(file)
-    await rm(previous, { force: true })
+    // Best effort: on Windows the file being replaced can still be locked (EBUSY), and the
+    // report did open; the sweep at quit or the next start takes what is left (#231 review).
+    void rm(previous, { force: true }).catch(() => {})
     open.window.focus()
     return
   }
@@ -413,7 +416,7 @@ async function showReport(runId: string, html: string) {
   window.on('closed', () => {
     const entry = reportWindows.get(runId)
     reportWindows.delete(runId)
-    if (entry) void rm(entry.file, { force: true })
+    if (entry) void rm(entry.file, { force: true }).catch(() => {})
   })
   await window.loadFile(file)
 }
@@ -428,11 +431,23 @@ function runFilter(value: unknown): RunFilter {
   return filter
 }
 
-app.on('will-quit', () => {
-  void rm(reportFolder(), { recursive: true, force: true })
-})
+/**
+ * Removes every report file. They hold screenshots of the application under test, so none may
+ * outlive AYNA: synchronous at quit (`will-quit` does not wait for a promise), and once at start
+ * for what a crash or a kill left behind (#231 review).
+ */
+function sweepReports() {
+  try {
+    rmSync(reportFolder(), { recursive: true, force: true })
+  } catch {
+    // A file still locked by a closing window; the next start removes it.
+  }
+}
+
+app.on('will-quit', sweepReports)
 
 app.whenReady().then(() => {
+  sweepReports()
   hardenSession()
   registerIpc()
   createMainWindow()

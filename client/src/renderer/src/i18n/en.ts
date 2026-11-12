@@ -466,7 +466,7 @@ export const en = {
     timeout: 'The server did not answer in time.',
     unauthorized: 'Your session has ended. Log in again.',
     'bad-response': 'The server answered with something unexpected.',
-    'not-found': 'This run, or its test, no longer exists. Refresh the list.',
+    'not-found': 'This run, its test or the application no longer exists. Refresh the list.',
     invalid: 'The server did not accept the filter.',
     cancelled: 'Not saved.',
     'write-failed': 'The report could not be written to this computer.',

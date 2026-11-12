@@ -443,7 +443,7 @@ export const tr: Strings = {
     timeout: 'Sunucu zamanında yanıt vermedi.',
     unauthorized: 'Oturumunuz sona erdi. Yeniden oturum açın.',
     'bad-response': 'Sunucu beklenmeyen bir yanıt verdi.',
-    'not-found': 'Bu çalıştırma ya da testi artık yok. Listeyi yenileyin.',
+    'not-found': 'Bu çalıştırma, test ya da uygulama artık yok. Listeyi yenileyin.',
     invalid: 'Sunucu filtreyi kabul etmedi.',
     cancelled: 'Kaydedilmedi.',
     'write-failed': 'Rapor bu bilgisayara yazılamadı.',

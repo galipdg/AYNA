@@ -103,8 +103,10 @@ export function repoObjectErrorText(error: RepoObjectError): string[] {
 /** A run's or step's length: "850 ms", "2.5 s" / "2,5 sn", "3 min 4 s" / "3 dk 4 sn". */
 export function formatDuration(ms: number): string {
   if (ms < 1000) return strings.durationMs(String(ms))
-  if (ms < 60_000) {
-    const seconds = (ms / 1000).toLocaleString(strings.locale, { maximumFractionDigits: 1 })
+  // Rounded to tenths before choosing the unit, so 59.96 s reads "1 min 0 s", not "60 s".
+  const tenths = Math.round(ms / 100) / 10
+  if (tenths < 60) {
+    const seconds = tenths.toLocaleString(strings.locale, { maximumFractionDigits: 1 })
     return strings.durationSeconds(seconds)
   }
   const total = Math.round(ms / 1000)

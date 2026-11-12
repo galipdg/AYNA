@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { after, before, describe, it } from 'node:test'
+import { formatDuration, setStringsLanguage } from '../../renderer/src/strings.ts'
 import { fetchReport, listRuns, reportFileName } from '../runs.ts'
 
 /** A run as the server's `RunSummary` sends it (#44). */
@@ -137,5 +138,25 @@ describe('reportFileName', () => {
     assert.equal(reportFileName('../..\u0001secret.html'), '-..-secret.html')
     assert.equal(reportFileName('  '), 'ayna-run.html')
     assert.equal(reportFileName('x'.repeat(300)).length, 125)
+  })
+
+  it('never gives one of the names Windows reserves for devices', () => {
+    assert.equal(reportFileName('CON'), 'ayna-run CON.html')
+    assert.equal(reportFileName('nul.txt'), 'ayna-run nul.txt.html')
+    assert.equal(reportFileName('com1'), 'ayna-run com1.html')
+    assert.equal(reportFileName('CONSOLE'), 'CONSOLE.html')
+  })
+})
+
+describe('formatDuration', () => {
+  it('picks the unit after rounding, so 59.96 s reads as a minute', () => {
+    setStringsLanguage('tr')
+    assert.equal(formatDuration(850), '850 ms')
+    assert.equal(formatDuration(2500), '2,5 sn')
+    assert.equal(formatDuration(59_940), '59,9 sn')
+    assert.equal(formatDuration(59_960), '1 dk 0 sn')
+    assert.equal(formatDuration(184_000), '3 dk 4 sn')
+    setStringsLanguage('en')
+    assert.equal(formatDuration(2500), '2.5 s')
   })
 })

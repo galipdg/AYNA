@@ -74,7 +74,8 @@ export async function fetchReport(
 
 /**
  * A file name for a saved report from a name the renderer suggests: no folders, no characters
- * Windows refuses, at most 120 characters, always `.html`.
+ * Windows refuses, none of its reserved device names (`CON`, `NUL`, `COM1`…), at most 120
+ * characters, always `.html`.
  */
 export function reportFileName(suggested: string): string {
   const name = suggested
@@ -86,7 +87,9 @@ export function reportFileName(suggested: string): string {
     .replace(/^\.+/, '')
     .slice(0, 120)
     .trim()
-  return `${name || 'ayna-run'}.html`
+  // Windows refuses these names with any extension.
+  const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i.test(name)
+  return `${reserved ? `ayna-run ${name}` : name || 'ayna-run'}.html`
 }
 
 function failure(answer: Extract<Answer, { ok: true }>): RunsError {

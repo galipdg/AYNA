@@ -193,9 +193,12 @@ async function sampleRun(api, testId, versionId, { fail, stop }) {
       stepId: steps[index].id,
       status,
       durationMs: status === 'notRun' ? null : 40 + ((index * 137) % 400),
+      // The wording #40 writes (hasan, #231 review), and the runner's line for a step not run.
       message: failed
-        ? `Checkpoint failed on ${steps[index].target}: expected the text to contain "Invalid", it was "Welcome, admin!"`
-        : null,
+        ? `${steps[index].target}: name should contain "Invalid", it is "Welcome, admin!"`
+        : status === 'notRun'
+          ? 'not run: an earlier step failed'
+          : null,
     }
     await api('PUT', `/api/runs/${run.id}/results/${index}`, result)
     if (status !== 'notRun') {
