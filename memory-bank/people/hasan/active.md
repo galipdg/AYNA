@@ -14,8 +14,9 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   3. **#201** (`hasan/dpi-awareness-v2`) — the two coordinate bugs from the Windows session.
   4. **#230** (`hasan/33-sample-app`, `Closes #33`) — new today. The app, its tests,
      `eval/AGENTS.md` and memory. CI's `eval` job failed on the first push (the `app.py`
-     name clash with the trial app) and was fixed with `sample_app.py`; re-check that CI is
-     5/5 before expecting a merge.
+     name clash with the trial app) and was fixed with `sample_app.py`; **CI is 5/5 green now**
+     (run 43262203133, the `eval` job ran 69 tests on the Windows runner). Waiting on the
+     two reviews and the macOS run.
 - **#33: two of three criteria are measured, the third is not mine to tick.** 44 interactive
   controls over five screens, 0 without an AutomationId, `pytest eval` 125 green in 39 s,
   ruff clean — all on Windows. Criterion 3 says *every member's machine*, so **galip and

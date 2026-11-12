@@ -80,8 +80,10 @@ after a search), a required field (SC-34), a modal dialog when leaving an edited
       and the trial app's `from app import ...` resolved to this app's. Renamed to
       `sample_app.py`. Both invocations green now: `cd eval; pytest -q` 69 passed (what CI
       runs) and `pytest eval` from the root 125 passed; ruff clean.
-- Next step: confirm CI is 5/5 green on PR #230 after the `sample_app.py` push, then wait
-  for galip's and omer's macOS run (the last criterion) and their review.
+- [x] **CI 5/5 green** on PR #230 after the rename (run 43262203133): the `eval` job
+      collected 69 items and all passed in 30.8 s on the Windows runner, so the 25 UIA tests
+      really ran there, not only here.
+- Next step: galip's and omer's macOS run (the last criterion) and their review of #230.
 
 ## Manual checks
 - 2026-11-12 · hasan · `uia_check.py` on all five screens · **pass** · evidence: the
