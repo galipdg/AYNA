@@ -3,8 +3,10 @@ package com.ayna.server.runs;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
@@ -25,6 +27,7 @@ import com.ayna.server.auth.UserRef;
 import com.ayna.server.error.ApiExceptions.ConflictException;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
+import com.ayna.server.error.ApiExceptions.TooLargeException;
 import com.ayna.server.error.FieldError;
 import com.ayna.server.runs.RunDtos.Events;
 import com.ayna.server.runs.RunDtos.RunDetail;
@@ -42,11 +45,15 @@ import tools.jackson.databind.node.ObjectNode;
  * test's steps, so a result's `stepIndex` stays true when the test is edited later. Writes are
  * safe to repeat: the client's outbox retries them. What other clients see goes out on
  * `/ws/runs` after the transaction commits, and only for writes that changed something.
+ * Screenshots, the idle timeout and retention are #51's (ADR run-screenshots-and-retention).
  */
 @Service
 public class RunService {
 
 	static final int HISTORY_LIMIT = 20;
+
+	/** Runs the application-wide history returns (#68). */
+	static final int APP_HISTORY_LIMIT = 100;
 
 	private static final String RUNNING = "running";
 
@@ -58,7 +65,7 @@ public class RunService {
 
 	private static final String NOT_RUN = "notRun";
 
-	/** Added by #51 and #74, which store the proposal that comes with it. */
+	/** Added by #74, which stores the proposal that comes with it (ADR run-screenshots-and-retention). */
 	private static final String REPAIR_PROPOSED = "repairProposed";
 
 	private static final Set<String> RUN_STATUSES = Set.of(RUNNING, PASSED, FAILED, ABORTED);
@@ -69,6 +76,12 @@ public class RunService {
 
 	/** What Neo4j reports when a uniqueness constraint refuses a write. */
 	private static final String CONSTRAINT_FAILED = "Neo.ClientError.Schema.ConstraintValidationFailed";
+
+	/** The first bytes of every PNG file. */
+	private static final byte[] PNG_SIGNATURE = { (byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n' };
+
+	/** Runs deleted per transaction by retention, so one sweep never holds a huge transaction. */
+	static final int RETENTION_BATCH = 100;
 
 	private static final String RUN_FIELDS = """
 			OPTIONAL MATCH (u:User {id: r.startedBy})
@@ -82,11 +95,15 @@ public class RunService {
 
 	private final ObjectMapper mapper;
 
-	public RunService(Driver driver, TestService tests, RunEvents events, ObjectMapper mapper) {
+	private final ScreenshotStore screenshots;
+
+	public RunService(Driver driver, TestService tests, RunEvents events, ObjectMapper mapper,
+			ScreenshotStore screenshots) {
 		this.driver = driver;
 		this.tests = tests;
 		this.events = events;
 		this.mapper = mapper;
+		this.screenshots = screenshots;
 	}
 
 	/** Starts a run of the test on an app version. `userId` is who started it (FR-40). */
@@ -104,7 +121,7 @@ public class RunService {
 				tx.run("""
 						MATCH (t:TestCase {id: $testId}), (v:AppVersion {id: $appVersionId})
 						CREATE (r:Run {id: $id, status: $status, stepCount: $stepCount, document: $document,
-						  startedBy: $userId, startedAt: datetime()})
+						  startedBy: $userId, startedAt: datetime(), lastActivityAt: datetime()})
 						CREATE (r)-[:OF]->(t)
 						CREATE (r)-[:ON_VERSION]->(v)""",
 						Map.of("testId", testId, "appVersionId", appVersionId, "id", id, "status", RUNNING, "stepCount",
@@ -140,6 +157,40 @@ public class RunService {
 				return tx.run("""
 						MATCH (r:Run)-[:OF]->(t:TestCase {id: $testId})
 						WHERE $status IS NULL OR r.status = $status
+						MATCH (r)-[:ON_VERSION]->(v:AppVersion)
+						""" + RUN_FIELDS + " ORDER BY r.startedAt DESC LIMIT $limit", params).list(RunService::summary);
+			});
+		}
+	}
+
+	/**
+	 * The application's runs, newest first, at most {@link #APP_HISTORY_LIMIT}: the run history
+	 * screen (#68, FR-22). `testId` and `status` narrow them; a test of another application is a
+	 * 404, like an unknown one.
+	 */
+	public List<RunSummary> listAppRuns(String appId, String testId, String status) {
+		if (status != null && !RUN_STATUSES.contains(status)) {
+			throw new InvalidRequestException("Unknown run status: " + status, List.of());
+		}
+		Map<String, Object> params = new HashMap<>();
+		params.put("appId", appId);
+		params.put("testId", testId);
+		params.put("status", status);
+		params.put("limit", APP_HISTORY_LIMIT);
+		try (Session session = driver.session()) {
+			return session.executeRead(tx -> {
+				if (!tx.run("MATCH (a:Application {id: $appId}) RETURN a LIMIT 1", params).hasNext()) {
+					throw new NotFoundException("Application not found: " + appId);
+				}
+				if (testId != null && !tx
+					.run("MATCH (:Application {id: $appId})-[:HAS_TEST]->(t:TestCase {id: $testId}) RETURN t LIMIT 1",
+							params)
+					.hasNext()) {
+					throw new NotFoundException("Test not found in this application: " + testId);
+				}
+				return tx.run("""
+						MATCH (:Application {id: $appId})-[:HAS_TEST]->(t:TestCase)<-[:OF]-(r:Run)
+						WHERE ($testId IS NULL OR t.id = $testId) AND ($status IS NULL OR r.status = $status)
 						MATCH (r)-[:ON_VERSION]->(v:AppVersion)
 						""" + RUN_FIELDS + " ORDER BY r.startedAt DESC LIMIT $limit", params).list(RunService::summary);
 			});
@@ -211,6 +262,170 @@ public class RunService {
 		return finished.run();
 	}
 
+	/**
+	 * Stores the PNG of a step whose result is already stored. Safe to repeat: the same image again
+	 * answers as a repeat, another image is a 409. The graph claims the image first, and the file
+	 * is written after the commit; a repeat writes the file again if it is missing, so a crash
+	 * between the two is healed by the client's retry.
+	 */
+	public ScreenshotWritten writeScreenshot(String runId, int stepIndex, byte[] png, long maxBytes) {
+		if (png.length > maxBytes) {
+			throw new TooLargeException("A screenshot may have at most " + maxBytes + " bytes, this one has more");
+		}
+		if (!isPng(png)) {
+			throw new InvalidRequestException("$", "The body must be a PNG image");
+		}
+		String hash = sha256(png);
+		String path = ScreenshotStore.relativePath(runId, stepIndex);
+		Claim claim;
+		try (Session session = driver.session()) {
+			claim = session.executeWrite(tx -> {
+				runRecord(tx, runId);
+				var result = tx.run("""
+						MATCH (r:Run {id: $runId})-[:HAS_RESULT]->(sr:StepResult {stepIndex: $stepIndex})
+						WITH r, sr, sr.screenshotHash AS before
+						SET sr.screenshotHash = coalesce(before, $hash), sr.screenshotPath = coalesce(sr.screenshotPath, $path),
+						  sr.screenshotReceivedAt = coalesce(sr.screenshotReceivedAt, datetime()),
+						  r.lastActivityAt = CASE WHEN before IS NULL THEN datetime() ELSE r.lastActivityAt END
+						RETURN sr.id AS id, before, sr.screenshotPath AS path""",
+						Map.of("runId", runId, "stepIndex", stepIndex, "hash", hash, "path", path));
+				if (!result.hasNext()) {
+					throw new NotFoundException(
+							"Step " + stepIndex + " of run " + runId + " has no result yet; send the result first");
+				}
+				Record stored = result.next();
+				String before = stored.get("before").asString(null);
+				if (before != null && !before.equals(hash)) {
+					throw new ConflictException(
+							"Step " + stepIndex + " of run " + runId + " already has a different screenshot");
+				}
+				return new Claim(stored.get("id").asString(), stored.get("path").asString(), before == null);
+			});
+		}
+		if (claim.created() || !screenshots.exists(claim.path())) {
+			screenshots.write(claim.path(), png);
+		}
+		return new ScreenshotWritten(claim.stepResultId(), claim.created());
+	}
+
+	/** The PNG of a step; 404 if the run, the result or its screenshot is missing. */
+	public byte[] readScreenshot(String runId, int stepIndex) {
+		String path;
+		try (Session session = driver.session()) {
+			path = session.executeRead(tx -> {
+				runRecord(tx, runId);
+				var result = tx.run("""
+						MATCH (:Run {id: $runId})-[:HAS_RESULT]->(sr:StepResult {stepIndex: $stepIndex})
+						RETURN sr.screenshotPath AS path""", Map.of("runId", runId, "stepIndex", stepIndex));
+				return result.hasNext() ? result.next().get("path").asString(null) : null;
+			});
+		}
+		byte[] png = path == null ? null : screenshots.read(path);
+		if (png == null) {
+			throw new NotFoundException("Step " + stepIndex + " of run " + runId + " has no screenshot");
+		}
+		return png;
+	}
+
+	/**
+	 * What the run's report shows (#59): the run, the names of its test, application and version,
+	 * and where its screenshots are. Read in one transaction, so a 404 comes before the report
+	 * starts; each file is read only when the report writes its step. A file that has gone
+	 * (retention meanwhile) is a step without a screenshot.
+	 */
+	RunReport.Input reportInput(String runId) {
+		record Read(RunDetail run, String testName, String applicationName, String version,
+				Map<Integer, String> paths) {
+		}
+		Read read;
+		try (Session session = driver.session()) {
+			read = session.executeRead(tx -> {
+				RunDetail run = detail(tx, runId);
+				Record names = tx.run("""
+						MATCH (r:Run {id: $id})-[:OF]->(t:TestCase)
+						MATCH (r)-[:ON_VERSION]->(v:AppVersion)<-[:HAS_VERSION]-(a:Application)
+						RETURN t.name AS test, a.name AS app, v.version AS version""", Map.of("id", runId)).single();
+				Map<Integer, String> paths = new HashMap<>();
+				tx.run("""
+						MATCH (:Run {id: $id})-[:HAS_RESULT]->(sr:StepResult)
+						WHERE sr.screenshotPath IS NOT NULL
+						RETURN sr.stepIndex AS stepIndex, sr.screenshotPath AS path""", Map.of("id", runId))
+					.forEachRemaining(r -> paths.put(r.get("stepIndex").asInt(), r.get("path").asString()));
+				return new Read(run, names.get("test").asString(), names.get("app").asString(),
+						names.get("version").asString(), paths);
+			});
+		}
+		Map<Integer, String> paths = read.paths();
+		return new RunReport.Input(read.run(), read.testName(), read.applicationName(), read.version(),
+				stepIndex -> paths.containsKey(stepIndex) ? screenshots.read(paths.get(stepIndex)) : null);
+	}
+
+	/**
+	 * Ends as `aborted` every running run with no write for `idle`: its client is gone and will
+	 * not finish it (ADR run-screenshots-and-retention). Watchers get `run.finished`.
+	 */
+	public List<RunSummary> abortIdleRuns(Duration idle) {
+		List<RunSummary> aborted;
+		try (Session session = driver.session()) {
+			aborted = session.executeWrite(tx -> {
+				List<String> ids = tx.run("""
+						MATCH (r:Run {status: $running})
+						WHERE coalesce(r.lastActivityAt, r.startedAt) < datetime() - duration({milliseconds: $idleMs})
+						WITH r, datetime() AS now
+						SET r.status = $aborted, r.finishedAt = now, r.endedBy = 'idleTimeout',
+						  r.durationMs = duration.inSeconds(r.startedAt, now).milliseconds
+						RETURN r.id AS id""", Map.of("running", RUNNING, "aborted", ABORTED, "idleMs", idle.toMillis()))
+					.list(r -> r.get("id").asString());
+				List<RunSummary> runs = new ArrayList<>();
+				for (String id : ids) {
+					runs.add(summary(runRecord(tx, id)));
+				}
+				return runs;
+			});
+		}
+		aborted.forEach(run -> events.publish(run.testId(), new Events.RunChanged(Events.RUN_FINISHED, run.testId(), run)));
+		return aborted;
+	}
+
+	/**
+	 * Keeps the newest `keep` runs of the whole server, by start time, and deletes the older ones
+	 * that have ended, with their results and screenshots (NFR-28, NFR-40). A running run is never
+	 * deleted, but it counts. Returns the deleted run ids.
+	 */
+	public List<String> deleteOldRuns(int keep) {
+		List<String> deleted = new ArrayList<>();
+		while (true) {
+			List<String> batch;
+			try (Session session = driver.session()) {
+				batch = session.executeWrite(tx -> tx.run("""
+						MATCH (r:Run)
+						WITH r ORDER BY r.startedAt DESC, r.id DESC
+						SKIP $keep
+						WITH r WHERE r.status <> $running
+						WITH r LIMIT $batch
+						OPTIONAL MATCH (r)-[:HAS_RESULT]->(sr:StepResult)
+						WITH r, r.id AS id, collect(sr) AS results
+						FOREACH (sr IN results | DETACH DELETE sr)
+						DETACH DELETE r
+						RETURN id""", Map.of("keep", keep, "running", RUNNING, "batch", RETENTION_BATCH))
+					.list(r -> r.get("id").asString()));
+			}
+			screenshots.deleteRuns(batch);
+			deleted.addAll(batch);
+			if (batch.size() < RETENTION_BATCH) {
+				return deleted;
+			}
+		}
+	}
+
+	/** Which of these ids name a run that still exists. */
+	public Set<String> existingRuns(Collection<String> runIds) {
+		try (Session session = driver.session()) {
+			return Set.copyOf(session.executeRead(tx -> tx.run("MATCH (r:Run) WHERE r.id IN $ids RETURN r.id AS id",
+					Map.of("ids", List.copyOf(runIds))).list(r -> r.get("id").asString())));
+		}
+	}
+
 	private Stored store(String runId, int stepIndex, JsonNode body, String canonical, String hash) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
@@ -245,6 +460,7 @@ public class RunService {
 				params.put("body", canonical);
 				tx.run("""
 						MATCH (r:Run {id: $runId})
+						SET r.lastActivityAt = datetime()
 						CREATE (r)-[:HAS_RESULT]->(:StepResult {id: $id, runId: $runId, stepIndex: $stepIndex,
 						  stepId: $stepId, status: $status, durationMs: $durationMs, message: $message,
 						  bodyHash: $hash, body: $body, receivedAt: datetime()})""", params).consume();
@@ -381,9 +597,12 @@ public class RunService {
 
 	private static StepResultResponse result(Record r) {
 		Value result = r.get("sr");
-		return new StepResultResponse(result.get("id").asString(), result.get("stepIndex").asInt(),
-				result.get("stepId").asString(null), result.get("status").asString(), longOrNull(result.get("durationMs")),
-				result.get("message").asString(null), instant(result.get("receivedAt")));
+		int stepIndex = result.get("stepIndex").asInt();
+		String screenshotUrl = result.get("screenshotPath").isNull() ? null
+				: "/api/runs/" + result.get("runId").asString() + "/results/" + stepIndex + "/screenshot";
+		return new StepResultResponse(result.get("id").asString(), stepIndex, result.get("stepId").asString(null),
+				result.get("status").asString(), longOrNull(result.get("durationMs")), result.get("message").asString(null),
+				instant(result.get("receivedAt")), screenshotUrl);
 	}
 
 	private static Instant instant(Value value) {
@@ -419,9 +638,25 @@ public class RunService {
 		return node;
 	}
 
+	private static boolean isPng(byte[] bytes) {
+		if (bytes.length < PNG_SIGNATURE.length) {
+			return false;
+		}
+		for (int i = 0; i < PNG_SIGNATURE.length; i++) {
+			if (bytes[i] != PNG_SIGNATURE[i]) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private static String sha256(String text) {
+		return sha256(text.getBytes(StandardCharsets.UTF_8));
+	}
+
+	private static String sha256(byte[] bytes) {
 		try {
-			byte[] digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+			byte[] digest = MessageDigest.getInstance("SHA-256").digest(bytes);
 			return HexFormat.of().formatHex(digest);
 		}
 		catch (NoSuchAlgorithmException ex) {
@@ -433,10 +668,17 @@ public class RunService {
 	public record StoredResult(String id, boolean created) {
 	}
 
+	/** `created` is false for the same image again. */
+	public record ScreenshotWritten(String stepResultId, boolean created) {
+	}
+
 	private record Stored(String id, String testId, boolean created) {
 	}
 
 	private record Finished(RunSummary run, boolean changed) {
+	}
+
+	private record Claim(String stepResultId, String path, boolean created) {
 	}
 
 }

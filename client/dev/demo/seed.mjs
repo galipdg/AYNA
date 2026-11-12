@@ -1,8 +1,10 @@
 // Sample data for `npm run demo`. It goes through the real REST API, so it passes the same
-// checks as the client. Running it again adds what is missing and puts the two sample tests
-// back as they were, so a rehearsal leaves nothing behind in them.
+// checks as the client. Running it again adds what is missing and puts the sample objects'
+// property sets and the two sample tests back as they were, so a rehearsal leaves nothing
+// behind in them.
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import { crc32, deflateSync } from 'node:zlib'
 import { defaultSnapshot } from '../mock/fake-agent-env.mjs'
 
 const STEP_SCHEMA = new URL('../../../schemas/step.schema.json', import.meta.url)
@@ -13,7 +15,7 @@ const APP = { name: 'AYNA Deneme Uygulaması', technology: 'PySide6' }
 const VERSIONS = ['1.0', '1.1']
 const CAPTURED_VERSION = '1.0'
 
-// Logical name → the element of `dev/mock/snapshot.json` it stands for.
+// Logical name → the element of the fake agent's capture (`defaultSnapshot`) it stands for.
 const OBJECTS = {
   'login.userNameInput': 'e8',
   'login.passwordInput': 'e10',
@@ -54,6 +56,27 @@ const TESTS = {
 }
 
 /**
+ * The objects to add, as the server takes them. Primary is the AutomationId. The backup set
+ * must find exactly one element too, or using it would be a failure rather than a repair
+ * (#40, #207): `name` + `controlType` does that in the trial window. `statusLabel` has no
+ * Name, so it keeps only its primary set.
+ */
+export function repoObjects(snapshot) {
+  return Object.entries(OBJECTS).map(([name, elementId]) => {
+    const { element } = snapshot.elements.find((node) => node.id === elementId)
+    const fallback =
+      element.name === undefined ? {} : { name: element.name, controlType: element.controlType }
+    return {
+      name,
+      snapshotId: snapshot.snapshotId,
+      snapshotElementId: elementId,
+      primary: { automationId: element.automationId },
+      fallback,
+    }
+  })
+}
+
+/**
  * The server takes a snapshot id into one version only, and a database that was used before
  * may hold the fixture's id already. So the sample capture gets an id of its own, which stays
  * the same on every run for this version.
@@ -67,10 +90,14 @@ function snapshotIdFor(versionId) {
 /** Calls the server; an unexpected answer becomes an error that names the call. */
 function client(server, token) {
   return async (method, path, body) => {
+    const png = body instanceof Uint8Array
     const response = await fetch(`${server}${path}`, {
       method,
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': png ? 'image/png' : 'application/json',
+      },
+      body: body === undefined || png ? body : JSON.stringify(body),
     })
     const text = await response.text()
     if (!response.ok) {
@@ -109,17 +136,15 @@ export async function seed(server, token) {
 
   const objectsPath = `/api/apps/${app.id}/repo-objects`
   const objects = await api('GET', objectsPath)
-  for (const [name, elementId] of Object.entries(OBJECTS)) {
-    const { element } = snapshot.elements.find((node) => node.id === elementId)
-    await ensure(objects, 'name', name, () =>
-      api('POST', objectsPath, {
-        name,
-        snapshotId: snapshot.snapshotId,
-        snapshotElementId: elementId,
-        primary: { automationId: element.automationId },
-        fallback: { controlType: element.controlType },
-      }),
-    )
+  for (const object of repoObjects(snapshot)) {
+    const saved = objects.find((item) => item.name === object.name)
+    if (!saved) {
+      await api('POST', objectsPath, object)
+    } else {
+      // An older seed or a rehearsal may have changed the sets: put them back.
+      const { primary, fallback } = object
+      await api('PATCH', `/api/repo-objects/${saved.id}`, { primary, fallback })
+    }
   }
 
   // The step schema's own version, not the snapshot's: the server accepts only that one.
@@ -132,5 +157,91 @@ export async function seed(server, token) {
     await api('PUT', `/api/tests/${test.id}/steps`, { version, steps })
   }
 
+  // Runs only once: a run is history, and the run history screen (#68) should show some.
+  if ((await api('GET', `/api/apps/${app.id}/runs`)).length === 0) {
+    const byName = await api('GET', testsPath)
+    const version = known.at(-1)
+    for (const run of RUNS) {
+      const test = byName.find((item) => item.name === run.test)
+      await sampleRun(api, test.id, version.id, run)
+    }
+  }
+
   return app
+}
+
+/**
+ * Sample runs (#68). `fail` is the step that fails, `stop` the step a crash stopped before;
+ * real screenshots come from the agent (#54), these are plain coloured cards.
+ */
+const RUNS = [
+  { test: 'Geçerli kullanıcıyla giriş' },
+  { test: 'Hatalı şifre uyarısı', fail: 3 },
+  { test: 'Geçerli kullanıcıyla giriş', stop: 2 },
+]
+
+async function sampleRun(api, testId, versionId, { fail, stop }) {
+  const run = await api('POST', '/api/runs', { testId, appVersionId: versionId })
+  const steps = run.document.steps
+  const last = stop ?? steps.length
+  for (let index = 0; index < last; index++) {
+    const failed = index === fail
+    const status = fail !== undefined && index > fail ? 'notRun' : failed ? 'failed' : 'passed'
+    const result = {
+      runId: run.id,
+      stepIndex: index,
+      stepId: steps[index].id,
+      status,
+      durationMs: status === 'notRun' ? null : 40 + ((index * 137) % 400),
+      // The wording #40 writes (hasan, #231 review), and the runner's line for a step not run.
+      message: failed
+        ? `${steps[index].target}: name should contain "Invalid", it is "Welcome, admin!"`
+        : status === 'notRun'
+          ? 'not run: an earlier step failed'
+          : null,
+    }
+    await api('PUT', `/api/runs/${run.id}/results/${index}`, result)
+    if (status !== 'notRun') {
+      const colour = failed ? [176, 48, 48] : [40 + index * 20, 90 + index * 10, 140]
+      await api('PUT', `/api/runs/${run.id}/results/${index}/screenshot`, card(colour))
+    }
+  }
+  const status = stop !== undefined ? 'aborted' : fail !== undefined ? 'failed' : 'passed'
+  await api('POST', `/api/runs/${run.id}/finish`, { status })
+}
+
+/** A 480 × 270 PNG of one colour with a lighter band: a stand-in for a window screenshot. */
+export function card([r, g, b], width = 480, height = 270) {
+  const row = Buffer.alloc(1 + width * 3)
+  const rows = []
+  for (let y = 0; y < height; y++) {
+    const band = y > height * 0.4 && y < height * 0.6
+    for (let x = 0; x < width; x++) {
+      row.set(
+        band ? [Math.min(r + 70, 255), Math.min(g + 70, 255), Math.min(b + 70, 255)] : [r, g, b],
+        1 + x * 3,
+      )
+    }
+    rows.push(Buffer.from(row))
+  }
+  const chunk = (type, data) => {
+    const length = Buffer.alloc(4)
+    length.writeUInt32BE(data.length)
+    const body = Buffer.concat([Buffer.from(type, 'ascii'), data])
+    const crc = Buffer.alloc(4)
+    crc.writeUInt32BE(crc32(body))
+    return Buffer.concat([length, body, crc])
+  }
+  const header = Buffer.alloc(13)
+  header.writeUInt32BE(width, 0)
+  header.writeUInt32BE(height, 4)
+  header.set([8, 2, 0, 0, 0], 8) // 8-bit RGB, no interlace
+  return new Uint8Array(
+    Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk('IHDR', header),
+      chunk('IDAT', deflateSync(Buffer.concat(rows))),
+      chunk('IEND', Buffer.alloc(0)),
+    ]),
+  )
 }

@@ -26,6 +26,9 @@ const api: AynaApi = {
   deleteTest: (id) => ipcRenderer.invoke(IPC.deleteTest, id),
   saveSteps: (id, document) => ipcRenderer.invoke(IPC.saveSteps, id, document),
   validateSteps: (document) => ipcRenderer.invoke(IPC.validateSteps, document),
+  listRuns: (appId, filter) => ipcRenderer.invoke(IPC.listRuns, appId, filter),
+  openReport: (runId) => ipcRenderer.invoke(IPC.openReport, runId),
+  saveReport: (runId, fileName) => ipcRenderer.invoke(IPC.saveReport, runId, fileName),
   getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
   onAgentStatus: (listener) => {
     const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)
@@ -34,7 +37,7 @@ const api: AynaApi = {
   },
   retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
   listWindows: () => ipcRenderer.invoke(IPC.listWindows),
-  snapshot: (handle) => ipcRenderer.invoke(IPC.snapshot, handle),
+  snapshot: (handle, budgetMs) => ipcRenderer.invoke(IPC.snapshot, handle, budgetMs),
   highlight: (bounds) => ipcRenderer.invoke(IPC.highlight, bounds),
   setPickHotkey: (enabled) => ipcRenderer.invoke(IPC.setPickHotkey, enabled),
   onPick: (listener) => {

@@ -9,7 +9,12 @@ import type {
 } from '../../shared/api.ts'
 import { windowDescriptor, type ElementDescriptor } from '../../shared/element.ts'
 import { foldText } from '../../shared/tree.ts'
-import { buildTree, type Snapshot, type TreeNode } from '../../shared/snapshot.ts'
+import {
+  buildTree,
+  nextSnapshotBudget,
+  type Snapshot,
+  type TreeNode,
+} from '../../shared/snapshot.ts'
 import AddToRepository from './AddToRepository.tsx'
 import ElementTree from './ElementTree.tsx'
 import Page from './Page.tsx'
@@ -32,23 +37,40 @@ async function fetchWindows(): Promise<List> {
   }
 }
 
-type Capture =
+/**
+ * A capture of the chosen window. `budgetMs` is the walk budget sent to the agent (undefined:
+ * its default); a window that once needed a longer one keeps it for the next capture.
+ */
+type Capture = { budgetMs?: number } & (
   | { state: 'loading' }
   | { state: 'loaded'; snapshot: Snapshot; root: TreeNode }
   | { state: 'failed'; reason: AgentFailure; detail?: string }
+)
 
-async function fetchSnapshot(handle: number): Promise<Capture> {
+async function fetchSnapshot(handle: number, budgetMs?: number): Promise<Capture> {
   try {
-    const result = await window.ayna.snapshot(handle)
-    if (!result.ok) return { state: 'failed', reason: result.reason, detail: result.detail }
+    const result = await window.ayna.snapshot(handle, budgetMs)
+    if (!result.ok) {
+      return { state: 'failed', reason: result.reason, detail: result.detail, budgetMs }
+    }
     const root = buildTree(result.snapshot.elements)
     return root
-      ? { state: 'loaded', snapshot: result.snapshot, root }
-      : { state: 'failed', reason: 'bad-response' }
+      ? { state: 'loaded', snapshot: result.snapshot, root, budgetMs }
+      : { state: 'failed', reason: 'bad-response', budgetMs }
   } catch {
-    return { state: 'failed', reason: 'not-connected' }
+    return { state: 'failed', reason: 'not-connected', budgetMs }
   }
 }
+
+/** The budget "Capture again" sends: a longer one after the walk ran out of time (#204). */
+function retryBudget(capture: Capture | undefined): number | undefined {
+  if (capture?.state === 'failed' && capture.reason === 'snapshot-timeout') {
+    return nextSnapshotBudget(capture.budgetMs)
+  }
+  return capture?.budgetMs
+}
+
+const seconds = (ms: number) => Math.round(ms / 1000)
 
 function capturedLine({ capture, app }: Snapshot): string {
   const time = formatTime(capture.startedAt)
@@ -119,11 +141,12 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
   // Entering `loading` (window chosen, Capture again, agent reconnected) captures the
   // selected window; choosing another window meanwhile drops the older answer.
   const capturing = capture?.state === 'loading'
+  const budgetMs = capture?.budgetMs
   const handle = selected?.handle
   useEffect(() => {
     if (!capturing || handle === undefined) return
     let cancelled = false
-    fetchSnapshot(handle).then((next) => {
+    fetchSnapshot(handle, budgetMs).then((next) => {
       if (cancelled) return
       setCapture(next)
       // The window's own element first, so the panel shows its full descriptor.
@@ -132,7 +155,7 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
     return () => {
       cancelled = true
     }
-  }, [capturing, handle])
+  }, [capturing, handle, budgetMs])
 
   useEffect(() => {
     // A list that failed because the agent was down is fetched again once it connects.
@@ -145,7 +168,7 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
       )
       setCapture((current) =>
         current?.state === 'failed' && current.reason === 'not-connected'
-          ? { state: 'loading' }
+          ? { state: 'loading', budgetMs: current.budgetMs }
           : current,
       )
     })
@@ -170,11 +193,11 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
   function choose(win: WindowInfo) {
     setSelected(win)
     window.ayna.highlight(win.bounds)
-    captureAgain()
+    startCapture(undefined)
   }
 
-  function captureAgain() {
-    setCapture({ state: 'loading' })
+  function startCapture(budgetMs: number | undefined) {
+    setCapture({ state: 'loading', budgetMs })
     setNode(undefined)
     setAdding(false)
     setSaved(undefined)
@@ -250,7 +273,11 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
           <header className="panel-header">
             <h2>{selected ? selected.title || strings.spyNoTitle : strings.spyTreeTitle}</h2>
             {selected && (
-              <button type="button" onClick={captureAgain} disabled={capturing}>
+              <button
+                type="button"
+                onClick={() => startCapture(retryBudget(capture))}
+                disabled={capturing}
+              >
                 {strings.spyCaptureAgain}
               </button>
             )}
@@ -260,10 +287,18 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
               <p className="empty-title">{strings.spyChooseWindow}</p>
             </div>
           )}
-          {capturing && <p className="hint">{strings.spyCapturing}</p>}
+          {capturing && (
+            <p className="hint">
+              {budgetMs === undefined
+                ? strings.spyCapturing
+                : strings.spyCapturingLonger(seconds(budgetMs))}
+            </p>
+          )}
           {capture?.state === 'failed' && (
             <p className="message message-danger" role="alert">
               {strings.agentErrors[capture.reason](capture.detail)}
+              {capture.reason === 'snapshot-timeout' &&
+                ` ${strings.spyCaptureLonger(seconds(nextSnapshotBudget(capture.budgetMs)))}`}
             </p>
           )}
           {selected && capture?.state === 'loaded' && (

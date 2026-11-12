@@ -7,6 +7,11 @@ import type { PropertySet } from './repository.ts'
 import type { Snapshot } from './snapshot.ts'
 import type { StepDocument, StepProblem } from './steps.ts'
 
+/** How long the connection check waits for `/api/health`; the error text names it. */
+export const CHECK_TIMEOUT_MS = 5000
+/** How long an ordinary API call waits; the error texts name it. */
+export const REQUEST_TIMEOUT_MS = 5000
+
 export interface AppInfo {
   name: string
   version: string
@@ -112,6 +117,11 @@ export interface RepoObjectSummary extends RepoObject {
   /** From the most recent capture of the element; for search and display. */
   controlType?: string
   nearestLabel?: string
+  /**
+   * A grid's or list's column headers in that capture, in order (#221); empty when unknown.
+   * Possibly incomplete, so the editor offers them but never rejects another column.
+   */
+  columns: string[]
   /** How many tests have a step on this object (FR-08). */
   testCount: number
   /** The application versions the object is found in. */
@@ -207,6 +217,48 @@ export type TestsResult = { ok: true; tests: TestSummary[] } | TestError
 export type TestResult = { ok: true; test: TestCase } | TestError
 export type TestDeleteResult = { ok: true } | TestError
 
+/** A run's status as the server keeps it (#44). */
+export const RUN_STATUSES = ['running', 'passed', 'failed', 'aborted'] as const
+export type RunStatus = (typeof RUN_STATUSES)[number]
+
+/** One run in the history (#68); `startedBy` is the user name, or the id of a removed account. */
+export interface RunSummary {
+  id: string
+  testId: string
+  appVersionId: string
+  status: RunStatus
+  stepCount: number
+  startedBy: string
+  startedAt: string
+  /** Null while the run is `running`. */
+  finishedAt: string | null
+  durationMs: number | null
+}
+
+/** What the run history shows; no field means every test or every status. */
+export interface RunFilter {
+  testId?: string
+  status?: RunStatus
+}
+
+export interface RunsError {
+  ok: false
+  reason:
+    | RequestFailure
+    | 'not-found' // the application, the test or the run is gone
+    | 'invalid'
+  detail?: string
+}
+
+export type RunsResult = { ok: true; runs: RunSummary[] } | RunsError
+
+/** The answer to showing or saving a run's report. */
+export type ReportResult =
+  | { ok: true; path?: string } // `path`: where a saved report went
+  | RunsError
+  | { ok: false; reason: 'cancelled' } // the user closed the save dialog
+  | { ok: false; reason: 'write-failed'; detail?: string }
+
 /** Why a user-management request failed; `detail` is the server's own message, when it sent one. */
 export interface UsersError {
   ok: false
@@ -282,6 +334,7 @@ export type AgentFailure =
   | 'timeout'
   | 'window-gone' // no window has that handle any more
   | 'snapshot-timeout' // the agent gave up the walk at its time budget
+  | 'snapshot-version' // the snapshot is in a format this client does not read; `detail` names it
   | 'bad-response' // the answer does not match `docs/agent-rpc.md`
   | 'agent-error' // any other JSON-RPC error; `detail` has the agent's message
 
@@ -339,6 +392,12 @@ export interface AynaApi {
   getTest(id: string): Promise<TestResult>
   renameTest(id: string, name: string): Promise<TestResult>
   deleteTest(id: string): Promise<TestDeleteResult>
+  /** The application's runs, newest first (at most 100), narrowed by `filter` (FR-22). */
+  listRuns(appId: string, filter: RunFilter): Promise<RunsResult>
+  /** Shows the run's report (#59) in its own window, in the UI language. */
+  openReport(runId: string): Promise<ReportResult>
+  /** Asks where to save the run's report, suggesting `fileName`, and writes it there. */
+  saveReport(runId: string, fileName: string): Promise<ReportResult>
   /** Replaces the test's steps; the answer has them as stored, with their ids. */
   saveSteps(id: string, document: StepDocument): Promise<TestResult>
   /** Checks `document` against `schemas/step.schema.json`; empty when it is valid. */
@@ -350,8 +409,11 @@ export interface AynaApi {
   retryAgent(): Promise<void>
   /** Lists the visible top-level windows through the agent, for the Spy. */
   listWindows(): Promise<WindowsResult>
-  /** Captures the UI Automation tree of the window with `handle` (from `listWindows`). */
-  snapshot(handle: number): Promise<SnapshotResult>
+  /**
+   * Captures the UI Automation tree of the window with `handle` (from `listWindows`). With
+   * `budgetMs` the agent may walk that long instead of its default 5 s.
+   */
+  snapshot(handle: number, budgetMs?: number): Promise<SnapshotResult>
   /**
    * Draws a frame around `bounds` on screen for a few seconds, above every window and
    * without taking focus or clicks; `null` removes it at once.
@@ -406,6 +468,9 @@ export const IPC = {
   deleteTest: 'tests:delete',
   saveSteps: 'tests:save-steps',
   validateSteps: 'tests:validate-steps',
+  listRuns: 'runs:list',
+  openReport: 'runs:open-report',
+  saveReport: 'runs:save-report',
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',

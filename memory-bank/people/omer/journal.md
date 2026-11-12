@@ -244,3 +244,53 @@ Append-only. One entry per session, newest at the bottom:
 - Found by the contract work: (1) the Spy dropped a window with `processId: null`; fixed. (2) oasdiff rates a removed optional response field INFO; `oasdiff-levels.txt` raises it (learnings).
 - Server 119/119, client 207/207, lint and typecheck clean. Updated `schemas/AGENTS.md` and `architecture.md` on omer's OK. Inbox notes to galip (agent side) and hasan (runSteps fields, #61).
 - Next: push and PR (`Closes #52`) on omer's OK; SDD rows after #222.
+## 2026-11-10 · #152
+- Session start: `main` unchanged since 2026-11-08; no review requests; none of PRs #217–#224 has a human review yet (Copilot out of quota); #224's first `contracts` run is green.
+- #152: load test with the Python standard library (omer chose it over k6). `server/loadtest/`: `seed.py` (1 000 objects, 500 tests via REST), `load.py` (10 sessions, p50/p95/p99 per endpoint), `compose.yml` + `run.sh` (one command, throwaway backend). Run: 105 443 requests, 100 % within 500 ms, p95 31.9 ms → NFR-07 met. Asked galip to confirm NFR-07/08 in the RS.
+- Next: push and PR on omer's OK.
+## 2026-11-08 (fifteenth session) · #51 run screenshots, idle timeout, retention
+- Session start: no human review yet on #217–#220, #222 (only Copilot's "insufficient quota" notes); nothing waiting for omer's review; `main` = `origin/main`.
+- omer chose #51. Design questions answered (all recommended): separate PNG upload, global retention 1000, abort after 60 min idle, `repairProposed` moves to #74. ADR `2026-11-08-run-screenshots-and-retention` (Proposed).
+- Built on `omer/51-screenshots-retention`: `ScreenshotStore`, upload/download endpoints, `RunHousekeeping` sweep, test delete removes folders, 413/415 problem responses, Compose volume and env vars. Server 134/134 (15 new incl. 100 runs × 3 screenshots); Compose smoke on the real image 25/25 plus retention after restart.
+- Next: push and PR (`Closes #51`) on omer's OK; comment on #74 about `repairProposed`.
+## 2026-11-08 (fifteenth session) · #205 SelectRow and row checks in the editor
+- `main` unchanged (`3bf3f15`); SSH still times out, fetched over HTTPS. No PR waits for omer's review; #217/#218/#219 wait for reviews.
+- #205 on `omer/205-selectrow-rows` (board In progress): `SelectRow`, a row picker (number, or a cell's text with an optional column), `cell` / `rowExists` / `rowCount` checks, element menu limited to tables and lists (cell: tables) with a local problem for a wrong control type. The #192 round-trip test no longer skips any valid case. en/tr texts, `docs/ui/` vocabulary.
+- Client 207/207, lint, typecheck, format green. Tried the StepTable in a throwaway Vite harness; not in the real app (demo seed has no grid).
+- Inbox emptied: every item was handled and #150 has merged.
+- Next: push and PR (Closes #205) on omer's OK.
+## 2026-11-08 (sixteenth session) · #204 Spy follow-ups → PR #219
+- `origin/main` unchanged (`3bf3f15`); no review requests. Branch `omer/204-spy-followups` from `origin/main`; board In progress.
+- Points 1–3 (`ec2b61c`): capture budget ladder 5 s → 30 s → 120 s after a timeout, client waits budget + 10 s; `snapshot-version` reason; fake agent reads the schema example, `--slow-snapshots` honours `timeoutMs`.
+- Points 4, 5, 7 (`c68245a`): leaf AutomationId search, type-named unnamed rows, Advanced opens on an ambiguous Find-by set; style guide reworded.
+- Point 6 (`9b5e689`): measured in a scratch Vite page — uniform 3031-element tree 1 canvas width while scrolling, Chromium-shaped 285-element tree 12 widths (`min-width: max-content` of the drawn rows). Width now from the deepest visible row; 1 width after.
+- Pushed on omer's yes, PR #219 (Part of #204, hasan + galip as reviewers), 7-step Windows check on #204, `needs-windows-test`. Point 8 left to galip.
+- Next: #205.
+
+## 2026-11-08 (fourteenth session, later) · CI cache, #206, Windows guide, everything merged
+- Client CI build failures traced to electron-builder's `SHASUMS256.txt` request (503/504 from GitHub; reproduced locally with an empty cache). #213 opened. #214 caches Electron downloads, verified on CI (cache hit, 0.09 s instead of 2 min).
+- #206: "wait up to" in the UI language, without grouping, rewritten on a language switch; a Repository rename is carried into the open test (rows, undo, saved fingerprint) by object id instead of refetching. 201 client tests. PR #215 is "Part of #206". The Windows re-run is posted on #206 with `needs-windows-test`. #38's check step 3 wording is fixed.
+- `DEMO-windows.md` (#216, Refs #28): setup to full run on Windows with the real agent; playback through the agent's trial-app tests. `DEMO.md` no longer points at the old demo branch.
+- Merged on omer's word after rerunning the 5xx client jobs: #210, #211, #212. #214–#216 and #150 merged too. Only #126 is open.
+- Inbox cleaned (only the #199 SDD path item left).
+- Next: #207, then #203/#204; #205 is unblocked.
+
+## 2026-11-08 (fifteenth session) · #207 demo seed backups, capture note, window width
+- Branched from `omer/memory-2026-11-08-end` at `ba1b0cc` (the amended tip; `7765e45` was the commit before the amend).
+- Seed: backup sets `name` + `controlType`, `statusLabel` none; a rerun PATCHes the sample objects' sets back. `demoSeed.test.ts` checks each set finds one element in the trial capture. Client 203/203. End-to-end on a throwaway Compose project on port 8097 (old → new seed, fresh database), removed afterwards.
+- DEMO.md capture note (#11 tree, rebuilt by the agent tests; fixture `snapshotId`/`agentVersion`), Chromium 125+ line in `client/AGENTS.md`, style guide keeps 960 minimum and says the step table scrolls below ~1280.
+- Next: push and PR on omer's OK, then #203/#204, #205.
+- Later the same session: #205's PR #220 opened (reviews: galip, hasan); #221 opened for table column headers (Week 6). Then #53 on `omer/53-sdd-update`: SDD v0.4 with the three missing §7 ADR rows, status rows checked against the code (#15, #24, #25, #30, #38, #183–#185 Built; `columns` → #221), RQ1 path (#199). galip asked to refresh two stale §5 lines.
+- Later the same session, on omer's "merge the reviewed ones, fix problems and conflicts": hasan had approved all eight PRs, galip none. Applied hasan's before-merge points, merged `main` into each in turn, retested the client after each conflict, and merged #222, #217, #218, #219, #220, #223 and #225. Held #224: its `schemas/` change needs galip's approval too; hasan's fixes are pushed there.
+
+## 2026-11-10 (eighteenth session) · #227 review, #59 run report, #68 run history
+- Reviewed hasan's #227 (#22 `elementFromPoint`): changes requested. A single same-bounds candidate wins without `CompareElements`, so after a tab switch or a scroll the Spy could select a stale node. Answered his three questions: the three states are enough, points are physical and signed, and whichever of #227 and #224 merges second adds the schema defs.
+- #59: `GET /api/runs/{runId}/report.html?lang=en|tr` rendered on request (inline CSS, `data:` screenshots, CSP `default-src 'none'`); a 50-step run with 222 KB screenshots in 216 ms. Server 149/149. PR #229 (reviewer hasan).
+- #68 on `omer/68-run-history`, stacked on #229: `GET /api/apps/{id}/runs` (newest 100), Runs screen with test and result filters, report in its own window with no script, Save… to file; demo seed adds three sample runs once. Client 229/229. Checked on an isolated stack (`-p ayna68`, port 28080).
+- Next: omer's hand checks (#59 offline, #68 screen), then push and PR for #68.
+- 2026-11-12, same session: hasan approved #229 with three points (streaming, `repairProposed`, `TZ`); done in `77dc7c6`, merged as `413fefa`. #231 retargeted to `main`. #228: hasan's two client points fixed, `main` merged, CI rerunning. Re-reviewed #227 (approve, not posted: blocked by the classifier). Ran #230's sample app on this Mac (pass) and commented. Next: merge #228, then #224's `main` merge and contract check.
+## 2026-11-10 · #221 grid column headers
+- Session start: `main` up to date (`3df2b81`), inbox handled, no review requests. SSH to GitHub still times out; fetched over HTTPS.
+- Found that every Element keeps `siblingIndex`, so the header order survives in the graph: `columns` is read from the captured tree at request time (`GridColumns`), with no snapshot, graph or migration change and no ADR (omer had first agreed to an `Element.columns` property + ADR, which I proposed on the wrong belief that the order was lost).
+- Client: the row picker's and the `cell` check's column field is a dropdown with "Other…" when columns are known. #221's criteria rewritten on GitHub. Notes to galip (#37: `columns` can be incomplete, do not reject on it) and hasan (Windows check).
+- Next: PR on omer's OK, manual check on #221 with `needs-windows-test`; then #59.

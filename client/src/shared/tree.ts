@@ -24,10 +24,20 @@ export function foldText(text: string): string {
 }
 
 /**
+ * The last part of a dotted AutomationId. Qt builds the id from the object names of every
+ * ancestor ("QApplication.loginWindow.loginButton"), so the window's own part matches every
+ * element in it; the last part is what names this element (#204).
+ */
+export function automationIdLeaf(id: string): string {
+  return id.slice(id.lastIndexOf('.') + 1)
+}
+
+/**
  * Whether an element matches a search, by name, control type, AutomationId or nearest label.
  * The label is what finds a text box with no name of its own (common in Qt and WinForms) by the
  * caption next to it. `typeLabel` adds the type's plain-language label, so "text box" finds
- * Edit elements too.
+ * Edit elements too. The AutomationId is searched by its last part, unless the query has a dot
+ * of its own (a pasted id).
  */
 export function elementMatches(
   element: ElementDescriptor,
@@ -40,7 +50,9 @@ export function elementMatches(
   const haystack = [
     name,
     controlType,
-    automationId,
+    automationId !== undefined && !needle.includes('.')
+      ? automationIdLeaf(automationId)
+      : automationId,
     nearestLabel,
     controlType && typeLabel?.(controlType),
   ]
@@ -113,4 +125,11 @@ export function visibleRows(root: TreeNode, open: Set<string>, shown?: Set<strin
     }
   }
   return rows
+}
+
+/** The depth of the deepest row, 0 for none. */
+export function deepestRow(rows: readonly TreeRow[]): number {
+  let deepest = 0
+  for (const row of rows) if (row.depth > deepest) deepest = row.depth
+  return deepest
 }

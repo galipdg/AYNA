@@ -1,0 +1,156 @@
+{
+  "startedAt": "2026-11-10T12:46:00+00:00",
+  "settings": {
+    "clients": 10,
+    "durationS": 120,
+    "warmupS": 20,
+    "thinkMs": 0,
+    "url": "http://127.0.0.1:18090"
+  },
+  "seed": {
+    "listed": {
+      "repoObjects": 1000,
+      "tests": 500
+    },
+    "stepsPerTest": 10,
+    "seconds": 14.8
+  },
+  "machine": {
+    "os": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "logicalCpus": 8,
+    "python": "3.13.0",
+    "cpu": "Apple M3",
+    "memoryGiB": 16.0,
+    "docker": {
+      "cpus": 4,
+      "memoryGiB": 4.1,
+      "version": "29.6.1"
+    }
+  },
+  "iterations": 5266,
+  "clientFailures": [],
+  "endpoints": [
+    {
+      "endpoint": "GET /api/apps/{appId}/repo-objects",
+      "count": 4580,
+      "errors": 0,
+      "overLimit": 3,
+      "p50Ms": 50.6,
+      "p95Ms": 90.8,
+      "p99Ms": 154.1,
+      "maxMs": 563.4,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "GET /api/apps/{appId}/tests",
+      "count": 4584,
+      "errors": 0,
+      "overLimit": 2,
+      "p50Ms": 14.8,
+      "p95Ms": 29.2,
+      "p99Ms": 49.1,
+      "maxMs": 575.7,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "GET /api/repo-objects/{objectId}",
+      "count": 13752,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 6.2,
+      "p95Ms": 16.9,
+      "p99Ms": 30.3,
+      "maxMs": 130.1,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "GET /api/runs/{runId}",
+      "count": 4583,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 4.8,
+      "p95Ms": 13.9,
+      "p99Ms": 25.6,
+      "maxMs": 222.9,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "GET /api/tests/{testId}",
+      "count": 13752,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 5.2,
+      "p95Ms": 14.7,
+      "p99Ms": 25.7,
+      "maxMs": 424.8,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "GET /api/tests/{testId}/runs",
+      "count": 4581,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 5.1,
+      "p95Ms": 14.4,
+      "p99Ms": 29.9,
+      "maxMs": 268.6,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "POST /api/runs",
+      "count": 4586,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 9.2,
+      "p95Ms": 22.4,
+      "p99Ms": 40.8,
+      "maxMs": 135.3,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "POST /api/runs/{runId}/finish",
+      "count": 4583,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 8.1,
+      "p95Ms": 20.6,
+      "p99Ms": 45.5,
+      "maxMs": 384.9,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "PUT /api/runs/{runId}/results/{stepIndex}",
+      "count": 45856,
+      "errors": 0,
+      "overLimit": 0,
+      "p50Ms": 7.4,
+      "p95Ms": 18.7,
+      "p99Ms": 31.4,
+      "maxMs": 289.1,
+      "errorSamples": []
+    },
+    {
+      "endpoint": "PUT /api/tests/{testId}/steps",
+      "count": 4586,
+      "errors": 0,
+      "overLimit": 10,
+      "p50Ms": 13.8,
+      "p95Ms": 30.7,
+      "p99Ms": 56.7,
+      "maxMs": 1807.2,
+      "errorSamples": []
+    }
+  ],
+  "overall": {
+    "requests": 105443,
+    "errors": 0,
+    "requestsPerSecond": 878.7,
+    "p50Ms": 7.5,
+    "p95Ms": 31.9,
+    "p99Ms": 69.5,
+    "withinLimitShare": 0.9999,
+    "limitMs": 500,
+    "nfr07Met": true
+  }
+}
