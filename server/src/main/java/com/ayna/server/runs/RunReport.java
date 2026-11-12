@@ -1,5 +1,13 @@
 package com.ayna.server.runs;
 
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -8,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
@@ -20,8 +29,12 @@ import tools.jackson.databind.JsonNode;
  * The HTML report of one run (#59, FR-21): a summary, a step table with status, duration and
  * message, and each step's screenshot, as one self-contained file. Styles are inline and
  * screenshots are `data:` URIs, so the file opens in a browser with no network; its Content
- * Security Policy forbids every other source, so it cannot load anything even by mistake. Pure,
- * so it is tested without Spring or a database.
+ * Security Policy forbids every other source, so it cannot load anything even by mistake.
+ * <p>
+ * It is written to a stream as it is made, one step at a time, and each screenshot is read only
+ * when its step is written and encoded straight into the stream: the peak memory is one
+ * screenshot, not the whole report (hasan, #229 review). Pure, so it is tested without Spring or
+ * a database.
  */
 final class RunReport {
 
@@ -33,9 +46,12 @@ final class RunReport {
 	private RunReport() {
 	}
 
-	/** What a report shows; `screenshots` maps a step index to its PNG. */
+	/**
+	 * What a report shows. `screenshot` gives a step's PNG, or null when it has none; it is
+	 * called once per step, in step order, while that step is written.
+	 */
 	record Input(RunDetail run, String testName, String applicationName, String version,
-			Map<Integer, byte[]> screenshots) {
+			IntFunction<byte[]> screenshot) {
 	}
 
 	/** The report's language. Agent messages are shown as they were sent, whatever it is. */
@@ -56,7 +72,23 @@ final class RunReport {
 
 	}
 
+	/** The whole report as one string; for tests. */
 	static String render(Input input, Lang lang, Instant generatedAt, ZoneId zone) {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			render(input, lang, generatedAt, zone, out);
+		}
+		catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
+		return out.toString(StandardCharsets.UTF_8);
+	}
+
+	/** Writes the report to `out` as UTF-8 and flushes it; `out` stays open. */
+	static void render(Input input, Lang lang, Instant generatedAt, ZoneId zone, OutputStream out)
+			throws IOException {
+		OutputStream target = new KeptOpen(out);
+		Writer writer = new BufferedWriter(new OutputStreamWriter(target, StandardCharsets.UTF_8), 16 * 1024);
 		Words w = lang == Lang.TR ? Words.TR : Words.EN;
 		RunDetail run = input.run();
 		Map<Integer, StepResultResponse> results = run.results()
@@ -66,26 +98,27 @@ final class RunReport {
 		int passed = 0;
 		int failed = 0;
 		int notRun = 0;
+		int repairProposed = 0;
 		Integer firstFailure = null;
 		for (int i = 0; i < run.stepCount(); i++) {
 			StepResultResponse result = results.get(i);
-			String status = result == null ? null : result.status();
-			if ("passed".equals(status)) {
-				passed++;
-			}
-			else if ("failed".equals(status)) {
-				failed++;
-				if (firstFailure == null) {
-					firstFailure = i;
+			String status = result == null ? "" : result.status();
+			switch (status) {
+				case "passed" -> passed++;
+				case "failed" -> failed++;
+				case "notRun" -> notRun++;
+				case "repairProposed" -> repairProposed++;
+				default -> {
 				}
 			}
-			else if ("notRun".equals(status)) {
-				notRun++;
+			if (firstFailure == null && (status.equals("failed") || status.equals("repairProposed"))) {
+				firstFailure = i;
 			}
 		}
-		int missing = run.stepCount() - passed - failed - notRun;
+		int missing = run.stepCount() - passed - failed - notRun - repairProposed;
 
-		StringBuilder html = new StringBuilder(64 * 1024);
+		// Built a step at a time and written out, so it never holds more than one step's text.
+		StringBuilder html = new StringBuilder(8 * 1024);
 		html.append("<!DOCTYPE html>\n<html lang=\"")
 			.append(lang.name().toLowerCase(Locale.ROOT))
 			.append("\">\n<head>\n<meta charset=\"utf-8\">\n")
@@ -125,6 +158,9 @@ final class RunReport {
 			.append(notRun)
 			.append(' ')
 			.append(esc(w.resultStatus("notRun")));
+		if (repairProposed > 0) {
+			html.append(" · ").append(repairProposed).append(' ').append(esc(w.resultStatus("repairProposed")));
+		}
 		if (missing > 0) {
 			html.append(" · ").append(missing).append(' ').append(esc(w.resultStatus(null)));
 		}
@@ -167,23 +203,73 @@ final class RunReport {
 				.append("</td><td class=\"msg\">")
 				.append(result == null || result.message() == null ? "" : esc(result.message()))
 				.append("</td></tr>\n<tr class=\"shot\"><td></td><td colspan=\"4\">");
-			byte[] png = input.screenshots().get(i);
+			// The step is out before its screenshot is read, so the client sees it arrive.
+			emit(html, writer);
+			writer.flush();
+			byte[] png = input.screenshot().apply(i);
 			if (png != null) {
 				html.append("<img alt=\"")
 					.append(esc(w.screenshotOf(i + 1)))
-					.append("\" src=\"data:image/png;base64,")
-					.append(Base64.getEncoder().encodeToString(png))
-					.append("\">");
+					.append("\" src=\"data:image/png;base64,");
+				emit(html, writer);
+				writer.flush();
+				// Encoded through to the stream: no base64 copy of the image is ever held.
+				try (OutputStream base64 = Base64.getEncoder().wrap(target)) {
+					base64.write(png);
+				}
+				html.append("\">");
 			}
 			else {
 				html.append("<p class=\"none\">").append(esc(w.noScreenshot)).append("</p>");
 			}
 			html.append("</td></tr>\n</tbody>\n");
+			emit(html, writer);
 		}
 		html.append("</table>\n</section>\n</main>\n<footer>")
 			.append(esc(w.generated(time(generatedAt, zone), run.id())))
 			.append("</footer>\n</body>\n</html>\n");
-		return html.toString();
+		emit(html, writer);
+		writer.flush();
+	}
+
+	/** Writes what `html` holds and empties it. */
+	private static void emit(StringBuilder html, Writer writer) throws IOException {
+		writer.append(html);
+		html.setLength(0);
+	}
+
+	/**
+	 * The response stream as the report's writers see it: closing them (the base64 encoder must be
+	 * closed to write its padding) flushes it but leaves it open for the rest of the report.
+	 */
+	private static final class KeptOpen extends OutputStream {
+
+		private final OutputStream out;
+
+		KeptOpen(OutputStream out) {
+			this.out = out;
+		}
+
+		@Override
+		public void write(int b) throws IOException {
+			out.write(b);
+		}
+
+		@Override
+		public void write(byte[] bytes, int offset, int length) throws IOException {
+			out.write(bytes, offset, length);
+		}
+
+		@Override
+		public void flush() throws IOException {
+			out.flush();
+		}
+
+		@Override
+		public void close() throws IOException {
+			out.flush();
+		}
+
 	}
 
 	/** One line for a step, in the step editor's words: keyword, target and what it uses. */
@@ -275,7 +361,8 @@ final class RunReport {
 						"Number of rows"),
 				Map.of("equals", "is", "notEquals", "is not", "contains", "contains"),
 				Map.of("running", "Running", "passed", "Passed", "failed", "Failed", "aborted", "Aborted"),
-				Map.of("passed", "passed", "failed", "failed", "notRun", "not run"), "no result");
+				Map.of("passed", "passed", "failed", "failed", "notRun", "not run", "repairProposed", "repair proposed"),
+				"no result");
 
 		static final Words TR = new Words(Locale.forLanguageTag("tr"), "Çalıştırma raporu", "Uygulama", "Başlatan",
 				"Başlangıç", "Bitiş", "Süre", "Adımlar", "Adım", "Durum", "Mesaj", "Bu adımın ekran görüntüsü yok", "evet",
@@ -287,7 +374,9 @@ final class RunReport {
 						"Satır sayısı"),
 				Map.of("equals", "eşittir", "notEquals", "eşit değildir", "contains", "içerir"),
 				Map.of("running", "Sürüyor", "passed", "Başarılı", "failed", "Başarısız", "aborted", "Yarıda kesildi"),
-				Map.of("passed", "başarılı", "failed", "başarısız", "notRun", "çalıştırılmadı"), "sonuç yok");
+				Map.of("passed", "başarılı", "failed", "başarısız", "notRun", "çalıştırılmadı", "repairProposed",
+						"onarım önerildi"),
+				"sonuç yok");
 
 		final Locale locale;
 
@@ -435,8 +524,9 @@ final class RunReport {
 			border:1px solid currentColor;white-space:nowrap}
 			.badge::first-letter{text-transform:uppercase}
 			.passed,.passed-text{color:var(--pass)}.failed,.failed-text{color:var(--fail)}
-			.running,.aborted{color:var(--warn)}.notRun,.missing{color:var(--none)}
-			tbody.passed,tbody.failed,tbody.notRun,tbody.missing{color:inherit}
+			.running,.aborted,.repairProposed{color:var(--warn)}.notRun,.missing{color:var(--none)}
+			tbody.passed,tbody.failed,tbody.notRun,tbody.missing,tbody.repairProposed{color:inherit}
+			tbody.repairProposed tr:first-child td{background:color-mix(in srgb,var(--warn) 8%,transparent)}
 			footer{margin-top:24px;color:var(--muted);font-size:12px}
 			@media print{body{padding:0}tr.shot img{max-height:none}tbody{break-inside:avoid}}
 			""";

@@ -17,7 +17,9 @@ Server only. `GET /api/runs/{runId}/report.html?lang=en|tr` renders the run on r
 - 2026-11-10 — Keyword, property and operator labels copy the client's `stepsKeywords` / `stepsProperties` / `stepsOperators` wording (tr.ts, en.ts), so the report reads like the step editor.
 - 2026-11-10 — `Content-Disposition: inline` with a filename: a browser shows it, the client (#68) saves it under that name.
 - 2026-11-10 — `Cache-Control: no-store`: a running run's report changes, and it holds screenshots of the AUT.
-- 2026-11-10 — Times are shown in the server's time zone with the offset written out; no script, so the browser cannot localise them.
+- 2026-11-10 — Times are shown in the server's time zone with the offset written out; no script, so the browser cannot localise them. 2026-11-12: Compose sets `TZ` (hasan's review); the image has tzdata.
+- 2026-11-12 — Streaming (hasan's review): before, a Turkish 50-step report peaked near 90 MB (all PNGs, a UTF-16 builder after the first `ı`, its copy, the bytes). The run is read before the response starts, so a 404 stays a problem body; MockMvc tests follow the async dispatch.
+- 2026-11-12 — `repairProposed` counts as a failure for the "first failed step" link.
 
 ## Status
 - [x] Branch, #59 In progress on the board
@@ -25,14 +27,16 @@ Server only. `GET /api/runs/{runId}/report.html?lang=en|tr` renders the run on r
 - [x] Endpoint + integration tests (`RunReportIntegrationTest`, 7): every step with its screenshot, running/aborted/failed runs, a vanished file, `lang`, 404; NFR-09 50 steps × 222 KB in 216 ms (15 MB file)
 - [x] OpenAPI regenerated (`runReport`, `lang` enum en/tr), SDD §2 server row, §3 files, §4.1 reports row
 - [x] Server 149/149 before the last rename + CSS tweak; the report and OpenAPI tests rerun after it (17/17)
-- [ ] PR (`Closes #59`), reviewer hasan
-- Next step: push and open the PR on omer's OK.
+- [x] PR #229; hasan approved 2026-11-12 with three points, all done on 2026-11-12: the report streams (`StreamingResponseBody`, one step's text and one PNG in memory, base64 encoded through to the stream; NFR-09 now 148 ms), `repairProposed` has words, colour and a count, and Compose sets `TZ` (default `Europe/Istanbul`, also in `.env.example`). Server 151/151.
+- Next step: push the fixes on omer's OK, merge this branch into `omer/68-run-history`.
 
 ## Manual checks
 - 2026-11-10 · agent · sample EN/TR reports with real PNGs (written by a throwaway test, not committed) opened in the built-in browser over a local `http.server` (the pane does not script `file://`): 3 of 3 images decoded, no console errors (no CSP violation), layout checked at ~800 px; badges then kept on one line · evidence: session screenshots.
 - pending · omer · open a report file with the network off (Wi-Fi off), by double-click from Finder · evidence: TBD
 
 ## Open issues
+- hasan (#229 review): FR-35's failure `category` has no place in `StepResultResponse` or this report; it should go into the REST read model before #224 freezes (a tag before the message). Not in #59's scope; raise with #224 / #63.
+- hasan offers a small issue for the CLI runner saving this report (`--report <path>`, after the last screenshot upload, never changing the exit code); waiting for omer's word.
 - The real per-step screenshots come with #54 (hasan) and their upload with #44's client half / #61; until then reports of real runs show "no screenshot".
 - The client button that opens or saves the report is #68.
 

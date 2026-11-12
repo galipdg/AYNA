@@ -3,10 +3,12 @@ package com.ayna.server.runs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +87,7 @@ class RunReportTest {
 	void escapesWhatCameFromTheAgentAndTheUser() {
 		String html = RunReport.render(
 				new RunReport.Input(run("failed", List.of(result(0, "failed", 1L, "<img src=x onerror=alert(1)>"))),
-						"<b>name</b>", "App & Co", "1.0\"", Map.of()),
+						"<b>name</b>", "App & Co", "1.0\"", step -> null),
 				Lang.EN, STARTED, ZoneOffset.UTC);
 
 		assertThat(html).doesNotContain("<img src=x").doesNotContain("<b>name</b>")
@@ -134,10 +136,48 @@ class RunReportTest {
 	@Test
 	void writesTimesWithTheirOffset() {
 		String html = RunReport.render(
-				new RunReport.Input(run("running", List.of()), "Giriş", "Müşteri Kayıt", "1.0.0", Map.of()), Lang.EN,
+				new RunReport.Input(run("running", List.of()), "Giriş", "Müşteri Kayıt", "1.0.0", step -> null), Lang.EN,
 				STARTED, ZoneId.of("Europe/Istanbul"));
 
 		assertThat(html).contains("<dd>2026-11-10 15:00:00 (UTC+03:00)</dd>");
+	}
+
+	/** hasan's #229 review: one screenshot in memory at a time, not the whole report. */
+	@Test
+	void writesEachStepBeforeReadingTheNextScreenshot() throws Exception {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		List<Integer> asked = new ArrayList<>();
+		RunReport.Input input = new RunReport.Input(
+				run("failed", List.of(result(0, "passed", 1L, null), result(1, "passed", 1L, null),
+						result(2, "failed", 1L, "x"))),
+				"Giriş", "Müşteri Kayıt", "1.0.0", step -> {
+					String written = out.toString(StandardCharsets.UTF_8);
+					// The step's own row is out already, and the next step's is not.
+					assertThat(written).contains("<tbody id=\"step-" + (step + 1) + "\"")
+						.doesNotContain("<tbody id=\"step-" + (step + 2) + "\"");
+					asked.add(step);
+					return PNG;
+				});
+
+		RunReport.render(input, Lang.TR, STARTED, ZoneOffset.UTC, out);
+
+		assertThat(asked).containsExactly(0, 1, 2, 3);
+		String html = out.toString(StandardCharsets.UTF_8);
+		assertThat(html).endsWith("</html>\n").contains("Çalıştırma raporu");
+		assertThat(html.split("src=\"data:image/png;base64," + Pattern.quote(Base64.getEncoder().encodeToString(PNG))
+				+ "\"", -1)).hasSize(5);
+	}
+
+	@Test
+	void namesARepairProposedStepAndLinksToIt() {
+		String html = render(Lang.TR, Map.of(), result(0, "passed", 1L, null),
+				result(1, "repairProposed", 1L, "login.loginButton not found; 3 candidates"));
+
+		assertThat(html).contains("<tbody id=\"step-2\" class=\"repairProposed\">")
+			.contains(">onarım önerildi</span>")
+			.contains("1 onarım önerildi")
+			.contains("<a href=\"#step-2\">İlk başarısız adım: 2</a>")
+			.contains("2 sonuç yok");
 	}
 
 	@Test
@@ -162,7 +202,7 @@ class RunReportTest {
 	static String render(Lang lang, Map<Integer, byte[]> screenshots, StepResultResponse... results) {
 		boolean failed = List.of(results).stream().anyMatch(r -> r.status().equals("failed"));
 		return RunReport.render(new RunReport.Input(run(failed ? "failed" : "running", List.of(results)), "Giriş",
-				"Müşteri Kayıt", "1.0.0", screenshots), lang, STARTED.plusSeconds(60), ZoneOffset.UTC);
+				"Müşteri Kayıt", "1.0.0", screenshots::get), lang, STARTED.plusSeconds(60), ZoneOffset.UTC);
 	}
 
 	static RunDetail run(String status, List<StepResultResponse> results) {

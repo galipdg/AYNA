@@ -1,12 +1,14 @@
 package com.ayna.server.runs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
@@ -32,6 +34,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.ayna.server.SignedIn;
@@ -101,7 +104,10 @@ class RunReportIntegrationTest {
 		}
 		finish(runId, "passed");
 
-		String html = mvc.perform(get("/api/runs/{id}/report.html", runId))
+		MvcResult started = mvc.perform(get("/api/runs/{id}/report.html", runId))
+			.andExpect(request().asyncStarted())
+			.andReturn();
+		String html = mvc.perform(asyncDispatch(started))
 			.andExpect(status().isOk())
 			.andExpect(header().string("Content-Type", "text/html;charset=UTF-8"))
 			.andExpect(header().string("Cache-Control", "no-store"))
@@ -224,11 +230,12 @@ class RunReportIntegrationTest {
 	}
 
 	private String report(String runId, String lang) throws Exception {
-		var request = get("/api/runs/{id}/report.html", runId);
+		var call = get("/api/runs/{id}/report.html", runId);
 		if (!lang.isEmpty()) {
-			request.param("lang", lang);
+			call.param("lang", lang);
 		}
-		return mvc.perform(request)
+		MvcResult started = mvc.perform(call).andExpect(request().asyncStarted()).andReturn();
+		return mvc.perform(asyncDispatch(started))
 			.andExpect(status().isOk())
 			.andReturn()
 			.getResponse()
