@@ -291,6 +291,39 @@ public class RunService {
 	}
 
 	/**
+	 * What the run's report shows (#59): the run, the names of its test, application and version,
+	 * and where its screenshots are. Read in one transaction, so a 404 comes before the report
+	 * starts; each file is read only when the report writes its step. A file that has gone
+	 * (retention meanwhile) is a step without a screenshot.
+	 */
+	RunReport.Input reportInput(String runId) {
+		record Read(RunDetail run, String testName, String applicationName, String version,
+				Map<Integer, String> paths) {
+		}
+		Read read;
+		try (Session session = driver.session()) {
+			read = session.executeRead(tx -> {
+				RunDetail run = detail(tx, runId);
+				Record names = tx.run("""
+						MATCH (r:Run {id: $id})-[:OF]->(t:TestCase)
+						MATCH (r)-[:ON_VERSION]->(v:AppVersion)<-[:HAS_VERSION]-(a:Application)
+						RETURN t.name AS test, a.name AS app, v.version AS version""", Map.of("id", runId)).single();
+				Map<Integer, String> paths = new HashMap<>();
+				tx.run("""
+						MATCH (:Run {id: $id})-[:HAS_RESULT]->(sr:StepResult)
+						WHERE sr.screenshotPath IS NOT NULL
+						RETURN sr.stepIndex AS stepIndex, sr.screenshotPath AS path""", Map.of("id", runId))
+					.forEachRemaining(r -> paths.put(r.get("stepIndex").asInt(), r.get("path").asString()));
+				return new Read(run, names.get("test").asString(), names.get("app").asString(),
+						names.get("version").asString(), paths);
+			});
+		}
+		Map<Integer, String> paths = read.paths();
+		return new RunReport.Input(read.run(), read.testName(), read.applicationName(), read.version(),
+				stepIndex -> paths.containsKey(stepIndex) ? screenshots.read(paths.get(stepIndex)) : null);
+	}
+
+	/**
 	 * Ends as `aborted` every running run with no write for `idle`: its client is gone and will
 	 * not finish it (ADR run-screenshots-and-retention). Watchers get `run.finished`.
 	 */
