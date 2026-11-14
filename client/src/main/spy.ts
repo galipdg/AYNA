@@ -4,6 +4,9 @@
 import type {
   AgentFailure,
   Bounds,
+  ElementFromPointResult,
+  ElementHit,
+  ScreenPoint,
   SnapshotResult,
   WindowInfo,
   WindowsResult,
@@ -87,6 +90,68 @@ export async function snapshot(
   return parsed ? { ok: true, snapshot: parsed } : { ok: false, reason: 'bad-response' }
 }
 
+/**
+ * A hit test takes milliseconds (#22: under 3.5 ms median), but UI Automation calls run one at
+ * a time on the agent, so a pick pressed during a capture waits for it: this covers a walk on
+ * the default budget.
+ */
+export const ELEMENT_FROM_POINT_TIMEOUT_MS = 10_000
+
+/**
+ * The element at `point` (physical pixels, sent as the OS gave it: the agent converts nothing).
+ * A point over nothing is not an error; the answer then has nulls.
+ */
+export async function elementFromPoint(
+  agent: AgentCaller,
+  point: ScreenPoint,
+): Promise<ElementFromPointResult> {
+  // The agent refuses anything but integers.
+  const params = { x: Math.round(point.x), y: Math.round(point.y) }
+  let result: unknown
+  try {
+    result = await agent.call('elementFromPoint', params, ELEMENT_FROM_POINT_TIMEOUT_MS)
+  } catch (error) {
+    return { ok: false, ...describeFailure(error) }
+  }
+  const hit = parseElementHit(result)
+  return hit ? { ok: true, hit } : { ok: false, reason: 'bad-response' }
+}
+
+/**
+ * The `elementFromPoint` result, or null if a field has the wrong type. A field left out reads
+ * as null, the value the contract gives it when there is nothing to report.
+ */
+export function parseElementHit(result: unknown): ElementHit | null {
+  if (!isRecord(result)) return null
+  const hit = {
+    handle: result.handle ?? null,
+    bounds: result.bounds ?? null,
+    snapshotId: result.snapshotId ?? null,
+    elementId: result.elementId ?? null,
+    element: result.element ?? null,
+  }
+  if (
+    !(hit.handle === null || Number.isInteger(hit.handle)) ||
+    !(hit.bounds === null || isBounds(hit.bounds)) ||
+    !(hit.snapshotId === null || typeof hit.snapshotId === 'string') ||
+    !(hit.elementId === null || typeof hit.elementId === 'string') ||
+    !(hit.element === null || isRecord(hit.element))
+  ) {
+    return null
+  }
+  return hit as ElementHit
+}
+
+/**
+ * The window handle in Electron's `getNativeWindowHandle()` buffer (an HWND on Windows, in the
+ * machine's little-endian order), as the agent reports handles.
+ */
+export function nativeHandle(bytes: Uint8Array): number {
+  let value = 0
+  for (let i = Math.min(bytes.length, 8) - 1; i >= 0; i--) value = value * 256 + bytes[i]
+  return value
+}
+
 /** Maps an error from `AgentManager.call` to a reason the UI has a message for. */
 export function describeFailure(error: unknown): { reason: AgentFailure; detail?: string } {
   if (error instanceof AgentNotConnectedError) return { reason: 'not-connected' }
@@ -96,7 +161,8 @@ export function describeFailure(error: unknown): { reason: AgentFailure; detail?
     if (error.code === WINDOW_NOT_FOUND) return { reason: 'window-gone' }
     // The agent's message says why the walk stopped (a blocked application or a slow window);
     // #226 will add a structured flag for the blocked case.
-    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout', detail: error.rpcMessage }
+    if (error.code === SNAPSHOT_TIMEOUT)
+      return { reason: 'snapshot-timeout', detail: error.rpcMessage }
     return { reason: 'agent-error', detail: error.rpcMessage }
   }
   return { reason: 'agent-error', detail: error instanceof Error ? error.message : String(error) }

@@ -18,6 +18,7 @@ import {
   RUN_STATUSES,
   type AppInfo,
   type NewRepoObject,
+  type PickEvent,
   type RepoObjectChange,
   type ReportResult,
   type RunFilter,
@@ -67,7 +68,15 @@ import {
 } from './users.ts'
 import { loadSettings, saveSettings, SETTINGS_FILE, withServer } from './settings.ts'
 import { Highlighter } from './overlay.ts'
-import { isBounds, listWindows, PickHotkey, pickHotkeyLabel, snapshot } from './spy.ts'
+import {
+  elementFromPoint,
+  isBounds,
+  listWindows,
+  nativeHandle,
+  PickHotkey,
+  pickHotkeyLabel,
+  snapshot,
+} from './spy.ts'
 
 // Set by `electron-vite dev`; absent in a built app.
 const devServerUrl = app.isPackaged ? undefined : process.env.ELECTRON_RENDERER_URL
@@ -100,13 +109,35 @@ const agent = new AgentManager({
 const highlighter = new Highlighter()
 let mainWindow: BrowserWindow | undefined
 
-// The agent reports and expects physical pixels; Electron's cursor point is in DIPs.
-// `dipToScreenPoint` exists on Windows only; elsewhere there is no UI Automation backend.
-const pickHotkey = new PickHotkey(globalShortcut, () => {
+const pickHotkey = new PickHotkey(globalShortcut, () => void pick())
+
+/**
+ * Asks the agent what is under the cursor and tells the Spy. The agent reports and expects
+ * physical pixels; Electron's cursor point is in DIPs. `dipToScreenPoint` exists on Windows
+ * only; elsewhere there is no UI Automation backend.
+ */
+async function pick() {
+  const target = mainWindow
+  if (!target) return
   const cursor = screen.getCursorScreenPoint()
-  const point = process.platform === 'win32' ? screen.dipToScreenPoint(cursor) : cursor
-  mainWindow?.webContents.send(IPC.pick, { x: point.x, y: point.y })
-})
+  const { x, y } = process.platform === 'win32' ? screen.dipToScreenPoint(cursor) : cursor
+  // The agent answers with what is visible at the point; the frame must not be that.
+  highlighter.hide()
+  const result = await elementFromPoint(agent, { x, y })
+  if (target.isDestroyed()) return
+  const event: PickEvent = result.ok
+    ? { point: { x, y }, ...result, ownWindow: isOwnWindow(result.hit.handle) }
+    : { point: { x, y }, ...result }
+  target.webContents.send(IPC.pick, event)
+}
+
+/** Whether `handle` is one of AYNA's windows: the main one, a report, the highlight frame. */
+function isOwnWindow(handle: number | null): boolean {
+  if (handle === null) return false
+  return BrowserWindow.getAllWindows().some(
+    (window) => nativeHandle(window.getNativeWindowHandle()) === handle,
+  )
+}
 
 agent.onStatus((status) => {
   for (const window of BrowserWindow.getAllWindows()) {

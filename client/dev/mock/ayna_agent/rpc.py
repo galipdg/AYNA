@@ -3,9 +3,10 @@
 
 The client starts it like the real one (`python -m ayna_agent.rpc --port 0`, token in
 AYNA_AGENT_TOKEN); `npm run dev:mock` puts this folder's parent first on PYTHONPATH.
-Answers `ping`, `listWindows` (windows from AYNA_MOCK_WINDOWS, a JSON file) and
-`snapshot` (the document in AYNA_MOCK_SNAPSHOT for every listed window, with that
-window's handle and a fresh id and time). With AYNA_MOCK_UIA=off both answer -32001, as on
+Answers `ping`, `listWindows` (windows from AYNA_MOCK_WINDOWS, a JSON file), `snapshot`
+(the document in AYNA_MOCK_SNAPSHOT for every listed window, with that window's handle and a
+fresh id and time) and `elementFromPoint` (out of the snapshot taken last, as the real agent
+does; see `element_from_point`). With AYNA_MOCK_UIA=off all but `ping` answer -32001, as on
 a machine without UI Automation; with AYNA_MOCK_SNAPSHOT_TIMEOUT=on every walk takes 20 s, so
 `snapshot` answers -32002 unless its `timeoutMs` allows that long. Exits on stdin EOF, like the
 real agent.
@@ -60,6 +61,51 @@ def load_json(path):
         return json.load(file)  # read per call, so edits show on the Spy's next request
 
 
+# The snapshot taken last, of whichever window: the real agent holds exactly one (#22).
+last_snapshot = None
+
+
+def contains(bounds, x, y):
+    return bounds is not None and bounds[0] <= x < bounds[2] and bounds[1] <= y < bounds[3]
+
+
+def element_from_point(rid, params):
+    """A hit test on fake geometry. The held snapshot's elements come first, deepest match
+    wins (the list is in pre-order). Else the first listed window whose bounds hold the point:
+    its snapshot id if that window is the one held ("the window has changed"), none otherwise.
+    So with the default files: (700, 240) is the Username field once "AYNA Trial" is captured,
+    (300, 600) is inside "AYNA Trial" but on no element, (100, 30) is an uncaptured window."""
+    if not isinstance(params, dict) or set(params) != {"x", "y"} or not all(
+        isinstance(params[k], int) and not isinstance(params[k], bool) for k in ("x", "y")
+    ):
+        return error(rid, -32602, "Invalid params: x and y must be ints, nothing else")
+    if not UIA:
+        return no_uia(rid)
+    x, y = params["x"], params["y"]
+    held = last_snapshot
+    if held is not None:
+        hits = [n for n in held["elements"] if contains(n["element"].get("bounds"), x, y)]
+        if hits:
+            node = hits[-1]
+            result = {
+                "handle": held["window"]["handle"],
+                "bounds": node["element"]["bounds"],
+                "snapshotId": held["snapshotId"],
+                "elementId": node["id"],
+                "element": node["element"],
+            }
+            return {"jsonrpc": "2.0", "id": rid, "result": result}
+    keys = ("handle", "bounds", "snapshotId", "elementId", "element")
+    result = dict.fromkeys(keys)
+    for window in load_json(WINDOWS_FILE):
+        if contains(window["bounds"], x, y):
+            result["handle"], result["bounds"] = window["handle"], window["bounds"]
+            if held is not None and held["window"]["handle"] == window["handle"]:
+                result["snapshotId"] = held["snapshotId"]
+            break
+    return {"jsonrpc": "2.0", "id": rid, "result": result}
+
+
 def snapshot(rid, params):
     handle = params.get("handle") if isinstance(params, dict) else None
     if not isinstance(handle, int) or isinstance(handle, bool) or handle < 1:
@@ -79,6 +125,8 @@ def snapshot(rid, params):
     document["capture"]["startedAt"] = datetime.now().astimezone().isoformat(timespec="seconds")
     document["window"]["handle"] = handle
     document["elements"][0]["element"]["nativeWindowHandle"] = handle
+    global last_snapshot
+    last_snapshot = document
     return {"jsonrpc": "2.0", "id": rid, "result": document}
 
 
@@ -93,6 +141,8 @@ def handle_request(request):
         return {"jsonrpc": "2.0", "id": rid, "result": {"windows": load_json(WINDOWS_FILE)}}
     if method == "snapshot":
         return snapshot(rid, request.get("params"))
+    if method == "elementFromPoint":
+        return element_from_point(rid, request.get("params"))
     return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": "Method not found"}}
 
 

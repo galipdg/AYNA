@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import type {
   AgentFailure,
   AppVersion,
   Application,
+  PickEvent,
   PickHotkeyState,
   ScreenPoint,
   WindowInfo,
 } from '../../shared/api.ts'
 import { windowDescriptor, type ElementDescriptor } from '../../shared/element.ts'
+import { pickState, type PickState } from '../../shared/pick.ts'
 import { foldText } from '../../shared/tree.ts'
 import {
   buildTree,
@@ -82,6 +84,72 @@ function processLabel(win: WindowInfo): string {
   return `${win.processName ?? strings.spyUnknownProcess} · ${win.processId}`
 }
 
+/** The last press of the pick key; `gone`: the window to capture has closed since. */
+type Pick = { point: ScreenPoint; state: PickState | { state: 'gone' } }
+
+/** What the last pick found, in one line for the tree panel's footer. */
+function PickNote({
+  pick,
+  onCapture,
+  onCaptureAgain,
+}: {
+  pick: Pick
+  onCapture: (handle: number) => void
+  onCaptureAgain: () => void
+}) {
+  const { point, state } = pick
+  switch (state.state) {
+    case 'element':
+      return (
+        <p className="hint" role="status">
+          {strings.spyPicked(point.x, point.y)}
+        </p>
+      )
+    case 'not-captured':
+      return (
+        <div className="message message-warning" role="status">
+          <span>{strings.spyPickNotCaptured(point.x, point.y)}</span>
+          <button type="button" onClick={() => onCapture(state.handle)}>
+            {strings.spyPickCapture}
+          </button>
+        </div>
+      )
+    case 'changed':
+      return (
+        <div className="message message-warning" role="status">
+          <span>{strings.spyPickChanged}</span>
+          <button type="button" onClick={onCaptureAgain}>
+            {strings.spyCaptureAgain}
+          </button>
+        </div>
+      )
+    case 'own-window':
+      return (
+        <p className="hint" role="status">
+          {strings.spyPickOwnWindow}
+        </p>
+      )
+    case 'no-window':
+      return (
+        <p className="hint" role="status">
+          {strings.spyPickNoWindow(point.x, point.y)}
+        </p>
+      )
+    case 'gone':
+      return (
+        <p className="message message-warning" role="status">
+          {strings.spyPickGone}
+        </p>
+      )
+    case 'failed':
+      return (
+        <p className="message message-danger" role="alert">
+          {strings.agentErrors[state.reason](state.detail)}
+        </p>
+      )
+  }
+}
+
 /** The chosen element in one line: its text (or AutomationId) and its type in plain words. */
 function ElementTitle({ element }: { element: ElementDescriptor }) {
   const { name, automationId, controlType, windowTitle } = element
@@ -109,7 +177,7 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
   const [list, setList] = useState<List>({ state: 'loading' })
   const [selected, setSelected] = useState<WindowInfo>()
   const [hotkey, setHotkey] = useState<PickHotkeyState>()
-  const [picked, setPicked] = useState<ScreenPoint>()
+  const [pick, setPick] = useState<Pick>()
   const [capture, setCapture] = useState<Capture>()
   const [node, setNode] = useState<TreeNode>()
   const [adding, setAdding] = useState(false)
@@ -177,10 +245,21 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
     }
   }, [])
 
+  // A pick is read against the capture on screen when the key is pressed (#24).
+  const onPick = useEffectEvent((event: PickEvent) => {
+    const shown =
+      capture?.state === 'loaded'
+        ? { snapshotId: capture.snapshot.snapshotId, root: capture.root }
+        : undefined
+    const state = pickState(event, shown)
+    if (state.state === 'element') chooseNode(state.node)
+    setPick({ point: event.point, state })
+  })
+
   // The pick key is global, so it is held only while the Spy is on screen.
   useEffect(() => {
     let cancelled = false
-    const unsubscribe = window.ayna.onPick(setPicked)
+    const unsubscribe = window.ayna.onPick((event) => onPick(event))
     window.ayna.setPickHotkey(true).then((state) => !cancelled && setHotkey(state))
     return () => {
       cancelled = true
@@ -195,8 +274,22 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
     startCapture(undefined)
   }
 
+  /** "Capture this window" after a pick: the window may be newer than the list on screen. */
+  async function captureWindow(handle: number, point: ScreenPoint) {
+    let win = list.state === 'loaded' ? list.windows.find((w) => w.handle === handle) : undefined
+    if (!win) {
+      const next = await fetchWindows()
+      setList(next)
+      win = next.state === 'loaded' ? next.windows.find((w) => w.handle === handle) : undefined
+    }
+    if (win) choose(win)
+    else setPick({ point, state: { state: 'gone' } })
+  }
+
   function startCapture(budgetMs: number | undefined) {
     setCapture({ state: 'loading', budgetMs })
+    // A pick note about the window that was on screen is out of date once it is captured anew.
+    setPick(undefined)
     setNode(undefined)
     setAdding(false)
     setSaved(undefined)
@@ -205,6 +298,7 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
   function chooseNode(next: TreeNode) {
     setNode(next)
     setSaved(undefined)
+    setPick(undefined) // a pick sets its own note right after
     window.ayna.highlight(next.element.bounds ?? null)
   }
 
@@ -324,10 +418,12 @@ export default function ObjectSpy({ app, version }: { app: Application; version?
                   : strings.spyHotkeyTaken(hotkey.label)}
               </p>
             )}
-            {picked && (
-              <p className="hint" role="status">
-                {strings.spyPicked(picked.x, picked.y)}
-              </p>
+            {pick && (
+              <PickNote
+                pick={pick}
+                onCapture={(windowHandle) => captureWindow(windowHandle, pick.point)}
+                onCaptureAgain={() => startCapture(retryBudget(capture))}
+              />
             )}
           </footer>
         </section>

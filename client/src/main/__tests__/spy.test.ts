@@ -5,9 +5,13 @@ import { describe, it } from 'node:test'
 import { AgentNotConnectedError, AgentRpcError, AgentTimeoutError } from '../agent.ts'
 import {
   describeFailure,
+  ELEMENT_FROM_POINT_TIMEOUT_MS,
+  elementFromPoint,
   frameRect,
   isBounds,
   listWindows,
+  nativeHandle,
+  parseElementHit,
   parseSnapshot,
   parseWindows,
   PICK_ACCELERATOR,
@@ -351,5 +355,94 @@ describe('PickHotkey', () => {
   it('names the key the way each platform writes it', () => {
     assert.equal(pickHotkeyLabel('win32'), 'Ctrl+Shift+A')
     assert.equal(pickHotkeyLabel('darwin'), '⌘⇧A')
+  })
+})
+
+describe('elementFromPoint', () => {
+  const hit = {
+    handle: 657704,
+    bounds: [614, 300, 814, 326],
+    snapshotId: '5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b',
+    elementId: 'e8',
+    element: { name: 'Username', controlType: 'Edit', bounds: [614, 300, 814, 326] },
+  }
+
+  it('sends the point as it is and returns what the agent found', async () => {
+    const calls: unknown[][] = []
+    const result = await elementFromPoint(agentAnswering(hit, calls), { x: -1915, y: 312 })
+    assert.deepEqual(result, { ok: true, hit })
+    assert.deepEqual(calls[0], [
+      'elementFromPoint',
+      { x: -1915, y: 312 },
+      ELEMENT_FROM_POINT_TIMEOUT_MS,
+    ])
+  })
+
+  it('rounds a point that is not whole, since the agent takes integers only', async () => {
+    const calls: unknown[][] = []
+    await elementFromPoint(agentAnswering(hit, calls), { x: 10.6, y: -3.2 })
+    assert.deepEqual(calls[0][1], { x: 11, y: -3 })
+  })
+
+  it('reports why the call failed', async () => {
+    const result = await elementFromPoint(agentAnswering(new AgentRpcError(-32001, 'no backend')), {
+      x: 1,
+      y: 1,
+    })
+    assert.deepEqual(result, { ok: false, reason: 'uia-unavailable' })
+  })
+
+  it('reports an answer outside the contract', async () => {
+    const result = await elementFromPoint(agentAnswering({ ...hit, bounds: [1, 2] }), {
+      x: 1,
+      y: 1,
+    })
+    assert.deepEqual(result, { ok: false, reason: 'bad-response' })
+  })
+
+  it('waits longer than a default capture, which a pick may queue behind', () => {
+    assert.ok(ELEMENT_FROM_POINT_TIMEOUT_MS > DEFAULT_SNAPSHOT_BUDGET_MS)
+  })
+})
+
+describe('parseElementHit', () => {
+  it('accepts every state of the contract', () => {
+    const nothing = { handle: null, bounds: null, snapshotId: null, elementId: null, element: null }
+    assert.deepEqual(parseElementHit(nothing), nothing)
+    const uncaptured = { ...nothing, handle: 66768, bounds: [0, 1040, 1920, 1080] }
+    assert.deepEqual(parseElementHit(uncaptured), uncaptured)
+    const changed = { ...uncaptured, snapshotId: 's1' }
+    assert.deepEqual(parseElementHit(changed), changed)
+  })
+
+  it('reads a field that is left out as null', () => {
+    assert.deepEqual(parseElementHit({ handle: 5 }), {
+      handle: 5,
+      bounds: null,
+      snapshotId: null,
+      elementId: null,
+      element: null,
+    })
+  })
+
+  it('refuses a field of the wrong type', () => {
+    assert.equal(parseElementHit(null), null)
+    assert.equal(parseElementHit([]), null)
+    assert.equal(parseElementHit({ handle: '5' }), null)
+    assert.equal(parseElementHit({ handle: 1.5 }), null)
+    assert.equal(parseElementHit({ handle: 5, bounds: [3, 0, 1, 0] }), null)
+    assert.equal(parseElementHit({ handle: 5, snapshotId: 7 }), null)
+    assert.equal(parseElementHit({ handle: 5, elementId: 7 }), null)
+    assert.equal(parseElementHit({ handle: 5, element: 'Edit' }), null)
+  })
+})
+
+describe('nativeHandle', () => {
+  it("reads Electron's window handle buffer, little-endian", () => {
+    // 64-bit Windows: an HWND in 8 bytes.
+    assert.equal(nativeHandle(Uint8Array.from([0x28, 0x09, 0x0a, 0x00, 0, 0, 0, 0])), 657704)
+    // 32-bit: 4 bytes.
+    assert.equal(nativeHandle(Uint8Array.from([0x28, 0x09, 0x0a, 0x00])), 657704)
+    assert.equal(nativeHandle(new Uint8Array()), 0)
   })
 })
