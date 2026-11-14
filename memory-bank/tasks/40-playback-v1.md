@@ -78,8 +78,41 @@ make playback depend on a property `NEVER_MATCH` already calls unreliable.
 - [ ] `Select`
 - [ ] `SelectRow` and the three row checkpoints
 - [ ] The three acceptance criteria, each with its own test
-- Next step: `Select`, down a pattern ladder, with the Qt combo-box obstacle measured rather
-  than assumed.
+- Next step: `Select` — the design is below, so it does not need re-deriving.
+
+### `Select` is not a pure action, and that is the design
+
+`actions.click` and `actions.type_text` each get **one** element and act on it. `Select`
+cannot: "choose the item whose text is `value`" needs the *item*, which is a descendant of the
+target, and on a combo box **the items may not exist until it is expanded** (#33 measured
+exactly this on Qt). So the flow belongs in the runner, where the tree and the re-read live:
+
+1. resolve the target and wait for ready (already done by the time the keyword is reached);
+2. look for a descendant of the target whose text is `value` in the tree just read;
+3. if there is none and the target has `ExpandCollapse`, expand it, **re-read the tree**, and
+   look again — the re-read is the point, because the items are new elements;
+4. `SelectionItem.Select()` the item; `Invoke` as a fallback (a menu item answers to Invoke);
+5. collapse again if step 3 expanded it, so the screen is left as the test found it;
+6. if the target is an editable combo box and none of that worked, `Value.SetValue(value)` —
+   last, because it writes text rather than choosing an item, and a combo box that accepts
+   arbitrary text would otherwise hide a genuine "no such item".
+
+An item's text: `ValuePattern` value when non-empty, else the UIA Name — **the same rule the
+schema already states for a cell** ("a cell's text is its ValuePattern value when that value is
+non-empty, else its UI Automation Name"), so `Select` and the row checks share it rather than
+each inventing one. That rule belongs in one place both can import.
+
+**The failure must distinguish three things**, because a tester fixes each differently: the
+target is not a list or combo box at all; it is, and has no item with that text (say how many
+items it does have); and it has the item but the provider refused to select it. The third is
+the Qt case and is a finding about the framework, not about the test.
+
+**Expect Qt to refuse** (`active.md`, from #33): `SelectionItem.Select`, `Invoke` and
+`ValuePattern.SetValue` all leave a Qt combo box unchanged, and the items only exist after
+`ExpandCollapse`. **SC-20 needs `Select` on a combo box**, so if it still refuses after the
+expand-and-re-read above, that is a real obstacle for a reference scenario: report it on #40
+and raise it for SC-20 rather than faking a pass. Measure it on the sample app (#33) before
+concluding anything — the earlier finding was made without the expand-then-re-read step.
 
 ### What `Verify` turned out to need
 
