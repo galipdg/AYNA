@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pytest
 
+from ayna_agent.playback import runner
 from ayna_agent.playback.runner import (
     DEFAULT_TIMEOUT_MS,
     POLL_INTERVAL_S,
@@ -205,11 +206,13 @@ def test_every_step_gets_a_result_even_when_the_first_one_fails():
 # --- what a single step can get wrong ------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "keyword", ["Select", "Verify", "Wait", "SelectRow", "Nonsense"]
-)
+@pytest.mark.parametrize("keyword", ["Select", "Verify", "SelectRow", "Nonsense"])
 def test_a_keyword_this_release_does_not_perform_fails_by_name(keyword):
-    """#26 performs Click and Type; the rest must not be silently reported as passed."""
+    """A keyword playback does not do must not be silently reported as passed.
+
+    The step editor offers every keyword of the schema, so a document can always name one the
+    agent has not got to yet, and the honest place to say so is the step's own result.
+    """
     document = {
         "version": "0.1",
         "steps": [{"keyword": keyword, "target": "login.loginButton"}],
@@ -217,7 +220,9 @@ def test_a_keyword_this_release_does_not_perform_fails_by_name(keyword):
     results, *_ = run(document)
     assert results[0].status == "failed"
     assert keyword in results[0].message
-    assert "#40" in results[0].message
+    assert "not implemented yet" in results[0].message
+    for performed in sorted(runner.IMPLEMENTED):
+        assert performed in results[0].message, "the message names what it can do"
 
 
 def test_a_target_the_request_forgot_fails_with_a_message_a_tester_can_act_on():
@@ -441,3 +446,219 @@ def test_both_step_schema_versions_are_read():
 def test_a_document_that_cannot_be_read_raises(document):
     with pytest.raises(StepDocumentError):
         run(document)
+
+
+# --- ready: exists, visible and enabled (#40) -----------------------------------------------
+
+
+def with_login_button(**changes) -> list[dict]:
+    """The trial tree with the login button's state changed."""
+    tree = nodes()
+    for node in tree:
+        if node.get("automation_id") == LOGIN:
+            node.update(changes)
+    return tree
+
+
+def test_a_disabled_target_is_waited_for_rather_than_clicked():
+    """#40: "before each step wait until the element exists, is visible and enabled".
+
+    HandBrake gives the real case (#29): with no source loaded every tab reads
+    `enabled: false`. Under #26's rule the step resolved at once and the click failed for an
+    unstated reason; the tester needs to know the control never became usable.
+    """
+    window = Window(content=with_login_button(enabled=False))
+    clock = Clock()
+    results, _window, _clock, patterns = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {"keyword": "Click", "target": "login.loginButton", "timeoutMs": 600}
+            ],
+        },
+        window=window,
+        clock=clock,
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        "login.loginButton: did not become enabled after 600 ms"
+    )
+    assert patterns.done == [], "nothing was clicked"
+    assert window.reads == 4, "it kept re-reading, as it does for a missing element"
+
+
+def test_an_offscreen_target_is_waited_for_too():
+    window = Window(content=with_login_button(offscreen=True))
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {"keyword": "Click", "target": "login.loginButton", "timeoutMs": 0}
+            ],
+        },
+        window=window,
+    )
+    assert results[0].message == (
+        "login.loginButton: did not become on screen after 0 ms"
+    )
+
+
+def test_an_element_that_is_both_disabled_and_offscreen_says_both():
+    window = Window(content=with_login_button(enabled=False, offscreen=True))
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {"keyword": "Click", "target": "login.loginButton", "timeoutMs": 0}
+            ],
+        },
+        window=window,
+    )
+    assert results[0].message == (
+        "login.loginButton: did not become enabled or on screen after 0 ms"
+    )
+
+
+@pytest.mark.parametrize("state", [{"enabled": None}, {"offscreen": None}])
+def test_a_state_the_provider_did_not_report_counts_as_ready(state):
+    """`NEVER_MATCH` already calls these unreliable, so a provider that reports neither must
+    not make every step of that application time out."""
+    window = Window(content=with_login_button(**state))
+    results, _window, _clock, patterns = run(
+        {
+            "version": "0.2",
+            "steps": [{"keyword": "Click", "target": "login.loginButton"}],
+        },
+        window=window,
+    )
+    assert results[0].status == "passed"
+    assert patterns.done == [("Click", "element-12", None)]
+
+
+def test_a_control_that_becomes_enabled_after_three_seconds_needs_no_fixed_sleep():
+    """#40's second acceptance criterion, on the state rather than on existence: the step
+    ends the moment the control becomes usable, and the elapsed time is the wait itself."""
+    window = Window(content=with_login_button(enabled=False))
+    clock = Clock()
+    original = window.read_tree
+
+    def enabling() -> tuple[list[dict], list[str]]:
+        if clock.at >= 3.0:
+            window.content = nodes()
+        return original()
+
+    window.read_tree = enabling  # type: ignore[method-assign]
+    results, _window, _clock, patterns = run(
+        {
+            "version": "0.2",
+            "steps": [{"keyword": "Click", "target": "login.loginButton"}],
+        },
+        window=window,
+        clock=clock,
+    )
+    assert results[0].status == "passed"
+    assert patterns.done == [("Click", "element-12", None)]
+    assert clock.at == pytest.approx(3.0), "it waited exactly as long as it had to"
+    assert set(clock.slept) == {POLL_INTERVAL_S}, (
+        "no fixed sleep, only the poll interval"
+    )
+    assert results[0].duration_ms == 3000
+
+
+# --- Wait ----------------------------------------------------------------------------------
+
+
+def test_wait_passes_as_soon_as_the_target_is_ready_and_acts_on_nothing():
+    results, window, clock, patterns = run(
+        {
+            "version": "0.2",
+            "steps": [{"keyword": "Wait", "target": "login.loginButton"}],
+        }
+    )
+    assert results[0].status == "passed"
+    assert results[0].matched == "primary"
+    assert results[0].performed_with is None, "a Wait performs nothing"
+    assert patterns.done == []
+    assert window.reads == 1
+    assert clock.slept == []
+
+
+def test_wait_waits_for_a_target_that_appears_late():
+    window = Window(content=[])
+    clock = Clock()
+    original = window.read_tree
+
+    def appearing() -> tuple[list[dict], list[str]]:
+        if window.reads >= 2:
+            window.content = nodes()
+        return original()
+
+    window.read_tree = appearing  # type: ignore[method-assign]
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [{"keyword": "Wait", "target": "login.loginButton"}],
+        },
+        window=window,
+        clock=clock,
+    )
+    assert results[0].status == "passed"
+    assert window.reads == 3
+
+
+def test_wait_fails_with_the_logical_name_when_the_target_never_arrives():
+    """#40's third criterion: the message names the logical name and the time waited."""
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {"keyword": "Wait", "target": "login.loginButton", "timeoutMs": 500}
+            ],
+        },
+        window=Window(content=[]),
+    )
+    assert results[0].status == "failed"
+    assert "login.loginButton" in results[0].message
+    assert "within 500 ms" in results[0].message
+
+
+def test_wait_does_not_take_a_value():
+    """The schema allows `value` for Type and Select only; a Wait carrying one is a client
+    bug and must not be read as "wait for this text"."""
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {"keyword": "Wait", "target": "login.loginButton", "value": "admin"}
+            ],
+        }
+    )
+    assert results[0].status == "failed"
+    assert "value" in results[0].message
+
+
+@pytest.mark.parametrize(
+    ("field", "extra", "allowed"),
+    [
+        ("value", "admin", "Select and Type"),
+        ("row", {"index": 1}, "SelectRow"),
+        ("checkpoint", {"property": "enabled", "expected": True}, "Verify"),
+    ],
+)
+def test_a_field_on_a_keyword_that_forbids_it_is_refused_not_ignored(
+    field, extra, allowed
+):
+    """Ignoring it would play a mis-built document as if it said something else and report
+    `passed`, which is the one outcome a tester cannot debug."""
+    results, _window, _clock, patterns = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {"keyword": "Click", "target": "login.loginButton", field: extra}
+            ],
+        }
+    )
+    assert results[0].status == "failed"
+    assert field in results[0].message
+    assert allowed in results[0].message
+    assert patterns.done == [], "nothing was clicked"

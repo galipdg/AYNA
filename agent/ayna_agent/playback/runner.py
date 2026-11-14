@@ -14,8 +14,14 @@ What a run does, per step:
 test did not reach, and the results after it would describe an application state nobody asked
 for.
 
-`#26 implements Click and Type` -- the issue says so, and `Select`, `Verify`, `Wait` and
-`SelectRow` fail with a message naming #40, rather than being quietly skipped as passed.
+**"Ready" is the pre-step wait, and it is more than "resolves"** (#40): a step waits until its
+target resolves to exactly one element *and* that element is neither disabled nor off screen,
+which is what the issue asks for ("exists, is visible and enabled") and what the schema calls
+ready. A `Verify` is the exception -- a checkpoint may be *about* a disabled element -- so it
+waits only for resolution and the checkpoint re-reads on its own.
+
+A keyword outside `IMPLEMENTED` fails with a message naming what this agent does perform,
+rather than being quietly skipped as passed.
 
 Everything here is pure: the window is read through an injected callable and time through
 injected `now`/`sleep`, so the ordering, the waiting and the stop-on-failure rules are tested
@@ -53,8 +59,21 @@ from ayna_agent.playback.resolve import (
 #: by name, which is the honest place for that to happen.
 SUPPORTED_STEP_VERSIONS: tuple[str, ...] = ("0.1", "0.2")
 
-#: Keywords #26 performs. The rest are #40's.
-IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type"})
+#: Keywords this runner performs. A keyword outside it fails per step, by name, which is the
+#: honest place for "not implemented" to appear: the step editor offers every keyword of the
+#: schema, so a document can always name one playback does not do yet.
+IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type", "Wait"})
+
+#: Which keyword may carry which optional field, from the step schema's own words: `value` is
+#: "text for Type and Select, not allowed for the other keywords", `row` is "the row SelectRow
+#: selects" and `checkpoint` is "the check of a Verify step". A field on a keyword that forbids
+#: it is refused rather than ignored: ignoring it would play a mis-built document as if it said
+#: something else and report `passed`, which is the one outcome a tester cannot debug.
+ALLOWED_FIELDS: dict[str, frozenset[str]] = {
+    "value": frozenset({"Type", "Select"}),
+    "row": frozenset({"SelectRow"}),
+    "checkpoint": frozenset({"Verify"}),
+}
 
 #: A step without `timeoutMs` waits this long (RS NFR-05, team-confirmed in #143). Per run it
 #: is configurable; `timeoutMs: 0` on a step means check once and never means "use this".
@@ -75,6 +94,38 @@ NOT_RUN = "notRun"
 
 class StepDocumentError(Exception):
     """The document is not a step document this runner can read."""
+
+
+class NotReady(Exception):
+    """The target resolved, but it is not usable yet: disabled, or off screen.
+
+    Its own failure, not an action error. The issue asks the runner to wait until the element
+    "exists, is visible and enabled" and the schema calls the same thing *ready*
+    (``timeoutMs`` is the "longest wait for the target … to become ready"), so an element that
+    resolves while disabled is something to keep waiting for -- and then to report as never
+    having become usable, rather than as a click that failed for an unstated reason.
+    """
+
+    def __init__(self, name: str, missing: Sequence[str]) -> None:
+        self.name = name
+        self.missing = list(missing)
+        wanted = " or ".join(self.missing)
+        super().__init__(f"{name}: did not become {wanted}")
+
+
+def not_ready(descriptor: Any) -> list[str]:
+    """What stops `descriptor` from being acted on, in the words the message uses.
+
+    `None` counts as **ready**: a provider that did not report `IsEnabled` or `IsOffscreen` is
+    common, and refusing to act then would make playback depend on properties `NEVER_MATCH`
+    already calls unreliable. Only an explicit `False`/`True` holds a step back.
+    """
+    missing = []
+    if descriptor.enabled is False:
+        missing.append("enabled")
+    if descriptor.offscreen is True:
+        missing.append("on screen")
+    return missing
 
 
 @dataclass(frozen=True, slots=True)
@@ -214,11 +265,10 @@ def _run_one(
 
     keyword = step.get("keyword")
     if keyword not in IMPLEMENTED:
-        known = " and ".join(sorted(IMPLEMENTED))
+        known = ", ".join(sorted(IMPLEMENTED))
         return done(
             FAILED,
-            f"keyword {keyword!r} is not implemented yet: #26 performs {known}, "
-            f"the rest comes with #40",
+            f"keyword {keyword!r} is not implemented yet; this agent performs {known}",
         )
 
     name = step.get("target")
@@ -231,6 +281,14 @@ def _run_one(
             f"the run request carries no properties for {name}; the object may have been "
             f"renamed or removed from the repository",
         )
+    for field, keywords in ALLOWED_FIELDS.items():
+        if field in step and keyword not in keywords:
+            allowed = " and ".join(sorted(keywords))
+            return done(
+                FAILED,
+                f"a {keyword} step carries {field!r}, which only {allowed} takes",
+            )
+
     value = step.get("value")
     if keyword == "Type" and not isinstance(value, str):
         return done(FAILED, "a Type step needs a text value")
@@ -256,6 +314,9 @@ def _run_one(
             timeout_ms=timeout_ms,
             now=now,
             sleep=sleep,
+            # A checkpoint may be *about* a disabled or offscreen element, so a Verify waits
+            # only for resolution and the checkpoint does its own re-reading.
+            require_ready=keyword != "Verify",
         )
     except Unsupported as exc:
         return done(FAILED, f"{name}: {exc}")
@@ -265,6 +326,15 @@ def _run_one(
         return done(FAILED, str(exc))
     except NotFound as exc:
         return done(FAILED, f"{exc} within {timeout_ms} ms")
+    except NotReady as exc:
+        # `after N ms`, not `within`: this one waited for a *state* to change rather than for
+        # an element to appear. The wording is the one promised in the PR #231 review.
+        return done(FAILED, f"{exc} after {timeout_ms} ms")
+
+    if keyword == "Wait":
+        # "only wait until the target is ready; never a fixed sleep" (the schema). The wait
+        # already happened above, so there is nothing left to do and nothing performed it.
+        return done(PASSED, matched=found.which)
 
     try:
         if keyword == "Click":
@@ -285,8 +355,13 @@ def _resolve_waiting(
     timeout_ms: int,
     now: Callable[[], float],
     sleep: Callable[[float], None],
+    require_ready: bool = True,
 ) -> Resolution:
-    """Re-read the window until `name` resolves to one element, or the time runs out.
+    """Re-read the window until `name` is ready to act on, or the time runs out.
+
+    Ready means: resolves to exactly one element, and that element is not disabled and not off
+    screen (:func:`not_ready`). `require_ready=False` waits only for resolution, which is what
+    a `Verify` needs -- a checkpoint on `enabled: false` would otherwise be unplayable.
 
     `timeoutMs: 0` checks once (RS NFR-05). The last failure is the one raised, so the message
     describes the state the window actually ended in rather than the first thing that went
@@ -299,12 +374,17 @@ def _resolve_waiting(
         nodes, infos = read_tree()
         descriptors = describe_tree(nodes)
         try:
-            return resolve(descriptors, infos, name, primary, fallback)
+            found = resolve(descriptors, infos, name, primary, fallback)
         except Unsupported:
             # A property set playback cannot match on is a client bug: waiting cannot fix it.
             raise
         except (NotFound, Ambiguous) as exc:
             last: Exception = exc
+        else:
+            missing = not_ready(found.descriptor) if require_ready else []
+            if not missing:
+                return found
+            last = NotReady(name, missing)
         remaining = deadline - now()
         if timeout_ms == 0 or remaining <= 0:
             raise last
