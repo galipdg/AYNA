@@ -427,6 +427,31 @@ two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`
 incidentally all session — every client start launched the agent and every close logged
 `stdin closed, shutting down` — so the check is presumably about crash and restart.
 
+## 2026-11-12 (second session) — #29 built; #231 approved; #162 unblocked
+
+- Asked the user about the overdue #162 vs #29 first, as they wanted. They chose to run both in
+  parallel: pull the models in the background and build #29 meanwhile. **Both models are now on
+  this machine** (`qwen3:8b`, `gemma4:e4b-it-qat`; Ollama 0.40.16 was already installed, which
+  #162's body does not know), so #162's remaining work is machine time, not a download.
+- **Reviewed and approved PR #231** (omer, run history + report window, #68) before starting new
+  work. Answered his two questions as commitments: #61 does not want the app-wide run list and it
+  must not be widened for it; and the failed-Verify message wording for #40 is now fixed, in
+  `resolve.py`'s house style. Asked for one fix before merge — the report's temp files are
+  deleted with a fire-and-forget `rm` in `will-quit`, so 15 MB pages carrying screenshots of the
+  app under test can survive in `%TEMP%`.
+- **#29: the harness and the labelling guide are committed** (`ae9ab25` on
+  `hasan/29-rq1-measure`). `measure.py` has `capture` (Windows, drives the agent's own
+  `UiaDesktop`) and `measure` (pure, reads committed snapshots). It imports `ayna_agent.model`
+  and `playback.resolve` rather than copying them, so "recognised" is decided by the Spy's own
+  proposal rule and playback's own comparison. `labelling.md` is the ground-truth procedure,
+  which exists because an automated denominator hides a control the walk never found. 31 new
+  tests, 43 eval tests pass, ruff clean.
+- **None of #29's three acceptance criteria is met**: all three need the pilot apps measured
+  here, and the user asked to run nothing on the machine this session. PR opened without
+  `Closes #29` on purpose, to get the definition agreed before the numbers exist.
+- Next step: with the machine idle, `kp_state.py main` → `capture keepass2 --screen main`,
+  the same for `entry`, HandBrake `main-summary`, then `measure`. Then leave the machine alone
+  for #162's idle batch.
 ## 2026-11-12 (late) — omer's #221 Windows check: 7 of 7 pass
 
 - **Ran the whole check on `omer/221-grid-columns` (`c1534e3`) with the user driving the UI, and
@@ -661,3 +686,63 @@ Week 3 and sits outside that order — it needs a decision, not work.
   a false `agent-error`. Confirmed what he asked: `pickState` reads #22's three states correctly.
   I owe #24 its Windows check, which is the first real test of the client's DIP -> physical
   conversion at 100 % and 150 %.
+## 2026-11-14 — #29's first real numbers, and two approved PRs unblocked
+
+- **Unblocked #227 and #232.** Both were APPROVED but `CONFLICTING`, and in both the only
+  conflict was `memory-bank/people/hasan/active.md` — exactly the clash the file's own header
+  predicted. Merged `origin/main` into each, kept the branch's (newer) version and folded #33's
+  unique facts in below it. Re-ran #227's suite on the merge: **436 agent tests pass, ruff
+  clean**. Pushed both with the user's OK; both are now APPROVED **and** MERGEABLE, and the
+  merge is omer's.
+- **#29: the first captures ran on this machine.** KeePass 2 `main` (74 elements, 561 ms) and
+  `entry-editor` (40, 291 ms) via `kp_state.py`, HandBrake `main-summary` (149, 1267 ms), all
+  with 0 read errors. Unlabelled rates: HandBrake 45 controls / 97.8 %, KeePass 2 53 / 100 %.
+  Posted to the team on #29 with the warning that these are not RQ1's rate.
+- **The first real run found a real bug**, which is why it was worth running before the labelled
+  half: `capture` snapshotted *every* window of the process, so KeePass 2's `Add Entry` state
+  wrote the dialog **and** the main form behind it, and `measure` — which counts every snapshot
+  file of an app — counted the main window's controls twice. Fixed by taking the topmost window
+  (`EnumWindows` is Z-order; the foreground window is useless here because the terminal is in
+  front), with `--all-windows` for the old behaviour, and extracted into `pick_windows` /
+  `snapshot_name` so four new tests cover it off Windows. 35 rq1 tests, 104 eval tests.
+- **The useful result is one control AYNA cannot identify.** 7 of HandBrake's 8 toolbar buttons
+  have an `automationId` and a `name`; the eighth has neither, so its proposal escalates to
+  `{className, parentPath}`, shared by all 8. `siblingIndex` would separate it and `suggestUses`
+  deliberately will not use it. Asked omer on #29 to confirm that stays — if so it is a measured
+  limit for #64, not a bug to fix.
+- Two environment facts cost time and are in `learnings.md`: `capture` needs `agent/.venv`
+  because `recognition/uia.py` reaches `ayna_agent.rpc`, which imports `websockets` at module
+  level (request in galip's inbox; his file, untouched); and leaving pilot apps open makes
+  `eval/apps/trial/tests/test_uia.py` print a `0x8001010d` fatal-exception dump and take 57 s
+  instead of 2.1 s — retried, nothing fails, but it reads like a crash.
+- **Next step:** the eight-step check on #29 (the four screens behind a click), then ground-truth
+  labelling, then the only rate worth reporting.
+
+## 2026-11-14 (second session) — #29, the eight-step check and the first labelled rates
+
+- Ran the check posted on #29 with the user staging each screen. **Every capture 0 read
+  errors.** 6 steps passed as written; the other two were the check's own mistakes — the
+  interpreter must be `agent/.venv` (the root one has no `websockets`) and HandBrake sits one
+  directory deeper than every note claimed.
+- **Caught a staging error in my own committed evidence.** The 2026-11-14 `main-summary` had
+  been taken with HandBrake's source picker still up (149 elements against the real 118). Found
+  by capturing to a probe name and diffing rather than trusting the file. The numbers I had
+  already posted to #29 (45 controls / 97.8 %) came from it.
+- **Retracted the headline I posted.** `e20`, the "control AYNA cannot identify", has no
+  `bounds` key at all and reads `enabled: false` — a WPF template part, not a control. Withdrew
+  the `siblingIndex` question to omer. The real limit is a **nameless `MenuItem` inside a named
+  `Menu`**, where identity lives one level up the tree.
+- **First labelled rates:** HandBrake `queue` 4/6 = 66.7 %, KeePass 2 `options` 35/35 = 100 %.
+  The user's `missing` sweep came back empty on both. Picked those two screens *because* they
+  carry the findings; `main-summary` would have read 100 % and hidden the result.
+- **Found and closed a hole in my own harness:** a half-labelled screen measured silently, since
+  `counted()` keeps only `control` rows. `apply_labels` now refuses it, with two tests.
+- **Another session was working in the same tree** (`.codex/`), mid-merge on my branch. Its work
+  was good — it had reached the composite-control rule independently — so I finished it rather
+  than reverting it. Lesson: check `git status` before trusting a clean tree.
+- `main-video` dropped from `apps.json`: HandBrake's tabs are all `enabled: false` without a
+  source, so the screen's own instruction contradicted itself.
+- Pushed `afe8343`; posted the correction to #29; ticked its three criteria. Issue left open and
+  PR #233 still has no `Closes` — the user's call.
+- **Next step:** a second independent labeller for the report's screen, then #162 (overdue,
+  Week 3), which needs the machine idle.
