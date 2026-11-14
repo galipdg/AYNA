@@ -1,0 +1,933 @@
+{
+  "window": {
+    "title": "ayna-demo.kdbx - KeePass",
+    "processName": "KeePass.exe"
+  },
+  "capture": {
+    "startedAt": "2026-11-14T14:08:33+03:00",
+    "durationMs": 471,
+    "budgetMs": 5000,
+    "elementCount": 74,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "elements": [
+    {
+      "elementId": "e0",
+      "controlType": "Window",
+      "automationId": "MainForm",
+      "name": "ayna-demo.kdbx - KeePass",
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 330082,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 0,
+        "text": "ayna-demo.kdbx - KeePass",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          515,
+          187,
+          1405,
+          832
+        ]
+      }
+    },
+    {
+      "elementId": "e1",
+      "controlType": "Pane",
+      "automationId": "m_splitHorizontal",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 199000,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 199000,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          281,
+          1396,
+          796
+        ]
+      }
+    },
+    {
+      "elementId": "e2",
+      "controlType": "Pane",
+      "automationId": "198984",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 198984,
+      "uiaIdUsable": false,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 198984,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          281,
+          1396,
+          710
+        ]
+      }
+    },
+    {
+      "elementId": "e3",
+      "controlType": "Pane",
+      "automationId": "m_splitVertical",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 198998,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 198998,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          281,
+          1396,
+          710
+        ]
+      }
+    },
+    {
+      "elementId": "e4",
+      "controlType": "Pane",
+      "automationId": "330080",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 330080,
+      "uiaIdUsable": false,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 330080,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          281,
+          742,
+          710
+        ]
+      }
+    },
+    {
+      "elementId": "e5",
+      "controlType": "Tree",
+      "automationId": "m_tvGroups",
+      "name": null,
+      "className": "WindowsForms10.SysTreeView32.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 330084,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.SysTreeView32.app.0.2bf8098_r6_ad1",
+        "control_id": 330084,
+        "text": "",
+        "friendlyClassName": "TreeView",
+        "bounds": [
+          524,
+          281,
+          742,
+          710
+        ]
+      }
+    },
+    {
+      "elementId": "e6",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "ayna-demo",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e7",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "General",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e8",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "Windows",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e9",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "Network",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e10",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "Internet",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e11",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "eMail",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e12",
+      "controlType": "TreeItem",
+      "automationId": null,
+      "name": "Homebanking",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e13",
+      "controlType": "Pane",
+      "automationId": "199016",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 199016,
+      "uiaIdUsable": false,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 199016,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          747,
+          281,
+          1396,
+          710
+        ]
+      }
+    },
+    {
+      "elementId": "e14",
+      "controlType": "List",
+      "automationId": "m_lvEntries",
+      "name": null,
+      "className": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 199024,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1",
+        "control_id": 199024,
+        "text": "",
+        "friendlyClassName": "ListView",
+        "bounds": [
+          747,
+          281,
+          1396,
+          710
+        ]
+      }
+    },
+    {
+      "elementId": "e15",
+      "controlType": "Header",
+      "automationId": "Header",
+      "name": "Header Control",
+      "className": "SysHeader32",
+      "nativeWindowHandle": 329792,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "SysHeader32",
+        "control_id": 0,
+        "text": "",
+        "friendlyClassName": "Header",
+        "bounds": [
+          749,
+          283,
+          1394,
+          309
+        ]
+      }
+    },
+    {
+      "elementId": "e16",
+      "controlType": "HeaderItem",
+      "automationId": "HeaderItem 0",
+      "name": "Title",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e17",
+      "controlType": "HeaderItem",
+      "automationId": "HeaderItem 1",
+      "name": "User Name",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e18",
+      "controlType": "HeaderItem",
+      "automationId": "HeaderItem 2",
+      "name": "Password",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e19",
+      "controlType": "HeaderItem",
+      "automationId": "HeaderItem 3",
+      "name": "URL",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e20",
+      "controlType": "HeaderItem",
+      "automationId": "HeaderItem 4",
+      "name": "Notes",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e21",
+      "controlType": "ListItem",
+      "automationId": null,
+      "name": "Sample Entry",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e22",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Sample Entry",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e23",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "User Name",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e24",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "********",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e25",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "https://keepass.info/",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e26",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Notes",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e27",
+      "controlType": "ListItem",
+      "automationId": null,
+      "name": "Sample Entry #2",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e28",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Sample Entry #2",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e29",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Michael321",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e30",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "********",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e31",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "https://keepass.info/help/kb/testform.html",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e32",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e33",
+      "controlType": "Pane",
+      "automationId": "1245458",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 1245458,
+      "uiaIdUsable": false,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 1245458,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          715,
+          1396,
+          796
+        ]
+      }
+    },
+    {
+      "elementId": "e34",
+      "controlType": "Document",
+      "automationId": "m_richEntryView",
+      "name": "RichEdit Control",
+      "className": "WindowsForms10.RICHEDIT50W.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 1706074,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.RICHEDIT50W.app.0.2bf8098_r6_ad1",
+        "control_id": 1706074,
+        "text": "Group: ayna-demo.",
+        "friendlyClassName": "WindowsForms10.RICHEDIT50W.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          715,
+          1396,
+          796
+        ]
+      }
+    },
+    {
+      "elementId": "e35",
+      "controlType": "StatusBar",
+      "automationId": "m_statusMain",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 327896,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 327896,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          796,
+          1396,
+          823
+        ]
+      }
+    },
+    {
+      "elementId": "e36",
+      "controlType": "Thumb",
+      "automationId": null,
+      "name": "Grip",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e37",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Ready.",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e38",
+      "controlType": "ToolBar",
+      "automationId": "m_toolMain",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 2164550,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 2164550,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          253,
+          1396,
+          281
+        ]
+      }
+    },
+    {
+      "elementId": "e39",
+      "controlType": "Thumb",
+      "automationId": null,
+      "name": "Grip",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e40",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "New Database",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e41",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Open Database",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e42",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Save Database",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e43",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e44",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Add Entry",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e45",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e46",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Copy User Name",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e47",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Copy Password",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e48",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Open URL(s)",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e49",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Copy URL(s)",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e50",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Perform Auto-Type",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e51",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e52",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Find",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e53",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Find Entries",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e54",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e55",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Lock Workspace",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e56",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e57",
+      "controlType": "ComboBox",
+      "automationId": "3606620",
+      "name": null,
+      "className": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 3606620,
+      "uiaIdUsable": false,
+      "win32": {
+        "className": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1",
+        "control_id": 3606620,
+        "text": "",
+        "friendlyClassName": "ComboBox",
+        "bounds": [
+          892,
+          253,
+          1052,
+          281
+        ]
+      }
+    },
+    {
+      "elementId": "e58",
+      "controlType": "Edit",
+      "automationId": "1001",
+      "name": null,
+      "className": "Edit",
+      "nativeWindowHandle": 199060,
+      "uiaIdUsable": false,
+      "win32": {
+        "className": "Edit",
+        "control_id": 1001,
+        "text": "",
+        "friendlyClassName": "Edit",
+        "bounds": [
+          895,
+          256,
+          1028,
+          278
+        ]
+      }
+    },
+    {
+      "elementId": "e59",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Open",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e60",
+      "controlType": "MenuBar",
+      "automationId": "m_menuMain",
+      "name": null,
+      "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+      "nativeWindowHandle": 264538,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "control_id": 264538,
+        "text": "",
+        "friendlyClassName": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "bounds": [
+          524,
+          225,
+          1396,
+          253
+        ]
+      }
+    },
+    {
+      "elementId": "e61",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "File",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e62",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Group",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e63",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Entry",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e64",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Find",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e65",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "View",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e66",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Tools",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e67",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Help",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e68",
+      "controlType": "TitleBar",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e69",
+      "controlType": "MenuBar",
+      "automationId": "MenuBar",
+      "name": "System",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e70",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "System",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e71",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Minimize",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e72",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Maximize",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e73",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Close",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    }
+  ]
+}
