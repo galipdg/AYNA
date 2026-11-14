@@ -380,3 +380,17 @@ Windows tests do exactly that via `_python_with_pyside()`.
   status" as if it were a permission problem. The working form is
   `gh auth refresh --hostname github.com --scopes project`; the user runs it (it is a device
   flow, so it needs a browser), and afterwards `gh project item-edit` works from the agent.
+- 2026-11-14 · hasan · **`model.describe_tree` loops for ever on a node that is its own
+  ancestor.** Its ancestor walk is `while walker is not None: walker = by_id.get(...)` with no
+  seen-set, so a hand-written tree where a node's `parent` is itself hangs pytest with no
+  output — which is exactly how I lost a test run on #40. Unreachable from a real UIA walk
+  (parents come from the walker and only go upward), so it is a fixture hazard, not a bug in
+  the product: **when you build tree fixtures by hand, give every node a parent above it**.
+  Noted as an open issue in the #40 task note rather than fixed, because `model.py` is
+  normative under #11.
+- 2026-11-14 · hasan · **A helper module next to the tests is importable by its bare name.**
+  `agent/tests/grids.py` is imported as `import grids` from two test files: pytest's default
+  import mode prepends each test file's directory to `sys.path` when there is no
+  `__init__.py`, and a module without a `test_` prefix is not collected. Worth knowing before
+  copying a fixture into a second test file — the #40 row shapes are measurements, and two
+  copies of a measurement drift.

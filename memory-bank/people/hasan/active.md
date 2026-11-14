@@ -7,10 +7,13 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   merge. When this branch merges, keep the 29-branch's header and this branch's own
   "omer's #221 Windows check" section — it is the one section `main` does not have.
 - Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
-  **`Wait` and `Verify` are done** (`826b386`, `ca51c83`); `Select` and `SelectRow` + the three
-  row checkpoints are left. **504 agent tests pass, ruff clean. No PR yet.** The `Select` design
-  is written out in `memory-bank/tasks/40-playback-v1.md` -- **read that before touching it**,
-  because it is not a pure action and the reason matters.
+  **All six keywords are implemented and all three acceptance criteria are tested**: `Wait` and
+  the ready gate (`826b386`), `Verify` (`ca51c83`), `Select` (`f36f1b3`), and `SelectRow` + the
+  three row checkpoints. **612 agent tests pass, ruff clean (2026-11-14). No PR yet** -- the
+  next step is to ask the user about pushing and opening it, then post the Windows manual check
+  on the issue and add `needs-windows-test`. Nothing in the code waits on anyone.
+  **Read `memory-bank/tasks/40-playback-v1.md` before touching any of it**: the three row
+  shapes, the duplicated column rule and the message wording are all decisions with reasons.
 - **This file is now spread over four branches and no copy is complete.** `hasan/29-rq1-measure`
   has the long review history and #29; `hasan/162-windows-llm-latency` has #162 and #23's
   summary; this one has #40. **Whichever merges last keeps every branch's own section.** Also:
@@ -57,7 +60,26 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 ## #40, so the next session does not re-derive it
 
 `playback/runner.py` had the shape from #26 and `IMPLEMENTED = {"Click", "Type"}`; it is now
-`{"Click", "Type", "Wait", "Verify"}`, plus a new `playback/checkpoint.py`.
+every keyword of step schema v0.2, with four new modules: `playback/checkpoint.py` (one
+property of one element), `playback/tree.py` (one read of the window, plus the schema's single
+rule for the text a cell or an item shows), `playback/items.py` (`Select`) and
+`playback/rows.py` (`SelectRow` and the row checks). `agent/tests/grids.py` holds the three
+measured row shapes for both row test files.
+
+**The five decisions most likely to be re-derived or broken:**
+- **`Select` is not a pure action**: a closed combo box has no items at all, so the target is
+  expanded and the window **read again** before looking (#33). An editable box takes the text
+  through `SetValue` only after the whole wait, and the value is **read back**.
+- **Three row shapes, by structure not by framework**: the item is the row (KeePass 2), the
+  items are the cells and only `GridItem` says which row they belong to (Qt has no row
+  element), or the item is a one-cell row (`QListWidget`).
+- **`playback/rows.py:columns_of` duplicates `server/.../GridColumns.java` on purpose** and
+  must stay identical: that rule fills the dropdown the tester picked the column from, so a
+  divergence reads the cell *next to* the one they meant. omer has this in his inbox.
+- **`SelectRow` never uses `Invoke`** (it would *activate* the row and open a window); the
+  fallback is MSAA's `LegacyIAccessible.Select`, which KeePass 2 needs.
+- **A `SelectRow` on a cell-selecting view passes with a `message`** — the first passing step
+  that carries one, which the ADR asks for and the run report (#59) renders.
 
 - **"Ready" is the pre-step wait and it is more than "resolves"**: a step waits until the target
   resolves *and* is neither disabled nor off screen -- what the issue text asks for ("exists, is

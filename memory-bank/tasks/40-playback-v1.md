@@ -74,11 +74,28 @@ make playback depend on a property `NEVER_MATCH` already calls unreliable.
 
 - [x] Branch, task note, the delta and the "ready" design
 - [x] `Wait` + the ready gate — `826b386`
-- [x] `Verify` for the six element properties — `playback/checkpoint.py`
-- [ ] `Select`
-- [ ] `SelectRow` and the three row checkpoints
-- [ ] The three acceptance criteria, each with its own test
-- Next step: `Select` — the design is below, so it does not need re-deriving.
+- [x] `Verify` for the six element properties — `playback/checkpoint.py`, `ca51c83`
+- [x] `Select` — `playback/items.py` + `playback/tree.py`, `f36f1b3`
+- [x] `SelectRow` and the three row checkpoints — `playback/rows.py`
+- [x] The three acceptance criteria, each with its own test (see below)
+- [x] `docs/agent-rpc.md`'s `runSteps` section rewritten for all six keywords
+- **612 agent tests pass, ruff clean (2026-11-14).** No PR yet.
+- Next step: ask the user about pushing and opening the PR, then post the Windows manual check
+  on the issue and add `needs-windows-test`. Nothing in the code is waiting on anything.
+
+### The three acceptance criteria, and where each is tested
+
+1. **Unit test per keyword** — `test_playback_runner.py`: Click/Type from #26, then `Wait`,
+   `Verify` (six properties), `Select`, `SelectRow` and the three row checks, each with its
+   happy path and its failures. The pure rules are in `test_playback_items.py` (29) and
+   `test_playback_rows.py` (44).
+2. **A control that appears after 3 s, no fixed sleeps** — four of them now, one per kind of
+   wait: the element (#26's), a property (`Verify`), the items of a list (`Select`) and the
+   rows of a grid (`SelectRow` and a row check). Each asserts `clock.at == 3.0`, that every
+   sleep was exactly `POLL_INTERVAL_S`, and that `durationMs` is 3000.
+3. **Timeout names the logical name** — asserted on `Wait`, `Select`, `SelectRow` and the
+   checkpoints. **Kept as `within N ms`** for an element that never appeared (see the decision
+   above); a state that never changed says `after N ms`.
 
 ### `Select` is not a pure action, and that is the design
 
@@ -134,7 +151,69 @@ concluding anything — the earlier finding was made without the expand-then-re-
   elements and holding the old one would read a stale handle — the same reason #22's
   `elementFromPoint` compares identity instead of trusting a remembered element.
 
+### What `SelectRow` and the row checks turned out to need
+
+- **There is no single shape for "a row", and the rule has to be structural**, not per
+  framework, or the next application breaks it. Three shapes, all from the v0.2 ADR's own
+  measurements: *the item is the row* and its children are the cells (KeePass 2's `ListItem`
+  with one `Text` per column, a WinForms `DataGridView` row); *the items are the cells* and
+  only `GridItemPattern` says which row they belong to (a Qt `QTableView` has **no row element
+  at all**); *the item is a one-cell row* (a `QListWidget`). The code asks "do the items have
+  cell children?" and then "is the target a Table/DataGrid?", which covers all three without
+  naming a framework.
+- **A grid whose cells do not report `GridItem` is refused, not guessed at.** Inferring rows
+  from the child order would be silently wrong on a sorted or virtualised grid, and the whole
+  point of #40 is that a wrong `passed` is undebuggable.
+- **The column rule is a deliberate duplicate of `server/.../repository/GridColumns.java`**
+  (#221) and has to stay exact: that is what fills `RepoObject.columns`, which is the dropdown
+  the tester picked the column from. A column list off by one would read the cell *next to* the
+  one they meant. `test_playback_rows.py` pins the Qt row-header case to the pixel (the header
+  `1` ends at 666, the first cell starts at 667).
+- **An empty Qt table still reports its columns here, which is better than the ADR expected.**
+  The ADR reasoned from `TablePattern.GetColumnHeaders`, which Qt collects through row 0;
+  reading the captured `HeaderItem`s instead still names them. So "a keyed row matches nothing
+  because the target names no columns" happens only where there are no header elements at all
+  — HandBrake's queue, not an empty table. Worth telling galip, since it is his ADR's text.
+- **`rowCount` prefers `GridPattern.RowCount`** — cheap, and it counts rows a virtualised grid
+  has not materialised, which the walk cannot see. So `rowCount` 120 and `rowExists {index:
+  40}` false can both be true at once; that is honest (`rowCount` is what the grid says it
+  has, `rowExists` is what is on screen) and it is a known limit in the ADR.
+- **`SelectRow` never falls back to `Invoke`.** Invoking a row *activates* it — a double-click,
+  which opens what it points at — and a step that said "select" must not open a window. The
+  fallback is MSAA's `LegacyIAccessible.Select(TAKEFOCUS|TAKESELECTION)`, because KeePass 2's
+  list offers only Selection and LegacyIAccessible (measured 2026-11-07) and that call means
+  the same thing.
+- **A view that selects cells rather than rows passes with a message**, which is the ADR's
+  "report what it selected instead of claiming the row". A failure would be wrong — the step
+  did select — and silence would be worse. Detected with **one** pattern read, the row's last
+  cell, rather than one per cell. This is the first place a *passing* step carries a `message`;
+  the run report (#59) renders it, which is exactly where it should show up.
+- **A cell that is not there is not an empty cell.** `expected: ""` is a real check ("the Notes
+  column is empty"), so `cell_of` answers None for a missing cell and the step says "cannot be
+  read" with the row count, rather than comparing nothing against "".
+- **The ` after N ms` suffix is appended at the end for the checkpoints** (where the wording is
+  what omer's report is written against) but sits mid-message for the action keywords, whose
+  wording is new: `row 5 was not found after 500 ms; the target has 2 rows` reads, while the
+  same clause at the end does not. One rule each, both deliberate.
+- **A step whose own shape is wrong fails before the window is read at all**: the checkpoint
+  and the row are validated in `_run_one`, so a `SelectRow` with no row or a `cell` check with
+  no column does not spend its timeout first. The tests assert `reads == 0`.
+- **`agent/tests/grids.py` is the one description of the three measured shapes**, shared by the
+  row tests and the runner tests, with an `info` string per node naming the live element. Do
+  not duplicate those trees into a test file: they are the measurements.
+
 ## Open issues
+
+- **`model.describe_tree` loops for ever on a node that is its own ancestor** (the `while
+  walker is not None` ancestor walk has no seen-set). Unreachable from a real UIA walk, where
+  parents come from the walker and are strictly upward, and found only because a defensive test
+  of mine built such a tree by hand — it hung pytest. Not fixed here: it is outside #40's scope
+  and `model.py` is normative under #11. Worth one small issue.
+- **The editable-combo `SetValue` read-back may be too strict on a slow provider.** `write`
+  confirms the text by reading `CurrentValue` straight back; a box that applies the value
+  asynchronously would read as a refusal and the step would report "no item has the text …".
+  Only reachable after the whole timeout has already passed, and it has to be checked on
+  Windows with a real editable combo box before it is defended.
 
 - **UI Automation cannot choose an item in a Qt combo box** (from #33, recorded in `active.md`):
   `SelectionItem.Select`, `Invoke` and `ValuePattern.SetValue` all leave it unchanged, and the
@@ -148,8 +227,24 @@ concluding anything — the earlier finding was made without the expand-then-re-
 
 ## Manual checks
 
-- (pending) · the Windows half: every keyword against the sample app (#33) and the two pilots,
-  including the Qt combo box and a KeePass 2 row.
+- (pending) · the Windows half: every keyword against the sample app (#33) and the two pilots.
+  In the order that makes each one count:
+  1. **`Select` on a Qt combo box** (sample app). This is the one that may *fail*: #33 found
+     `SelectionItem.Select`, `Invoke` and `ValuePattern.SetValue` all leaving the box
+     unchanged, and the items existing only after `ExpandCollapse`. The expand-then-re-read is
+     new, so the question is open again — and the second question is whether the popup's items
+     are in the window's tree at all or in a window of their own, which would make the
+     editable-box `SetValue` the only route. **SC-20 needs this**; if it still refuses, report
+     it on #40 and raise it for SC-20 rather than faking a pass.
+  2. **`SelectRow` on the Qt probe table**: does `SelectionItem.Select` on the first cell
+     select the whole row (SelectionBehavior = SelectRows), i.e. is the result `passed` with no
+     message? A message means the view selects cells, which is a finding, not a bug.
+  3. **`SelectRow` and `rowExists` on KeePass 2's entry list** by a key cell in a column, which
+     exercises the `ListItem` + `Text`-children shape and the `Header`/`HeaderItem` columns.
+  4. **A `cell` check on the Qt table**, which exercises the `GridItem` grouping and the column
+     list that must match the editor's dropdown.
+  5. **`Wait` and `Verify` on HandBrake with no source loaded**, where every tab reads
+     `enabled: false` (#29) — the case the ready gate exists for.
 
 ## Handoff
 

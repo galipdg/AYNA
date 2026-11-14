@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import grids
 import pytest
 
 from ayna_agent.playback import runner
@@ -206,7 +207,7 @@ def test_every_step_gets_a_result_even_when_the_first_one_fails():
 # --- what a single step can get wrong ------------------------------------------------------
 
 
-@pytest.mark.parametrize("keyword", ["SelectRow", "Nonsense"])
+@pytest.mark.parametrize("keyword", ["Open", "Nonsense"])
 def test_a_keyword_this_release_does_not_perform_fails_by_name(keyword):
     """A keyword playback does not do must not be silently reported as passed.
 
@@ -1240,3 +1241,432 @@ def test_a_failed_select_leaves_the_list_open_for_the_screenshot():
     assert results[0].status == "failed"
     assert patterns.done == ["Expand"]
     assert window.opened is True
+
+
+# --- SelectRow and the row checks (#40) ----------------------------------------------------
+
+GRID_TARGETS = {
+    "main.customerGrid": {"properties": {"automationId": grids.CUSTOMER_GRID}},
+    "main.entryList": {"properties": {"automationId": grids.ENTRY_LIST}},
+    "main.cityList": {"properties": {"automationId": grids.CITY_LIST}},
+}
+
+
+def select_row(row, target: str = "main.entryList", **extra) -> dict:
+    return {
+        "version": "0.2",
+        "steps": [{"keyword": "SelectRow", "target": target, "row": row, **extra}],
+    }
+
+
+def verify_row(checkpoint, target: str = "main.customerGrid", **extra) -> dict:
+    return {
+        "version": "0.2",
+        "steps": [
+            {"keyword": "Verify", "target": target, "checkpoint": checkpoint, **extra}
+        ],
+    }
+
+
+def test_select_row_by_position_selects_that_row():
+    window = grids.Reader(grids.entry_list())
+    patterns = grids.Patterns()
+    results, *_ = run(
+        select_row({"index": 2}), GRID_TARGETS, window=window, patterns=patterns
+    )
+    assert results[0].status == "passed"
+    assert results[0].performed_with == "SelectionItem"
+    assert results[0].message is None
+    assert patterns.selected == ["row:1"], "index counts from 1, GridItem from 0"
+
+
+def test_select_row_by_a_key_cell_selects_the_first_row_that_matches():
+    window = grids.Reader(grids.customer_grid())
+    patterns = grids.Patterns()
+    results, *_ = run(
+        select_row({"value": "Demir", "column": "Soyad"}, "main.customerGrid"),
+        GRID_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "passed"
+    assert patterns.selected == ["grid-cell:1,0"], (
+        "a Qt table has no row element, so its first cell is what selects the row"
+    )
+    assert results[0].message is None
+
+
+def test_a_view_that_selects_cells_passes_and_says_what_it_selected():
+    """The ADR's open case: playback reports what it selected instead of claiming the row, and
+    a failure would be wrong -- a pilot app's selection behaviour is not ours to change."""
+    window = grids.Reader(grids.customer_grid())
+    patterns = grids.Patterns(selects_rows=False)
+    results, *_ = run(
+        select_row({"index": 1}, "main.customerGrid"),
+        GRID_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "passed"
+    assert results[0].message == (
+        "main.customerGrid: the target selects cells rather than rows, so the first cell of "
+        "row 1 is selected"
+    )
+
+
+def test_a_row_that_is_not_there_says_how_many_rows_the_target_has():
+    window = grids.Reader(grids.entry_list())
+    results, *_ = run(
+        select_row({"index": 5}, timeoutMs=500),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        "main.entryList: row 5 was not found after 500 ms; the target has 2 rows"
+    )
+
+
+def test_select_row_waits_for_a_row_that_arrives_after_three_seconds():
+    """A grid is ready before its rows are (SC-18), which the target's smart wait cannot see --
+    the reason the ADR gives SelectRow a wait of its own."""
+    window = grids.Reader(grids.entry_list(()))
+    clock = Clock()
+    original = window.read_tree
+
+    def filling() -> tuple[list[dict], list[str]]:
+        if clock.at >= 3.0:
+            window.content = grids.entry_list()
+        return original()
+
+    window.read_tree = filling  # type: ignore[method-assign]
+    patterns = grids.Patterns()
+    results, *_ = run(
+        select_row({"value": "GitHub"}),
+        GRID_TARGETS,
+        window=window,
+        clock=clock,
+        patterns=patterns,
+    )
+    assert results[0].status == "passed"
+    assert patterns.selected == ["row:1"]
+    assert clock.at == pytest.approx(3.0)
+    assert set(clock.slept) == {POLL_INTERVAL_S}
+    assert results[0].duration_ms == 3000
+
+
+def test_a_row_the_application_refuses_to_select_is_its_own_failure():
+    window = grids.Reader(grids.entry_list())
+    results, *_ = run(
+        select_row({"index": 1}, timeoutMs=0),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(refuses=True),
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        "main.entryList: row 1 is there, but the application refused to select it "
+        "(SelectionItem and LegacyIAccessible were tried)"
+    )
+
+
+def test_a_select_row_with_no_row_fails_before_reading_the_window():
+    """A step whose own shape is wrong is a client bug, and spending the timeout on it before
+    saying so helps nobody."""
+    window = grids.Reader(grids.entry_list())
+    results, _window, clock, _patterns = run(
+        {
+            "version": "0.2",
+            "steps": [{"keyword": "SelectRow", "target": "main.entryList"}],
+        },
+        GRID_TARGETS,
+        window=window,
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == "main.entryList: the step names no row"
+    assert window.reads == 0
+    assert clock.slept == []
+
+
+def test_a_grid_whose_cells_do_not_report_their_row_says_so_rather_than_guessing():
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        select_row({"index": 1}, "main.customerGrid", timeoutMs=0),
+        GRID_TARGETS,
+        window=window,
+        patterns=Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert "cannot tell which cells make up a row" in results[0].message
+
+
+def test_row_count_reads_the_grid_pattern_and_passes():
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        verify_row({"property": "rowCount", "operator": "equals", "expected": 7}),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(row_count=7),
+    )
+    assert results[0].status == "passed"
+
+
+def test_row_count_is_worded_exactly_as_promised_on_pr_231():
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        verify_row(
+            {"property": "rowCount", "operator": "equals", "expected": 3},
+            timeoutMs=500,
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        "main.customerGrid: rowCount should be 3, it is 2 after 500 ms"
+    )
+
+
+def test_row_exists_passes_on_a_row_that_is_there():
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        verify_row(
+            {
+                "property": "rowExists",
+                "operator": "equals",
+                "expected": True,
+                "row": {"value": "Yılmaz", "column": "Soyad"},
+            }
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "passed"
+
+
+def test_row_exists_failing_is_worded_exactly_as_promised_on_pr_231():
+    window = grids.Reader(grids.customer_grid((("Ayşe", "Demir", "Ankara"),)))
+    results, *_ = run(
+        verify_row(
+            {
+                "property": "rowExists",
+                "operator": "equals",
+                "expected": True,
+                "row": {"value": "Yılmaz", "column": "Soyad"},
+            },
+            timeoutMs=500,
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        'main.customerGrid: a row with "Yılmaz" in "Soyad" should exist, none does '
+        "after 500 ms"
+    )
+
+
+def test_a_cell_check_names_the_cell_and_both_values():
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        verify_row(
+            {
+                "property": "cell",
+                "operator": "equals",
+                "expected": "Yılmaz",
+                "row": {"index": 2},
+                "column": "Soyad",
+            },
+            timeoutMs=0,
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        'main.customerGrid: the "Soyad" cell of row 2 should be "Yılmaz", it is "Demir"'
+    )
+
+
+def test_a_cell_check_passes_on_a_keepass_list_item_s_column_child():
+    """KeePass 2's list has no Table pattern, so this is the shape a `cell` check meets in a
+    pilot app -- read through the ListItem's Text children in header order."""
+    window = grids.Reader(grids.entry_list())
+    results, *_ = run(
+        verify_row(
+            {
+                "property": "cell",
+                "operator": "contains",
+                "expected": "@example.com",
+                "row": {"value": "Gmail"},
+                "column": "User Name",
+            },
+            "main.entryList",
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "passed"
+
+
+def test_a_column_the_target_does_not_have_fails_without_waiting():
+    window = grids.Reader(grids.customer_grid())
+    results, _window, clock, _patterns = run(
+        verify_row(
+            {
+                "property": "cell",
+                "operator": "equals",
+                "expected": "Yılmaz",
+                "row": {"index": 1},
+                "column": "Soyadı",
+            }
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert 'no column "Soyadı"' in results[0].message
+    assert '"Ad", "Soyad", "Şehir"' in results[0].message
+    assert clock.slept == [], "a column the grid cannot name will not appear by waiting"
+
+
+def test_a_cell_of_a_row_that_is_not_there_cannot_be_read():
+    """ "Expected Yılmaz, got nothing" would blame the data instead of the address."""
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        verify_row(
+            {
+                "property": "cell",
+                "operator": "equals",
+                "expected": "Yılmaz",
+                "row": {"index": 9},
+                "column": "Soyad",
+            },
+            timeoutMs=0,
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        'main.customerGrid: the "Soyad" cell of row 9 cannot be read; '
+        "the target has 2 rows"
+    )
+
+
+def test_a_row_check_waits_for_rows_that_fill_after_three_seconds():
+    """#40's second criterion once more, on rows: the grid is ready long before them."""
+    window = grids.Reader(grids.customer_grid(()))
+    clock = Clock()
+    original = window.read_tree
+
+    def filling() -> tuple[list[dict], list[str]]:
+        if clock.at >= 3.0:
+            window.content = grids.customer_grid()
+        return original()
+
+    window.read_tree = filling  # type: ignore[method-assign]
+    results, *_ = run(
+        verify_row({"property": "rowCount", "operator": "equals", "expected": 2}),
+        GRID_TARGETS,
+        window=window,
+        clock=clock,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "passed"
+    assert clock.at == pytest.approx(3.0)
+    assert set(clock.slept) == {POLL_INTERVAL_S}
+
+
+def test_a_target_that_vanishes_mid_row_check_says_so():
+    window = grids.Reader(grids.customer_grid())
+    original = window.read_tree
+
+    def vanishing() -> tuple[list[dict], list[str]]:
+        if window.reads >= 1:
+            window.gone = True
+        return original()
+
+    window.read_tree = vanishing  # type: ignore[method-assign]
+    results, *_ = run(
+        verify_row(
+            {"property": "rowCount", "operator": "equals", "expected": 9},
+            timeoutMs=500,
+        ),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "failed"
+    assert "no element matches main.customerGrid" in results[0].message
+    assert "while checking rowCount" in results[0].message
+
+
+@pytest.mark.parametrize(
+    ("checkpoint", "expected"),
+    [
+        (
+            {
+                "property": "name",
+                "operator": "equals",
+                "expected": "x",
+                "row": {"index": 1},
+            },
+            "a name check carries 'row'",
+        ),
+        (
+            {
+                "property": "rowCount",
+                "operator": "equals",
+                "expected": 1,
+                "row": {"index": 1},
+            },
+            "a rowCount check carries 'row'",
+        ),
+        (
+            {
+                "property": "cell",
+                "operator": "equals",
+                "expected": "x",
+                "row": {"index": 1},
+            },
+            "a cell check says no column",
+        ),
+        (
+            {"property": "rowExists", "operator": "equals", "expected": True},
+            "a rowExists check says no row",
+        ),
+        (
+            {
+                "property": "rowExists",
+                "operator": "equals",
+                "expected": True,
+                "row": {"index": 1},
+                "column": "Soyad",
+            },
+            "a rowExists check carries 'column'",
+        ),
+        (
+            {"property": "rowCount", "operator": "equals", "expected": "3"},
+            "rowCount is checked against a whole number of rows",
+        ),
+    ],
+)
+def test_a_checkpoint_the_schema_would_refuse_fails_before_reading_the_window(
+    checkpoint, expected
+):
+    """The schema enforces every one of these with an `if`/`then`, so a request carrying one is
+    a client bug; reading it as something else would report `passed` on a different check."""
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(verify_row(checkpoint), GRID_TARGETS, window=window)
+    assert results[0].status == "failed"
+    assert expected in results[0].message
+    assert window.reads == 0

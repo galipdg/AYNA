@@ -6,7 +6,11 @@ What a run does, per step:
    until it resolves to exactly one element or the step's time runs out. No fixed sleep
    (`agent/AGENTS.md`): the wait ends the moment the element is there, and a step that needs no
    waiting costs one read.
-2. **Act** -- Click or Type, through UI Automation patterns only (`playback.actions`).
+2. **Act** -- through UI Automation patterns only, never coordinates: Click and Type on the
+   element itself (`playback.actions`), Select on one of its items (`playback.items`),
+   SelectRow on one of its rows (`playback.rows`), Verify on a property of it
+   (`playback.checkpoint`) or of a row of it, and Wait on nothing at all, because the wait in
+   step 1 is the whole keyword.
 3. **Record** one result, with how long the step took.
 
 **A failed step stops the run** and every step after it is `notRun` (TBD-6, which I closed as
@@ -36,7 +40,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ayna_agent.playback import items
+from ayna_agent.playback import items, rows
 from ayna_agent.playback.actions import (
     ActionFailed,
     Patterns,
@@ -60,20 +64,23 @@ from ayna_agent.playback.resolve import (
     Unsupported,
     resolve,
 )
+from ayna_agent.playback.rows import RowError, RowFailed, RowsUnavailable
 from ayna_agent.playback.tree import Tree
 from ayna_agent.playback.tree import of as tree_of
 
 #: Step-document versions this runner reads. A *consumer* lists what it understands instead of
-#: deriving one version from the schema file, which it does not ship: Click and Type are
-#: identical in 0.1 and 0.2, so refusing 0.2 would break playback the day the v0.2 schema
-#: merges (#147) for no reason. A keyword this runner does not implement is refused per step,
-#: by name, which is the honest place for that to happen.
+#: deriving one version from the schema file, which it does not ship: v0.2 only *adds*
+#: SelectRow, `row` and the three row checkpoints, so every 0.1 document means the same thing
+#: in both and refusing one of them would break playback for no reason. A keyword this runner
+#: does not implement is refused per step, by name, which is the honest place for that.
 SUPPORTED_STEP_VERSIONS: tuple[str, ...] = ("0.1", "0.2")
 
-#: Keywords this runner performs. A keyword outside it fails per step, by name, which is the
-#: honest place for "not implemented" to appear: the step editor offers every keyword of the
-#: schema, so a document can always name one playback does not do yet.
-IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type", "Wait", "Verify", "Select"})
+#: Keywords this runner performs -- every keyword of step schema v0.2 (#40). One outside it
+#: fails per step, by name, which is the honest place for "not implemented" to appear: a
+#: document from a newer schema than this agent reads can always name one.
+IMPLEMENTED: frozenset[str] = frozenset(
+    {"Click", "Type", "Wait", "Verify", "Select", "SelectRow"}
+)
 
 #: Which keyword may carry which optional field, from the step schema's own words: `value` is
 #: "text for Type and Select, not allowed for the other keywords", `row` is "the row SelectRow
@@ -321,6 +328,21 @@ def _run_one(
             f"timeoutMs must be a whole number of milliseconds, not {timeout_ms!r}",
         )
 
+    #: The checkpoint and the row, read before the wait: a step whose own shape is wrong is a
+    #: client bug, and spending the timeout on it before saying so helps nobody.
+    check: tuple[str, str, Any] | None = None
+    want_row: rows.Address | None = None
+    checkpoint = step.get("checkpoint")
+    try:
+        if keyword == "Verify":
+            check = checkpoint_rules(checkpoint)
+            if check[0] in rows.ROW_PROPERTIES and check[0] != "rowCount":
+                want_row = rows.address((checkpoint or {}).get("row"))
+        elif keyword == "SelectRow":
+            want_row = rows.address(step.get("row"))
+    except (CheckpointError, RowError) as exc:
+        return done(FAILED, f"{name}: {exc}")
+
     try:
         found, tree = _resolve_waiting(
             read_tree,
@@ -357,20 +379,45 @@ def _run_one(
                 read_tree,
                 name,
                 target,
-                step.get("checkpoint"),
+                checkpoint,
+                check,
+                want_row,
                 found,
+                tree,
                 timeout_ms=timeout_ms,
                 patterns=patterns,
                 now=now,
                 sleep=sleep,
             )
-        except CheckpointError as exc:
+        except (CheckpointError, RowError, RowsUnavailable) as exc:
             return done(FAILED, f"{name}: {exc}", matched=found.which)
         except Unreadable as exc:
             return done(FAILED, f"{name}: {exc}", matched=found.which)
         if message is None:
             return done(PASSED, matched=found.which)
         return done(FAILED, message, matched=found.which)
+
+    if keyword == "SelectRow":
+        try:
+            performed_with, note = _select_row_waiting(
+                read_tree,
+                name,
+                target,
+                want_row,
+                found,
+                tree,
+                timeout_ms=timeout_ms,
+                patterns=patterns,
+                now=now,
+                sleep=sleep,
+            )
+        except (RowError, RowsUnavailable) as exc:
+            return done(FAILED, f"{name}: {exc}", matched=found.which)
+        except RowFailed as exc:
+            return done(FAILED, str(exc), matched=found.which)
+        # `note` is a message on a *passing* step: the ADR asks playback to report what it
+        # selected when the view selects cells rather than rows, and that is not a failure.
+        return done(PASSED, note, matched=found.which, performed_with=performed_with)
 
     if keyword == "Select":
         try:
@@ -406,7 +453,10 @@ def _verify_waiting(
     name: str,
     target: Mapping[str, Any],
     checkpoint: Any,
+    check: tuple[str, str, Any] | None,
+    want_row: rows.Address | None,
     found: Resolution,
+    tree: Tree,
     *,
     timeout_ms: int,
     patterns: Patterns,
@@ -424,7 +474,22 @@ def _verify_waiting(
     elements, and holding the old one would check a stale handle -- the same reason #22's
     `elementFromPoint` compares identity instead of trusting a remembered element.
     """
-    prop, operator, expected = checkpoint_rules(checkpoint)
+    prop, operator, expected = check if check else checkpoint_rules(checkpoint)
+    if prop in rows.ROW_PROPERTIES:
+        return _verify_rows_waiting(
+            read_tree,
+            name,
+            target,
+            (checkpoint or {}).get("column"),
+            (prop, operator, expected),
+            want_row,
+            found,
+            tree,
+            timeout_ms=timeout_ms,
+            patterns=patterns,
+            now=now,
+            sleep=sleep,
+        )
     deadline = now() + timeout_ms / 1000
     while True:
         actual = read_property(prop, found.descriptor, found.element, patterns)
@@ -443,6 +508,141 @@ def _verify_waiting(
             # It was there a moment ago and now it is not: that is the honest report, and it
             # is a different fact from "the property never took the expected value".
             return f"{exc} while checking {prop}"
+
+
+def _verify_rows_waiting(
+    read_tree: ReadTree,
+    name: str,
+    target: Mapping[str, Any],
+    column: Any,
+    check: tuple[str, str, Any],
+    want: rows.Address | None,
+    found: Resolution,
+    tree: Tree,
+    *,
+    timeout_ms: int,
+    patterns: Patterns,
+    now: Callable[[], float],
+    sleep: Callable[[float], None],
+) -> str | None:
+    """`cell`, `rowExists` and `rowCount`: None when the check holds, else the message.
+
+    Re-reads the target on the same interval as every other wait, because **rows fill after
+    the grid itself is ready** (SC-18) -- the target's smart wait cannot see that, which is the
+    whole reason the ADR gives these three checks their own wait.
+
+    The ` after N ms` suffix is appended at the end, exactly as it is for the element
+    properties: the wording of these messages is what omer's run report (#59) is written
+    against, and one rule for the suffix is worth more than a better-reading sentence.
+    """
+    prop, operator, expected = check
+    deadline = now() + timeout_ms / 1000
+    while True:
+        grid = rows.of(tree, found.index, patterns)
+        if want is None:
+            # `rowCount`, the one row check with no row: the pattern's count, or the rows the
+            # tree holds (`rows._count`), against the expected number.
+            failure = (
+                None
+                if holds(operator, grid.count, expected)
+                else describe(name, prop, operator, expected, grid.count)
+            )
+        else:
+            failure = _row_check(
+                name, prop, operator, expected, want, column, grid, tree, patterns
+            )
+        if failure is None:
+            return None
+        remaining = deadline - now()
+        if timeout_ms == 0 or remaining <= 0:
+            return failure + (f" after {timeout_ms} ms" if timeout_ms else "")
+        sleep(min(POLL_INTERVAL_S, remaining))
+        try:
+            found, tree = _read_and_resolve(read_tree, name, target)
+        except (NotFound, Ambiguous, Unsupported) as exc:
+            # It was there a moment ago and now it is not: a different fact from "the check
+            # never held", and a tester debugs the two differently.
+            return f"{exc} while checking {prop}"
+
+
+def _row_check(
+    name: str,
+    prop: str,
+    operator: str,
+    expected: Any,
+    want: rows.Address,
+    column: Any,
+    grid: rows.Grid,
+    tree: Tree,
+    patterns: Patterns,
+) -> str | None:
+    """One pass of `cell` or `rowExists`: None when it holds, else the message, no time in it."""
+    row = rows.find(tree, grid, want, patterns)
+    if prop == "rowExists":
+        if holds(operator, row is not None, expected):
+            return None
+        return rows.describe_exists(name, want, bool(expected), grid, row)
+
+    cell = (
+        rows.cell_of(row, rows.column_index(grid, column)) if row is not None else None
+    )
+    if cell is None:
+        # No such row, or the row has no cell in that column: the check has no answer at all,
+        # and "expected Yılmaz, got nothing" would blame the data instead of the address.
+        return rows.unreadable_cell(name, want, column, grid)
+    actual = rows.text_at(tree, cell, patterns)
+    if holds(operator, actual, expected):
+        return None
+    return rows.describe_cell(name, want, column, operator, expected, actual)
+
+
+def _select_row_waiting(
+    read_tree: ReadTree,
+    name: str,
+    target: Mapping[str, Any],
+    want: rows.Address | None,
+    found: Resolution,
+    tree: Tree,
+    *,
+    timeout_ms: int,
+    patterns: Patterns,
+    now: Callable[[], float],
+    sleep: Callable[[float], None],
+) -> tuple[str, str | None]:
+    """Select the row `want` addresses: `(the pattern that did it, a note or None)`.
+
+    The note is for the one case the ADR leaves open: on a view that selects cells rather than
+    rows, selecting the row's first cell selects *that cell*, and playback "reports what it
+    selected instead of claiming the row". A failure would be wrong -- the step did select
+    something, and a pilot app's selection behaviour is not ours to change.
+
+    Waits for the row within the step's `timeoutMs`, because a grid is ready before its rows
+    are (SC-18).
+    """
+    if want is None:  # pragma: no cover - `_run_one` validates the row before the wait
+        raise RowError("the step names no row")
+    deadline = now() + timeout_ms / 1000
+    while True:
+        grid = rows.of(tree, found.index, patterns)
+        row = rows.find(tree, grid, want, patterns)
+        if row is not None:
+            performed = rows.select(row, tree, patterns)
+            if performed is None:
+                raise RowFailed(rows.refused(name, want))
+            note = (
+                rows.selected_a_cell(name, want)
+                if rows.whole_row_selected(row, tree, patterns) is False
+                else None
+            )
+            return performed, note
+        remaining = deadline - now()
+        if timeout_ms == 0 or remaining <= 0:
+            raise RowFailed(rows.not_found(name, want, grid, timeout_ms))
+        sleep(min(POLL_INTERVAL_S, remaining))
+        try:
+            found, tree = _read_and_resolve(read_tree, name, target)
+        except (NotFound, Ambiguous, Unsupported) as exc:
+            raise RowFailed(f"{exc} while selecting {want.describe()}") from exc
 
 
 def _select_waiting(

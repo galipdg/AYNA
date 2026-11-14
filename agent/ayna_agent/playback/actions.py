@@ -1,5 +1,10 @@
 """Performing Click and Type on an element, through UI Automation patterns only (#26).
 
+The two keywords that act on *one* element and nothing around it. Select needs the target's
+items (`playback.items`) and SelectRow its rows (`playback.rows`), so those live apart; what
+they share with this module is :data:`Patterns` and the rule that a pattern which refuses falls
+through to the next one.
+
 **Never coordinates** (`agent/AGENTS.md`). A click at a remembered point breaks when the window
 moves, when the display scaling changes, or when a list scrolls -- which is most of what makes
 recorded tests brittle, and the thing AYNA exists to avoid. So an action asks the provider to

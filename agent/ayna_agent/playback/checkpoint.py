@@ -50,10 +50,18 @@ from ayna_agent.model import Element, text_value
 from ayna_agent.playback.actions import Patterns, uia_patterns
 
 #: Properties of a single element. The grid ones (`cell`, `rowExists`, `rowCount`) are checked
-#: against the target's rows instead and live with `SelectRow`.
+#: against the target's rows instead and live in `playback.rows`.
 ELEMENT_PROPERTIES: frozenset[str] = frozenset(
     {"name", "value", "enabled", "visible", "checked", "selected"}
 )
+
+#: Which checkpoint property takes `row` and which takes `column`, from the schema's own
+#: `if`/`then` rules: `cell` needs both, `rowExists` needs the row and refuses the column
+#: (a list has no columns), and every other property refuses both. A field on a property that
+#: forbids it is refused rather than ignored, for the same reason the runner refuses one on a
+#: keyword: a check that quietly read a different row would report `passed`.
+NEEDS_ROW: frozenset[str] = frozenset({"cell", "rowExists"})
+NEEDS_COLUMN: frozenset[str] = frozenset({"cell"})
 
 #: Properties whose `expected` is text, and the only ones an operator other than `equals`
 #: means anything for (step schema: `name`, `value` and `cell` take a string).
@@ -84,6 +92,15 @@ class Unreadable(Exception):
         super().__init__(f"{name}: {reason}")
 
 
+def says(operator: str) -> str:
+    """How `operator` reads in a message. Public because the row checks word their own.
+
+    One table, so `name should contain "Invalid"` and `the "Soyad" cell of row 2 should be
+    "Yılmaz"` cannot drift apart -- the run report (#59) is written against both.
+    """
+    return _SAYS[operator]
+
+
 def validate(checkpoint: Mapping[str, Any]) -> tuple[str, str, Any]:
     """`(property, operator, expected)`, or raise :class:`CheckpointError`.
 
@@ -107,12 +124,21 @@ def validate(checkpoint: Mapping[str, Any]) -> tuple[str, str, Any]:
         raise CheckpointError(f"{prop} can only be checked with equals, not {operator}")
     if prop in TEXT_PROPERTIES and not isinstance(expected, str):
         raise CheckpointError(f"{prop} is checked against text, not {expected!r}")
-    if (
-        prop not in TEXT_PROPERTIES
-        and prop != "rowCount"
-        and not isinstance(expected, bool)
-    ):
+    if prop == "rowCount":
+        if not isinstance(expected, int) or isinstance(expected, bool) or expected < 0:
+            raise CheckpointError(
+                f"rowCount is checked against a whole number of rows, not {expected!r}"
+            )
+    elif prop not in TEXT_PROPERTIES and not isinstance(expected, bool):
         raise CheckpointError(f"{prop} is checked against true or false")
+    for field, needed in (("row", NEEDS_ROW), ("column", NEEDS_COLUMN)):
+        if field in checkpoint and prop not in needed:
+            allowed = " and ".join(sorted(needed))
+            raise CheckpointError(
+                f"a {prop} check carries {field!r}, which only {allowed} takes"
+            )
+        if field not in checkpoint and prop in needed:
+            raise CheckpointError(f"a {prop} check says no {field}")
     return prop, operator, expected
 
 

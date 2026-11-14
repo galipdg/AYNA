@@ -229,14 +229,15 @@ comparison the answer now makes is inside the noise of the two runs.
 
 ### `runSteps`
 
-Plays a step document against one window and answers with one result per step, in order (#26).
-**#26 performs Click and Type.** Every other keyword comes back as that step's `failed`
-result naming #40, so a test is never reported as passed because a keyword was skipped.
+Plays a step document against one window and answers with one result per step, in order (#26,
+#40). **All six keywords of the step schema are performed**: Click, Type, Wait, Select,
+SelectRow and Verify. A keyword outside the schema comes back as that step's `failed` result
+naming itself, so a test is never reported as passed because a keyword was skipped.
 
 | Param | Type | Meaning |
 |---|---|---|
 | `handle` | integer | The window to play against, from `listWindows`. #40 makes this optional and finds the window from a target's `windowTitle`; until then an explicit handle keeps window discovery (FR-35's "unexpected window") a separate problem. |
-| `steps` | object | A step document, `{version, steps}` (`schemas/step.schema.json`). Versions **0.1 and 0.2** are both read: Click and Type are identical in them. |
+| `steps` | object | A step document, `{version, steps}` (`schemas/step.schema.json`). Versions **0.1 and 0.2** are both read: v0.2 only adds SelectRow, `row` and the three row checkpoints, so every 0.1 document means the same thing in both. |
 | `targets` | object | Per logical name, the repository object's property sets: `properties` (its primary, "Find by") and optional `fallback` (its "Backup", #25). `serverElementId` and `featureVersion` from the healing request below are accepted and ignored. |
 | `runId`, `appVersionId` | UUID string, optional | Accepted and ignored, so the client can send one request shape before and after #40. |
 | `defaultTimeoutMs` | integer 1–600000, optional | What a step without `timeoutMs` waits. Default **10 000 ms** (RS NFR-05). A step's own `timeoutMs: 0` means check once and never means "use this". |
@@ -253,13 +254,43 @@ result naming #40, so a test is never reported as passed because a keyword was s
   is tried only when `properties` matches *nothing*: a fallback replaces a primary set, it
   cannot narrow one.
 
-Waiting is a re-read every 250 ms until the target resolves or the step's time runs out — never
-a fixed sleep.
+Waiting is a re-read every 250 ms until the step can proceed or its time runs out — never a
+fixed sleep.
 
-**Actions use UI Automation patterns only, never coordinates.** Click tries `Invoke`, `Toggle`,
-`SelectionItem.Select`, then `LegacyIAccessible.DoDefaultAction`; Type tries `Value.SetValue`
-and then focus-and-keys. A pattern that is present can still refuse (a disabled button has
-`Invoke`), so a refusal falls through to the next one.
+**What a step waits for is "ready", which is more than "resolves"** (#40): the target resolves
+to exactly one element *and* that element is neither disabled nor off screen, which is what the
+schema means by ready. `enabled`/`offscreen` that the provider does not report count as ready,
+since refusing would make every step of such an application time out. A **Verify is the
+exception** and waits only for resolution: a checkpoint may be *about* a disabled or offscreen
+element, and the check does its own re-reading afterwards. Two waits, two words in the message:
+` within N ms` for an element that never appeared, ` after N ms` for a state that never changed.
+
+**Actions use UI Automation patterns only, never coordinates.** A pattern that is present can
+still refuse (a disabled button has `Invoke`), so a refusal falls through to the next one.
+
+| Keyword | How |
+|---|---|
+| `Click` | `Invoke`, `Toggle`, `SelectionItem.Select`, then `LegacyIAccessible.DoDefaultAction`. |
+| `Type` | `Value.SetValue`, then focus-and-keys. A read-only ValuePattern fails the step rather than being worked around. |
+| `Wait` | Nothing: the pre-step wait above *is* the keyword, so nothing performed it. |
+| `Select` | The item of the target whose text is `value` (ValuePattern value when non-empty, else Name — the schema's rule for a cell), then `SelectionItem.Select`, then `Invoke`. **A closed combo box has no items at all**, so when the target offers `ExpandCollapse` it is expanded and the window **read again** before looking; a box it opened is closed again on success. Last, only after the whole wait, an **editable** box takes `value` as text through `Value.SetValue`, read back to confirm, and reports `performedWith: "SetValue"`. |
+| `SelectRow` | The row `row` addresses — `{index}` from the top, counted from 1, or the first row whose cell equals `{value}` (in `{column}` when given) — through `SelectionItem.Select`, then MSAA's `LegacyIAccessible.Select` (KeePass 2's list has nothing else). Never `Invoke`: invoking a row *activates* it. |
+| `Verify` | The checkpoint, re-read until it holds or the time runs out. |
+
+**Rows come from the captured tree, in the three shapes the v0.2 ADR measured**: the item is the
+row and its children are the cells (KeePass 2's `ListItem`s, a WinForms `DataGridView` row); the
+items *are* the cells and only `GridItemPattern` says which row they belong to (a Qt table has no
+row element); or the item is a one-cell row (a `QListWidget`). `rowCount` prefers
+`GridPattern.RowCount`, which also counts rows a virtualised grid has not materialised. The
+column names come from the same rule the server uses to fill `RepoObject.columns` (#221), so the
+column a tester picked in the editor is the column playback reads. A target that reports no
+columns at all makes a keyed row match nothing rather than failing on the column; a column that
+is not among the ones it does report is a mistake, and the message lists the ones it has.
+
+**A SelectRow on a view that selects cells rather than rows** selects the row's first cell, which
+is the ADR's rule, and the step **passes with a message saying so** instead of claiming the row:
+a pilot app's selection behaviour is not ours to change, and silence would be the one outcome a
+tester cannot debug.
 
 A result carries `stepIndex`, `status` (`passed`, `failed` or `notRun`), `durationMs`, and when
 known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback match is what #73
@@ -285,10 +316,10 @@ A document the agent cannot read at all is `-32602`; a handle that is not a top-
 `-32000`, and a window that cannot be read inside its budget is `-32002`, because reading the
 window is how a target is resolved.
 
-**Not yet, and all #40's:** the other keywords, checkpoints, screenshots, healing, the
-`run.stepResult` notifications below, and finding the window without a handle. `ping` still
-answers `rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
-`elementFromPoint` belong to.
+**Not yet:** screenshots (#54), healing (#73), the `run.stepResult` notifications below, and
+finding the window without a handle. `repairProposed` is not emitted until #74 is on `main`, as
+agreed on #223. `ping` still answers `rpcVersion` `"0.1"`; see the note at the top about which
+number `runSteps` and `elementFromPoint` belong to.
 
 ## Errors
 
