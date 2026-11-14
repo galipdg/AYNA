@@ -22,12 +22,13 @@ build-backend = "setuptools.build_meta"
 packages = []
 
 [tool.pytest.ini_options]
-testpaths = ["apps/trial/tests", "apps/sample/tests"]
+testpaths = ["apps/trial/tests", "apps/sample/tests", "llm-latency/tests"]
 
 [tool.ruff]
 target-version = "py311"
-# The apps and their tests import `app`, `model`, `texts`, `windows` and `uia_dump` as
-# local modules, so ruff has to know they are first-party.
-src = [".", "apps/trial", "apps/sample"]
+# The apps and their tests import `app`, `model`, `texts`, `windows` and `uia_dump`, and
+# `llm-latency/tests` imports `run`, as local modules, so ruff has to know they are
+# first-party.
+src = [".", "apps/trial", "apps/sample", "llm-latency"]
 # Throwaway spike scripts are not held to the module lint rules.
 extend-exclude = ["spikes"]
