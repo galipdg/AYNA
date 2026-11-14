@@ -1,0 +1,55 @@
+﻿elementId,label,note
+e1,control,Options penceresinin arama kutusu (m_tbSearch); UIA Name'i komsu etiketten geliyor
+e5,control,'For administrators' baglantisi
+e7,control,'For experts' baglantisi
+e9,control,"NumericUpDown'in dis Spinner'i, gelistirici id'si tasiyor"
+e10,ignore,e9 composite kontrolunun ic parcasi
+e11,ignore,e9 composite kontrolunun ic parcasi
+e12,ignore,e9 composite kontrolunun ic parcasi
+e13,ignore,e9 composite kontrolunun ic parcasi
+e56,control,"NumericUpDown'in dis Spinner'i, gelistirici id'si tasiyor"
+e57,ignore,e56 composite kontrolunun ic parcasi
+e58,ignore,e56 composite kontrolunun ic parcasi
+e59,ignore,e56 composite kontrolunun ic parcasi
+e60,ignore,e56 composite kontrolunun ic parcasi
+e62,control,"NumericUpDown'in dis Spinner'i, gelistirici id'si tasiyor"
+e63,ignore,e62 composite kontrolunun ic parcasi
+e64,ignore,e62 composite kontrolunun ic parcasi
+e65,ignore,e62 composite kontrolunun ic parcasi
+e66,ignore,e62 composite kontrolunun ic parcasi
+e69,control,"NumericUpDown'in dis Spinner'i, gelistirici id'si tasiyor"
+e70,ignore,e69 composite kontrolunun ic parcasi
+e71,ignore,e69 composite kontrolunun ic parcasi
+e72,ignore,e69 composite kontrolunun ic parcasi
+e73,ignore,e69 composite kontrolunun ic parcasi
+e17,ignore,"liste kaydirma cubugunun parcasi, testin hedefi degil"
+e19,ignore,"liste kaydirma cubugunun parcasi, testin hedefi degil"
+e20,ignore,"liste kaydirma cubugunun parcasi, testin hedefi degil"
+e22,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e24,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e26,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e28,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e30,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e32,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e34,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e37,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e39,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e41,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e44,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e46,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e48,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e50,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e52,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e54,control,"Security sekmesinin secenek listesindeki satir, testci isaretler"
+e14,control,Lock workspace after global user inactivity onay kutusu
+e61,control,Clipboard auto-clear time onay kutusu
+e67,control,"By default, new entries expire onay kutusu"
+e68,control,Lock workspace after KeePass inactivity onay kutusu
+e74,control,Security sekmesi
+e75,control,Policy sekmesi
+e76,control,Interface (1) sekmesi
+e77,control,Interface (2) sekmesi
+e78,control,Integration sekmesi
+e79,control,Advanced sekmesi
+e80,control,Cancel dugmesi
+e81,control,OK dugmesi

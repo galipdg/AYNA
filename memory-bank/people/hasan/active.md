@@ -2,10 +2,12 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-14. **The current copy of this file lives on `hasan/29-rq1-measure`**,
-  not here: this branch carries only what #221's notes need, plus `main`'s facts as of #227's
-  merge. When this branch merges, keep the 29-branch's header and this branch's own
-  "omer's #221 Windows check" section — it is the one section `main` does not have.
+- Last update: 2026-11-14, third session (#40's Windows check ran, four fixes, PR pushed).
+  **This copy is the most complete one**: `origin/main` is merged in as of `6fd87a9` (#233),
+  so #29's facts below came from `main` and #40's came from this branch. Two copies are still
+  behind: `hasan/162-windows-llm-latency` and `hasan/23-win32-fallback` each hold their own
+  issue's section and nothing of #40's. **Whichever merges last keeps every branch's own
+  section** — never resolve this file by taking one side.
 - Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
   All six keywords are implemented, all three criteria are tested, **and the Windows check ran
   here on 2026-11-14: 7 of 7 pass — but only after four fixes (`b28f2b9`)**. `Wait` and the
@@ -71,21 +73,109 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
   2026-11-12 at 100 % and 150 % and passed at both, and **PR #227 was squash-merged on
   2026-11-14 (`bfcdb35`)**, which closed the issue. Nothing is left on it.
+- **#29 is MERGED and CLOSED, and the second labeller is still owed.** PR **#233** was
+  squash-merged by the user on 2026-11-14 (`6fd87a9`), which **closed #29 even though the PR
+  deliberately carried no `Closes`** — the PR was linked to the issue in GitHub's Development
+  panel, and a linked issue closes on merge regardless of keywords. So **the closing is a
+  side effect of the link, not a judgement that the work is done**: a second independent
+  labeller is still owed and two open issues still feed #64. If that matters, reopen #29 or
+  carry the remainder as a new issue. **Watch for this on every PR that omits `Closes` on
+  purpose** — unlink it in the Development panel, or the omission buys nothing.
+- **The eight-step check is done** — every screen captured with 0 read errors, 6 steps passing
+  as written and the other two being the check's own mistakes. HandBrake is now 3 screens
+  (`main-summary`, `preferences`, `queue`); `main-video` is **dropped from `apps.json`** because
+  every tab reads `enabled: false` with no source loaded, so the instruction contradicted itself.
+- **The first labelled rates, per screen, are the only ones that may be quoted**: HandBrake
+  `queue` **4/6 = 66.7 %**, KeePass 2 `options` **35/35 = 100 %** (`eval/rq1/labels/*.csv`,
+  `missing` sweep run by the user and empty on both). **Never quote the app totals**:
+  `measure --labels` mixes labelled and unlabelled screens, so KeePass 2's app line reads
+  99 / 100 % while only one of its four screens is labelled.
+- **The `e20` claim is RETRACTED and the question to omer withdrawn.** It is not a control:
+  **no `bounds` key at all**, `enabled: false`, a WPF toolbar template part that is never
+  rendered. So `siblingIndex` was never the issue, and a missing `bounds` is the cheap test for
+  "not a control". Said so on #29 (comment `6874969764`) and in omer's inbox. The *real* limit is
+  **a nameless WPF `MenuItem` inside a named `Menu`**: HandBrake's `Options` split button and
+  `When Done` dropdown carry no `automationId` and no `name`, the name sits on the parent
+  `Menu`, and a per-element descriptor does not reach for an ancestor's identity. That same
+  shape is *recognised* in `main-summary`'s status bar only because it has no sibling — one app
+  pattern giving both a pass and a fail, which belongs in #64.
+- **The unlabelled rate is NOT reliably the optimistic one** — I had this backwards and so did
+  the guide; both are corrected. The denominator is wrong in **both** directions: a missed
+  control flatters it, a composite control's inner parts punish it. KeePass 2's Options screen
+  shows both at once (70.4 % unlabelled → 100 % labelled, all 19 dropped rows non-controls).
+- **#227 and #232 are MERGED** (2026-11-14, `bfcdb35` and `d788d64`), so **#22 is closed** and
+  #221's notes are on `main`. Both had been `CONFLICTING` on this file alone; each took an
+  `origin/main` merge, and 436 agent tests were re-run green on #227's.
 - **Merging a PR is the agent's prohibition, not the user's** (AGENTS.md §6 is addressed to the
   agent). The user has `push` on the repo, `protect-main` asks only for 1 approval, squash and
   resolved review threads, and there are **no bypass actors and no CODEOWNERS gate** on who
-  merges. So an approved PR of mine is the user's to merge whenever they want — do not tell them
-  it is waiting on omer, which is what the earlier "neither mine to merge" note was misread as.
-- **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on `main`**.
-  **#228 and #231 are merged too** (omer's grid columns and run history), and **#170, #200, #201**
-  landed on 2026-11-07/08, so #161, #26 and the coordinate fixes are on `main`.
-- `origin/main` is merged into this branch too (2026-11-14); this file was the only conflict,
-  resolved by keeping this branch's version and folding #33's unique facts in below.
+  merges. So an approved PR of mine is the user's to merge whenever they want — **do not tell
+  them it is waiting on omer**, which is how the earlier "neither mine to merge" note got
+  misread. The user asked about exactly this on 2026-11-14.
+- **`capture` runs on `agent/.venv`, not the repo-root one** — `recognition/uia.py` takes its
+  exception types from `ayna_agent.rpc`, which imports `websockets` at module level. galip has
+  the request to decouple it; `rpc.py` is his file and is untouched.
+
+## #162 is no longer blocked by a download
+
+The user agreed to take #162 (overdue, Week 3) and #29 in parallel: pull the models in the
+background, build #29 meanwhile. **Both models are now on this machine** — `qwen3:8b` (5.2 GB)
+and `gemma4:e4b-it-qat` (6.1 GB), Ollama **0.40.16** answering on `127.0.0.1:11434`, 11 GB in
+`%USERPROFILE%\.ollama\models`. Ollama was already installed when this session started, which
+#162's body does not know: its first step is done.
+
+**What #162 still needs is uninterrupted machine time, not a download.** Its own plan asks for
+the batch idle *and* under load, so nothing else of mine may run during the idle half — which is
+exactly why the captures for #29 and #162's runs cannot be done in the same sitting. The user
+postponed both on 2026-11-12. Do #29's captures first (short, no CPU load), then leave the
+machine alone for #162.
+
+## #29, so the next session does not re-derive it
+
+- **It measures with the product's code, not a copy.** `measure.py` puts `agent/` on `sys.path`
+  and imports `ayna_agent.model` and `ayna_agent.playback.resolve`; both are UIA-free by
+  contract, which is what lets the measuring half be tested off Windows. A test fails if either
+  grows a pywinauto import.
+- **"Recognised" = the Spy's own proposal matches exactly one element of the same window.** The
+  rule is the client's `suggestUses` (`client/src/shared/repository.ts:98`), escalating along
+  `automationId, name, nearestLabel, className, parentPath, controlType` and keeping a property
+  only while it narrows. Not `model.primary_property()`, which returns a single property name and
+  **is used nowhere** — measuring it would report a number no user ever sees.
+- **The denominator is the honest part**, and `labelling.md` is the human enumeration
+  (`control` / `ignore` / `missing`) that `--labels` makes it. **Label every row of a screen**:
+  `measure` now refuses a half-labelled screen, because `counted()` keeps only `control` rows,
+  so an unlabelled row used to drop out of the denominator silently and lift the rate.
+- **Two open issues of #29's own, both recorded and neither mine to close.** (1) `INTERACTIVE_TYPES`
+  is #6's 15-type set and omits the **container** types (`List`, `Table`, `DataGrid`, `Tree`)
+  that step schema v0.2 targets with `rowCount` / `rowExists` / `cell` / `SelectRow`, so
+  `queueJobs` and `m_lvEntries` never reach the sheet although both would be recognised — this
+  makes the rate **pessimistic**, and changing the set breaks comparability with #6, so galip
+  was asked for a decision. (2) `measure --labels` prints a **hybrid app total**; a `--by-screen`
+  table is wanted before #64 quotes anything.
+- Pilots are **HandBrake (P1)** and **KeePass 2 (P2)** per D1; KeePassXC is in `apps.json` but
+  off by default. `eval/spikes/kp_state.py main|entry` reaches two of KeePass 2's four screens
+  unattended in ~16 s; the rest need clicks, which the user staged on 2026-11-14. HandBrake is
+  at **`C:/ayna-pilots/handbrake/HandBrake/HandBrake.exe`**, one level deeper than every note
+  said, and **KeePass does not close on `WM_CLOSE`** (it goes to the tray) — ask the user for
+  `File → Exit` rather than killing a password manager with an open vault.
+- PR #233 **deliberately does not say `Closes #29`** even though all three criteria are now
+  ticked (the user's call, 2026-11-14). What is actually left is a **second independent
+  labeller** for the report's screen; the judgement calls worth disagreeing with are listed in
+  the task note's "Manual checks".
+- **#22 is DONE and closed**, all three criteria ticked. The scaling check ran here on
+  2026-11-12 at 100 % and 150 % and passed at both; omer's `CHANGES_REQUESTED` was answered in
+  `142a6c6`, he approved on 2026-11-14 and PR #227 was squash-merged the same day.
+- **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on
+  `main`**. Its `active.md` conflicted with this one exactly as expected; resolved on
+  `hasan/29-rq1-measure` by keeping this header and folding its unique facts in below.
+  **#228 and #231 are merged too**, so omer's grid columns and run history are on `main`.
+- **One open PR of mine is left: #233** (#29, deliberately no `Closes`). #227 and #232 merged on
+  2026-11-14; `hasan/221-windows-check-notes` is gone with #232.
 - **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
   2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
-- **A third branch of mine is open: `hasan/221-windows-check-notes`**, cut from `main`, memory
-  only (`learnings.md`, `journal.md`, this file). It exists because nothing of mine may be
-  committed on omer's branch, which is where the #221 check had to run.
+- The `hasan/221-windows-check-notes` branch existed only because nothing of mine may be
+  committed on omer's branch, which is where the #221 check had to run. It merged as #232 and
+  is gone; the pattern is worth reusing the next time a check runs on someone else's branch.
 
 ## #40, so the next session does not re-derive it
 
@@ -248,7 +338,30 @@ element id** at both scalings. Full table in the task note and in the #22 commen
 whichever of #227 / #224 merged *second* adds `$defs/elementFromPointRequest` and
 `elementFromPointResult` to the contract. **#227 merged first (2026-11-14, `bfcdb35`) and #224
 is still open**, so omer folds them into 1.0 rather than me bumping anything to 1.1. Worth
-telling him if #224 is about to land without them.
+telling him if #224 looks about to land without them.
+
+## PR #231 (omer, run history, #68) — approved 2026-11-12, with one fix asked for
+
+Full review is on the PR. The two questions he asked me are answered there and are commitments:
+
+- **#61 does not want the app-wide run list**, and it must not be widened for it. `ayna run`
+  gets its run id from `POST /api/runs`, so it never looks one up; a CI consumer would want
+  "this test on this version" with paging, not the newest 100 of an application (≈ a day under
+  #223's retention). What I do still want is the single run's report as `--report <path>`, its
+  own issue, not a wider #61.
+- **The failed-Verify wording is mine and I set it**, since #26 has no checkpoint to copy. House
+  style from `playback/resolve.py` — lower case, logical name first, no "Step failed:" prefix:
+  `login.message: name should contain "Invalid", it is "Welcome, admin!"`;
+  `login.okButton: enabled should be true, it is false`;
+  `main.customerGrid: rowCount should be 3, it is 5`;
+  `main.customerGrid: a row with "Yılmaz" in "Soyad" should exist, none does`. A checkpoint that
+  re-read until the time ran out appends ` after 5000 ms`, matching "element not found"'s
+  existing `within 5000 ms`. **#40 must use exactly these.**
+- Asked him to fix before merge: the report temp files are deleted with a fire-and-forget
+  `rm` in `will-quit`, which does not wait, so ~15 MB pages carrying screenshots of the
+  application under test can survive in `%TEMP%`. `rmSync` plus a sweep at `whenReady`.
+- Also told him the seed's `notRun` steps should carry `"not run: an earlier step failed"`, the
+  message the real runner writes (`playback/runner.py:147`).
 
 ## What I owe from the 2026-11-12 reviews
 
@@ -333,7 +446,7 @@ Keep these; they are commitments, not opinions.
 Table patterns), Qt `QListWidget` → `List`, KeePass 2 `m_lvEntries` → `List` with a `Header` of
 five `HeaderItem`s. No pilot app has a WinForms `DataGridView`.
 
-## From #33 / PR #230, so merging `main` into this branch did not lose them
+## From #33 / PR #230, so merging this file did not lose them
 
 - **UI Automation cannot choose an item in a Qt combo box.** `SelectionItem.Select`, `Invoke`
   and `ValuePattern.SetValue` all leave it unchanged, and the items only exist after
@@ -342,11 +455,20 @@ five `HeaderItem`s. No pilot app has a WinForms `DataGridView`.
 - **Reproduce CI before pushing anything under `eval/`:** `cd eval;
   ../.venv/Scripts/python.exe -m pytest -q`. CI runs a bare `pytest` from `eval/`, not
   `pytest eval` from the root, and the two disagree about which module wins when a name exists
-  twice (#199, #210).
+  twice (#199, #210). This is why #29 had to add `rq1/tests` to `testpaths` — a green
+  `pytest eval/rq1/tests` says nothing about CI.
 - For galip: `eval/apps/sample/texts.py` and `uia_check.py --json` are what
   `eval/nl/objects/sample.json` (#36) should be generated from.
-- **#10's five literature entries are still owed** (PR #126 is a draft with no reviewer), and
-  **#28 (G0 gate)** is open with three of four criteria ticked — the last one is galip's #7.
+- **#10, my five literature entries, is still owed** (omer's inbox note of 2026-11-05); PR #126
+  is still a draft and has no reviewer.
+- **#33's three checkboxes were still empty on the closed issue**, and one of them really is not
+  met: "runs with one command on every member's machine" holds for Windows and omer's macOS M3
+  but **not galip's machine**. Recorded as a comment on #33 on 2026-11-12 rather than ticked, and
+  galip is asked for one command there. Also answered omer's open question from his run: the
+  login window staying visible beside the customers window is deliberate (SC-14).
+- **#28 (G0 gate) is still open** with three of four criteria ticked; the last one is galip's #7.
+- Of the inbox's entries only two are still live (#10's entries, and now nothing of #221's).
+  **I offered to delete the handled ones; the user has not said yes, so they stay.**
 - `.codex/` sits untracked in my working tree (another CLI's hooks, my user's). Deliberately not
   committed and not ignored.
 
@@ -370,6 +492,12 @@ All omer's, all needing this machine:
   makes #197's "at 100 % **and** 150 %" cheap to batch with any other scaling check in one
   session. Confirm the scale from a **DPI-aware** probe, never from plain PowerShell
   (`learnings.md` 2026-11-12).
+- **#29's own captures (mine, not omer's)**: KeePass 2 `main` and `entry-editor` via
+  `kp_state.py`, HandBrake `main-summary`, then `measure.py measure`. Short and CPU-light, so do
+  it *before* leaving the machine idle for #162.
+- **#231** — the Runs screen in the Electron app: the two dropdowns, "Raporu aç" in its own
+  window, Kaydet… and the saved file opening offline, at 100 % **and** 150 %. Batch it with
+  #197's Ctrl+Z/Ctrl+Y, which have never been pressed on Windows.
 - New: the **nav at 1280 px** — "Nesne Deposu" is the longest nav label now and it collapses to
   icons below 1180.
 - **A second monitor at another scaling is impossible here**: this machine has one 1920×1080
@@ -383,6 +511,9 @@ All omer's, all needing this machine:
   as `agent/.venv/Scripts/python.exe -m ruff`; the root `.venv` has no ruff.
 - **`python3` is a Store stub here**, `python` is the real 3.13.0. Any script that hard-codes
   `python3` fails on this machine.
+- **Ollama 0.40.16 is installed and running** on `127.0.0.1:11434`, with `qwen3:8b` and
+  `gemma4:e4b-it-qat` pulled (11 GB in `%USERPROFILE%\.ollama\models`), as of 2026-11-12.
+  #162's body says there is no Ollama here; that is out of date.
 - Docker **29.6.1** is available. Server address is **`http://[::1]:8080`**, not `localhost`:
   `PEMHTTPD-x64` holds IPv4 8080 and cannot be stopped without elevation. Admin is
   `admin` / `ayna-dev-admin` (the git-ignored `.env`).
@@ -421,5 +552,6 @@ All omer's, all needing this machine:
 - **`copilot-swe-agent[bot]`** has pushed to branches of mine and once left a `<<<<<<< HEAD`
   marker in `memory-bank/decisions/README.md` on `main`. Its `COMMENTED` review is not an
   approval.
+- **Review queue: empty again.** PR #231 was the only one waiting and it is approved.
 - Inbox: handled through 2026-11-05. Do not delete the handled lines yet — open PRs still append
   to that file and `merge=union` would bring deletions back.

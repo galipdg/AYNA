@@ -1,0 +1,464 @@
+{
+  "version": "0.1",
+  "snapshotId": "d72fe871-35ac-419e-8430-3f1bf506fbfa",
+  "capture": {
+    "startedAt": "2026-11-14T10:35:34+03:00",
+    "durationMs": 216,
+    "budgetMs": 5000,
+    "elementCount": 19,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "KeePass.exe",
+    "fileVersion": "2.61.1.0"
+  },
+  "window": {
+    "handle": 263908,
+    "title": "Open Database - ayna-demo.kdbx",
+    "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+    "processId": 2100,
+    "bounds": [
+      679,
+      365,
+      1241,
+      654
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "automationId": "KeyPromptForm",
+        "name": "Open Database - ayna-demo.kdbx",
+        "controlType": "Window",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          679,
+          365,
+          1241,
+          654
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263908
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_cmbKeyFile",
+        "name": "(None)",
+        "controlType": "ComboBox",
+        "className": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          851,
+          520,
+          1170,
+          544
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329438
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e1",
+      "element": {
+        "controlType": "Text",
+        "bounds": [
+          851,
+          520,
+          1170,
+          544
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ComboBox",
+        "siblingIndex": 0,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e1",
+      "element": {
+        "name": "Open",
+        "controlType": "Button",
+        "bounds": [
+          1150,
+          521,
+          1169,
+          543
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ComboBox",
+        "siblingIndex": 1,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Down Arrow"
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_lblSeparator",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          682,
+          591,
+          1238,
+          593
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 984734
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnHelp",
+        "name": "Help",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          698,
+          607,
+          798,
+          635
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+h",
+        "nativeWindowHandle": 853084
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_cbHidePassword",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1179,
+          486,
+          1222,
+          514
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 3,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 526038
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_bannerImage",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          682,
+          397,
+          1238,
+          471
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 4,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263912
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnCancel",
+        "name": "Cancel",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1122,
+          607,
+          1222,
+          635
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 5,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263914
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnOK",
+        "name": "OK",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1014,
+          607,
+          1114,
+          635
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 6,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263916
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_cbUserAccount",
+        "name": "Windows user account",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          698,
+          555,
+          861,
+          575
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 7,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+w",
+        "nativeWindowHandle": 263918
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnOpenKeyFile",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1179,
+          519,
+          1222,
+          547
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 8,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198384
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_cbKeyFile",
+        "name": "Key file/provider:",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          698,
+          523,
+          827,
+          543
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 9,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+k",
+        "nativeWindowHandle": 263922
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_tbPassword",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          851,
+          488,
+          1170,
+          510
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 10,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263924
+      }
+    },
+    {
+      "id": "e14",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_cbPassword",
+        "name": "Master password:",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          698,
+          491,
+          833,
+          511
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 11,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+m",
+        "nativeWindowHandle": 198392
+      }
+    },
+    {
+      "id": "e15",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          702,
+          368,
+          1238,
+          397
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 12,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e16",
+      "parentId": "e15",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          688,
+          374,
+          716,
+          402
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e17",
+      "parentId": "e16",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          688,
+          374,
+          716,
+          402
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e18",
+      "parentId": "e15",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          1195,
+          366,
+          1239,
+          397
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "Open Database - ayna-demo.kdbx",
+        "enabled": true,
+        "offscreen": false
+      }
+    }
+  ]
+}

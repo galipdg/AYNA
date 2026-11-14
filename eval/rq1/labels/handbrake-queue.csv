@@ -1,0 +1,7 @@
+﻿elementId,label,note
+e9,control,Start Queue dugmesi
+e14,control,"Start Queue yanindaki Options acilir dugmesi; tiklanan MenuItem adsiz, kimlik bir ust Menu'de"
+e19,control,Pencere altindaki When Done acilir menusu; ayni sekilde adsiz
+e24,control,Summary sekmesi
+e28,control,Statistics sekmesi
+e30,control,Activity Log sekmesi
