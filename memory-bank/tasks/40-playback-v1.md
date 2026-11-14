@@ -109,9 +109,11 @@ make playback depend on a property `NEVER_MATCH` already calls unreliable.
   in `b28f2b9` (the results are under "Manual checks", the reasons under "Decisions")
 - **623 agent tests pass, ruff clean (2026-11-14).** PR **#237** is open, CI was green before
   `b28f2b9`.
-- Next step: push `b28f2b9` and the memory with it, post the check result as a comment on #40
-  and **remove `needs-windows-test`**, then re-request both reviews because the PR changed
-  under them. Nothing in the code is waiting on anything.
+- [x] Pushed (`75f2b18`), result posted as issue comment `6880618635`,
+  `needs-windows-test` removed, both reviews re-requested because the PR changed under them.
+- Next step: **nothing of mine.** #40 waits on the two reviews and then on a merge. If a
+  reviewer asks about the `Select` ladder, the measurements behind every rung are in the issue
+  comment and the reasons in "Decisions" above.
 
 ### The three acceptance criteria, and where each is tested
 
@@ -310,5 +312,26 @@ broad; galip has this, since SC-20 was written around it.
   an **editable** combo box, so `items.write`'s read-back is still only covered by fakes.
 
 ## Handoff
+
+Everything in #40 is implemented, measured on real providers and pushed. **The one thing a next
+session must not redo is the Windows check** — it ran on 2026-11-14 and the result, with the
+per-route measurements, is issue comment `6880618635`.
+
+What is genuinely left open, in the order it will bite:
+
+1. **No driver for a manual `runSteps` exists in the repo.** This check needed one and it was
+   written in a scratchpad and thrown away. The user's call (2026-11-14): it stays **inside
+   #61's scope** as an `ayna_cli` subcommand rather than getting an issue of its own. The shape
+   that worked: `UiaDesktop()` → `setup()` → `list_windows()` to pick the handle →
+   `desktop.run_steps(handle, document, targets)`. Use `agent/.venv`, which is the only one with
+   `ayna_agent` and `websockets` installed.
+2. **`items.write`'s read-back has no grace period** and a late-applying provider is now known
+   to exist (Qt, 32 ms). `choose`'s confirmation got `_confirmed`'s one-interval wait; `write`
+   did not, because no editable combo box exists in the sample app or either pilot to measure it
+   on. Give it the same wait, or find such an app first.
+3. **Three branches of playback have never met a real provider**: the cell-selecting view, a WPF
+   `DataGrid` (HandBrake's queue is a `List`), and an editable combo box. Nothing in
+   `C:\ayna-pilots\` exercises any of them. Same gap #221's step 7 hit.
+4. `model.describe_tree` loops for ever on a node that is its own ancestor (see "Open issues").
 
 ## Outcome (fill when the issue closes)

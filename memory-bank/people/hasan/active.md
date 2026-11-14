@@ -25,8 +25,12 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   confirmed by reading the **target** back. (3) `LegacyIAccessible.DoDefaultAction` joined the
   ladder: the only rung Qt honours. (4) The box was expanded **once**, and Qt's popup shuts
   itself ~1 s later, so a late-filling list stayed invisible for good.
-- **Next on #40: push `b28f2b9` + the memory, post the result as a comment on #40, remove
-  `needs-windows-test`, and re-request both reviews** — the PR changed under them.
+- **#40 is out and nothing of mine is left on it.** Pushed (`75f2b18`), result posted as issue
+  comment `6880618635`, `needs-windows-test` removed, both reviews re-requested because the PR
+  changed under them. It waits on the two reviews and then on a merge.
+- **The Windows queue's other seven are all omer's** (#206, #204, #184, #68, #38, #24, #17) and
+  need him present, so they wait for the weekly session — do not run them alone. #24's is mine
+  to run but only after his fix to PR #234.
 - **SC-20 is unblocked and #33's Qt finding is overturned** (too broad): UIA *can* choose an
   item in a Qt combo box, the popup's items *are* in the window's tree once expanded, and
   `LegacyIAccessible.DoDefaultAction()` on the item works. In galip's inbox.
@@ -35,7 +39,8 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   the handle, then `desktop.run_steps(handle, document, targets)` — the `rpc.py` path with the
   socket taken out. `ayna_agent` is **not** pip-installed in the root `.venv`; use
   `agent/.venv/Scripts/python.exe`, which has it editable along with `websockets`. Worth a
-  committed `ayna_cli` subcommand when #61 starts, because every future playback check needs it.
+  committed `ayna_cli` subcommand when #61 starts, because every future playback check needs
+  it — **the user decided on 2026-11-14 that this stays inside #61's scope**, not its own issue.
 - **The sample app's grid is empty until a search runs**, so any grid step needs a `Click` on
   `refreshButton` first, and `--screen main` skips the login. The automation ids are Qt-prefixed:
   `QApplication.main.customerGrid`, not `customerGrid`.
