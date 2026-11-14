@@ -298,3 +298,8 @@ Append-only. One entry per session, newest at the bottom:
 - Built the client half of the pick: main calls `elementFromPoint` on the key press, the Spy selects the node or offers capture / capture again; fake agent answers it for `dev:mock`. PR #234 ("Part of #24"), Windows check posted on #24 with `needs-windows-test`.
 - SSH to GitHub still times out; fetch/push over HTTPS with gh credentials worked.
 - Next: CI and reviews on #234, Windows check, then #224 / #44.
+
+## 2026-11-14 — #24 macOS check
+- Session start: `main` unchanged (`d788d64`), no review requests, inbox handled. PR #234 CI green, no reviews yet; #224 still waits for galip; #40 still open, so #44 waits.
+- omer ran the `dev:mock` pick check on macOS: all steps pass (task note).
+- Next: reviews on #234, Windows check at the weekly session, then #224 / #44.
