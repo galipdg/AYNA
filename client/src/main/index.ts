@@ -1,8 +1,12 @@
+import { randomUUID } from 'node:crypto'
+import { rmSync } from 'node:fs'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
   app,
   BrowserWindow,
+  dialog,
   globalShortcut,
   ipcMain,
   screen,
@@ -11,9 +15,13 @@ import {
 } from 'electron'
 import {
   IPC,
+  RUN_STATUSES,
   type AppInfo,
   type NewRepoObject,
   type RepoObjectChange,
+  type ReportResult,
+  type RunFilter,
+  type RunStatus,
   type Role,
 } from '../shared/api.ts'
 import { isLanguage, languageFor } from '../shared/language.ts'
@@ -23,6 +31,7 @@ import {
   isAllowedNavigation,
   isAllowedRequest,
   isTrustedSender,
+  reportWebPreferences,
   secureWebPreferences,
 } from './security.ts'
 import { createApplication, listApplications } from './apps.ts'
@@ -36,6 +45,7 @@ import {
   listVersions,
   updateRepoObject,
 } from './repository.ts'
+import { fetchReport, listRuns, reportFileName } from './runs.ts'
 import { checkServer } from './server.ts'
 import {
   createTest,
@@ -144,10 +154,13 @@ function registerIpc() {
     platform: process.platform,
   }))
   handle(IPC.getSettings, () => loadSettings(settingsFile))
-  handle(IPC.getLanguage, async () => {
+  /** The UI language: the user's choice, else the first-run rule. */
+  async function uiLanguage() {
     const { language } = await loadSettings(settingsFile)
     return language ?? languageFor(app.getPreferredSystemLanguages())
-  })
+  }
+
+  handle(IPC.getLanguage, uiLanguage)
   handle(IPC.setLanguage, async (_event, language: unknown) => {
     if (!isLanguage(language)) throw new Error(`not a UI language: ${String(language)}`)
     const settings = await loadSettings(settingsFile)
@@ -234,6 +247,46 @@ function registerIpc() {
     return track(await saveSteps(serverUrl, String(id), document as StepDocument, { token }))
   })
   handle(IPC.validateSteps, (_event, document: unknown) => validateSteps(document))
+  handle(IPC.listRuns, async (_event, appId: unknown, filter: unknown) => {
+    const { serverUrl, token } = await server()
+    return track(await listRuns(serverUrl, String(appId), runFilter(filter), { token }))
+  })
+  handle(IPC.openReport, async (_event, runId: unknown): Promise<ReportResult> => {
+    const { serverUrl, token } = await server()
+    const report = track(await fetchReport(serverUrl, String(runId), await uiLanguage(), { token }))
+    if (!report.ok) return report
+    try {
+      await showReport(String(runId), report.html)
+    } catch (error) {
+      return { ok: false, reason: 'write-failed', detail: String(error) }
+    }
+    return { ok: true }
+  })
+  handle(
+    IPC.saveReport,
+    async (event, runId: unknown, fileName: unknown): Promise<ReportResult> => {
+      const owner = BrowserWindow.fromWebContents(event.sender)
+      const options = {
+        defaultPath: join(app.getPath('downloads'), reportFileName(String(fileName))),
+        filters: [{ name: 'HTML', extensions: ['html'] }],
+      }
+      const choice = owner
+        ? await dialog.showSaveDialog(owner, options)
+        : await dialog.showSaveDialog(options)
+      if (choice.canceled || !choice.filePath) return { ok: false, reason: 'cancelled' }
+      const { serverUrl, token } = await server()
+      const report = track(
+        await fetchReport(serverUrl, String(runId), await uiLanguage(), { token }),
+      )
+      if (!report.ok) return report
+      try {
+        await writeFile(choice.filePath, report.html, 'utf8')
+      } catch (error) {
+        return { ok: false, reason: 'write-failed', detail: String(error) }
+      }
+      return { ok: true, path: choice.filePath }
+    },
+  )
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
   handle(IPC.listWindows, () => listWindows(agent))
@@ -326,7 +379,75 @@ function createMainWindow() {
   window.loadURL(entryUrl)
 }
 
+/** Run report windows by run id; a run's report opens again in the same window (#68). */
+const reportWindows = new Map<string, { window: BrowserWindow; file: string }>()
+const reportFolder = () => join(app.getPath('temp'), 'ayna-reports')
+
+/**
+ * Shows a report in its own window, from a file in a private temp folder: a 15 MB page is too
+ * large for a `data:` URL. The file goes when the window closes, and the folder when AYNA quits.
+ */
+async function showReport(runId: string, html: string) {
+  await mkdir(reportFolder(), { recursive: true })
+  const file = join(reportFolder(), `${randomUUID()}.html`)
+  await writeFile(file, html, 'utf8')
+  const open = reportWindows.get(runId)
+  if (open && !open.window.isDestroyed()) {
+    const previous = open.file
+    open.file = file
+    await open.window.loadFile(file)
+    // Best effort: on Windows the file being replaced can still be locked (EBUSY), and the
+    // report did open; the sweep at quit or the next start takes what is left (#231 review).
+    void rm(previous, { force: true }).catch(() => {})
+    open.window.focus()
+    return
+  }
+  const window = new BrowserWindow({
+    width: 1100,
+    height: 850,
+    minWidth: 480,
+    minHeight: 400,
+    show: false,
+    autoHideMenuBar: true,
+    webPreferences: reportWebPreferences(),
+  })
+  reportWindows.set(runId, { window, file })
+  window.once('ready-to-show', () => window.show())
+  window.on('closed', () => {
+    const entry = reportWindows.get(runId)
+    reportWindows.delete(runId)
+    if (entry) void rm(entry.file, { force: true }).catch(() => {})
+  })
+  await window.loadFile(file)
+}
+
+/** The filter the renderer sent, keeping only what the server accepts. */
+function runFilter(value: unknown): RunFilter {
+  const filter: RunFilter = {}
+  if (typeof value !== 'object' || value === null) return filter
+  const { testId, status } = value as Record<string, unknown>
+  if (typeof testId === 'string' && testId) filter.testId = testId
+  if (RUN_STATUSES.includes(status as RunStatus)) filter.status = status as RunStatus
+  return filter
+}
+
+/**
+ * Removes every report file. They hold screenshots of the application under test, so none may
+ * outlive AYNA: synchronous at quit (`will-quit` does not wait for a promise), and once at start
+ * for what a crash or a kill left behind (#231 review).
+ */
+function sweepReports() {
+  try {
+    rmSync(reportFolder(), { recursive: true, force: true })
+  } catch {
+    // A file still locked by a closing window; the next start removes it.
+  }
+}
+
+app.on('will-quit', sweepReports)
+
 app.whenReady().then(() => {
+  sweepReports()
   hardenSession()
   registerIpc()
   createMainWindow()

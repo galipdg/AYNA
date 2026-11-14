@@ -5,6 +5,7 @@ import {
   isAllowedNavigation,
   isAllowedRequest,
   isTrustedSender,
+  reportWebPreferences,
   secureWebPreferences,
 } from '../security.ts'
 
@@ -98,5 +99,16 @@ describe('secureWebPreferences', () => {
     assert.equal(prefs.webSecurity, true)
     assert.equal(prefs.webviewTag, false)
     assert.equal(prefs.preload, '/app/out/preload/index.js')
+  })
+})
+
+describe('reportWebPreferences', () => {
+  it('gives the report window no script, no Node and no bridge', () => {
+    const prefs = reportWebPreferences()
+    assert.equal(prefs.javascript, false)
+    assert.equal(prefs.contextIsolation, true)
+    assert.equal(prefs.nodeIntegration, false)
+    assert.equal(prefs.sandbox, true)
+    assert.equal('preload' in prefs, false)
   })
 })

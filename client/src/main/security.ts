@@ -77,3 +77,20 @@ export function secureWebPreferences(preload: string) {
     spellcheck: false,
   }
 }
+
+/**
+ * webPreferences for the run report window (#68): a server-rendered page that needs no script
+ * and no bridge, so it gets neither. The report also carries its own CSP (#59).
+ */
+export function reportWebPreferences() {
+  return {
+    contextIsolation: true,
+    nodeIntegration: false,
+    sandbox: true,
+    javascript: false,
+    webSecurity: true,
+    allowRunningInsecureContent: false,
+    webviewTag: false,
+    spellcheck: false,
+  }
+}

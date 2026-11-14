@@ -52,6 +52,9 @@ public class RunService {
 
 	static final int HISTORY_LIMIT = 20;
 
+	/** Runs the application-wide history returns (#68). */
+	static final int APP_HISTORY_LIMIT = 100;
+
 	private static final String RUNNING = "running";
 
 	private static final String PASSED = "passed";
@@ -154,6 +157,40 @@ public class RunService {
 				return tx.run("""
 						MATCH (r:Run)-[:OF]->(t:TestCase {id: $testId})
 						WHERE $status IS NULL OR r.status = $status
+						MATCH (r)-[:ON_VERSION]->(v:AppVersion)
+						""" + RUN_FIELDS + " ORDER BY r.startedAt DESC LIMIT $limit", params).list(RunService::summary);
+			});
+		}
+	}
+
+	/**
+	 * The application's runs, newest first, at most {@link #APP_HISTORY_LIMIT}: the run history
+	 * screen (#68, FR-22). `testId` and `status` narrow them; a test of another application is a
+	 * 404, like an unknown one.
+	 */
+	public List<RunSummary> listAppRuns(String appId, String testId, String status) {
+		if (status != null && !RUN_STATUSES.contains(status)) {
+			throw new InvalidRequestException("Unknown run status: " + status, List.of());
+		}
+		Map<String, Object> params = new HashMap<>();
+		params.put("appId", appId);
+		params.put("testId", testId);
+		params.put("status", status);
+		params.put("limit", APP_HISTORY_LIMIT);
+		try (Session session = driver.session()) {
+			return session.executeRead(tx -> {
+				if (!tx.run("MATCH (a:Application {id: $appId}) RETURN a LIMIT 1", params).hasNext()) {
+					throw new NotFoundException("Application not found: " + appId);
+				}
+				if (testId != null && !tx
+					.run("MATCH (:Application {id: $appId})-[:HAS_TEST]->(t:TestCase {id: $testId}) RETURN t LIMIT 1",
+							params)
+					.hasNext()) {
+					throw new NotFoundException("Test not found in this application: " + testId);
+				}
+				return tx.run("""
+						MATCH (:Application {id: $appId})-[:HAS_TEST]->(t:TestCase)<-[:OF]-(r:Run)
+						WHERE ($testId IS NULL OR t.id = $testId) AND ($status IS NULL OR r.status = $status)
 						MATCH (r)-[:ON_VERSION]->(v:AppVersion)
 						""" + RUN_FIELDS + " ORDER BY r.startedAt DESC LIMIT $limit", params).list(RunService::summary);
 			});
@@ -288,6 +325,39 @@ public class RunService {
 			throw new NotFoundException("Step " + stepIndex + " of run " + runId + " has no screenshot");
 		}
 		return png;
+	}
+
+	/**
+	 * What the run's report shows (#59): the run, the names of its test, application and version,
+	 * and where its screenshots are. Read in one transaction, so a 404 comes before the report
+	 * starts; each file is read only when the report writes its step. A file that has gone
+	 * (retention meanwhile) is a step without a screenshot.
+	 */
+	RunReport.Input reportInput(String runId) {
+		record Read(RunDetail run, String testName, String applicationName, String version,
+				Map<Integer, String> paths) {
+		}
+		Read read;
+		try (Session session = driver.session()) {
+			read = session.executeRead(tx -> {
+				RunDetail run = detail(tx, runId);
+				Record names = tx.run("""
+						MATCH (r:Run {id: $id})-[:OF]->(t:TestCase)
+						MATCH (r)-[:ON_VERSION]->(v:AppVersion)<-[:HAS_VERSION]-(a:Application)
+						RETURN t.name AS test, a.name AS app, v.version AS version""", Map.of("id", runId)).single();
+				Map<Integer, String> paths = new HashMap<>();
+				tx.run("""
+						MATCH (:Run {id: $id})-[:HAS_RESULT]->(sr:StepResult)
+						WHERE sr.screenshotPath IS NOT NULL
+						RETURN sr.stepIndex AS stepIndex, sr.screenshotPath AS path""", Map.of("id", runId))
+					.forEachRemaining(r -> paths.put(r.get("stepIndex").asInt(), r.get("path").asString()));
+				return new Read(run, names.get("test").asString(), names.get("app").asString(),
+						names.get("version").asString(), paths);
+			});
+		}
+		Map<Integer, String> paths = read.paths();
+		return new RunReport.Input(read.run(), read.testName(), read.applicationName(), read.version(),
+				stepIndex -> paths.containsKey(stepIndex) ? screenshots.read(paths.get(stepIndex)) : null);
 	}
 
 	/**

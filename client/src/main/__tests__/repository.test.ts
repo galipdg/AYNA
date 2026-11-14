@@ -251,12 +251,32 @@ describe('versions and repository API', () => {
             primary: object.primary,
             fallback: object.fallback,
             controlType: 'Edit',
+            columns: [],
             testCount: 2,
             versionIds: ['v1', 'v2'],
           },
         ],
       })
       assert.equal(request, 'GET /api/apps/a%201/repo-objects Bearer t')
+
+      // #221: a grid's column headers pass through; anything but a list of names gives none.
+      handle = (_req, _body, res) =>
+        json(res, 200, [
+          {
+            ...stored,
+            controlType: 'List',
+            columns: ['Title', '', 3, 'URL'],
+            testCount: 0,
+            resolvesTo: [],
+          },
+          { ...stored, id: 'o2', columns: 'Title', testCount: 0, resolvesTo: [] },
+        ])
+      const grids = await listRepoObjects(base, 'a1')
+      assert.ok(grids.ok)
+      assert.deepEqual(
+        grids.objects.map((o) => o.columns),
+        [['Title', 'URL'], []],
+      )
 
       handle = (_req, _body, res) => json(res, 200, [{ ...stored }])
       assert.deepEqual(await listRepoObjects(base, 'a1'), { ok: false, reason: 'bad-response' })

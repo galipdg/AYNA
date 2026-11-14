@@ -114,6 +114,47 @@ paths:
           $ref: "#/components/responses/Conflict"
       tags:
       - repo-object-controller
+  /api/apps/{appId}/runs:
+    get:
+      operationId: listAppRuns
+      parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: testId
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - running
+          - passed
+          - failed
+          - aborted
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RunSummary"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - run-controller
   /api/apps/{appId}/tests:
     get:
       operationId: listTests
@@ -511,6 +552,39 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+      tags:
+      - run-controller
+  /api/runs/{runId}/report.html:
+    get:
+      operationId: runReport
+      parameters:
+      - in: path
+        name: runId
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: lang
+        required: false
+        schema:
+          type: string
+          default: en
+          enum:
+          - en
+          - tr
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                type: string
+          description: The report
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
       tags:
       - run-controller
   /api/runs/{runId}/results/{stepIndex}:
@@ -1166,6 +1240,10 @@ components:
       properties:
         appId:
           type: string
+        columns:
+          type: array
+          items:
+            type: string
         createdAt:
           type: string
           format: date-time
@@ -1200,6 +1278,10 @@ components:
     RepoObjectSummary:
       type: object
       properties:
+        columns:
+          type: array
+          items:
+            type: string
         controlType:
           type: string
         fallback:
