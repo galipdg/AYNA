@@ -287,3 +287,9 @@ Append-only. One entry per session, newest at the bottom:
 - Found that every Element keeps `siblingIndex`, so the header order survives in the graph: `columns` is read from the captured tree at request time (`GridColumns`), with no snapshot, graph or migration change and no ADR (omer had first agreed to an `Element.columns` property + ADR, which I proposed on the wrong belief that the order was lost).
 - Client: the row picker's and the `cell` check's column field is a dropdown with "Other…" when columns are known. #221's criteria rewritten on GitHub. Notes to galip (#37: `columns` can be incomplete, do not reject on it) and hasan (Windows check).
 - Next: PR on omer's OK, manual check on #221 with `needs-windows-test`; then #59.
+
+## 2026-11-12 – 2026-11-14 (nineteenth session) · PR sweep
+- Merged on omer's word: #229 (#59; hasan's three fixes first: streaming report, `repairProposed`, `TZ`), #228 (#221; hasan's two client points), #230 (hasan's #33, after a macOS run), #231 (#68; hasan's fix first: report temp files swept at quit and start; "Part of #68" until the Windows screen check). hasan merged #227 and #232 himself after merging `main` (I do not push to his branches, omer's choice).
+- #224: `main` merged twice (decisions index, `active.md`), `elementFromPoint` into agent-rpc 1.0. Waits for galip.
+- Reviews: #227 approved after `142a6c6`; #230, #232 and #233 approved.
+- Next: #24 on `omer/24-pick-hotkey`.
