@@ -11,7 +11,10 @@ import { listWindows, parseSnapshot, parseWindows, snapshot } from '../spy.ts'
 
 const schemas = join(import.meta.dirname, '..', '..', '..', '..', 'schemas')
 const read = (path: string): unknown => JSON.parse(readFileSync(join(schemas, path), 'utf8'))
-const contract = read('agent-rpc.schema.json') as { $id: string; $defs: { version: { const: string } } }
+const contract = read('agent-rpc.schema.json') as {
+  $id: string
+  $defs: { version: { const: string } }
+}
 
 const ajv = new Ajv2020({ allErrors: true, strict: false })
 ajv.addSchema(contract as object)
@@ -20,7 +23,10 @@ ajv.addSchema(contract as object)
 function matches(definition: string) {
   const validate = ajv.compile({ $ref: `${contract.$id}#/$defs/${definition}` })
   return (value: unknown): void => {
-    assert.ok(validate(value), `${definition}: ${ajv.errorsText(validate.errors)} in ${JSON.stringify(value)}`)
+    assert.ok(
+      validate(value),
+      `${definition}: ${ajv.errorsText(validate.errors)} in ${JSON.stringify(value)}`,
+    )
   }
 }
 
@@ -62,7 +68,12 @@ describe('agent JSON-RPC contract, client side', () => {
     await snapshot(shot.agent, 657704)
 
     for (const sent of [...windows.sent, ...shot.sent]) request(sent)
-    assert.deepEqual(shot.sent[0], { jsonrpc: '2.0', id: 1, method: 'snapshot', params: { handle: 657704 } })
+    assert.deepEqual(shot.sent[0], {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'snapshot',
+      params: { handle: 657704 },
+    })
   })
 
   it('reads every window the contract allows, also with values Windows could not read', () => {
@@ -94,8 +105,16 @@ describe('agent JSON-RPC contract, client side', () => {
   it('reads the agent answers the contract documents', () => {
     matches('pingResult')({ agentVersion: '0.0.0', rpcVersion: '1.0' })
     matches('success')({ jsonrpc: '2.0', id: 3, result: { windows: [] } })
-    matches('failure')({ jsonrpc: '2.0', id: 4, error: { code: -32000, message: 'Window not found: 12' } })
-    matches('failure')({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } })
+    matches('failure')({
+      jsonrpc: '2.0',
+      id: 4,
+      error: { code: -32000, message: 'Window not found: 12' },
+    })
+    matches('failure')({
+      jsonrpc: '2.0',
+      id: null,
+      error: { code: -32700, message: 'Parse error' },
+    })
     // #22: one shape for every outcome, every field nullable (docs/agent-rpc.md).
     matches('elementFromPointResult')({
       handle: 657704,
@@ -111,11 +130,28 @@ describe('agent JSON-RPC contract, client side', () => {
       elementId: null,
       element: null,
     })
-    matches('request')({ jsonrpc: '2.0', id: 9, method: 'elementFromPoint', params: { x: -8, y: 40 } })
+    matches('request')({
+      jsonrpc: '2.0',
+      id: 9,
+      method: 'elementFromPoint',
+      params: { x: -8, y: 40 },
+    })
     matches('runStepsResult')({
       results: [
-        { stepIndex: 0, status: 'passed', durationMs: 31, matched: 'primary', performedWith: 'SetValue' },
-        { stepIndex: 1, status: 'failed', durationMs: 10000, stepId: 'b6f0', message: 'Element not found' },
+        {
+          stepIndex: 0,
+          status: 'passed',
+          durationMs: 31,
+          matched: 'primary',
+          performedWith: 'SetValue',
+        },
+        {
+          stepIndex: 1,
+          status: 'failed',
+          durationMs: 10000,
+          stepId: 'b6f0',
+          message: 'Element not found',
+        },
         { stepIndex: 2, status: 'notRun', durationMs: 0 },
       ],
     })
@@ -127,6 +163,9 @@ describe('agent JSON-RPC contract, client side', () => {
   it('keeps working with a later 1.x agent, which only adds', () => {
     matches('pingResult')({ agentVersion: '0.3.0', rpcVersion: '1.4' })
     const later = { windows: [{ ...window, monitor: 2 }] }
-    assert.deepEqual(parseWindows(later)?.map((w) => w.handle), [395942])
+    assert.deepEqual(
+      parseWindows(later)?.map((w) => w.handle),
+      [395942],
+    )
   })
 })
