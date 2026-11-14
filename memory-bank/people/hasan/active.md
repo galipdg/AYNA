@@ -27,8 +27,12 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   pick pressed during a long capture shows a false `agent-error`. **I owe #24 its Windows check**
   after his fix: it is the first real test of the client's DIP -> physical conversion at 100 %
   and 150 %, the half #22's scaling evidence does not cover.
-- **`gh` cannot set the Project status**: the token lacks `read:project`. `gh auth refresh -s
-  project` is interactive, so the user has to run it; #162, #23 and #40 are all still `Todo`.
+- **The Project status is settable again, and all four of mine are now `In progress`** (#23,
+  #29, #40, #162). The token was missing `project`; the user granted it on 2026-11-14 with
+  `gh auth refresh --hostname github.com --scopes project`. **`--hostname` is required**, because
+  the shell here is non-interactive and `gh auth refresh -s project` alone exits with
+  "--hostname required when not running interactively" -- which is what blocked every earlier
+  session from touching the board.
 - **#28's four acceptance criteria are all ticked** -- the earlier note saying "three of four,
   the last is galip's #7" was wrong. It stays open because its dependency **#24** is still open.
 - **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
