@@ -973,10 +973,18 @@ class ComboWindow:
     """
 
     def __init__(
-        self, items: tuple[str, ...] = CITIES, *, opened: bool = False
+        self,
+        items: tuple[str, ...] = CITIES,
+        *,
+        opened: bool = False,
+        self_closing: bool = False,
     ) -> None:
         self.items = items
         self.opened = opened
+        #: Qt: a popup opened through `ExpandCollapse` closes itself again about a second
+        #: later, taking its items out of the tree (measured in the #40 Windows check). Here
+        #: it closes after the read that saw it, which is the same failure deterministically.
+        self.self_closing = self_closing
         self.gone = False
         self.reads = 0
 
@@ -985,6 +993,8 @@ class ComboWindow:
         if self.gone:
             return [], []
         content = city_window(self.items if self.opened else ())
+        if self.self_closing and self.opened:
+            self.opened = False
         return content, [f"{n['control_type']}:{n.get('name')}" for n in content]
 
 
@@ -1191,6 +1201,51 @@ def test_select_waits_for_a_list_that_fills_late_without_a_fixed_sleep():
     assert clock.at == pytest.approx(3.0)
     assert set(clock.slept) == {POLL_INTERVAL_S}
     assert results[0].duration_ms == 3000
+
+
+def test_a_popup_that_closes_itself_is_opened_again_so_a_late_item_is_still_found():
+    """Qt's popup shuts about a second after `Expand`, and the sample app's list fills later
+    than that. Expanding only once left the item in a box playback had stopped reopening, so
+    it could never be found -- the same late control SC-18 is built around (#40 Windows
+    check). The guard is "the target shows no items", so this stops by itself once they are
+    there."""
+    window = ComboWindow(items=(), self_closing=True)
+    clock = Clock()
+    original = window.read_tree
+
+    def filling() -> tuple[list[dict], list[str]]:
+        if clock.at >= 3.0:
+            window.items = CITIES
+        return original()
+
+    window.read_tree = filling  # type: ignore[method-assign]
+    patterns = ComboPatterns(window)
+    results, *_ = run(
+        select_steps(), SELECT_TARGETS, window=window, clock=clock, patterns=patterns
+    )
+    assert results[0].status == "passed"
+    assert patterns.chosen == ["ListItem:Ankara"]
+    assert patterns.done.count("Expand") > 1, "it reopened the box that closed itself"
+    assert clock.at == pytest.approx(3.0)
+    assert set(clock.slept) == {POLL_INTERVAL_S}
+
+
+def test_the_count_in_the_message_is_the_most_items_ever_seen_not_the_last():
+    """A self-closing popup holds nothing at the deadline, so the last count is 0 and "the
+    target shows no items at all" would tell the tester the opposite of the truth: the list
+    plainly had three and the text is what is wrong."""
+    window = ComboWindow(self_closing=True)
+    patterns = ComboPatterns(window)
+    results, *_ = run(
+        select_steps("Bursa", timeoutMs=500),
+        SELECT_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        'list.city: no item has the text "Bursa" after 500 ms; the target offers 3 items'
+    )
 
 
 def test_a_target_that_vanishes_mid_select_says_so():

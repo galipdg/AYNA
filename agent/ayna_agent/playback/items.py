@@ -35,7 +35,7 @@ and only `uia_patterns` needs Windows (`agent/AGENTS.md`).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from ayna_agent.model import text_value
@@ -121,19 +121,74 @@ def collapse(element: Any, patterns: Patterns = uia_patterns) -> bool:
     return pattern is not None and _try(lambda: pattern.Collapse())
 
 
-def choose(element: Any, patterns: Patterns = uia_patterns) -> str | None:
-    """Select the item. Returns the pattern that did it, or None when both refused.
+#: The rungs :func:`choose` tries, in order, named for the result's `performedWith` and for
+#: :func:`refused`'s message. One tuple so the message cannot drift from the ladder.
+CHOOSE_PATTERNS: tuple[str, ...] = ("SelectionItem", "Invoke", "LegacyIAccessible")
+
+
+def choose(
+    element: Any,
+    patterns: Patterns = uia_patterns,
+    *,
+    confirm: Callable[[], bool],
+) -> str | None:
+    """Select the item. Returns the pattern that did it, or None when every rung refused.
 
     `SelectionItem.Select` first, because that is what choosing an item *means*; `Invoke`
-    second, for a menu item, which is activated rather than selected.
+    second, for a menu item, which is activated rather than selected;
+    `LegacyIAccessible.DoDefaultAction` last, and it is the **only** rung a Qt combo box
+    honours (measured on the sample app, #40 Windows check -- the other two return without
+    complaint and change nothing).
+
+    `confirm` is read back after every rung and is what makes the ladder trustworthy: a rung
+    that "succeeded" is not evidence, so a silent no-op falls through to the next rung instead
+    of being reported as the winner. It is keyword-only and has no default on purpose -- the
+    bug this ladder shipped with was exactly a caller that did not think about it.
     """
-    item = patterns(element, "SelectionItem")
-    if item is not None and _try(lambda: item.Select()):
-        return "SelectionItem"
-    invoke = patterns(element, "Invoke")
-    if invoke is not None and _try(lambda: invoke.Invoke()):
-        return "Invoke"
+    for name, call in (
+        ("SelectionItem", lambda pattern: pattern.Select()),
+        ("Invoke", lambda pattern: pattern.Invoke()),
+        ("LegacyIAccessible", lambda pattern: pattern.DoDefaultAction()),
+    ):
+        pattern = patterns(element, name)
+        if pattern is None:
+            continue
+        if _try(lambda pattern=pattern, call=call: call(pattern)) and confirm():
+            return name
     return None
+
+
+def took_effect(
+    target: Any,
+    item: Any,
+    value: str,
+    patterns: Patterns = uia_patterns,
+) -> bool:
+    """Whether the choice reached the control, read back from the provider.
+
+    `SelectionItem.Select()` returns without complaint on a Qt combo box and changes nothing,
+    and the item then reports `IsSelected` **true** -- that flag records the popup highlight,
+    not the choice (measured on the sample app, #40 Windows check). So without this read-back
+    `Select` reports `passed` while the box still shows its old value, which is the one
+    outcome a tester cannot debug.
+
+    The **target's** value decides whenever it has one: that is what a combo box shows and
+    what the next step will read. Only a target with no `Value` pattern falls back to the
+    item's own `IsSelected`. When neither can be read there is no evidence either way and the
+    ladder's own success stands -- a menu item is gone the moment it is invoked, and refusing
+    it would make `Select` unplayable on a menu.
+    """
+    pattern = patterns(target, "Value")
+    if pattern is not None:
+        shown = _read(lambda: pattern.CurrentValue)
+        if shown is not None:
+            return text_value(shown) == value
+    selection = patterns(item, "SelectionItem")
+    if selection is not None:
+        selected = _read(lambda: selection.CurrentIsSelected)
+        if selected is not None:
+            return bool(selected)
+    return True
 
 
 def write(element: Any, value: str, patterns: Patterns = uia_patterns) -> bool:
@@ -194,8 +249,15 @@ def refused(name: str, value: str, tried: Sequence[str]) -> str:
     """
     return (
         f"{name}: the item {show(value)} is there, but the application refused to select it "
-        f"({' and '.join(tried)} were tried)"
+        f"({_listed(tried)} were tried)"
     )
+
+
+def _listed(names: Sequence[str]) -> str:
+    """`a and b`, `a, b and c` -- the ladder grew a third rung and `and and` does not read."""
+    if len(names) < 3:
+        return " and ".join(names)
+    return f"{', '.join(names[:-1])} and {names[-1]}"
 
 
 def vanished(exc: Exception, value: str) -> str:

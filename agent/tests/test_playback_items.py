@@ -199,9 +199,10 @@ def test_the_first_item_with_that_text_wins():
 class Item:
     """One item, with switchable support for each pattern."""
 
-    def __init__(self, *, selection_item=True, invoke=True, refuses=()):
+    def __init__(self, *, selection_item=True, invoke=True, legacy=True, refuses=()):
         self.selection_item = selection_item
         self.invoke = invoke
+        self.legacy = legacy
         self.refuses = refuses
         self.tried: list[str] = []
 
@@ -225,36 +226,151 @@ class Item:
                         raise OSError("the provider refused")
 
             return I()
+        if name == "LegacyIAccessible" and self.legacy:
+
+            class L:
+                def DoDefaultAction(self):
+                    recorder.tried.append("LegacyIAccessible")
+                    if "LegacyIAccessible" in recorder.refuses:
+                        raise OSError("the provider refused")
+
+            return L()
         return None
+
+
+def took():
+    """A `confirm` that says the choice reached the control."""
+    return True
+
+
+def did_not_take():
+    """A `confirm` that says it did not -- the Qt no-op."""
+    return False
 
 
 def test_choose_prefers_selection_item_because_that_is_what_choosing_means():
     patterns = Item()
-    assert items.choose("item", patterns) == "SelectionItem"
+    assert items.choose("item", patterns, confirm=took) == "SelectionItem"
     assert patterns.tried == ["SelectionItem"]
 
 
 def test_choose_falls_back_to_invoke_for_a_menu_item():
     """A menu item is activated rather than selected, and has no SelectionItem."""
     patterns = Item(selection_item=False)
-    assert items.choose("item", patterns) == "Invoke"
+    assert items.choose("item", patterns, confirm=took) == "Invoke"
 
 
 def test_a_pattern_that_is_there_and_refuses_moves_to_the_next():
     patterns = Item(refuses=("SelectionItem",))
-    assert items.choose("item", patterns) == "Invoke"
+    assert items.choose("item", patterns, confirm=took) == "Invoke"
     assert patterns.tried == ["SelectionItem", "Invoke"]
 
 
-def test_choose_answers_none_when_both_refuse_rather_than_raising():
+def test_choose_answers_none_when_every_rung_refuses_rather_than_raising():
     """The Qt case (#33): the caller turns it into a message about the application, after
     trying the editable-combo fallback."""
-    patterns = Item(refuses=("SelectionItem", "Invoke"))
-    assert items.choose("item", patterns) is None
+    patterns = Item(refuses=("SelectionItem", "Invoke", "LegacyIAccessible"))
+    assert items.choose("item", patterns, confirm=took) is None
 
 
-def test_an_element_with_neither_pattern_cannot_be_chosen():
-    assert items.choose("item", Item(selection_item=False, invoke=False)) is None
+def test_an_element_with_no_pattern_at_all_cannot_be_chosen():
+    patterns = Item(selection_item=False, invoke=False, legacy=False)
+    assert items.choose("item", patterns, confirm=took) is None
+
+
+def test_legacy_do_default_action_is_the_last_rung_and_the_one_qt_honours():
+    """Measured on the sample app's Qt combo box (#40 Windows check): SelectionItem and Invoke
+    return without complaint and change nothing, DoDefaultAction is the only route."""
+    patterns = Item(selection_item=False, invoke=False)
+    assert items.choose("item", patterns, confirm=took) == "LegacyIAccessible"
+    assert patterns.tried == ["LegacyIAccessible"]
+
+
+def test_a_rung_that_succeeds_but_changes_nothing_falls_through_to_the_next():
+    """The whole reason `confirm` exists: Qt's SelectionItem.Select() accepts the call, does
+    nothing, and the item then reports IsSelected true. Reporting that rung as the winner is a
+    false `passed`, which is the one failure a tester cannot debug."""
+    patterns = Item()
+    confirmed = [False, True]
+    performed = items.choose("item", patterns, confirm=lambda: confirmed.pop(0))
+    assert performed == "Invoke"
+    assert patterns.tried == ["SelectionItem", "Invoke"]
+
+
+def test_a_ladder_whose_every_rung_is_unconfirmed_chose_nothing():
+    patterns = Item()
+    assert items.choose("item", patterns, confirm=did_not_take) is None
+    assert patterns.tried == ["SelectionItem", "Invoke", "LegacyIAccessible"]
+
+
+# --- the read-back that makes the ladder trustworthy ----------------------------------------
+
+RAISES = object()
+UNSET = object()
+
+
+class ReadBack:
+    """A target and an item, each with a readable, unreadable or absent property."""
+
+    def __init__(self, *, shown=UNSET, selected=None):
+        self.shown = shown
+        self.selected = selected
+
+    def __call__(self, element, name):
+        outer = self
+        if element == "target" and name == "Value" and self.shown is not UNSET:
+
+            class V:
+                @property
+                def CurrentValue(self):
+                    if outer.shown is RAISES:
+                        raise OSError("the provider died mid-call")
+                    return outer.shown
+
+            return V()
+        if element == "item" and name == "SelectionItem" and self.selected is not None:
+
+            class S:
+                @property
+                def CurrentIsSelected(self):
+                    return outer.selected
+
+            return S()
+        return None
+
+
+def test_the_targets_value_decides_over_an_item_that_claims_to_be_selected():
+    """The Qt measurement (#40 Windows check): after the no-op Select the item reports
+    IsSelected true while the combo still shows its old value. That flag records the popup
+    highlight, not the choice, so the box's own value is the authority."""
+    patterns = ReadBack(shown="Tümü", selected=True)
+    assert items.took_effect("target", "item", "Ankara", patterns) is False
+
+
+def test_the_targets_value_confirms_the_choice_when_it_reads_as_the_item():
+    patterns = ReadBack(shown="Ankara", selected=False)
+    assert items.took_effect("target", "item", "Ankara", patterns) is True
+
+
+def test_a_target_with_no_value_pattern_falls_back_to_the_items_own_flag():
+    """A plain list has no Value of its own, and there the item's IsSelected is all there is."""
+    assert (
+        items.took_effect("target", "item", "Ankara", ReadBack(selected=True)) is True
+    )
+    assert (
+        items.took_effect("target", "item", "Ankara", ReadBack(selected=False)) is False
+    )
+
+
+def test_a_value_that_cannot_be_read_falls_through_to_the_item_rather_than_failing():
+    patterns = ReadBack(shown=RAISES, selected=True)
+    assert items.took_effect("target", "item", "Ankara", patterns) is True
+
+
+def test_nothing_readable_leaves_the_ladders_own_success_standing():
+    """A menu item is gone the moment it is invoked: there is no evidence either way, and
+    refusing it would make Select unplayable on a menu."""
+    assert items.took_effect("target", "item", "Ankara", ReadBack()) is True
 
 
 # --- the editable combo box, read back -----------------------------------------------------
@@ -377,6 +493,16 @@ def test_refused_blames_the_application_not_the_test():
     assert message == (
         'list.city: the item "Ankara" is there, but the application refused to select it '
         "(SelectionItem and Invoke were tried)"
+    )
+
+
+def test_refused_names_the_whole_ladder_the_runner_actually_tried():
+    """Pinned against `CHOOSE_PATTERNS` rather than a tuple of its own, so the message a
+    tester reads cannot drift from the rungs `choose` really walks."""
+    message = items.refused("list.city", "Ankara", items.CHOOSE_PATTERNS)
+    assert message == (
+        'list.city: the item "Ankara" is there, but the application refused to select it '
+        "(SelectionItem, Invoke and LegacyIAccessible were tried)"
     )
 
 

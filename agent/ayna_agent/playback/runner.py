@@ -673,9 +673,12 @@ def _select_waiting(
     target itself goes away mid-wait.
     """
     deadline = now() + timeout_ms / 1000
-    tried_expand = False
     opened = False
-    count = 0
+    # The *most* items the target was ever seen to hold, not the last count. A Qt popup
+    # closes itself about a second after it is opened programmatically (measured in the #40
+    # Windows check), so the count at the deadline is 0 while the list plainly had five --
+    # and "the target shows no items at all" would tell the tester the opposite of the truth.
+    most = 0
 
     def finish(performed: str) -> str:
         """Leave the screen as the test found it, then report what performed the choice.
@@ -690,8 +693,24 @@ def _select_waiting(
 
     while True:
         position, count = items.find(tree, found.index, value, patterns)
+        most = max(most, count)
         if position is not None:
-            performed = items.choose(tree.infos[position], patterns)
+            item = tree.infos[position]
+            performed = items.choose(
+                item,
+                patterns,
+                # Read back after every rung, so a provider that accepts the call and does
+                # nothing falls through instead of reporting a choice it did not make.
+                confirm=lambda item=item, box=found.element: _confirmed(
+                    box,
+                    item,
+                    value,
+                    patterns=patterns,
+                    now=now,
+                    sleep=sleep,
+                    deadline=deadline,
+                ),
+            )
             if performed is not None:
                 return finish(performed)
             # The item is there and the provider would not select it: the Qt case (#33). An
@@ -699,13 +718,18 @@ def _select_waiting(
             # recorded as `SetValue` rather than as a choice.
             if items.write(found.element, value, patterns):
                 return finish("SetValue")
-            raise SelectFailed(items.refused(name, value, ("SelectionItem", "Invoke")))
+            raise SelectFailed(items.refused(name, value, items.CHOOSE_PATTERNS))
 
-        if not tried_expand and items.can_expand(found.element, patterns):
+        if not count and items.can_expand(found.element, patterns):
             # The items of a closed combo box do not exist yet, so this is not "look harder":
             # it is the only way they can appear. The re-read below is what sees them.
-            tried_expand = True
-            opened = items.expand(found.element, patterns)
+            #
+            # Every poll the box shows nothing, **not once**: Qt's popup closes itself about a
+            # second after it was opened programmatically (#40 Windows check), so a list that
+            # fills late -- the late control SC-18 is built around -- would appear in a box
+            # playback had already given up reopening, and the item could never be found. The
+            # guard is "shows no items", so this stops by itself as soon as they are there.
+            opened = items.expand(found.element, patterns) or opened
         elif not count and not items.selectable(found.element, patterns):
             # Not a list or a combo box at all. Fail now rather than at the deadline: waiting
             # cannot turn a button into a list, and ten seconds of silence would suggest it
@@ -719,12 +743,45 @@ def _select_waiting(
                 # of its own) still has a usable text value. Last, and only after the full
                 # wait, so it cannot hide a genuine "there is no such item".
                 return finish("SetValue")
-            raise SelectFailed(items.no_such_item(name, value, count, timeout_ms))
+            raise SelectFailed(items.no_such_item(name, value, most, timeout_ms))
         sleep(min(POLL_INTERVAL_S, remaining))
         try:
             found, tree = _read_and_resolve(read_tree, name, target)
         except (NotFound, Ambiguous, Unsupported) as exc:
             raise SelectFailed(items.vanished(exc, value)) from exc
+
+
+def _confirmed(
+    target: Any,
+    item: Any,
+    value: str,
+    *,
+    patterns: Patterns,
+    now: Callable[[], float],
+    sleep: Callable[[float], None],
+    deadline: float,
+) -> bool:
+    """Whether the rung just tried really changed the control, allowing for a slow provider.
+
+    Qt applies a chosen item **asynchronously**: the sample app's combo box still reads its old
+    value 11 ms after `LegacyIAccessible.DoDefaultAction()` and the new one at 32 ms (measured
+    in the #40 Windows check). A single read straight after the call therefore judges the rung
+    a no-op, falls through, and whichever rung comes next takes the credit for what this one
+    did -- which is how `Select` first reported `SetValue` for a choice `LegacyIAccessible` had
+    already made.
+
+    So the confirmation is a short wait rather than a read: **one** `POLL_INTERVAL_S`, the same
+    cadence as every other wait here, bounded by the step's own deadline so it can never
+    outlive the timeout the tester set. One interval and no more -- a rung that genuinely did
+    nothing has to reach the next rung inside that same timeout.
+    """
+    if items.took_effect(target, item, value, patterns):
+        return True
+    remaining = deadline - now()
+    if remaining <= 0:
+        return False
+    sleep(min(POLL_INTERVAL_S, remaining))
+    return items.took_effect(target, item, value, patterns)
 
 
 def _resolve_waiting(
