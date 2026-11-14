@@ -36,7 +36,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ayna_agent.model import describe_tree
+from ayna_agent.playback import items
 from ayna_agent.playback.actions import (
     ActionFailed,
     Patterns,
@@ -52,6 +52,7 @@ from ayna_agent.playback.checkpoint import (
 )
 from ayna_agent.playback.checkpoint import read as read_property
 from ayna_agent.playback.checkpoint import validate as checkpoint_rules
+from ayna_agent.playback.items import SelectFailed
 from ayna_agent.playback.resolve import (
     Ambiguous,
     NotFound,
@@ -59,6 +60,8 @@ from ayna_agent.playback.resolve import (
     Unsupported,
     resolve,
 )
+from ayna_agent.playback.tree import Tree
+from ayna_agent.playback.tree import of as tree_of
 
 #: Step-document versions this runner reads. A *consumer* lists what it understands instead of
 #: deriving one version from the schema file, which it does not ship: Click and Type are
@@ -70,7 +73,7 @@ SUPPORTED_STEP_VERSIONS: tuple[str, ...] = ("0.1", "0.2")
 #: Keywords this runner performs. A keyword outside it fails per step, by name, which is the
 #: honest place for "not implemented" to appear: the step editor offers every keyword of the
 #: schema, so a document can always name one playback does not do yet.
-IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type", "Wait", "Verify"})
+IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type", "Wait", "Verify", "Select"})
 
 #: Which keyword may carry which optional field, from the step schema's own words: `value` is
 #: "text for Type and Select, not allowed for the other keywords", `row` is "the row SelectRow
@@ -300,6 +303,10 @@ def _run_one(
     value = step.get("value")
     if keyword == "Type" and not isinstance(value, str):
         return done(FAILED, "a Type step needs a text value")
+    if keyword == "Select" and not (isinstance(value, str) and value):
+        # The schema requires `minLength: 1` here: "choose the item whose text is" nothing is
+        # not a choice, and an empty value would match an item with no text.
+        return done(FAILED, "a Select step needs the text of the item to choose")
 
     timeout_ms = step.get("timeoutMs")
     if timeout_ms is None:
@@ -315,7 +322,7 @@ def _run_one(
         )
 
     try:
-        found = _resolve_waiting(
+        found, tree = _resolve_waiting(
             read_tree,
             name,
             target,
@@ -365,6 +372,24 @@ def _run_one(
             return done(PASSED, matched=found.which)
         return done(FAILED, message, matched=found.which)
 
+    if keyword == "Select":
+        try:
+            performed_with = _select_waiting(
+                read_tree,
+                name,
+                target,
+                str(value),
+                found,
+                tree,
+                timeout_ms=timeout_ms,
+                patterns=patterns,
+                now=now,
+                sleep=sleep,
+            )
+        except SelectFailed as exc:
+            return done(FAILED, str(exc), matched=found.which)
+        return done(PASSED, matched=found.which, performed_with=performed_with)
+
     try:
         if keyword == "Click":
             performed_with = click(found.element, patterns)
@@ -412,20 +437,94 @@ def _verify_waiting(
             suffix = f" after {timeout_ms} ms" if timeout_ms else ""
             return describe(name, prop, operator, expected, actual) + suffix
         sleep(min(POLL_INTERVAL_S, remaining))
-        nodes, infos = read_tree()
-        descriptors = describe_tree(nodes)
         try:
-            found = resolve(
-                descriptors,
-                infos,
-                name,
-                target.get("properties") or {},
-                target.get("fallback") or None,
-            )
+            found, _tree = _read_and_resolve(read_tree, name, target)
         except (NotFound, Ambiguous, Unsupported) as exc:
             # It was there a moment ago and now it is not: that is the honest report, and it
             # is a different fact from "the property never took the expected value".
             return f"{exc} while checking {prop}"
+
+
+def _select_waiting(
+    read_tree: ReadTree,
+    name: str,
+    target: Mapping[str, Any],
+    value: str,
+    found: Resolution,
+    tree: Tree,
+    *,
+    timeout_ms: int,
+    patterns: Patterns,
+    now: Callable[[], float],
+    sleep: Callable[[float], None],
+) -> str:
+    """Choose the item whose text is `value`, and return the pattern that did it.
+
+    The loop is here rather than in `playback.items` because it is the same loop every wait in
+    this module runs: re-read the window, resolve the target again, look again. What is new is
+    that the *items* are what it waits for -- a combo box fills its list when it opens, so
+    expanding and then re-reading is the only way to see them (#33).
+
+    The item wait gets the step's `timeoutMs` of its own, as a checkpoint's re-reading does:
+    the schema names the target becoming ready and "its row or check" as two waits sharing one
+    limit, not one clock split between them.
+
+    Raises :class:`SelectFailed` with the message already worded, including the case where the
+    target itself goes away mid-wait.
+    """
+    deadline = now() + timeout_ms / 1000
+    tried_expand = False
+    opened = False
+    count = 0
+
+    def finish(performed: str) -> str:
+        """Leave the screen as the test found it, then report what performed the choice.
+
+        Only on success: a *failed* Select leaves an opened list open on purpose, because the
+        run stops there and the open list with its items in it is the evidence a tester needs
+        in the screenshot (#54). A refusal to close is not a failure -- the item is chosen.
+        """
+        if opened:
+            items.collapse(found.element, patterns)
+        return performed
+
+    while True:
+        position, count = items.find(tree, found.index, value, patterns)
+        if position is not None:
+            performed = items.choose(tree.infos[position], patterns)
+            if performed is not None:
+                return finish(performed)
+            # The item is there and the provider would not select it: the Qt case (#33). An
+            # editable box may still take the text, and that is a different, honest outcome --
+            # recorded as `SetValue` rather than as a choice.
+            if items.write(found.element, value, patterns):
+                return finish("SetValue")
+            raise SelectFailed(items.refused(name, value, ("SelectionItem", "Invoke")))
+
+        if not tried_expand and items.can_expand(found.element, patterns):
+            # The items of a closed combo box do not exist yet, so this is not "look harder":
+            # it is the only way they can appear. The re-read below is what sees them.
+            tried_expand = True
+            opened = items.expand(found.element, patterns)
+        elif not count and not items.selectable(found.element, patterns):
+            # Not a list or a combo box at all. Fail now rather than at the deadline: waiting
+            # cannot turn a button into a list, and ten seconds of silence would suggest it
+            # might.
+            raise SelectFailed(items.not_a_list(name))
+
+        remaining = deadline - now()
+        if timeout_ms == 0 or remaining <= 0:
+            if items.write(found.element, value, patterns):
+                # An editable combo box whose list playback cannot see (a Qt popup is a window
+                # of its own) still has a usable text value. Last, and only after the full
+                # wait, so it cannot hide a genuine "there is no such item".
+                return finish("SetValue")
+            raise SelectFailed(items.no_such_item(name, value, count, timeout_ms))
+        sleep(min(POLL_INTERVAL_S, remaining))
+        try:
+            found, tree = _read_and_resolve(read_tree, name, target)
+        except (NotFound, Ambiguous, Unsupported) as exc:
+            raise SelectFailed(items.vanished(exc, value)) from exc
 
 
 def _resolve_waiting(
@@ -437,25 +536,25 @@ def _resolve_waiting(
     now: Callable[[], float],
     sleep: Callable[[float], None],
     require_ready: bool = True,
-) -> Resolution:
+) -> tuple[Resolution, Tree]:
     """Re-read the window until `name` is ready to act on, or the time runs out.
 
     Ready means: resolves to exactly one element, and that element is not disabled and not off
     screen (:func:`not_ready`). `require_ready=False` waits only for resolution, which is what
     a `Verify` needs -- a checkpoint on `enabled: false` would otherwise be unplayable.
 
+    Returns the resolution **and the tree it was read from**: `Select` and the row keywords
+    address a descendant of the target, so the shape of the window has to survive the wait
+    that found it (`playback.tree`).
+
     `timeoutMs: 0` checks once (RS NFR-05). The last failure is the one raised, so the message
     describes the state the window actually ended in rather than the first thing that went
     wrong.
     """
-    primary = target.get("properties") or {}
-    fallback = target.get("fallback") or None
     deadline = now() + timeout_ms / 1000
     while True:
-        nodes, infos = read_tree()
-        descriptors = describe_tree(nodes)
         try:
-            found = resolve(descriptors, infos, name, primary, fallback)
+            found, tree = _read_and_resolve(read_tree, name, target)
         except Unsupported:
             # A property set playback cannot match on is a client bug: waiting cannot fix it.
             raise
@@ -464,9 +563,32 @@ def _resolve_waiting(
         else:
             missing = not_ready(found.descriptor) if require_ready else []
             if not missing:
-                return found
+                return found, tree
             last = NotReady(name, missing)
         remaining = deadline - now()
         if timeout_ms == 0 or remaining <= 0:
             raise last
         sleep(min(POLL_INTERVAL_S, remaining))
+
+
+def _read_and_resolve(
+    read_tree: ReadTree,
+    name: str,
+    target: Mapping[str, Any],
+) -> tuple[Resolution, Tree]:
+    """Read the window once and resolve `name` in it.
+
+    One place, so every wait in this module resolves against the same derivation
+    (`model.describe_tree`, as a snapshot does) and keeps the tree of the *same* read -- a
+    descendant taken from an older read would be a stale handle.
+    """
+    nodes, infos = read_tree()
+    tree = tree_of(nodes, infos)
+    found = resolve(
+        tree.descriptors,
+        tree.infos,
+        name,
+        target.get("properties") or {},
+        target.get("fallback") or None,
+    )
+    return found, tree

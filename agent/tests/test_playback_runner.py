@@ -206,7 +206,7 @@ def test_every_step_gets_a_result_even_when_the_first_one_fails():
 # --- what a single step can get wrong ------------------------------------------------------
 
 
-@pytest.mark.parametrize("keyword", ["Select", "SelectRow", "Nonsense"])
+@pytest.mark.parametrize("keyword", ["SelectRow", "Nonsense"])
 def test_a_keyword_this_release_does_not_perform_fails_by_name(keyword):
     """A keyword playback does not do must not be silently reported as passed.
 
@@ -874,3 +874,369 @@ def test_a_failed_verify_stops_the_run_like_any_other_failure():
     )
     assert [r.status for r in results] == ["failed", "notRun"]
     assert results[1].message == "not run: an earlier step failed"
+
+
+# --- Select (#40) --------------------------------------------------------------------------
+
+CITY_COMBO = "QApplication.listWindow.cityCombo"
+CITIES = ("Adana", "Ankara", "İzmir")
+
+SELECT_TARGETS = {"list.city": {"properties": {"automationId": CITY_COMBO}}}
+
+
+def city_window(items: tuple[str, ...]) -> list[dict]:
+    """A window with a combo box, whose items are in the tree only while it is open.
+
+    The items hang under an inner `List`, as WPF's and Qt's do, so "the children of the combo
+    box" would find none of them.
+    """
+    content = [
+        {
+            "id": 0,
+            "parent": None,
+            "control_type": "Window",
+            "automation_id": "QApplication.listWindow",
+            "name": "AYNA Trial - Liste",
+            "class_name": "ListWindow",
+            "framework_id": "Qt",
+            "bounds": [0, 0, 400, 300],
+            "enabled": True,
+            "offscreen": False,
+            "window_title": "AYNA Trial - Liste",
+            "dpi": 120,
+        },
+        {
+            "id": 1,
+            "parent": 0,
+            "control_type": "Text",
+            "name": "Şehir",
+            "bounds": [10, 10, 60, 30],
+            "enabled": True,
+            "offscreen": False,
+        },
+        {
+            "id": 2,
+            "parent": 0,
+            "control_type": "ComboBox",
+            "automation_id": CITY_COMBO,
+            "name": "Adana",
+            "bounds": [70, 10, 200, 30],
+            "enabled": True,
+            "offscreen": False,
+        },
+    ]
+    if items:
+        content.append(
+            {
+                "id": 3,
+                "parent": 2,
+                "control_type": "List",
+                "name": "cityCombo list",
+                "bounds": [70, 30, 200, 120],
+                "enabled": True,
+                "offscreen": False,
+            }
+        )
+        for position, text in enumerate(items):
+            content.append(
+                {
+                    "id": 10 + position,
+                    "parent": 3,
+                    "control_type": "ListItem",
+                    "name": text,
+                    "bounds": [70, 30 + 20 * position, 200, 50 + 20 * position],
+                    "enabled": True,
+                    "offscreen": False,
+                }
+            )
+    content.append(
+        {
+            "id": 4,
+            "parent": 0,
+            "control_type": "Button",
+            "automation_id": "QApplication.listWindow.okButton",
+            "name": "Tamam",
+            "bounds": [10, 150, 100, 180],
+            "enabled": True,
+            "offscreen": False,
+        }
+    )
+    return content
+
+
+class ComboWindow:
+    """The window above, read as often as playback asks.
+
+    Each live element names itself (`ComboBox:Adana`, `ListItem:Ankara`), so a test asserts on
+    *what* was acted on rather than on an index that moves when the list opens.
+    """
+
+    def __init__(
+        self, items: tuple[str, ...] = CITIES, *, opened: bool = False
+    ) -> None:
+        self.items = items
+        self.opened = opened
+        self.gone = False
+        self.reads = 0
+
+    def read_tree(self) -> tuple[list[dict], list[str]]:
+        self.reads += 1
+        if self.gone:
+            return [], []
+        content = city_window(self.items if self.opened else ())
+        return content, [f"{n['control_type']}:{n.get('name')}" for n in content]
+
+
+class ComboPatterns:
+    """Patterns for that window: the box expands, and its items answer `SelectionItem`."""
+
+    def __init__(
+        self,
+        window: ComboWindow,
+        *,
+        refuses: bool = False,
+        editable: bool = False,
+        expands: bool = True,
+    ) -> None:
+        self.window = window
+        self.refuses = refuses
+        self.editable = editable
+        self.expands = expands
+        #: What was done to the box itself, in order.
+        self.done: list[str] = []
+        #: Which items were selected.
+        self.chosen: list[str] = []
+        self.text = "Adana"
+
+    def __call__(self, element: str, name: str) -> object | None:
+        recorder = self
+        if element.startswith("ComboBox"):
+            if name == "ExpandCollapse" and self.expands:
+
+                class E:
+                    def Expand(self) -> None:
+                        recorder.done.append("Expand")
+                        recorder.window.opened = True
+
+                    def Collapse(self) -> None:
+                        recorder.done.append("Collapse")
+                        recorder.window.opened = False
+
+                return E()
+            if name == "Selection":
+                return object()
+            if name == "Value" and self.editable:
+
+                class V:
+                    CurrentIsReadOnly = False
+
+                    @property
+                    def CurrentValue(self) -> str:
+                        return recorder.text
+
+                    def SetValue(self, value: str) -> None:
+                        recorder.done.append("SetValue")
+                        recorder.text = value
+
+                return V()
+        if element.startswith("ListItem") and name == "SelectionItem":
+
+            class S:
+                def Select(self) -> None:
+                    if recorder.refuses:
+                        raise OSError("Qt leaves the box unchanged")
+                    recorder.chosen.append(element)
+
+            return S()
+        return None
+
+
+def select_steps(value: str = "Ankara", target: str = "list.city", **extra) -> dict:
+    return {
+        "version": "0.2",
+        "steps": [{"keyword": "Select", "target": target, "value": value, **extra}],
+    }
+
+
+def test_select_expands_the_box_rereads_and_chooses_the_item():
+    """The re-read is the point: a closed combo box has no items at all (#33), so they are new
+    elements rather than ones a harder look would have found."""
+    window = ComboWindow()
+    patterns = ComboPatterns(window)
+    results, _window, clock, _patterns = run(
+        select_steps(), SELECT_TARGETS, window=window, patterns=patterns
+    )
+    assert results[0].status == "passed"
+    assert results[0].performed_with == "SelectionItem"
+    assert results[0].matched == "primary"
+    assert patterns.chosen == ["ListItem:Ankara"]
+    assert patterns.done == [
+        "Expand",
+        "Collapse",
+    ], "the screen is left as the test found it"
+    assert window.reads == 2, "one read to resolve, one after expanding"
+    assert clock.slept == [POLL_INTERVAL_S]
+
+
+def test_a_list_that_already_shows_its_items_is_not_expanded():
+    window = ComboWindow(opened=True)
+    patterns = ComboPatterns(window, expands=False)
+    results, _window, clock, _patterns = run(
+        select_steps(), SELECT_TARGETS, window=window, patterns=patterns
+    )
+    assert results[0].status == "passed"
+    assert patterns.chosen == ["ListItem:Ankara"]
+    assert patterns.done == []
+    assert window.reads == 1
+    assert clock.slept == []
+
+
+def test_an_item_the_list_does_not_have_says_how_many_items_it_has():
+    """0 items and 3 items send a tester in different directions, so the count is in the
+    message: a list that never filled, against a value that is simply wrong."""
+    window = ComboWindow(opened=True)
+    patterns = ComboPatterns(window, expands=False)
+    results, *_ = run(
+        select_steps("Bursa", timeoutMs=500),
+        SELECT_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        'list.city: no item has the text "Bursa" after 500 ms; the target offers 3 items'
+    )
+    assert patterns.chosen == []
+
+
+def test_a_select_on_something_that_is_not_a_list_fails_without_waiting():
+    """Waiting cannot turn a button into a list, and ten seconds of silence would suggest it
+    might."""
+    results, _window, clock, _patterns = run(select_steps(target="login.loginButton"))
+    assert results[0].status == "failed"
+    assert "Select needs a list or a combo box" in results[0].message
+    assert results[0].message.startswith("login.loginButton: ")
+    assert clock.slept == [], "it did not wait"
+
+
+def test_a_provider_that_refuses_to_select_blames_itself_not_the_test():
+    """The Qt case from #33: `SelectionItem.Select` leaves the box unchanged. A tester must
+    not read that as "your text is wrong"."""
+    window = ComboWindow(opened=True)
+    patterns = ComboPatterns(window, refuses=True, expands=False)
+    results, *_ = run(
+        select_steps("Ankara", timeoutMs=0),
+        SELECT_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "failed"
+    assert "refused to select it" in results[0].message
+    assert '"Ankara"' in results[0].message
+
+
+def test_an_editable_box_takes_the_text_when_playback_cannot_see_any_item():
+    """A Qt combo box's popup is a window of its own, so its items are in no tree read here.
+    Writing the text is the honest last resort, and `SetValue` in the result says the step
+    typed rather than chose."""
+    window = ComboWindow(items=())
+    patterns = ComboPatterns(window, editable=True)
+    results, *_ = run(
+        select_steps("Ankara", timeoutMs=500),
+        SELECT_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "passed"
+    assert results[0].performed_with == "SetValue"
+    assert patterns.text == "Ankara"
+    assert patterns.done[-1] == "Collapse", "the box it opened is closed again"
+
+
+def test_the_text_fallback_is_only_tried_after_the_whole_wait():
+    """It writes text rather than choosing an item, so trying it early would hide a genuine
+    "there is no such item" behind a pass."""
+    window = ComboWindow(opened=True)
+    patterns = ComboPatterns(window, editable=True, expands=False)
+    results, _window, clock, _patterns = run(
+        select_steps("Bursa", timeoutMs=500),
+        SELECT_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "passed"
+    assert results[0].performed_with == "SetValue"
+    assert clock.at == pytest.approx(0.5), "it waited the whole timeout first"
+
+
+def test_select_waits_for_a_list_that_fills_late_without_a_fixed_sleep():
+    """#40's second criterion, on items rather than on existence."""
+    window = ComboWindow(items=())
+    clock = Clock()
+    original = window.read_tree
+
+    def filling() -> tuple[list[dict], list[str]]:
+        if clock.at >= 3.0:
+            window.items = CITIES
+        return original()
+
+    window.read_tree = filling  # type: ignore[method-assign]
+    patterns = ComboPatterns(window)
+    results, *_ = run(
+        select_steps(), SELECT_TARGETS, window=window, clock=clock, patterns=patterns
+    )
+    assert results[0].status == "passed"
+    assert patterns.chosen == ["ListItem:Ankara"]
+    assert clock.at == pytest.approx(3.0)
+    assert set(clock.slept) == {POLL_INTERVAL_S}
+    assert results[0].duration_ms == 3000
+
+
+def test_a_target_that_vanishes_mid_select_says_so():
+    """ "It was there and now it is not" is a different fact from "it has no such item"."""
+    window = ComboWindow(items=())
+    original = window.read_tree
+
+    def vanishing() -> tuple[list[dict], list[str]]:
+        if window.reads >= 1:
+            window.gone = True
+        return original()
+
+    window.read_tree = vanishing  # type: ignore[method-assign]
+    results, *_ = run(
+        select_steps("Ankara", timeoutMs=500),
+        SELECT_TARGETS,
+        window=window,
+        patterns=ComboPatterns(window),
+    )
+    assert results[0].status == "failed"
+    assert "no element matches list.city" in results[0].message
+    assert 'while choosing "Ankara"' in results[0].message
+
+
+@pytest.mark.parametrize("value", ["", None])
+def test_a_select_without_the_item_text_is_refused(value):
+    """The schema requires a non-empty value: "choose the item whose text is" nothing is not a
+    choice, and an empty value would match an item with no text."""
+    step = {"keyword": "Select", "target": "list.city"}
+    if value is not None:
+        step["value"] = value
+    results, *_ = run({"version": "0.2", "steps": [step]}, SELECT_TARGETS)
+    assert results[0].status == "failed"
+    assert "needs the text of the item to choose" in results[0].message
+
+
+def test_a_failed_select_leaves_the_list_open_for_the_screenshot():
+    """The run stops at a failed step, and the open list with its items in it is the evidence
+    a tester needs in the screenshot (#54)."""
+    window = ComboWindow()
+    patterns = ComboPatterns(window)
+    results, *_ = run(
+        select_steps("Bursa", timeoutMs=500),
+        SELECT_TARGETS,
+        window=window,
+        patterns=patterns,
+    )
+    assert results[0].status == "failed"
+    assert patterns.done == ["Expand"]
+    assert window.opened is True
