@@ -654,3 +654,10 @@ Week 3 and sits outside that order — it needs a decision, not work.
 - Next step: post #162's numbers as an issue comment and open the PR. Then PR #234's review
   (omer asks for me by name on #22's three states), then #29's labelling round when a person is
   free.
+- Pushed #162 as **PR #235** and posted the numbers on the issue (`6876199863`). Then reviewed
+  **PR #234** (omer, #24 pick hotkey): CHANGES_REQUESTED for one constant —
+  `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the Spy's own retry ladder captures for 30 s and
+  120 s, and the agent serialises UIA calls on one thread, so a pick during a long capture shows
+  a false `agent-error`. Confirmed what he asked: `pickState` reads #22's three states correctly.
+  I owe #24 its Windows check, which is the first real test of the client's DIP -> physical
+  conversion at 100 % and 150 %.

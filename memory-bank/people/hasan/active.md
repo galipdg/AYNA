@@ -26,9 +26,20 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   round 1's labels and every one of its calls are written out in the #29 task note — and a
   *fully* blind round is no longer available inside the team either, since the composite rule,
   the nameless-`MenuItem` finding and the `e20` retraction are published on #29.
-- **PR #234 (omer, #24 pick hotkey) is waiting for my review** and its body asks me by name to
-  check that `pickState` reads #22's three `elementFromPoint` states as I meant them. Not
-  started.
+- **PR #234 (omer, #24 pick hotkey): reviewed 2026-11-14, CHANGES_REQUESTED.** `pickState`
+  reads #22's three states exactly right, including the two subtle ones (a `snapshotId` other
+  than the one on screen means none; an `elementId` missing from the tree means "changed"), and
+  the tests cover them. **One real bug**: `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s, but the agent
+  runs every UIA call on one worker thread in arrival order (`rpc.py:72-80`), so a pick waits out
+  a running capture — and the Spy's own retry ladder is `LONGER_SNAPSHOT_BUDGETS_MS =
+  [30_000, 120_000]`. Pressing the hotkey during a "capture for longer" therefore shows an
+  `agent-error` while the capture is fine. Asked him to derive it the way `snapshot()` does.
+  Smaller: `highlighter.hide()` is never restored on a pick that selects nothing, so the frame
+  around the selected node disappears until the user clicks another one.
+- **I owe #24 its Windows check** (steps on the issue, `needs-windows-test`): the own-window check
+  only matches on Windows, and this is the **first exercise of the client's DIP → physical
+  conversion** at 100 % and 150 % — the half #22's scaling evidence does not cover. Told omer I
+  will test the version *after* the timeout fix.
 - **`gh` cannot set the Project status**: the token is missing `read:project`, so #162 is still
   `Todo` on the board. `gh auth refresh -s project` is interactive, so the user has to run it.
 - **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
