@@ -402,3 +402,49 @@ def test_every_registered_app_names_its_process_and_its_screens() -> None:
 
 def test_measuring_an_unknown_app_fails_without_writing_anything() -> None:
     assert measure.main(["measure", "notepad"]) == 2
+
+
+# ------------------------------------------------------------------ which window is a screen
+
+
+def window(title: str) -> dict:
+    """A `list_windows` entry, in the order `EnumWindows` answers: top of the Z-order first."""
+    return {
+        "handle": abs(hash(title)) % 100000,
+        "title": title,
+        "processName": "pilot.exe",
+    }
+
+
+def test_a_screen_is_captured_from_the_topmost_window_alone() -> None:
+    """Two windows open means two screens, not one screen in two files.
+
+    `measure` counts every snapshot file of an app, so capturing KeePass 2's main form again
+    under `entry-editor` would count its controls twice and lift the rate.
+    """
+    staged, left = measure.pick_windows(
+        [window("Add Entry"), window("vault - KeePass")]
+    )
+    assert [w["title"] for w in staged] == ["Add Entry"]
+    assert [w["title"] for w in left] == ["vault - KeePass"]
+
+
+def test_one_window_is_captured_whole_and_nothing_is_left() -> None:
+    staged, left = measure.pick_windows([window("HandBrake")])
+    assert [w["title"] for w in staged] == ["HandBrake"]
+    assert left == []
+
+
+def test_all_windows_captures_every_one_and_reports_nothing_skipped() -> None:
+    windows = [window("Add Entry"), window("vault - KeePass")]
+    staged, left = measure.pick_windows(windows, all_windows=True)
+    assert [w["title"] for w in staged] == ["Add Entry", "vault - KeePass"]
+    assert left == []
+
+
+def test_a_single_window_keeps_the_screen_name_and_several_are_numbered() -> None:
+    """The bare name is what a screen's snapshot is called; the suffix only appears with
+    `--all-windows`, where the file no longer stands for one screen."""
+    assert measure.snapshot_name("entry-editor", 0, 1) == "entry-editor"
+    assert measure.snapshot_name("entry-editor", 0, 2) == "entry-editor-1"
+    assert measure.snapshot_name("entry-editor", 1, 2) == "entry-editor-2"

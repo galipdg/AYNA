@@ -9,8 +9,13 @@ on all pilot apps and reports the result.
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e "eval[dev]"
 
-# 1. put the pilot app in the state apps.json describes, then capture that screen (Windows)
-.venv/Scripts/python.exe eval/rq1/measure.py capture keepass2 --screen entry-editor
+# 1. put the pilot app in the state apps.json describes, then capture that screen (Windows).
+#    `capture` runs on the AGENT's venv, not this one: it imports the recognition backend,
+#    which reaches `ayna_agent.rpc` for its exception types and so pulls in `websockets`.
+agent/.venv/Scripts/python.exe eval/rq1/measure.py capture keepass2 --screen entry-editor
+
+# only the topmost window of the process is captured, because that is the screen just staged
+# and `measure` counts every snapshot file; --all-windows captures the ones behind it too
 
 # 2. write the CSVs and print the table (any OS, from the committed snapshots)
 .venv/Scripts/python.exe eval/rq1/measure.py measure
@@ -28,7 +33,7 @@ measure it alone.
 
 | Path | What it is |
 |---|---|
-| `measure.py` | The harness: `capture` (Windows, UIA) and `measure` (pure). |
+| `measure.py` | The harness: `capture` (Windows, UIA, the agent's venv) and `measure` (pure, this venv). |
 | `apps.json` | Pilot apps, their processes, and the screens RQ1 measures with the state each must be in. |
 | `labelling.md` | The ground-truth procedure: how a person enumerates a screen's controls, and what `control` / `ignore` / `missing` mean. |
 | `snapshots/<app>/<screen>.json` | What a capture wrote. **The evidence**: every number is re-derivable from these without the applications. Frozen once a result used one. |

@@ -572,6 +572,27 @@ def run_measure(args: argparse.Namespace) -> int:
     return 1 if empty and not written else 0
 
 
+def pick_windows(
+    windows: Sequence[Mapping[str, Any]], *, all_windows: bool = False
+) -> tuple[list[Mapping[str, Any]], list[Mapping[str, Any]]]:
+    """The windows one screen is captured from, and the ones left to their own screens.
+
+    `measure` counts every snapshot file of an app, so a window captured under two screen
+    names is counted twice and the rate is wrong. `list_windows` comes from `EnumWindows`,
+    which answers in Z-order with the top window first, so the screen the operator just
+    staged is `windows[0]` -- KeePass 2's `Add Entry` dialog, not the main form behind it.
+    That one is captured alone unless the operator asks for all of them.
+    """
+    if all_windows or len(windows) <= 1:
+        return list(windows), []
+    return [windows[0]], list(windows[1:])
+
+
+def snapshot_name(screen: str, index: int, total: int) -> str:
+    """The file name for one captured window: bare for a single window, suffixed beyond."""
+    return screen if total == 1 else f"{screen}-{index + 1}"
+
+
 def run_capture(args: argparse.Namespace) -> int:
     """Snapshot the app's open windows. Windows only: this is the half that needs UIA."""
     apps = load_apps()
@@ -603,10 +624,18 @@ def run_capture(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 1
+        windows, skipped = pick_windows(windows, all_windows=args.all_windows)
+        if skipped:
+            titles = ", ".join(repr(window.get("title")) for window in skipped)
+            print(
+                f"{len(skipped)} more window(s) of {entry['process']} are open and skipped: "
+                f"{titles}. They belong to their own screens; pass --all-windows to capture "
+                "them under this screen's name."
+            )
         folder = SNAPSHOTS / args.app
         folder.mkdir(parents=True, exist_ok=True)
         for index, window in enumerate(windows):
-            name = args.screen if len(windows) == 1 else f"{args.screen}-{index + 1}"
+            name = snapshot_name(args.screen, index, len(windows))
             path = folder / f"{name}.json"
             if path.exists() and not args.force:
                 print(
@@ -651,6 +680,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     capture.add_argument("--timeout-ms", type=int, default=None, help="walk budget")
     capture.add_argument("--force", action="store_true", help="overwrite a snapshot")
+    capture.add_argument(
+        "--all-windows",
+        action="store_true",
+        help="capture every open window of the process, not only the topmost one",
+    )
     capture.set_defaults(run=run_capture)
 
     measure = sub.add_parser("measure", help="measure the snapshots and write the CSVs")

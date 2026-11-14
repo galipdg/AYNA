@@ -1,0 +1,9 @@
+﻿controlType,controls,recognised,recognisedShare,ambiguous,noProperty,missing,byAutomationId,byName,byNearestLabel,byClassName,byParentPath,byControlType,propertiesPerControl
+Button,17,16,94.1,1,0,0,9,7,0,4,1,0,1.24
+TabItem,7,7,100.0,0,0,0,7,0,0,0,0,0,1.00
+ComboBox,6,6,100.0,0,0,0,6,0,0,0,0,0,1.00
+MenuItem,6,6,100.0,0,0,0,2,3,0,3,1,0,1.50
+CheckBox,4,4,100.0,0,0,0,4,0,0,0,0,0,1.00
+Hyperlink,3,3,100.0,0,0,0,3,0,0,0,0,0,1.00
+Edit,2,2,100.0,0,0,0,2,0,0,0,0,0,1.00
+TOTAL,45,44,97.8,1,0,0,33,10,0,7,2,0,1.16
