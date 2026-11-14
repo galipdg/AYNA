@@ -450,8 +450,11 @@ def write_csv(
 ) -> Path:
     """Write a CSV that Excel on a Turkish Windows opens without a wizard.
 
-    UTF-8 **with a BOM** and CRLF: without the BOM Excel reads `Şifre` as `Åifre`, and the team
-    reads these files in Excel long before they reach the report.
+    UTF-8 **with a BOM**: without it Excel reads `Şifre` as `Åifre`, and the team reads these
+    files in Excel long before they reach the report. The BOM is what matters and it survives
+    everything; the CRLF written here does not reach a fresh clone, because `.gitattributes`
+    is `* text=auto eol=lf`. Excel opens a BOM'd CSV with LF endings anyway -- so do not
+    "fix" the line endings here, and do not read CRLF into a file you cloned.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
@@ -645,9 +648,13 @@ def run_capture(args: argparse.Namespace) -> int:
                 )
                 return 1
             document = desktop.snapshot(int(window["handle"]), args.timeout_ms)
+            # newline="\n" so a re-capture writes the bytes git stores (`.gitattributes` is
+            # `* text=auto eol=lf`). Without it this is CRLF on Windows and LF on macOS, and
+            # a snapshot the evidence depends on shows a whole-file diff on the wrong machine.
             path.write_text(
                 json.dumps(document, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
+                newline="\n",
             )
             capture = document.get("capture") or {}
             print(
