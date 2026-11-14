@@ -519,3 +519,35 @@ Lesson: on a PR of my own, read the branch's task note before believing the revi
 (2) #221 / PR #228's Windows check, seven steps with KeePass 2 and `GridProbeWindow`; (3) #29,
 the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
 Week 3 and sits outside that order — it needs a decision, not work.
+
+## 2026-11-14 — #29's first real numbers, and two approved PRs unblocked
+
+- **Unblocked #227 and #232.** Both were APPROVED but `CONFLICTING`, and in both the only
+  conflict was `memory-bank/people/hasan/active.md` — exactly the clash the file's own header
+  predicted. Merged `origin/main` into each, kept the branch's (newer) version and folded #33's
+  unique facts in below it. Re-ran #227's suite on the merge: **436 agent tests pass, ruff
+  clean**. Pushed both with the user's OK; both are now APPROVED **and** MERGEABLE, and the
+  merge is omer's.
+- **#29: the first captures ran on this machine.** KeePass 2 `main` (74 elements, 561 ms) and
+  `entry-editor` (40, 291 ms) via `kp_state.py`, HandBrake `main-summary` (149, 1267 ms), all
+  with 0 read errors. Unlabelled rates: HandBrake 45 controls / 97.8 %, KeePass 2 53 / 100 %.
+  Posted to the team on #29 with the warning that these are not RQ1's rate.
+- **The first real run found a real bug**, which is why it was worth running before the labelled
+  half: `capture` snapshotted *every* window of the process, so KeePass 2's `Add Entry` state
+  wrote the dialog **and** the main form behind it, and `measure` — which counts every snapshot
+  file of an app — counted the main window's controls twice. Fixed by taking the topmost window
+  (`EnumWindows` is Z-order; the foreground window is useless here because the terminal is in
+  front), with `--all-windows` for the old behaviour, and extracted into `pick_windows` /
+  `snapshot_name` so four new tests cover it off Windows. 35 rq1 tests, 104 eval tests.
+- **The useful result is one control AYNA cannot identify.** 7 of HandBrake's 8 toolbar buttons
+  have an `automationId` and a `name`; the eighth has neither, so its proposal escalates to
+  `{className, parentPath}`, shared by all 8. `siblingIndex` would separate it and `suggestUses`
+  deliberately will not use it. Asked omer on #29 to confirm that stays — if so it is a measured
+  limit for #64, not a bug to fix.
+- Two environment facts cost time and are in `learnings.md`: `capture` needs `agent/.venv`
+  because `recognition/uia.py` reaches `ayna_agent.rpc`, which imports `websockets` at module
+  level (request in galip's inbox; his file, untouched); and leaving pilot apps open makes
+  `eval/apps/trial/tests/test_uia.py` print a `0x8001010d` fatal-exception dump and take 57 s
+  instead of 2.1 s — retried, nothing fails, but it reads like a crash.
+- **Next step:** the eight-step check on #29 (the four screens behind a click), then ground-truth
+  labelling, then the only rate worth reporting.

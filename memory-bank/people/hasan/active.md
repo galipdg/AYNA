@@ -2,17 +2,30 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-12, second session of the day (#29's harness built, PR #231 approved,
-  #162 unblocked). **This copy is the current one**: it is the 2026-11-12 version from
-  `hasan/221-windows-check-notes` plus this session. `main` still carries the 2026-11-07 version,
-  and the copies on `hasan/22-element-from-point` and `hasan/33-sample-app` are each further
-  behind. When any of those merges, take **this** file's version of the header and keep each
-  branch's own sections.
+- Last update: 2026-11-14 (#29's first real captures and numbers; #227 and #232 unblocked).
+  **This copy is the current one**: `main` still carries the 2026-11-07 version. `#227` and
+  `#232` now carry their own merged copies with #33's facts folded in, so when either merges,
+  keep **this** file's header and each branch's own sections.
 - Current issue: **#29 (RQ1 recognition measurement harness, Week 4, due 16 Nov) is in progress**
-  on `hasan/29-rq1-measure`. The harness, the labelling guide and 31 tests are committed
-  (`ae9ab25`); **all three acceptance criteria are still open** because they need the pilot apps
-  measured on this machine, and the user asked on 2026-11-12 to run nothing on it that session.
-  Resume from the task note's "Next step".
+  on `hasan/29-rq1-measure`, PR #233. The harness, the labelling guide and **35** tests are
+  committed, and **the first captures and numbers are in** (`3c38247`, `47e2485`, `2137882`,
+  pushed 2026-11-14). Posted to the team as a comment on #29.
+- **#29's first numbers are unlabelled and must never be quoted as RQ1's rate**: HandBrake 45
+  controls / 97.8 %, KeePass 2 53 / 100 %. The denominator is only what AYNA's walk found.
+  What is left: the four screens behind a click (the check on #29), then labelling, then a rate.
+- **The useful result is HandBrake's one unidentifiable control.** Of 8 toolbar buttons, 7 have
+  both `automationId` and `name`; `e20` has neither and no `nearestLabel`, so its proposal
+  escalates to `{className, parentPath}`, which all 8 share. **`siblingIndex` is the only
+  property that would separate it, and `suggestUses` deliberately does not escalate to it** —
+  UIA child order is not stable, the same reason #40 refuses "the first match". Asked omer on
+  #29 to confirm it stays out; if he agrees it is a measured limit for #64's report, not a bug.
+- **Two branches of mine are now APPROVED *and* MERGEABLE, waiting only on omer to merge:**
+  **#227** (`hasan/22-element-from-point`, `Closes #22`) and **#232** (memory only, #221). Both
+  were `CONFLICTING` on `active.md` alone until 2026-11-14; `origin/main` is merged into each and
+  436 agent tests were re-run green on #227's.
+- **`capture` runs on `agent/.venv`, not the repo-root one** — `recognition/uia.py` takes its
+  exception types from `ayna_agent.rpc`, which imports `websockets` at module level. galip has
+  the request to decouple it; `rpc.py` is his file and is untouched.
 
 ## #162 is no longer blocked by a download
 
@@ -52,15 +65,14 @@ machine alone for #162.
 - **#22 is complete: all three acceptance criteria are ticked.** The scaling check ran here on
   2026-11-12 at 100 % and 150 %, passed at both, and the result with its numbers is a comment on
   the issue; `needs-windows-test` is removed. omer's `CHANGES_REQUESTED` was answered in
-  `142a6c6` and the re-review is asked for again in a PR comment. **Nothing is left for me on
-  #22 but waiting.**
+  `142a6c6` and **he approved it on 2026-11-14**. **Nothing is left for me on #22 but his
+  merge.**
 - **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on
   `main`**. Its `active.md` conflicted with this one exactly as expected; resolved on
   `hasan/29-rq1-measure` by keeping this header and folding its unique facts in below.
   **#228 and #231 are merged too**, so omer's grid columns and run history are on `main`.
-- **One open PR of mine is still waiting: #227** (`hasan/22-element-from-point`, `Closes #22`),
-  CI 5/5 green, `MERGEABLE`, decision still `CHANGES_REQUESTED` until omer re-reads it — the only
-  thing between it and merge. Plus **#232** (memory only, #221) and **#29's** PR.
+- My three open PRs are **#227** and **#232** (both APPROVED and MERGEABLE, see the header) and
+  **#233** (#29, deliberately no `Closes`).
 - **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
   2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
 - **A third branch of mine is open: `hasan/221-windows-check-notes`**, cut from `main`, memory
