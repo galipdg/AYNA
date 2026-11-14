@@ -1,0 +1,1654 @@
+{
+  "version": "0.1",
+  "snapshotId": "fdf57fc6-c9c7-463c-9576-449bebf19500",
+  "capture": {
+    "startedAt": "2026-11-14T11:28:00+03:00",
+    "durationMs": 826,
+    "budgetMs": 5000,
+    "elementCount": 74,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "HandBrake.exe",
+    "fileVersion": "1.11.2.0"
+  },
+  "window": {
+    "handle": 329540,
+    "title": "HandBrake",
+    "className": "Window",
+    "processId": 5432,
+    "bounds": [
+      298,
+      79,
+      1623,
+      942
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "automationId": "shellView",
+        "name": "HandBrake",
+        "controlType": "Window",
+        "className": "Window",
+        "frameworkId": "WPF",
+        "bounds": [
+          298,
+          79,
+          1623,
+          942
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329540
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          327,
+          82,
+          1614,
+          117
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e1",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          307,
+          88,
+          335,
+          116
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e2",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          307,
+          88,
+          335,
+          116
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e1",
+      "element": {
+        "name": "Minimize",
+        "controlType": "Button",
+        "bounds": [
+          1436,
+          80,
+          1496,
+          117
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e1",
+      "element": {
+        "name": "Maximize",
+        "controlType": "Button",
+        "bounds": [
+          1496,
+          80,
+          1555,
+          117
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 2,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e1",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          1555,
+          80,
+          1615,
+          117
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 3,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e0",
+      "element": {
+        "automationId": "OptionsViewModel",
+        "controlType": "Custom",
+        "className": "OptionsView",
+        "frameworkId": "WPF",
+        "bounds": [
+          307,
+          117,
+          1614,
+          933
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e7",
+      "element": {
+        "name": "Preferences",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          319,
+          129,
+          485,
+          174
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e7",
+      "element": {
+        "name": "< Back",
+        "controlType": "Button",
+        "className": "Button",
+        "frameworkId": "WPF",
+        "bounds": [
+          321,
+          187,
+          398,
+          216
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e9",
+      "element": {
+        "name": "< Back",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          337,
+          192,
+          382,
+          212
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Button",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e7",
+      "element": {
+        "automationId": "optionCategories",
+        "controlType": "List",
+        "className": "ListBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          321,
+          228,
+          509,
+          526
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom",
+        "siblingIndex": 2,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e11",
+      "element": {
+        "name": "General",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          229,
+          508,
+          266
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e12",
+      "element": {
+        "name": "General",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          237,
+          396,
+          257
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e14",
+      "parentId": "e11",
+      "element": {
+        "name": "OutputFiles",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          266,
+          508,
+          303
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e15",
+      "parentId": "e14",
+      "element": {
+        "name": "Output Files",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          274,
+          424,
+          294
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e16",
+      "parentId": "e11",
+      "element": {
+        "name": "WhenDone",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          303,
+          508,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 2,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e17",
+      "parentId": "e16",
+      "element": {
+        "name": "When Done",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          311,
+          423,
+          331
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e18",
+      "parentId": "e11",
+      "element": {
+        "name": "Video",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          340,
+          508,
+          377
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 3,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e19",
+      "parentId": "e18",
+      "element": {
+        "name": "Video",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          348,
+          384,
+          368
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e20",
+      "parentId": "e11",
+      "element": {
+        "name": "Advanced",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          377,
+          508,
+          414
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 4,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e21",
+      "parentId": "e20",
+      "element": {
+        "name": "Advanced",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          385,
+          411,
+          405
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e22",
+      "parentId": "e11",
+      "element": {
+        "name": "Updates",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          414,
+          508,
+          451
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 5,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e23",
+      "parentId": "e22",
+      "element": {
+        "name": "Updates",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          422,
+          400,
+          442
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e24",
+      "parentId": "e11",
+      "element": {
+        "name": "Reset",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          451,
+          508,
+          488
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 6,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e25",
+      "parentId": "e24",
+      "element": {
+        "name": "Reset",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          459,
+          381,
+          479
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e26",
+      "parentId": "e11",
+      "element": {
+        "name": "About",
+        "controlType": "ListItem",
+        "className": "ListBoxItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          322,
+          488,
+          508,
+          525
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List",
+        "siblingIndex": 7,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e27",
+      "parentId": "e26",
+      "element": {
+        "name": "About HandBrake",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          345,
+          496,
+          463,
+          516
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e28",
+      "parentId": "e7",
+      "element": {
+        "controlType": "Button",
+        "className": "Button",
+        "frameworkId": "WPF",
+        "bounds": [
+          319,
+          892,
+          339,
+          921
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom",
+        "siblingIndex": 3,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false,
+        "helpText": "Launches the documentation website located at https://handbrake.fr/docs"
+      }
+    },
+    {
+      "id": "e29",
+      "parentId": "e28",
+      "element": {
+        "controlType": "Image",
+        "className": "Image",
+        "frameworkId": "WPF",
+        "bounds": [
+          319,
+          896,
+          339,
+          916
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Button",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e30",
+      "parentId": "e7",
+      "element": {
+        "controlType": "Pane",
+        "className": "ScrollViewer",
+        "frameworkId": "WPF",
+        "bounds": [
+          532,
+          129,
+          1614,
+          892
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom",
+        "siblingIndex": 4,
+        "nearestLabel": "Preferences",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e31",
+      "parentId": "e30",
+      "element": {
+        "controlType": "Custom",
+        "className": "OptionsGeneral",
+        "frameworkId": "WPF",
+        "bounds": [
+          544,
+          135,
+          1593,
+          895
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane",
+        "siblingIndex": 0,
+        "nearestLabel": "Preferences",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e32",
+      "parentId": "e31",
+      "element": {
+        "name": "General",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          556,
+          141,
+          1593,
+          179
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e33",
+      "parentId": "e31",
+      "element": {
+        "name": "On Startup",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          556,
+          191,
+          1593,
+          216
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e34",
+      "parentId": "e31",
+      "element": {
+        "name": "Check for Updates",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          230,
+          1593,
+          252
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 2,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e35",
+      "parentId": "e34",
+      "element": {
+        "name": "Check for Updates",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          231,
+          729,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e36",
+      "parentId": "e31",
+      "element": {
+        "automationId": "checkForUpdateFrequency",
+        "controlType": "ComboBox",
+        "className": "ComboBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          612,
+          255,
+          762,
+          284
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 3,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e37",
+      "parentId": "e31",
+      "element": {
+        "name": "User Interface",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          556,
+          303,
+          1593,
+          328
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 4,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e38",
+      "parentId": "e31",
+      "element": {
+        "name": "Language:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          344,
+          649,
+          364
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 5,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e39",
+      "parentId": "e31",
+      "element": {
+        "controlType": "ComboBox",
+        "className": "ComboBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          655,
+          340,
+          961,
+          369
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 6,
+        "nearestLabel": "Language:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e40",
+      "parentId": "e31",
+      "element": {
+        "name": "Right to Left display mode:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          379,
+          760,
+          399
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 7,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e41",
+      "parentId": "e31",
+      "element": {
+        "controlType": "ComboBox",
+        "className": "ComboBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          766,
+          375,
+          964,
+          404
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 8,
+        "nearestLabel": "Right to Left display mode:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e42",
+      "parentId": "e31",
+      "element": {
+        "name": "Theme:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          433,
+          629,
+          453
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 9,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e43",
+      "parentId": "e31",
+      "element": {
+        "controlType": "ComboBox",
+        "className": "ComboBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          635,
+          429,
+          823,
+          458
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 10,
+        "nearestLabel": "Theme:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e44",
+      "parentId": "e31",
+      "element": {
+        "name": "(Requires Restart)",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          829,
+          433,
+          946,
+          453
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 11,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e45",
+      "parentId": "e31",
+      "element": {
+        "name": "Minimize to system tray (Requires Restart)",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          472,
+          1593,
+          494
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 12,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e46",
+      "parentId": "e45",
+      "element": {
+        "name": "Minimize to system tray (Requires Restart)",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          473,
+          886,
+          493
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e47",
+      "parentId": "e31",
+      "element": {
+        "name": "Always clear completed queue items after an encode completes",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          500,
+          1593,
+          522
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 13,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e48",
+      "parentId": "e47",
+      "element": {
+        "name": "Always clear completed queue items after an encode completes",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          501,
+          1032,
+          521
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e49",
+      "parentId": "e31",
+      "element": {
+        "name": "Show the encode status in the application title bar.",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          526,
+          1593,
+          548
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 14,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e50",
+      "parentId": "e49",
+      "element": {
+        "name": "Show the encode status in the application title bar.",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          527,
+          943,
+          547
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e51",
+      "parentId": "e31",
+      "element": {
+        "name": "Show previews on summary tab.",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          554,
+          1593,
+          576
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 15,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e52",
+      "parentId": "e51",
+      "element": {
+        "name": "Show previews on summary tab.",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          555,
+          820,
+          575
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e53",
+      "parentId": "e31",
+      "element": {
+        "name": "Choose how presets are displayed in menus:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          595,
+          872,
+          615
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 16,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e54",
+      "parentId": "e31",
+      "element": {
+        "controlType": "ComboBox",
+        "className": "ComboBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          878,
+          591,
+          1066,
+          620
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 17,
+        "nearestLabel": "Choose how presets are displayed in menus:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false,
+        "helpText": "Flat - Presets are displayed as a flat list.\r\nPartially Flat - The last 8 user presets are displayed as a flat list followed by all presets being shown in category listing.\r\nCategories - All presets are shown under a sub menu per category."
+      }
+    },
+    {
+      "id": "e55",
+      "parentId": "e31",
+      "element": {
+        "name": "Display toolbar preset popup as:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          630,
+          797,
+          650
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 18,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e56",
+      "parentId": "e31",
+      "element": {
+        "controlType": "ComboBox",
+        "className": "ComboBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          803,
+          626,
+          991,
+          655
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 19,
+        "nearestLabel": "Display toolbar preset popup as:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false,
+        "helpText": "Flat - Presets are displayed as a flat list.\r\nPartially Flat - The last 8 user presets are displayed as a flat list followed by all presets being shown in category listing.\r\nCategories - All presets are shown under a sub menu per category."
+      }
+    },
+    {
+      "id": "e57",
+      "parentId": "e31",
+      "element": {
+        "name": "Application Toolbar",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          556,
+          673,
+          1593,
+          698
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 20,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e58",
+      "parentId": "e31",
+      "element": {
+        "name": "Show 'Add All to Queue' on the toolbar",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          713,
+          1593,
+          735
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 21,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e59",
+      "parentId": "e58",
+      "element": {
+        "name": "Show 'Add All to Queue' on the toolbar",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          714,
+          868,
+          734
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e60",
+      "parentId": "e31",
+      "element": {
+        "name": "Show 'Add Selection to Queue' on the toolbar",
+        "controlType": "CheckBox",
+        "className": "CheckBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          741,
+          1593,
+          763
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 22,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e61",
+      "parentId": "e60",
+      "element": {
+        "name": "Show 'Add Selection to Queue' on the toolbar",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          608,
+          742,
+          911,
+          762
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/CheckBox",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e62",
+      "parentId": "e31",
+      "element": {
+        "name": "Path to Media Player",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          556,
+          777,
+          1593,
+          802
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 23,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e63",
+      "parentId": "e31",
+      "element": {
+        "name": "Path:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          581,
+          818,
+          616,
+          838
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 24,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e64",
+      "parentId": "e31",
+      "element": {
+        "automationId": "vlcPath",
+        "controlType": "Edit",
+        "className": "TextBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          622,
+          814,
+          934,
+          843
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 25,
+        "nearestLabel": "Path:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e65",
+      "parentId": "e31",
+      "element": {
+        "name": "Browse",
+        "controlType": "Button",
+        "className": "Button",
+        "frameworkId": "WPF",
+        "bounds": [
+          940,
+          814,
+          1010,
+          843
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 26,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e66",
+      "parentId": "e65",
+      "element": {
+        "name": "Browse",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          951,
+          819,
+          999,
+          839
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom/Button",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e67",
+      "parentId": "e31",
+      "element": {
+        "name": "This path is used for the video preview feature only.\r\nVLC and MPC-HC are supported. Other players may also work but are not validated.",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          625,
+          843,
+          1593,
+          883
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/Custom",
+        "siblingIndex": 27,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e68",
+      "parentId": "e30",
+      "element": {
+        "automationId": "VerticalScrollBar",
+        "controlType": "ScrollBar",
+        "className": "ScrollBar",
+        "frameworkId": "WPF",
+        "bounds": [
+          1593,
+          129,
+          1614,
+          892
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e69",
+      "parentId": "e68",
+      "element": {
+        "automationId": "PART_LineUpButton",
+        "controlType": "Button",
+        "className": "RepeatButton",
+        "frameworkId": "WPF",
+        "bounds": [
+          1593,
+          129,
+          1614,
+          150
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/ScrollBar",
+        "siblingIndex": 0,
+        "windowTitle": "HandBrake",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e70",
+      "parentId": "e68",
+      "element": {
+        "automationId": "PageUp",
+        "controlType": "Button",
+        "className": "RepeatButton",
+        "frameworkId": "WPF",
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/ScrollBar",
+        "siblingIndex": 1,
+        "windowTitle": "HandBrake",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e71",
+      "parentId": "e68",
+      "element": {
+        "automationId": "PageDown",
+        "controlType": "Button",
+        "className": "RepeatButton",
+        "frameworkId": "WPF",
+        "bounds": [
+          1593,
+          868,
+          1614,
+          871
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/ScrollBar",
+        "siblingIndex": 2,
+        "windowTitle": "HandBrake",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e72",
+      "parentId": "e68",
+      "element": {
+        "controlType": "Thumb",
+        "className": "Thumb",
+        "frameworkId": "WPF",
+        "bounds": [
+          1593,
+          150,
+          1614,
+          868
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/ScrollBar",
+        "siblingIndex": 3,
+        "windowTitle": "HandBrake",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e73",
+      "parentId": "e68",
+      "element": {
+        "automationId": "PART_LineDownButton",
+        "controlType": "Button",
+        "className": "RepeatButton",
+        "frameworkId": "WPF",
+        "bounds": [
+          1593,
+          871,
+          1614,
+          892
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Custom/Pane/ScrollBar",
+        "siblingIndex": 4,
+        "windowTitle": "HandBrake",
+        "enabled": false,
+        "offscreen": false
+      }
+    }
+  ]
+}

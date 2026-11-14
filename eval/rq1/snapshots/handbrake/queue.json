@@ -1,0 +1,727 @@
+{
+  "version": "0.1",
+  "snapshotId": "78e74b47-e474-4ac4-9f3e-58e998ebc966",
+  "capture": {
+    "startedAt": "2026-11-14T11:31:40+03:00",
+    "durationMs": 236,
+    "budgetMs": 5000,
+    "elementCount": 32,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "HandBrake.exe",
+    "fileVersion": "1.11.2.0"
+  },
+  "window": {
+    "handle": 329206,
+    "title": "Queue",
+    "className": "Window",
+    "processId": 5432,
+    "bounds": [
+      351,
+      135,
+      1570,
+      885
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "name": "Queue",
+        "controlType": "Window",
+        "className": "Window",
+        "frameworkId": "WPF",
+        "bounds": [
+          351,
+          135,
+          1570,
+          885
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329206
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          380,
+          138,
+          1561,
+          173
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e1",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          360,
+          144,
+          388,
+          172
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e2",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          360,
+          144,
+          388,
+          172
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e1",
+      "element": {
+        "name": "Minimize",
+        "controlType": "Button",
+        "bounds": [
+          1383,
+          136,
+          1443,
+          173
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e1",
+      "element": {
+        "name": "Maximize",
+        "controlType": "Button",
+        "bounds": [
+          1443,
+          136,
+          1502,
+          173
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 2,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e1",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          1502,
+          136,
+          1562,
+          173
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 3,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e0",
+      "element": {
+        "name": "Queue",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          373,
+          173,
+          470,
+          218
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e0",
+      "element": {
+        "name": "0 jobs pending",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          488,
+          192,
+          587,
+          212
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "nearestLabel": "Queue",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e0",
+      "element": {
+        "automationId": "Start",
+        "name": "Start Queue",
+        "controlType": "Button",
+        "className": "Button",
+        "frameworkId": "WPF",
+        "bounds": [
+          373,
+          237,
+          537,
+          277
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 3,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e9",
+      "element": {
+        "controlType": "Image",
+        "className": "Image",
+        "frameworkId": "WPF",
+        "bounds": [
+          386,
+          247,
+          406,
+          267
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Button",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e9",
+      "element": {
+        "name": "Start Queue",
+        "controlType": "Text",
+        "className": "Text",
+        "frameworkId": "WPF",
+        "bounds": [
+          413,
+          241,
+          503,
+          273
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Button",
+        "siblingIndex": 1,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e11",
+      "element": {
+        "name": "Start Queue",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          419,
+          247,
+          497,
+          267
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Button/Text",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e0",
+      "element": {
+        "controlType": "Menu",
+        "className": "Menu",
+        "frameworkId": "WPF",
+        "bounds": [
+          735,
+          241,
+          849,
+          277
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 4,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e14",
+      "parentId": "e13",
+      "element": {
+        "controlType": "MenuItem",
+        "className": "MenuItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          735,
+          241,
+          849,
+          277
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e15",
+      "parentId": "e14",
+      "element": {
+        "controlType": "Image",
+        "className": "Image",
+        "frameworkId": "WPF",
+        "bounds": [
+          744,
+          246,
+          769,
+          271
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu/MenuItem",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e16",
+      "parentId": "e14",
+      "element": {
+        "name": "Options",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          775,
+          249,
+          827,
+          269
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu/MenuItem",
+        "siblingIndex": 1,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e17",
+      "parentId": "e0",
+      "element": {
+        "automationId": "queueJobs",
+        "controlType": "List",
+        "className": "ListBox",
+        "frameworkId": "WPF",
+        "bounds": [
+          373,
+          283,
+          849,
+          820
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 5,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e18",
+      "parentId": "e0",
+      "element": {
+        "name": "When Done:",
+        "controlType": "Menu",
+        "className": "Menu",
+        "frameworkId": "WPF",
+        "bounds": [
+          503,
+          820,
+          719,
+          862
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 6,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e19",
+      "parentId": "e18",
+      "element": {
+        "controlType": "MenuItem",
+        "className": "MenuItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          503,
+          820,
+          719,
+          862
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e20",
+      "parentId": "e19",
+      "element": {
+        "name": "When Done:",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          511,
+          831,
+          597,
+          851
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu/MenuItem",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e21",
+      "parentId": "e19",
+      "element": {
+        "name": "Do nothing",
+        "controlType": "Text",
+        "className": "Text",
+        "frameworkId": "WPF",
+        "bounds": [
+          607,
+          825,
+          695,
+          857
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu/MenuItem",
+        "siblingIndex": 1,
+        "nearestLabel": "When Done:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e22",
+      "parentId": "e21",
+      "element": {
+        "name": "Do nothing",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          614,
+          831,
+          689,
+          851
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Menu/MenuItem/Text",
+        "siblingIndex": 0,
+        "nearestLabel": "When Done:",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e23",
+      "parentId": "e0",
+      "element": {
+        "automationId": "summaryTabControl",
+        "controlType": "Tab",
+        "className": "TabControl",
+        "frameworkId": "WPF",
+        "bounds": [
+          861,
+          237,
+          1549,
+          864
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 7,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e24",
+      "parentId": "e23",
+      "element": {
+        "name": "Summary",
+        "controlType": "TabItem",
+        "className": "TabItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          864,
+          239,
+          951,
+          274
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e25",
+      "parentId": "e24",
+      "element": {
+        "name": "Summary",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          876,
+          247,
+          938,
+          267
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/TabItem",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e26",
+      "parentId": "e24",
+      "element": {
+        "controlType": "Pane",
+        "className": "ScrollViewer",
+        "frameworkId": "WPF",
+        "bounds": [
+          870,
+          283,
+          1546,
+          855
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/TabItem",
+        "siblingIndex": 1,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e27",
+      "parentId": "e26",
+      "element": {
+        "name": "Please select a single job to view summary information.",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          870,
+          296,
+          1546,
+          316
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/TabItem/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e28",
+      "parentId": "e23",
+      "element": {
+        "name": "Statistics",
+        "controlType": "TabItem",
+        "className": "TabItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          951,
+          239,
+          1034,
+          274
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 1,
+        "windowTitle": "Queue",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e29",
+      "parentId": "e28",
+      "element": {
+        "name": "Statistics",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          963,
+          247,
+          1021,
+          267
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/TabItem",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e30",
+      "parentId": "e23",
+      "element": {
+        "name": "Activity Log",
+        "controlType": "TabItem",
+        "className": "TabItem",
+        "frameworkId": "WPF",
+        "bounds": [
+          1034,
+          239,
+          1137,
+          274
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 2,
+        "windowTitle": "Queue",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e31",
+      "parentId": "e30",
+      "element": {
+        "name": "Activity Log",
+        "controlType": "Text",
+        "className": "TextBlock",
+        "frameworkId": "WPF",
+        "bounds": [
+          1046,
+          247,
+          1124,
+          267
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/TabItem",
+        "siblingIndex": 0,
+        "windowTitle": "Queue",
+        "enabled": false,
+        "offscreen": false
+      }
+    }
+  ]
+}

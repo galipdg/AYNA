@@ -1,0 +1,973 @@
+{
+  "version": "0.1",
+  "snapshotId": "0e3cb33c-3bce-4782-bc85-5ae22604dbda",
+  "capture": {
+    "startedAt": "2026-11-14T10:00:26+03:00",
+    "durationMs": 291,
+    "budgetMs": 5000,
+    "elementCount": 40,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "KeePass.exe",
+    "fileVersion": "2.61.1.0"
+  },
+  "window": {
+    "handle": 983826,
+    "title": "Add Entry",
+    "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+    "processId": 22132,
+    "bounds": [
+      631,
+      193,
+      1289,
+      826
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "automationId": "PwEntryForm",
+        "name": "Add Entry",
+        "controlType": "Window",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          631,
+          193,
+          1289,
+          826
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 983826
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_tabMain",
+        "controlType": "Tab",
+        "className": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          645,
+          306,
+          1278,
+          759
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198372
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e1",
+      "element": {
+        "automationId": "m_tabEntry",
+        "name": "General",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          649,
+          331,
+          1274,
+          755
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 0,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198374
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_cbQualityCheck",
+        "name": "20 ch.",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1214,
+          474,
+          1257,
+          499
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 0,
+        "nearestLabel": "20 ch.",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198376
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblTitle",
+        "name": "Title:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          347,
+          693,
+          363
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 1,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198378
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_rtNotes",
+        "name": "Title:",
+        "controlType": "Document",
+        "className": "WindowsForms10.RICHEDIT50W.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          538,
+          1256,
+          708
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 2,
+        "nearestLabel": "Notes:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198380
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_cbExpires",
+        "name": "Expires:",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          661,
+          719,
+          738,
+          739
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 3,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+e",
+        "nativeWindowHandle": 198382
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblQualityInfo",
+        "name": "20 ch.",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1144,
+          477,
+          1211,
+          493
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 4,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198386
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_tbUrl",
+        "name": "URL:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          505,
+          1254,
+          527
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 5,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+l",
+        "nativeWindowHandle": 460502
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_btnGenPw",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1214,
+          441,
+          1257,
+          469
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 6,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 526076
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_cbHidePassword",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1214,
+          407,
+          1257,
+          435
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 7,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329466
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_pbQuality",
+        "name": "Quality:",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          476,
+          1140,
+          496
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 8,
+        "nearestLabel": "Quality:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 787548
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblIcon",
+        "name": "Icon:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1165,
+          347,
+          1200,
+          363
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 9,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 919198
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_btnIcon",
+        "name": "Icon:",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1214,
+          341,
+          1257,
+          369
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 10,
+        "nearestLabel": "Icon:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+i",
+        "nativeWindowHandle": 198370
+      }
+    },
+    {
+      "id": "e14",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_tbRepeatPassword",
+        "name": "Repeat:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          443,
+          1205,
+          465
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 11,
+        "nearestLabel": "Repeat:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+r",
+        "nativeWindowHandle": 263902
+      }
+    },
+    {
+      "id": "e15",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_tbPassword",
+        "name": "Password:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          410,
+          1205,
+          432
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 12,
+        "nearestLabel": "Password:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+p",
+        "nativeWindowHandle": 198388
+      }
+    },
+    {
+      "id": "e16",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblNotes",
+        "name": "Notes:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          541,
+          703,
+          557
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 13,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67328
+      }
+    },
+    {
+      "id": "e17",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_dtExpireDateTime",
+        "controlType": "ComboBox",
+        "className": "WindowsForms10.SysDateTimePick32.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          716,
+          1204,
+          738
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 14,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67330
+      }
+    },
+    {
+      "id": "e18",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_btnStandardExpires",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1214,
+          714,
+          1257,
+          742
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 15,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67332
+      }
+    },
+    {
+      "id": "e19",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_tbTitle",
+        "name": "Title:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          343,
+          1148,
+          365
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 16,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+t",
+        "nativeWindowHandle": 67334
+      }
+    },
+    {
+      "id": "e20",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblUrl",
+        "name": "URL:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          508,
+          694,
+          524
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 17,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67336
+      }
+    },
+    {
+      "id": "e21",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblQuality",
+        "name": "Quality:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          477,
+          708,
+          493
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 18,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67338
+      }
+    },
+    {
+      "id": "e22",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblPassword",
+        "name": "Password:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          413,
+          727,
+          429
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 19,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67340
+      }
+    },
+    {
+      "id": "e23",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblPasswordRepeat",
+        "name": "Repeat:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          447,
+          712,
+          463
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 20,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67342
+      }
+    },
+    {
+      "id": "e24",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_lblUserName",
+        "name": "User name:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          657,
+          380,
+          733,
+          396
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 21,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67344
+      }
+    },
+    {
+      "id": "e25",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_tbUserName",
+        "name": "User name:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          757,
+          377,
+          1254,
+          399
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 22,
+        "nearestLabel": "User name:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+u",
+        "nativeWindowHandle": 132882
+      }
+    },
+    {
+      "id": "e26",
+      "parentId": "e1",
+      "element": {
+        "name": "General",
+        "controlType": "TabItem",
+        "bounds": [
+          647,
+          308,
+          707,
+          329
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 1,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e27",
+      "parentId": "e1",
+      "element": {
+        "name": "Advanced",
+        "controlType": "TabItem",
+        "bounds": [
+          707,
+          308,
+          781,
+          329
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 2,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e28",
+      "parentId": "e1",
+      "element": {
+        "name": "Properties",
+        "controlType": "TabItem",
+        "bounds": [
+          781,
+          308,
+          855,
+          329
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 3,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e29",
+      "parentId": "e1",
+      "element": {
+        "name": "Auto-Type",
+        "controlType": "TabItem",
+        "bounds": [
+          855,
+          308,
+          930,
+          329
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 4,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e30",
+      "parentId": "e1",
+      "element": {
+        "name": "History",
+        "controlType": "TabItem",
+        "bounds": [
+          930,
+          308,
+          984,
+          329
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 5,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e31",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_lblSeparator",
+        "name": "UUID:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          634,
+          773,
+          1286,
+          775
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67348
+      }
+    },
+    {
+      "id": "e32",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_bannerImage",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          634,
+          225,
+          1286,
+          299
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67350
+      }
+    },
+    {
+      "id": "e33",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnTools",
+        "name": "Tools",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          647,
+          783,
+          754,
+          811
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 3,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+o",
+        "nativeWindowHandle": 67352
+      }
+    },
+    {
+      "id": "e34",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnCancel",
+        "name": "Cancel",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1166,
+          783,
+          1273,
+          811
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 4,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67354
+      }
+    },
+    {
+      "id": "e35",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnOK",
+        "name": "OK",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1051,
+          783,
+          1158,
+          811
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 5,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 67356
+      }
+    },
+    {
+      "id": "e36",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          654,
+          196,
+          1286,
+          225
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 6,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e37",
+      "parentId": "e36",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          640,
+          202,
+          668,
+          230
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e38",
+      "parentId": "e37",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          640,
+          202,
+          668,
+          230
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e39",
+      "parentId": "e36",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          1243,
+          194,
+          1287,
+          225
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "Add Entry",
+        "enabled": true,
+        "offscreen": false
+      }
+    }
+  ]
+}
