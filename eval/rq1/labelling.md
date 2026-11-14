@@ -95,6 +95,16 @@ step:
 - An element that duplicates another in the same place because the raw and control views
   disagree. Label the one a tester would not pick `ignore`, and put the other row's `elementId`
   in its `note`.
+- **The inner parts of one composite control.** A spinner, a combo box or a date picker reaches
+  UIA as several elements, and a tester targets the whole thing, not its pieces. Label the outer
+  element `control` and every inner part `ignore`, with the outer row's `elementId` in each
+  `note`. *Worked example, KeePass 2 Options → Security, measured 2026-11-14:* each of the four
+  rows is one WinForms `NumericUpDown`, and AYNA lists **five** elements for it — the outer
+  `Spinner` (`automationId` `m_numLockAfterGlobalTime`, developer-chosen, `control`), an inner
+  `Edit` and an inner `Spinner` (both with generated numeric ids) and `Up` / `Down` buttons (no
+  id at all) — the last four being `ignore`. The four outer spinners are all recognised; the 16
+  inner parts are all ambiguous, because all four composites expose identical names. Getting
+  this wrong moves the screen's rate by **13.6 %**, so it is not a detail.
 - A menu item inside a menu the reference scenarios never open. Be consistent within an app and
   write the rule you used in §6.
 - Rows of a grid that happens to be empty, and placeholder list items.
@@ -122,7 +132,14 @@ oynat düğmesi"`). Turkish is fine in `note`.
 
 With `--labels` the denominator is `control` rows + `missing` rows, the `ignore` rows drop out,
 and the heading says `ground truth` and how many of the app's screens are labelled. Without
-`--labels` it says so too, and that number is the optimistic one — never report it as RQ1's rate.
+`--labels` it says so too, and **that number is not RQ1's rate and never may be reported as it**.
+
+It is also not reliably the *optimistic* one, which is what this guide used to claim. The
+unlabelled denominator is wrong in **both** directions at once, and only labelling separates
+them: a control AYNA's walk never found is invisible, which flatters the rate (`missing`), while
+every inner part of a composite control is counted as if a tester would target it, which
+punishes the rate (`ignore`). KeePass 2's Options → Security measures both at once — see the
+`NumericUpDown` example in §4. So do not assume the labelled rate will come out lower.
 
 The CSVs are overwritten per date; the snapshots and labels are what the result is made of.
 Commit the snapshot, the label file and both CSVs together.

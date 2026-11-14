@@ -60,5 +60,7 @@ identical to `eval/spikes/uia_tree_dump.py` so these numbers sit beside the D1 t
 `eval/spikes/uia-dump.md`.
 
 **Report the labelled rate.** Without `--labels` the denominator is only what AYNA's walk found,
-so a control the walk missed is invisible and the rate flatters us. The harness says which
-denominator it used in the heading of every table it prints.
+which is wrong in both directions at once: a control the walk missed is invisible and flatters
+the rate, while every inner part of a composite control (a spinner's arrows and text field) is
+counted as if a tester would target it and punishes the rate. Only ground-truth labels separate
+the two. The harness says which denominator it used in the heading of every table it prints.

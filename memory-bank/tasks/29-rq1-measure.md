@@ -62,24 +62,55 @@ registered but off by default, as D1 makes it conditional.
 - [x] **First captures and first (unlabelled) numbers** — 2026-11-14 on this machine
       (`3c38247`): KeePass 2 `main` (74 elements, 561 ms) and `entry-editor` (40, 291 ms),
       HandBrake `main-summary` (149, 1267 ms), all with **0 read errors**.
-- [ ] The four screens that need clicks — the check posted on #29 (still pending)
+- [ ] The four screens that need clicks — **2 of 4 done**: the user captured KeePass 2
+      `open-database` (19 elements, 216 ms) and `options` (87, 1364 ms) on 2026-11-14 at 10:35
+      and 10:51, both 0 read errors. Both verified against `apps.json`'s stated state from the
+      snapshot content: `open-database` carries `m_tbPassword` + the "Master password:" box, and
+      `options` carries the Security tab's own options. **HandBrake `main-video`,
+      `preferences` and `queue` are left.**
 - [ ] Ground-truth labelling, so a **labelled** rate exists (criterion 2)
 - [ ] Post the numbers to the team (third criterion)
 - **Next step:** run the eight-step check on #29 with the user (KeePass 2 `open-database` and
   `options`, HandBrake `main-video`, `preferences`, `queue`), then label one screen per pilot
   per `labelling.md` and re-run `measure --labels`. Only the labelled rate may be reported.
 
-### First numbers, 2026-11-14 — unlabelled, so the optimistic ones
+### First numbers, 2026-11-14 — unlabelled, so not RQ1's rate
 
 | App | Screens | Controls | Recognised | Ambiguous | No property |
 |---|---|---|---|---|---|
 | HandBrake 1.11.2 (WPF) | 1 | 45 | 44 (97.8 %) | 1 | 0 |
-| KeePass 2 (WinForms) | 2 | 53 | 53 (100 %) | 0 | 0 |
+| KeePass 2 (WinForms) | 4 | 118 | 102 (86.4 %) | 16 | 0 |
 
-**The denominator is only what the walk found**, so these are not RQ1's rate — a control the
-walk missed is invisible here and lifts the number. Say "unlabelled" whenever they are quoted.
+KeePass 2 was 53 controls / 100 % on two screens; **`open-database` and `options` took it to
+86.4 %**, which is the first evidence that two easy screens were flattering it.
 
-**The one ambiguous control is the interesting result.** HandBrake's toolbar has 8 buttons;
+**The denominator is only what the walk found, and it is wrong in both directions at once** —
+this corrects what the guide and this note used to say. A control the walk missed is invisible
+and lifts the rate; every inner part of a composite control is counted as a target and lowers
+it. Only labelling separates them, so **do not assume the labelled rate comes out lower**.
+
+**All 16 of KeePass 2's ambiguous elements are one cause: composite controls.** The Options →
+Security tab has four rows, each a WinForms `NumericUpDown` that reaches UIA as five elements —
+the outer `Spinner` with a developer-chosen id (`m_numLockAfterGlobalTime`, **recognised**), an
+inner `Edit` and inner `Spinner` with generated numeric ids, and `Up` / `Down` buttons with no
+id. The four outer spinners are all recognised; the 16 inner parts are all ambiguous, because
+the four composites expose identical names (`NumericUpDown`, `Spinner`, `Up`, `Down`) and
+`matchCount` is exactly 4 every time.
+
+So **the control a tester would actually target is identifiable, and the 16 failures are UIA
+implementation detail.** This is the `ignore` case, and the guide's `ignore` list did not cover
+it — added in §4 with this as the worked example, plus the correction that the unlabelled rate
+is not reliably optimistic. Labelling this screen right moves its rate by **13.6 %**.
+
+`nearestLabel` is empty on all 16 and cannot be blamed: the nearest `Text`/`Group`/`CheckBox` is
+199 physical px away at 120 dpi = **159 DIP**, far past `MAX_LABEL_GAP_DIP` 48. The rule is
+declining correctly — a 159-DIP pairing would be a wrong label, not a helpful one. The row's
+real name lives on a **`CheckBox`** (`m_cbLockAfterGlobalTime`), and `LABEL_TYPES` is
+`{Text, Group}`, so no gap change would reach it either. Not #29's to alter: `nearest_label` is
+normative under #11 (healing recomputes it from a stored snapshot), so changing it is an ADR
+plus a `FEATURE_VERSION` bump that touches galip's scorer.
+
+**HandBrake's one ambiguous control is a different cause.** Its toolbar has 8 buttons;
 7 carry both an `automationId` and a `name`, and `e20` (`siblingIndex` 0) carries **neither**,
 no `nearestLabel` either. Its proposal escalates to `{className: Button, parentPath:
 Window/Custom/ToolBar}`, which all 8 share → `matchCount` 8. The only property that would
