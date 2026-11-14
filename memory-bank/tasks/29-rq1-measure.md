@@ -59,14 +59,35 @@ registered but off by default, as D1 makes it conditional.
 - [x] `eval/rq1/measure.py`, `apps.json`, tests (31), README — `ae9ab25`
 - [x] `eval/rq1/labelling.md` (ground-truth guide) — `ae9ab25`
 - [x] `eval/pyproject.toml`: `rq1/tests` in `testpaths`, `rq1` in ruff's `src`
-- [ ] **Capture + first numbers on the two pilots** — needs this machine free; the user asked
-      on 2026-11-12 to run nothing on it this session.
-- [ ] Post the first numbers to the team (third criterion)
-- **Next step:** on this machine, with it otherwise idle, run
-  `.venv/Scripts/python.exe eval/spikes/kp_state.py main` then
-  `... eval/rq1/measure.py capture keepass2 --screen main`; repeat with `kp_state.py entry`
-  and `--screen entry-editor`; start HandBrake and capture `main-summary`. Then
-  `measure.py measure` for the first (unlabelled) numbers.
+- [x] **First captures and first (unlabelled) numbers** — 2026-11-14 on this machine
+      (`3c38247`): KeePass 2 `main` (74 elements, 561 ms) and `entry-editor` (40, 291 ms),
+      HandBrake `main-summary` (149, 1267 ms), all with **0 read errors**.
+- [ ] The four screens that need clicks — the check posted on #29 (still pending)
+- [ ] Ground-truth labelling, so a **labelled** rate exists (criterion 2)
+- [ ] Post the numbers to the team (third criterion)
+- **Next step:** run the eight-step check on #29 with the user (KeePass 2 `open-database` and
+  `options`, HandBrake `main-video`, `preferences`, `queue`), then label one screen per pilot
+  per `labelling.md` and re-run `measure --labels`. Only the labelled rate may be reported.
+
+### First numbers, 2026-11-14 — unlabelled, so the optimistic ones
+
+| App | Screens | Controls | Recognised | Ambiguous | No property |
+|---|---|---|---|---|---|
+| HandBrake 1.11.2 (WPF) | 1 | 45 | 44 (97.8 %) | 1 | 0 |
+| KeePass 2 (WinForms) | 2 | 53 | 53 (100 %) | 0 | 0 |
+
+**The denominator is only what the walk found**, so these are not RQ1's rate — a control the
+walk missed is invisible here and lifts the number. Say "unlabelled" whenever they are quoted.
+
+**The one ambiguous control is the interesting result.** HandBrake's toolbar has 8 buttons;
+7 carry both an `automationId` and a `name`, and `e20` (`siblingIndex` 0) carries **neither**,
+no `nearestLabel` either. Its proposal escalates to `{className: Button, parentPath:
+Window/Custom/ToolBar}`, which all 8 share → `matchCount` 8. The only property that would
+separate it is `siblingIndex`, and `suggestUses` does not escalate to it — deliberately, since
+UIA child order is not stable across runs (the same reason playback refuses "the first match",
+#40). So this control is **not identifiable by AYNA today**, and that is a real limit to report
+rather than a harness bug. Whether a human labels it `control` or `ignore` decides whether the
+labelled rate is 97.8 % or 100 %, which is exactly what `labelling.md` exists to adjudicate.
 
 **43 eval tests pass and ruff is clean**, run here on 2026-11-12. The whole measuring half is
 covered off Windows; nothing of the capture half has run against a real app yet, so
@@ -75,9 +96,13 @@ places to watch on the first real run.
 
 ## Manual checks
 
-- **(pending)** · hasan · capture the two KeePass 2 screens `kp_state.py` can reach plus
-  HandBrake's main window, then `measure` · result: — · agreed with the user 2026-11-12: I
-  capture what is scriptable; the screens that need clicks are the check below.
+- **PASS** · 2026-11-14 · hasan, on this machine · capture the two KeePass 2 screens
+  `kp_state.py` can reach plus HandBrake's main window, then `measure` · result: all three
+  captured with 0 read errors and both tables printed; evidence is
+  `eval/rq1/snapshots/{keepass2,handbrake}/` and `eval/rq1/results/*-2026-11-14-*.csv`,
+  committed in `3c38247`. **It found a real bug** (a screen was being captured as every window
+  of the process, double-counting the main form) and two environment facts: `capture` needs
+  `agent/.venv`, and `UiaDesktop.list_windows()`'s `processName` filter works as hoped.
 - **(pending)** · the user, on this machine · the eight-step check posted as a comment on #29 on
   2026-11-12 (https://github.com/galipdg/AYNA/issues/29#issuecomment-6835118882): KeePass 2
   `open-database` and `options`, HandBrake `main-summary`, `main-video`, `preferences` and
@@ -97,6 +122,16 @@ places to watch on the first real run.
 - `eval/pyproject.toml`'s `testpaths` is `apps/trial/tests` only, so a new test directory is
   invisible to CI until it is added. Adding `rq1/tests` here; the next experiment folder will
   hit the same thing.
+- **`ayna_agent.rpc` makes `websockets` a dependency of the recognition backend**, which needs
+  nothing from it: `recognition/uia.py` takes four exception types from it and `rpc.py:30`
+  imports `websockets.asyncio.server` at module level. `capture` therefore runs on
+  `agent/.venv`, not the repo-root one. Requested in galip's inbox 2026-11-14 (move the
+  exceptions to a dependency-free module, re-export from `rpc.py`); `rpc.py` is his file, so
+  not touched here.
+- **`siblingIndex` is the only property that could identify a nameless sibling**, and the
+  client's `suggestUses` does not escalate to it. HandBrake's toolbar gives the first real
+  example (see "First numbers"). Not #29's to decide — it is a question for `suggestUses`
+  (omer) and #40/#11, and it belongs in #64's report either way.
 
 ## Decisions taken while building it
 
