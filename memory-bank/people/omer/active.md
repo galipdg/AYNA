@@ -11,7 +11,7 @@ Only omer's agent edits this file. Overwrite it at every session end.
 - ADRs still **Proposed** on `main`, waiting for galip: `2026-11-08-run-screenshots-and-retention` (#51), `2026-11-08-contracts-v1-freeze` (on #224).
 - Local stacks/worktrees: the `ayna68` Compose stack (port 28080) may still run — remove with `docker compose -p ayna68 down -v`. #224's branch is checked out in `.claude/worktrees/pr-review-responses-f36ba1`.
 - **AGENTS.md** §2 lists hasan as `@HasanBerk18`; his login is `hasanberkyanikkaya` (reviewer requests fail with the old one). Changing AGENTS.md needs omer's OK.
-- **Next step** (resume here): #231 merged → #224 when galip approves; then #24 (pick hotkey client half, after #227) or #44's client half (after hasan's #40).
+- **Next step** (resume here): #24's pick hotkey on `omer/24-pick-hotkey` (create `memory-bank/tasks/24-*.md` if missing); #224 when galip approves; then #44's client half (after hasan's #40).
 - Follow-up issues still open (owner omer): #204 (`needs-windows-test`), #206 (#38 Windows findings). Issues left open on purpose: #17, #24, #183, #184, #185, #38 (see their PRs' "Part of" notes).
 - Inbox: every item up to 2026-11-10 is handled; delete the handled items in a branch of their own (with `merge=union`, deleting them in several branches at once brings them back).
 - Local branches of merged PRs and old worktrees (`omer/195-advisor-demo` in the main folder; `omer/15…`, `omer/53-sdd-final`, `omer/44-run-api`, `omer/221-grid-columns` in `.claude/worktrees/`) are still here; delete them only on omer's OK.
