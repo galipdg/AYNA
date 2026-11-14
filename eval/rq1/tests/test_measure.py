@@ -271,6 +271,41 @@ def test_a_label_for_an_element_the_snapshot_has_not_is_refused(tmp_path: Path) 
         measure.apply_labels(result, path)
 
 
+def test_a_half_labelled_screen_is_refused(tmp_path: Path) -> None:
+    """`counted()` keeps only `control` rows, so an unlabelled row would leave the denominator.
+
+    That is the same distortion a control AYNA never found causes -- the rate goes up -- and it
+    is exactly what labelling exists to prevent, so a partially labelled screen must not
+    measure at all rather than print a plausible wrong number.
+    """
+    result = screen_of(
+        node(0, None, control_type="Window", name="Giris"),
+        node(1, 0, control_type="Button", name="Tamam"),
+        node(2, 0, control_type="Button", name="Iptal"),
+        node(3, 0, control_type="CheckBox", name="Beni hatirla"),
+    )
+    path = tmp_path / "pilot-main.csv"
+    path.write_text(LABEL_HEADER + "e1,control,\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="2 of 3 measured controls"):
+        measure.apply_labels(result, path)
+    assert not result.labelled
+
+
+def test_a_fully_labelled_screen_measures(tmp_path: Path) -> None:
+    """The guard counts `ignore` as labelled: it is a decision, not an omission."""
+    result = screen_of(
+        node(0, None, control_type="Window", name="Giris"),
+        node(1, 0, control_type="Button", name="Tamam"),
+        node(2, 0, control_type="Button", name="Iptal"),
+    )
+    path = tmp_path / "pilot-main.csv"
+    path.write_text(
+        LABEL_HEADER + "e1,control,\ne2,ignore,layout only\n", encoding="utf-8"
+    )
+    measure.apply_labels(result, path)
+    assert [control.element_id for control in measure.counted(result)] == ["e1"]
+
+
 # --------------------------------------------------------------------------------- the rates
 
 

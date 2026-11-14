@@ -278,7 +278,15 @@ def load_labels(path: Path) -> tuple[dict[str, tuple[str, str]], list[str]]:
 
 
 def apply_labels(screen: Screen, labels_file: Path) -> Screen:
-    """`screen` with its labels applied. Raises when a label names an element it has not."""
+    """`screen` with its labels applied.
+
+    Raises when a label names an element the screen has not, and when the screen has a control
+    the label file does not mention. The second check is the important one: `counted()` keeps
+    only `control` rows on a labelled screen, so a row nobody labelled leaves the denominator
+    silently -- the very failure (a control missing from the denominator, rate goes up) that
+    labelling exists to prevent. A half-finished label file would otherwise print a plausible
+    and wrong rate. The unit of labelling is one whole screen.
+    """
     labels, missing = load_labels(labels_file)
     known = {control.element_id for control in screen.controls}
     unknown = sorted(set(labels) - known)
@@ -286,6 +294,20 @@ def apply_labels(screen: Screen, labels_file: Path) -> Screen:
         raise ValueError(
             f"{labels_file}: no measured control has element id {', '.join(unknown)}. "
             "A label file belongs to one snapshot and is void if the snapshot is recaptured."
+        )
+    unlabelled = [
+        control.element_id
+        for control in screen.controls
+        if control.element_id not in labels
+    ]
+    if unlabelled:
+        shown = ", ".join(unlabelled[:10])
+        more = f" and {len(unlabelled) - 10} more" if len(unlabelled) > 10 else ""
+        raise ValueError(
+            f"{labels_file}: {len(unlabelled)} of {len(screen.controls)} measured controls of "
+            f"screen {screen.screen!r} carry no label ({shown}{more}). Label every row of a "
+            "screen before measuring it: an unlabelled row drops out of the denominator and "
+            "lifts the rate, which is what ground truth is for."
         )
     screen.controls = [
         replace(

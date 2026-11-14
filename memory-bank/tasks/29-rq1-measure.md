@@ -73,12 +73,41 @@ registered but off by default, as D1 makes it conditional.
       `vlcPath` box, `queue` the `queueJobs` list with `0 jobs pending`.
 - [x] **`main-video` is dropped from `apps.json`, not pending** — see below; the registry
       carries the reason in a `note` on the HandBrake entry.
-- [ ] Ground-truth labelling, so a **labelled** rate exists (criterion 2)
+- [x] **Ground-truth labelling, one screen per pilot** — `eval/rq1/labels/handbrake-queue.csv`
+      (6 rows) and `eval/rq1/labels/keepass2-options.csv` (54 rows), 2026-11-14. The two
+      screens were chosen because they carry the findings: `queue` has HandBrake's genuine
+      failures and `options` has KeePass 2's 16 composite rows. `main-summary` was deliberately
+      *not* labelled — it comes out 100 % and would hide the result.
 - [ ] Post the corrected numbers to the team (third criterion)
-- **Next step:** label one screen per pilot per `labelling.md` (`eval/rq1/labels/<app>-<screen>.csv`,
-  `elementId,label,note`), re-run `measure --labels`, then post the corrected numbers to #29
-  together with the two corrections the check itself produced (the `agent/.venv` interpreter and
-  HandBrake's real path, both wrong in the posted check). Only the labelled rate may be reported.
+- **Next step:** post the corrected numbers and the `e20` retraction to #29, fix the two errors
+  in the check text there (the `agent/.venv` interpreter, HandBrake's real path), then decide
+  with the user whether PR #233 takes `Closes #29` — all three acceptance criteria are met once
+  the comment is posted.
+
+### The first labelled rates, 2026-11-14 — these are the ones that may be reported
+
+Per **screen**, because a ground-truth rate's unit is the labelled screen and not the app (see
+"Open issues": `--labels` prints a hybrid app total). The `missing` sweep was run on both
+screens by the user on this machine and found **nothing**, so no control escaped the walk.
+
+| App | Screen | Controls | Recognised | Rate | `ignore` |
+|---|---|---|---|---|---|
+| HandBrake 1.11.2 | `queue` | 6 | 4 | **66.7 %** | 0 |
+| KeePass 2 | `options` (Security) | 35 | 35 | **100 %** | 19 |
+
+**The two rates fail in opposite directions, and that is the result.** KeePass 2's screen was
+70.4 % unlabelled and is **100 %** labelled: all 19 dropped rows are non-controls — the inner
+parts of the four `NumericUpDown` composites and three scroll-bar parts — so every control a
+tester would target on that screen is uniquely identifiable. HandBrake's screen was unchanged
+by labelling (all 6 rows are controls) and sits at **66.7 %**: `e14` (the `Options` split
+button beside Start Queue) and `e19` (the `When Done` dropdown) are `MenuItem`s with **no
+`automationId` and no `name`**, whose parent `Menu` carries the name instead, so `suggestUses`
+escalates to `{className, parentPath}` and the two match each other.
+
+**This is the shape of AYNA's real limit: nameless WPF `MenuItem`s inside a named `Menu`.** The
+identity exists one level up the tree and the descriptor does not reach for it. It is not the
+`siblingIndex` question `e20` looked like — these elements have real bounds, are enabled, and
+are controls a tester targets.
 
 ### Numbers after the full check, 2026-11-14 — still unlabelled, so not RQ1's rate
 
@@ -118,8 +147,13 @@ Scan`, `Cancel`) — and confirmed by `enabled: false` on every toolbar button i
 `Open Source`. The real `main-summary` was captured at 10:53 (118 elements, `Open Source`
 enabled). **The numbers first posted to #29 — HandBrake 45 controls / 97.8 % — came from the
 wrong state and the correction is owed on the issue.** The `e20` finding below survives
-unchanged: it is still 8 toolbar buttons with `e20` alone carrying no `automationId`, no `name`
-and no `nearestLabel`.
+unchanged as a measurement but **its reading is retracted**: `e20` has **no `bounds` at all**,
+`enabled: false`, and is a WPF `Button` with no name and no id — a toolbar template part that is
+not rendered, so it is not a control and is labelled `ignore`. The claim posted to #29, that it
+is "a control AYNA cannot identify", is **wrong and owed a correction**. The `siblingIndex`
+question it raised with omer is therefore not grounded in this element; the genuine nameless
+controls are `queue`'s two `MenuItem`s, and they would not be helped by `siblingIndex` either,
+since their names live on the parent `Menu`.
 
 The source-picker capture was then **deleted rather than registered as a screen**: it is the
 same window with the same controls in a different `enabled` state, and `enabled` is in
@@ -200,10 +234,40 @@ places to watch on the first real run.
     `C:\ayna-pilots\handbrake\HandBrake\HandBrake.exe`, one level deeper than the check says.
   - It also asserted the unlabelled rate is the optimistic one. **That is wrong** and is
     corrected in `labelling.md` and the README: the denominator is wrong in both directions.
-- **(pending)** · hasan + a second labeller · label one screen per pilot per `labelling.md`,
-  twice and independently, for the screen that goes into the report · result: —
+- **PASS** · 2026-11-14 · the user, on this machine · the `missing` sweep of `labelling.md` §4
+  on HandBrake `queue` and KeePass 2 Options → Security: walk the screen and name any control
+  that no sheet row carries · result: **nothing missing on either screen**, and the user
+  correctly excluded the title-bar close button, which `measure.py` drops anyway. So the
+  denominator of both labelled screens is the walk's own output, and the 66.7 % / 100 % rates
+  are not inflated by a missed control.
+- **(pending)** · hasan + a second labeller · label the report's screen **twice and
+  independently** (`labelling.md` §1). Today's two label files are one labeller's work with the
+  user confirming the `missing` sweep, which is enough for a first number but not for #64's
+  reported one. The judgement calls a second labeller should disagree with, if they are going
+  to: `e20` → `ignore` (no bounds, disabled), the three scroll-bar parts of `options` →
+  `ignore`, `options` `e1` → `control` (its `automationId` is `m_tbSearch` but its UIA `name`
+  is a neighbouring label's text), and HandBrake's six disabled tab items, which are controls
+  on a screen where they cannot be clicked.
 
 ## Open issues
+
+- **RQ1 does not measure container controls, and that makes the rate pessimistic, not
+  optimistic.** `INTERACTIVE_TYPES` is #6's 15-type set, deliberately identical so these
+  numbers sit beside the D1 table — but it has `ListItem` and `DataItem` and **not** `List`,
+  `Table`, `DataGrid` or `Tree`. Step schema v0.2 targets exactly those containers with
+  `rowCount`, `rowExists`, `cell` and `SelectRow`, so HandBrake's `queueJobs` list and
+  KeePass 2's `m_lvEntries` are real test targets that never reach the sheet. Both carry an
+  `automationId` and would be recognised, so leaving them out **lowers** the measured rate.
+  Not labelled `missing` either: `missing` means never recognised, which would be false here.
+  Changing the set breaks comparability with #6, so it needs a decision rather than an edit —
+  the cheapest honest fix is a second set, counted and reported separately.
+- **`measure --labels` prints an app total that mixes labelled and unlabelled screens.** The
+  heading says `ground truth, 1/4 screen(s) labelled`, which is true but invites the exact
+  misreading this note warns about: KeePass 2's app line reads 99 controls / 100 % while only
+  `options` is labelled, and the other three screens contribute raw walk output. **The unit of
+  a ground-truth rate is the labelled screen**, and the harness prints no per-screen rate — the
+  numbers below were computed from the controls CSV by hand. Worth a `--by-screen` table before
+  #64 quotes anything.
 
 - **Three copies of "the primary property set".** `client/src/shared/repository.ts`
   (`IDENTIFYING_FIELDS` + `suggestUses`, escalating, what ships), `agent/ayna_agent/model.py`

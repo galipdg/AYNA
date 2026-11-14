@@ -64,6 +64,12 @@ Copy the rows for one screen into `eval/rq1/labels/<app>-<screen>.csv` keeping o
 columns — `elementId,label,note` — and label them. (Keeping the label file small and separate is
 what lets the sheet be regenerated at any time without touching a human's work.)
 
+**Label every row of the screen, including the ones you dismiss.** `measure --labels` counts
+only `control` rows, so a row nobody labelled drops out of the denominator and lifts the rate —
+the same distortion as a control the walk never found, which is what labelling is here to
+remove. `measure` therefore refuses a screen whose rows are not all labelled and names the ones
+left; the unit of labelling is one whole screen, and `ignore` is a decision, not an omission.
+
 ## 4. The three labels
 
 | Label | Meaning | Counts in the denominator? |
