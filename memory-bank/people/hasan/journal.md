@@ -618,3 +618,33 @@ Lesson: on a PR of my own, read the branch's task note before believing the revi
 (2) #221 / PR #228's Windows check, seven steps with KeePass 2 and `GridProbeWindow`; (3) #29,
 the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
 Week 3 and sits outside that order — it needs a decision, not work.
+
+## 2026-11-14 — fourth session (continued): #162 and #23 out, #40 started
+
+- Pushed **#162** as PR #235 with the numbers on the issue, then **reviewed PR #234** (omer, #24
+  pick hotkey): CHANGES_REQUESTED for one constant. `pickState` reads #22's three states exactly
+  right, including the two subtle ones, but `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the
+  Spy's own retry ladder captures for 30 s and 120 s, and the agent serialises UIA calls on one
+  worker thread (`rpc.py:72-80`) -- so a pick during a long capture shows a false `agent-error`.
+  Also noted that `highlighter.hide()` is never restored on a pick that selects nothing.
+- **#23 (win32 fallback trial) done in one sitting and the answer is "do not build it".** Built
+  `eval/spikes/win32_probe.py`, ran KeePass 2 twice from two launches and HandBrake once. The
+  elements win32 can see are exactly the ones UIA already names, the control id is literally the
+  same `automationId`, and 7 of 8 changed between launches. HandBrake: 149 elements, **one**
+  HWND. One real finding: a native Win32 `Edit` kept `1001` across the restart, which
+  `_GENERATED_ID` discards -- recorded as an open issue, not a change, because `model.py` is
+  normative under #11 and the sample is one element. PR #236, `Closes #23`.
+- Three of that probe's 19 tests exist because I got it wrong first, each time in the direction
+  that *flattered* the fallback: a zero control id counted as stable, `None` in a match key
+  crashed `compare` on every real run, and absent handles counted as "the handle did not move"
+  (49 of them, which read as evidence against `NEVER_MATCH`). Worth remembering as a shape:
+  measurement bugs are not random, they lean towards the conclusion you set out to test.
+- **Started #40 (Playback v1)** and got two of the four keywords: `Wait` and `Verify`. The useful
+  discovery was in the issue text all along -- "wait until the element exists, is **visible and
+  enabled**" -- which #26's `_resolve_waiting` did not do, so a disabled element resolved at once
+  and failed inside `actions`. #29's HandBrake finding is the real case. `Verify` needed a new
+  module because three of its six properties are state the walk deliberately does not carry.
+- Corrected a stale note: **#28's four criteria are all ticked**; it is open because #24 is.
+- **Next step: `Select`**, whose design is written out in the task note -- it is not a pure action
+  (the items of a combo box may not exist until it is expanded, #33), and Qt is expected to
+  refuse, which matters because SC-20 needs it.

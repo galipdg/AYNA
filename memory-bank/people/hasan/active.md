@@ -6,9 +6,31 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   not here: this branch carries only what #221's notes need, plus `main`'s facts as of #227's
   merge. When this branch merges, keep the 29-branch's header and this branch's own
   "omer's #221 Windows check" section — it is the one section `main` does not have.
-- Current issue: **#29 (RQ1 harness, Week 4, due 16 Nov) is in progress** on
-  `hasan/29-rq1-measure` (PR #233). This branch is memory only and has nothing left to do but
-  merge. **#162 is still overdue from Week 3** and now has no capture work in front of it.
+- Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
+  **`Wait` and `Verify` are done** (`826b386`, `ca51c83`); `Select` and `SelectRow` + the three
+  row checkpoints are left. **504 agent tests pass, ruff clean. No PR yet.** The `Select` design
+  is written out in `memory-bank/tasks/40-playback-v1.md` -- **read that before touching it**,
+  because it is not a pure action and the reason matters.
+- **This file is now spread over four branches and no copy is complete.** `hasan/29-rq1-measure`
+  has the long review history and #29; `hasan/162-windows-llm-latency` has #162 and #23's
+  summary; this one has #40. **Whichever merges last keeps every branch's own section.** Also:
+  `eval/pyproject.toml`'s `testpaths` line is edited on the #29 *and* #162 branches and **will
+  conflict** -- keep both entries (`rq1/tests` and `llm-latency/tests`).
+- **#162 and #23 are delivered and out; #29 is waiting on a human.** PR **#235** (#162, no
+  `Closes`: criterion 5 is galip's files) + issue comment `6876199863`. PR **#236** (#23,
+  `Closes #23`) + comment `6876502627`. PR **#233** (#29, deliberately no `Closes`) needs the
+  second labelling round, which the user postponed on 2026-11-14 -- the blind sheets and
+  `measure.py agree` are committed and ready, so it needs a person's hour and nothing else.
+- **PR #234 (omer, #24) reviewed 2026-11-14, CHANGES_REQUESTED**: `pickState` reads #22's three
+  states correctly, but `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the Spy's own retry ladder
+  captures for 30 s and 120 s and the agent serialises UIA calls on one worker thread -- so a
+  pick pressed during a long capture shows a false `agent-error`. **I owe #24 its Windows check**
+  after his fix: it is the first real test of the client's DIP -> physical conversion at 100 %
+  and 150 %, the half #22's scaling evidence does not cover.
+- **`gh` cannot set the Project status**: the token lacks `read:project`. `gh auth refresh -s
+  project` is interactive, so the user has to run it; #162, #23 and #40 are all still `Todo`.
+- **#28's four acceptance criteria are all ticked** -- the earlier note saying "three of four,
+  the last is galip's #7" was wrong. It stays open because its dependency **#24** is still open.
 - **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
   2026-11-12 at 100 % and 150 % and passed at both, and **PR #227 was squash-merged on
   2026-11-14 (`bfcdb35`)**, which closed the issue. Nothing is left on it.
@@ -27,6 +49,87 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - **A third branch of mine is open: `hasan/221-windows-check-notes`**, cut from `main`, memory
   only (`learnings.md`, `journal.md`, this file). It exists because nothing of mine may be
   committed on omer's branch, which is where the #221 check had to run.
+
+## #40, so the next session does not re-derive it
+
+`playback/runner.py` had the shape from #26 and `IMPLEMENTED = {"Click", "Type"}`; it is now
+`{"Click", "Type", "Wait", "Verify"}`, plus a new `playback/checkpoint.py`.
+
+- **"Ready" is the pre-step wait and it is more than "resolves"**: a step waits until the target
+  resolves *and* is neither disabled nor off screen -- what the issue text asks for ("exists, is
+  visible and enabled") and what the schema calls ready. #26 waited only for resolution, so a
+  disabled element resolved at once and the step then failed inside `actions` for an unstated
+  reason. **HandBrake is the real case from #29**: with no source loaded *every* tab reads
+  `enabled: false`.
+- `enabled`/`offscreen` of **`None` count as ready** -- a provider reporting neither is common
+  and `NEVER_MATCH` already calls both unreliable, so refusing would time out every step of such
+  an application.
+- **A `Verify` waits only for resolution**, because a checkpoint may be *about* a disabled or
+  offscreen element and would otherwise be unplayable.
+- **Three of `Verify`'s six properties are not in a descriptor** and are read live: `value`
+  (`ValuePattern`, then `LegacyIAccessible` -- the ladder `Type` writes down), `checked`
+  (`TogglePattern` **On**, so indeterminate is *not* checked) and `selected`
+  (`SelectionItemPattern`). `name`, `enabled` and `visible` come from the walk's descriptor.
+- **"Cannot be read" is its own failure, not `false`** -- no `TogglePattern` on the target means
+  the check does not apply, and "expected true, got false" would blame the application instead.
+- **`expected: ""` matches an element with no text**, or an empty error label could never be
+  verified. A target that vanishes mid-check reports *that*, not a property failure.
+- **The target is re-resolved on every poll**, never kept: a re-read gives new live elements and
+  the old one is a stale handle (the same reason #22 compares identity rather than geometry).
+- **Message wording is fixed by the PR #231 review and the tests assert the exact strings**,
+  because the run report (#59) is written against them. ` after N ms` for a check that re-read
+  until the time ran out, `within N ms` for an element that never appeared -- two waits, two
+  words. **#40's third criterion says "after N ms" for element-not-found while #26 shipped
+  "within": keep `within`** and say so on the issue rather than changing it silently.
+- **A field on a keyword that forbids it is refused, not ignored** (`value` on a Click, `row` on
+  a Verify): ignoring it would play a mis-built document as something else and report `passed`.
+
+## #23 -- the win32 fallback, answered and deliberately not built
+
+- The elements win32 can see are exactly the ones UIA already names, the number it offers is
+  literally the same `automationId`, and it is **not stable across runs** (7 of 8 control ids
+  changed between two launches). Everything UIA cannot name has **no HWND at all**: 58 of 74 in
+  KeePass 2, and HandBrake is 149 elements with **one** HWND, the window. WPF and Qt cannot gain
+  anything, structurally.
+- **The one genuine finding**: `e58`, a native Win32 `Edit` (class `Edit`, no `WindowsForms10.`
+  prefix), kept control id **1001** across a restart -- real identity that `_GENERATED_ID` throws
+  away for being a bare number. Candidate rule: trust a bare number from a native Win32 class,
+  not from `WindowsForms10.*`. **Sample size one**, and `model.py` is normative under #11, so it
+  needs an ADR and a `FEATURE_VERSION` bump. Open issue, not a change.
+- `eval/spikes/win32_probe.py`, 19 tests off Windows; report `eval/spikes/win32-fallback.md`.
+  **Three of those tests exist because the probe got it wrong first, each in the direction that
+  flatters the fallback** -- do not simplify them away.
+- **`UiaDesktop()` needs `setup()` called by hand** in a script; #29's harness and this probe
+  both tripped over it. Asked galip for a line in `agent/AGENTS.md`.
+- `eval/spikes/` is excluded from ruff and has no CI job, so its tests only run when someone
+  names the path. Worth one issue together with `eval/pyproject.toml`'s `testpaths`.
+
+## #162 -- NFR-12 on Windows, so it is not re-measured
+
+Report `eval/llm-latency/report.md`, 13 result files under `eval/llm-latency/results/`.
+
+- **The issue's premise was wrong about this machine**: it has an **RTX 3060 Laptop, 6 GB**, so
+  the default numbers beat the Mac's. Forced CPU-only it is **2.7x slower than the Mac**.
+- **`qwen3:8b` does not fit in 6 GB** (6.0 GB loaded, 30 % CPU / 70 % GPU); **`gemma4:e4b-it-qat`
+  does** (3.1 GB, 100 % GPU). So gemma4 is **3.2x faster here** and matched the expected keywords
+  **10/10 against 9/10** -- while being the *slower* of the two on the M2. "Which model is
+  faster" is a question about the box, not the model.
+- p50/p95 s: CLI qwen GPU **5.34 / 8.38**, CLI gemma GPU **1.65 / 2.47**, CLI qwen CPU
+  **15.30 / 22.68**, HTTP qwen GPU **8.59 / 16.04**, HTTP qwen CPU **23.24 / 41.30**.
+- **Recommended: a 60 s Windows deadline, not 30 s** (~1.4x the worst measured p95 of 43.33 s),
+  and **`reasons` opt-in per request, default off** (#78) -- CPU-only it is p95 22.68 s with 0/10
+  over the deadline against 43.10 s with 2/10.
+- **A fully VRAM-resident model is almost immune to the machine's own load** (gemma4 1.65 ->
+  1.70 s at 59 % busy; qwen3 5.34 -> 6.29 s). Under load the damage is in the **tail**.
+- **Warm every offered model, not just the default**: a first request against a non-default model
+  pays 14.71 s on the GPU and **25-51 s CPU-only**.
+- **Output is not reproducible run to run at temperature 0 with seed 42** -- 1 of 10 sentences
+  differed between two runs that differed only in machine load. Contradicts
+  `ai/spikes/llm-smoke.md` and matters for **RQ3 (#77)**. In galip's inbox with the `reasons`
+  toggle and criterion 5.
+- Two gotchas now in `learnings.md`: a subclassed warm-up that skips `request_body` warms the
+  wrong offload, and **Ollama reuses a runner already loaded CPU-only** (so `ollama stop` before
+  a GPU run, and read `size_vram` instead of trusting the configuration you asked for).
 
 ## omer's #221 Windows check — done 2026-11-12, 7 of 7 pass
 
