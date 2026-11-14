@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ayna:schema:agent-rpc",
   "title": "AYNA agent JSON-RPC messages",
-  "description": "Every message between the client's main process and the automation agent: JSON-RPC 2.0 over one WebSocket on 127.0.0.1, plus the one line the agent prints on stdout once it listens. The prose contract (start-up, token, ordering, what each method does) is docs/agent-rpc.md; this file fixes the shapes, so both sides can be tested against it. A response does not name its method: check a result against the method's `<method>Result` definition. A reader ignores properties, notifications and error codes it does not know, so additions are not breaking. Version 1.0 is v0.1 as built plus runSteps (#26), frozen with the other contracts (#52, ADR contracts-v1-freeze); `ping` answers rpcVersion with the version the agent speaks. Changing this file needs an ADR and all three owners' approval (schemas/AGENTS.md).",
+  "description": "Every message between the client's main process and the automation agent: JSON-RPC 2.0 over one WebSocket on 127.0.0.1, plus the one line the agent prints on stdout once it listens. The prose contract (start-up, token, ordering, what each method does) is docs/agent-rpc.md; this file fixes the shapes, so both sides can be tested against it. A response does not name its method: check a result against the method's `<method>Result` definition. A reader ignores properties, notifications and error codes it does not know, so additions are not breaking. Version 1.0 is v0.1 as built plus runSteps (#26) and elementFromPoint (#22), frozen with the other contracts (#52, ADR contracts-v1-freeze); `ping` answers rpcVersion with the version the agent speaks. Changing this file needs an ADR and all three owners' approval (schemas/AGENTS.md).",
   "oneOf": [
     { "$ref": "#/$defs/request" },
     { "$ref": "#/$defs/success" },
@@ -36,6 +36,7 @@
         { "$ref": "#/$defs/pingRequest" },
         { "$ref": "#/$defs/listWindowsRequest" },
         { "$ref": "#/$defs/snapshotRequest" },
+        { "$ref": "#/$defs/elementFromPointRequest" },
         { "$ref": "#/$defs/runStepsRequest" }
       ]
     },
@@ -83,6 +84,26 @@
           "properties": {
             "handle": { "$ref": "#/$defs/positiveInt" },
             "timeoutMs": { "$ref": "#/$defs/timeoutMs" }
+          }
+        }
+      }
+    },
+    "elementFromPointRequest": {
+      "type": "object",
+      "required": ["jsonrpc", "method", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "jsonrpc": { "const": "2.0" },
+        "id": { "$ref": "#/$defs/id" },
+        "method": { "const": "elementFromPoint" },
+        "params": {
+          "description": "A point in physical pixels, virtual-desktop coordinates. Signed: a maximised window on a scaled display starts at a negative origin.",
+          "type": "object",
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "integer" },
+            "y": { "type": "integer" }
           }
         }
       }
@@ -218,6 +239,31 @@
       "description": "One window snapshot document, as schemas/snapshot.schema.json defines it; check it against that file.",
       "type": "object",
       "required": ["version", "snapshotId", "capture", "app", "window", "elements"]
+    },
+    "elementFromPointResult": {
+      "description": "One shape for every outcome; a point is never an error. snapshotId null: nothing captured for this window. snapshotId set, elementId null: the window changed since the capture. Both set: that element of that snapshot. The snapshot is the one the agent took last, by any caller.",
+      "type": "object",
+      "required": ["handle", "bounds", "snapshotId", "elementId", "element"],
+      "additionalProperties": false,
+      "properties": {
+        "handle": {
+          "description": "The top-level window under the point, the kind of handle listWindows reports; null when there is no window.",
+          "type": ["integer", "null"]
+        },
+        "bounds": {
+          "description": "The hit element's [left, top, right, bottom], physical pixels; null when nothing was hit.",
+          "oneOf": [
+            { "type": "array", "items": { "type": "integer" }, "minItems": 4, "maxItems": 4 },
+            { "type": "null" }
+          ]
+        },
+        "snapshotId": { "type": ["string", "null"] },
+        "elementId": { "type": ["string", "null"] },
+        "element": {
+          "description": "That snapshot's element descriptor, unchanged (schemas/element.schema.json); null with elementId.",
+          "type": ["object", "null"]
+        }
+      }
     },
     "runStepsResult": {
       "type": "object",

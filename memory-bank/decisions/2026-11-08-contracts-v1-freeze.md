@@ -35,7 +35,7 @@
 |---|---|---|---|
 | REST API | `docs/api/openapi.yaml` (generated) | **1.0** | `info.version`, set in `OpenApiConfig.CONTRACT_VERSION` |
 | Live run status | `schemas/ws-runs.schema.json` (new) | **1.0** | `$defs/version` (not sent on the wire) |
-| Agent JSON-RPC | `schemas/agent-rpc.schema.json` (new), prose in `docs/agent-rpc.md` | **1.0** = v0.1 as built + `runSteps` (#26) | `$defs/version`, and `rpcVersion` in `ping` |
+| Agent JSON-RPC | `schemas/agent-rpc.schema.json` (new), prose in `docs/agent-rpc.md` | **1.0** = v0.1 as built + `runSteps` (#26) + `elementFromPoint` (#22, merged before the freeze) | `$defs/version`, and `rpcVersion` in `ping` |
 | Exchange documents | `schemas/step`, `element`, `snapshot`, `healing-proposal` `.schema.json` | unchanged: 0.2, 0.1, 0.1, 0.2 | `properties/version/const` |
 
 The four document schemas are not renumbered. Changing their `const` would make every stored test and snapshot invalid. Under the rule below their next breaking change is 1.0.

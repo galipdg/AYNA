@@ -96,6 +96,22 @@ describe('agent JSON-RPC contract, client side', () => {
     matches('success')({ jsonrpc: '2.0', id: 3, result: { windows: [] } })
     matches('failure')({ jsonrpc: '2.0', id: 4, error: { code: -32000, message: 'Window not found: 12' } })
     matches('failure')({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } })
+    // #22: one shape for every outcome, every field nullable (docs/agent-rpc.md).
+    matches('elementFromPointResult')({
+      handle: 657704,
+      bounds: [614, 300, 814, 326],
+      snapshotId: '5e8f0a1b-3c2d-4e6f-8a9b-1c0d2e3f4a5b',
+      elementId: 'e8',
+      element: { automationId: 'QApplication.loginWindow.usernameInput', controlType: 'Edit' },
+    })
+    matches('elementFromPointResult')({
+      handle: null,
+      bounds: null,
+      snapshotId: null,
+      elementId: null,
+      element: null,
+    })
+    matches('request')({ jsonrpc: '2.0', id: 9, method: 'elementFromPoint', params: { x: -8, y: 40 } })
     matches('runStepsResult')({
       results: [
         { stepIndex: 0, status: 'passed', durationMs: 31, matched: 'primary', performedWith: 'SetValue' },

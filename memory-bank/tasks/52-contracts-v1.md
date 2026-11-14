@@ -41,3 +41,6 @@ None: everything here runs in CI.
 - The `contracts` job compares with `origin/<base>` on PRs and with `github.event.before` on pushes. Local runs: `python3 .github/contracts/schema_compat.py --base origin/main` and `.github/contracts/rest_compat.sh origin/main <oasdiff>`.
 
 ## Outcome (fill when the issue closes)
+
+## 2026-11-14
+- #227 (#22 `elementFromPoint`) merged before this PR, so `elementFromPoint` is part of agent-rpc 1.0 (request with signed `x`, `y`; result with every field nullable), as agreed with hasan on #227. `main` merged in again (#51, #59, #221, #33, #68, #22). Client 237/237, contract tools OK. Still waiting for galip's approval (schemas/ change).
