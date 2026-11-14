@@ -37,6 +37,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -91,6 +93,23 @@ class CpuOnly(StepGenerator):
         body["options"] = {**body["options"], "num_gpu": 0}
         return body
 
+    def warm_up(self) -> None:
+        """Load the model **CPU-only**, which the inherited warm-up does not do.
+
+        `StepGenerator.warm_up` sends its own minimal body and never goes through
+        :meth:`request_body`, so it warmed whatever offload Ollama already had loaded and the
+        first timed request then paid for the reload: an early `cli-qwen-cpu` run printed
+        `warm-up 0.0s` and a 34.5 s first request against a 15.3 s median. Asking for
+        `num_gpu` 0 here is what makes the warm-up warm the thing being measured.
+        """
+        self.client.chat(
+            {
+                "model": self.settings.model,
+                "messages": [],
+                "options": {"num_gpu": 0},
+            }
+        )
+
 
 @dataclass(frozen=True)
 class Config:
@@ -133,10 +152,25 @@ CONFIGS: tuple[Config, ...] = (
         "what reasons cost: same path, one flag",
         reasons=True,
     ),
+    # `reasons=True` on every HTTP row is a statement of fact, not a choice: the service
+    # hard-codes it (`service.py:181`) and its request schema has no such field. Recording
+    # False here would have put a wrong configuration in the results file.
     Config(
-        "http-qwen-gpu", "http", QWEN, "A-gpu", "the service as shipped, reasons on"
+        "http-qwen-gpu",
+        "http",
+        QWEN,
+        "A-gpu",
+        "the service as shipped, reasons on",
+        reasons=True,
     ),
-    Config("http-gemma-gpu", "http", GEMMA, "A-gpu", "the service on the second model"),
+    Config(
+        "http-gemma-gpu",
+        "http",
+        GEMMA,
+        "A-gpu",
+        "the service on the second model",
+        reasons=True,
+    ),
     # --- group B: forced CPU-only, the box NFR-12 is actually about
     Config(
         "cli-qwen-cpu", "cli", QWEN, "B-cpu", "the closed-network number", gpu=False
@@ -153,7 +187,15 @@ CONFIGS: tuple[Config, ...] = (
         reasons=True,
         gpu=False,
     ),
-    Config("http-qwen-cpu", "http", QWEN, "B-cpu", "the service CPU only", gpu=False),
+    Config(
+        "http-qwen-cpu",
+        "http",
+        QWEN,
+        "B-cpu",
+        "the service CPU only",
+        reasons=True,
+        gpu=False,
+    ),
 )
 
 BY_ID = {config.id: config for config in CONFIGS}
@@ -195,15 +237,91 @@ def ollama_ps() -> list[dict[str, Any]]:
         return []
 
 
-def machine() -> dict[str, Any]:
-    """SDD 6.7 wants the hardware beside the number, so it is stored in every run."""
+def loaded_vram(model: str) -> int | None:
+    """Bytes of the loaded `model` that sit in VRAM, or None when it is not loaded."""
+    for entry in ollama_ps():
+        if entry.get("name") == model:
+            return entry.get("size_vram")
+    return None
+
+
+def check_offload(config: Config) -> int | None:
+    """Refuse to record a run whose offload is not the one the configuration claims.
+
+    This is the guard the whole GPU/CPU pair depends on. A CPU-only run that quietly got the
+    GPU would be published as the closed-network number and be wrong by a factor of three,
+    and nothing in the result file would show it -- `size_vram` is the only honest witness.
+    """
+    vram = loaded_vram(config.model)
+    if vram is None:
+        print(f"    offload: {config.model} is not loaded, cannot check", flush=True)
+        return None
+    print(f"    offload: {vram / 1e9:.2f} GB in VRAM", flush=True)
+    if config.gpu and vram == 0:
+        raise SystemExit(
+            f"{config.id} claims the GPU but {config.model} is loaded with no VRAM. "
+            "Ollama reuses a runner already loaded CPU-only; unload it first "
+            "(`ollama stop`) and run the group A configurations again."
+        )
+    if not config.gpu and vram != 0:
+        raise SystemExit(
+            f"{config.id} claims CPU only but {config.model} holds "
+            f"{vram / 1e9:.2f} GB of VRAM, so this would measure the GPU."
+        )
+    return vram
+
+
+@contextmanager
+def background_load(workers: int) -> Iterator[None]:
+    """Keep `workers` CPU-bound processes running for the body of the `with`.
+
+    The Mac numbers were taken at load average 4-6 on an 8-core machine, so an idle-only
+    comparison flatters whichever side was quieter. A fixed number of busy processes is used
+    rather than "I opened some applications", because the number is what makes the run
+    repeatable; `busy_before` records what it actually came to.
+    """
+    if workers <= 0:
+        yield
+        return
+    spinner = "x = 0\nwhile True:\n    x = (x * x + 1) % 2147483647\n"
+    started = [
+        subprocess.Popen(
+            [sys.executable, "-c", spinner],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        for _ in range(workers)
+    ]
+    print(f"    background load: {workers} busy processes", flush=True)
+    try:
+        yield
+    finally:
+        for process in started:
+            process.terminate()
+        for process in started:
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+
+
+def machine(config: Config | None = None) -> dict[str, Any]:
+    """SDD 6.7 wants the hardware beside the number, so it is stored in every run.
+
+    `prompt_version` carries the `+reason` suffix when reasons are on, the way
+    `StepGenerator.prompt_version` and the service's own health endpoint report it. Without
+    it a results file claims comparability with a run that used a different prompt. The
+    files committed on 2026-11-14 record the bare `"3"` for the reasons runs as well; the
+    prompts were right, only the recorded label was short.
+    """
+    reasons = bool(config and config.reasons)
     return {
         "platform": platform.platform(),
         "processor": platform.processor(),
         "python": platform.python_version(),
         "gpu": nvidia_smi(),
         "ollama_ps": ollama_ps(),
-        "prompt_version": PROMPT_VERSION,
+        "prompt_version": PROMPT_VERSION + ("+reason" if reasons else ""),
     }
 
 
@@ -267,7 +385,7 @@ def objects() -> dict[str, str]:
     return json.loads(OBJECTS.read_text(encoding="utf-8"))
 
 
-def run_cli(config: Config) -> list[dict[str, Any]]:
+def run_cli(config: Config) -> tuple[list[dict[str, Any]], float | None]:
     """Drive `ayna_ai.generate` the way PR #142 did, in process."""
     client = OllamaClient(DEFAULT_HOST, RUN_TIMEOUT_S)
     settings = GenerationSettings(
@@ -275,12 +393,14 @@ def run_cli(config: Config) -> list[dict[str, Any]]:
     )
     build = StepGenerator if config.gpu else CpuOnly
     generator = build(client, settings)
-    # Pay the model load before the timed requests, as the spike did -- but print it, because
+    # Pay the model load before the timed requests, as the spike did -- but keep it, because
     # a cold load is minutes CPU-only and a first-request latency would otherwise hide it.
     started = time.perf_counter()
     generator.warm_up()
-    print(f"warm-up {time.perf_counter() - started:.1f}s", flush=True)
-    return run_batch(generator, cases(), objects())
+    warmup = time.perf_counter() - started
+    print(f"warm-up {warmup:.1f}s", flush=True)
+    check_offload(config)
+    return run_batch(generator, cases(), objects()), round(warmup, 2)
 
 
 def post(port: int, body: dict[str, Any]) -> tuple[int, dict[str, Any], float]:
@@ -301,22 +421,40 @@ def post(port: int, body: dict[str, Any]) -> tuple[int, dict[str, Any], float]:
     return code, payload, time.perf_counter() - started
 
 
-def run_http(config: Config) -> list[dict[str, Any]]:
+def run_http(config: Config) -> tuple[list[dict[str, Any]], float | None]:
     """Drive a running `ayna_ai.service`, which is the path #78's panel will use.
 
     The service hard-codes ``reasons=True`` (`service.py:181`), so every HTTP row has reasons
     on; what reasons cost is measured on the CLI path instead, where it is one flag on the
     same code.
+
+    One untimed request goes first, for the same reason the CLI path calls ``warm_up``: the
+    service warms only its **default** model, so a run against any other one would charge its
+    first request the whole model load. That is how an early `http-gemma-gpu` run came out at
+    p95 9.87 s with a p50 of 2.43 s -- a cold load inside the sample, not a tail.
+
+    A CPU-only HTTP run cannot be asked for through the service, which builds its own request
+    and has no ``num_gpu``. What makes it possible is that **Ollama reuses a runner already
+    loaded CPU-only** rather than reloading it for a request that does not mention the
+    offload -- measured here on 2026-11-14. So the model is pre-loaded CPU-only through
+    :class:`CpuOnly` and :func:`check_offload` then refuses to let the run continue if the
+    loaded runner is not the one the configuration claims.
     """
     named = [{"name": name, "description": text} for name, text in objects().items()]
+    request = {"app": "customer-records", "objects": named, "model": config.model}
+    started = time.perf_counter()
+    if not config.gpu:
+        CpuOnly(
+            OllamaClient(DEFAULT_HOST, RUN_TIMEOUT_S),
+            GenerationSettings(model=config.model),
+        ).warm_up()
+    post(config.port, {**request, "text": cases()[0]["text"]})
+    warmup = time.perf_counter() - started
+    print(f"warm-up {warmup:.1f}s (untimed)", flush=True)
+    check_offload(config)
     rows = []
     for case in cases():
-        body = {
-            "text": case["text"],
-            "app": "customer-records",
-            "objects": named,
-            "model": config.model,
-        }
+        body = {**request, "text": case["text"]}
         code, payload, elapsed = post(config.port, body)
         keywords = [step["keyword"] for step in payload.get("steps", [])]
         rows.append(
@@ -341,7 +479,7 @@ def run_http(config: Config) -> list[dict[str, Any]]:
             f"#{case['id']} {code} {payload.get('status')} {elapsed:.2f}s {keywords}",
             flush=True,
         )
-    return rows
+    return rows, round(warmup, 2)
 
 
 def deadline_share(
@@ -362,9 +500,19 @@ def deadline_share(
     }
 
 
-def run_one(config: Config, note: str = "") -> Path:
+def run_key(config_id: str, load: int) -> str:
+    """How a run is identified in the report: the configuration, plus its load if any.
+
+    An under-load run is a different measurement of the same configuration, not a newer one,
+    so it must not replace the idle run in `latest()`.
+    """
+    return config_id + (f"+load{load}" if load else "")
+
+
+def run_one(config: Config, note: str = "", load: int = 0) -> Path:
     stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M")
-    path = RESULTS / f"{config.id}-{stamp}.json"
+    key = run_key(config.id, load)
+    path = RESULTS / f"{key}-{stamp}.json"
     if path.exists():
         raise SystemExit(f"{path} exists")
     print(f"=== {config.id}: {config.why}")
@@ -372,24 +520,36 @@ def run_one(config: Config, note: str = "") -> Path:
         f"    {config.path} · {config.model} · format={config.format} "
         f"· reasons={config.reasons} · gpu={config.gpu}"
     )
-    before = busy_share()
-    print(f"    machine busy before: {before}", flush=True)
+    resting = busy_share()
+    print(f"    machine busy at rest: {resting}", flush=True)
     runner = run_cli if config.path == "cli" else run_http
-    started = time.perf_counter()
-    rows = runner(config)
-    wall = time.perf_counter() - started
+    with background_load(load):
+        before = busy_share()
+        if load:
+            print(f"    machine busy with the load on: {before}", flush=True)
+        started = time.perf_counter()
+        rows, warmup_s = runner(config)
+        wall = time.perf_counter() - started
+        after = busy_share()
     summary = summarize(rows)
     summary["wall_s"] = round(wall, 1)
+    # The cold load, kept out of the timed rows but reported: on a closed-network box it is
+    # the first thing a tester waits for, and it is minutes rather than seconds CPU-only.
+    summary["warmup_s"] = warmup_s
     summary["latency_mean_s"] = round(
         statistics.fmean(row["latency_s"] for row in rows), 2
     )
     result = {
+        "key": key,
         "config": asdict(config),
+        "load_workers": load,
         "note": note,
         "finished_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "busy_at_rest": resting,
         "busy_before": before,
-        "busy_after": busy_share(),
-        "machine": machine(),
+        "busy_after": after,
+        "loaded_vram_bytes": loaded_vram(config.model),
+        "machine": machine(config),
         "summary": summary,
         "deadline": deadline_share(rows),
         "rows": rows,
@@ -414,10 +574,25 @@ def latest() -> dict[str, dict[str, Any]]:
     newest: dict[str, tuple[str, dict[str, Any]]] = {}
     for path in sorted(RESULTS.glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
-        config_id = data["config"]["id"]
-        if config_id not in newest or path.name > newest[config_id][0]:
-            newest[config_id] = (path.name, data)
-    return {config_id: data for config_id, (_, data) in newest.items()}
+        key = data.get("key") or data["config"]["id"]
+        if key not in newest or path.name > newest[key][0]:
+            newest[key] = (path.name, data)
+    return {key: data for key, (_, data) in newest.items()}
+
+
+HEADER = "| run | path | model | p50 s | p95 s | max s | ok | over 30 s | busy |"
+RULE = "|---|---|---|---|---|---|---|---|---|"
+
+
+def table_row(key: str, data: dict[str, Any]) -> str:
+    config, summary, deadline = data["config"], data["summary"], data["deadline"]
+    busy = data.get("busy_before")
+    return (
+        f"| `{key}` | {config['path']} | {config['model']} | "
+        f"**{summary['latency_p50_s']}** | **{summary['latency_p95_s']}** | "
+        f"{summary['latency_max_s']} | {summary['ok']}/{summary['n']} | "
+        f"{deadline['over']}/{summary['n']} | {'' if busy is None else f'{busy:.0%}'} |"
+    )
 
 
 def report() -> int:
@@ -428,25 +603,29 @@ def report() -> int:
         return 1
     for group in dict.fromkeys(config.group for config in CONFIGS):
         rows = [
-            (config, found[config.id])
+            (config.id, found[config.id])
             for config in CONFIGS
             if config.group == group and config.id in found
         ]
         if not rows:
             continue
-        print(f"\n### {group}\n")
+        print(f"\n### {group} — idle\n")
+        print(HEADER)
+        print(RULE)
+        for key, data in rows:
+            print(table_row(key, data))
+    # Under load is a separate measurement of the same configurations, so it gets its own
+    # table rather than replacing the idle row it should be read against.
+    loaded = {key: data for key, data in found.items() if data.get("load_workers")}
+    if loaded:
+        workers = sorted({data["load_workers"] for data in loaded.values()})
         print(
-            "| run | path | model | p50 s | p95 s | max s | ok | over 30 s | mean s |"
+            f"\n### under load — {', '.join(str(n) for n in workers)} busy processes\n"
         )
-        print("|---|---|---|---|---|---|---|---|---|")
-        for config, data in rows:
-            summary, deadline = data["summary"], data["deadline"]
-            print(
-                f"| `{config.id}` | {config.path} | {config.model} | "
-                f"**{summary['latency_p50_s']}** | **{summary['latency_p95_s']}** | "
-                f"{summary['latency_max_s']} | {summary['ok']}/{summary['n']} | "
-                f"{deadline['over']}/{summary['n']} | {summary['latency_mean_s']} |"
-            )
+        print(HEADER)
+        print(RULE)
+        for key in sorted(loaded):
+            print(table_row(key, loaded[key]))
     missing = [config.id for config in CONFIGS if config.id not in found]
     if missing:
         print(f"\nNot run yet: {', '.join(missing)}")
@@ -463,6 +642,13 @@ def main(argv: list[str] | None = None) -> int:
     one = sub.add_parser("run", help="run one configuration")
     one.add_argument("config", choices=sorted(BY_ID))
     one.add_argument("--note", default="", help="free text stored in the result")
+    one.add_argument(
+        "--load",
+        type=int,
+        default=0,
+        help="CPU-bound background processes to keep running during the run "
+        "(0 = idle; 8 is half of this machine's 16 threads)",
+    )
     sub.add_parser("report", help="a markdown table per group from the newest results")
     args = parser.parse_args(argv)
 
@@ -478,7 +664,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "report":
         return report()
-    run_one(BY_ID[args.config], args.note)
+    run_one(BY_ID[args.config], args.note, args.load)
     return 0
 
 

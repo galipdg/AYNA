@@ -98,7 +98,8 @@ def test_the_report_takes_the_newest_result_per_configuration(
         (tmp_path / f"cli-qwen-gpu-{stamp}.json").write_text(
             json.dumps(
                 {
-                    "config": {"id": "cli-qwen-gpu"},
+                    "key": "cli-qwen-gpu",
+                    "config": {"id": "cli-qwen-gpu", "path": "cli", "model": run.QWEN},
                     "summary": {"latency_p50_s": p50},
                     "deadline": {"over": 0},
                 }
@@ -119,7 +120,8 @@ def test_the_report_says_which_configurations_have_not_been_run(
     (tmp_path / "cli-qwen-gpu-20261114-1200.json").write_text(
         json.dumps(
             {
-                "config": {"id": "cli-qwen-gpu"},
+                "key": "cli-qwen-gpu",
+                "config": {"id": "cli-qwen-gpu", "path": "cli", "model": run.QWEN},
                 "summary": {
                     "latency_p50_s": 6.1,
                     "latency_p95_s": 9.0,
@@ -155,3 +157,127 @@ def test_the_inputs_are_the_ten_sentences_the_mac_numbers_used() -> None:
     assert len(cases) == 10
     assert all("text" in case and "expected" in case for case in cases)
     assert run.INPUTS == run.AI / "spikes" / "llm-smoke-inputs.jsonl"
+
+
+def test_the_cpu_only_warm_up_loads_the_thing_being_measured() -> None:
+    """The inherited warm-up sends its own body and skips `request_body`.
+
+    Without this override it warmed whichever offload Ollama already had loaded, and the
+    first timed request paid for the reload -- an early `cli-qwen-cpu` run printed
+    `warm-up 0.0s` beside a 34.5 s first request against a 15.3 s median.
+    """
+    sent: list[dict] = []
+
+    class Recording:
+        def chat(self, body: dict, timeout_s: float | None = None) -> dict:
+            sent.append(body)
+            return {"message": {"content": "{}"}}
+
+    run.CpuOnly(Recording(), run.GenerationSettings()).warm_up()
+    assert sent and sent[0]["options"]["num_gpu"] == 0
+
+
+@pytest.mark.parametrize(
+    ("gpu", "vram", "refused"),
+    [
+        (True, 4_000_000_000, False),
+        (True, 0, True),  # Ollama reused a CPU-only runner: not the GPU number
+        (False, 0, False),
+        (False, 4_000_000_000, True),  # would publish a GPU number as the CPU one
+        (True, None, False),  # not loaded: nothing to check, say so and carry on
+    ],
+)
+def test_a_run_whose_offload_is_not_the_claimed_one_is_refused(
+    monkeypatch: pytest.MonkeyPatch, gpu: bool, vram: int | None, refused: bool
+) -> None:
+    """The guard the whole GPU/CPU pair depends on.
+
+    A CPU-only run that quietly got the GPU would be published as the closed-network number
+    and be wrong by about a factor of three, and nothing else in the result file would show
+    it -- `size_vram` is the only witness.
+    """
+    config = run.Config("probe", "cli", run.QWEN, "test", "", gpu=gpu)
+    monkeypatch.setattr(run, "loaded_vram", lambda model: vram)
+    if refused:
+        with pytest.raises(SystemExit):
+            run.check_offload(config)
+    else:
+        assert run.check_offload(config) == vram
+
+
+def test_the_vram_of_a_model_that_is_not_loaded_is_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(run, "ollama_ps", lambda: [{"name": "other", "size_vram": 7}])
+    assert run.loaded_vram(run.QWEN) is None
+
+
+def test_an_under_load_run_does_not_replace_the_idle_run_it_is_read_against(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Idle and under load are two measurements of one configuration, not two versions of
+    it, so they are keyed apart and reported in separate tables."""
+    monkeypatch.setattr(run, "RESULTS", tmp_path)
+    summary = {
+        "latency_p50_s": 5.3,
+        "latency_p95_s": 8.4,
+        "latency_max_s": 9.2,
+        "latency_mean_s": 5.5,
+        "ok": 10,
+        "n": 10,
+    }
+    config = {"id": "cli-qwen-gpu", "path": "cli", "model": run.QWEN}
+    for key, load, stamp in (
+        ("cli-qwen-gpu", 0, "20261114-1002"),
+        ("cli-qwen-gpu+load8", 8, "20261114-1102"),
+    ):
+        (tmp_path / f"{key}-{stamp}.json").write_text(
+            json.dumps(
+                {
+                    "key": key,
+                    "config": config,
+                    "load_workers": load,
+                    "busy_before": 0.1 if not load else 0.55,
+                    "summary": summary,
+                    "deadline": {"over": 0},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    assert set(run.latest()) == {"cli-qwen-gpu", "cli-qwen-gpu+load8"}
+    assert run.report() == 0
+    out = capsys.readouterr().out
+    assert "A-gpu — idle" in out
+    assert "under load — 8 busy processes" in out
+    assert "cli-qwen-gpu+load8" in out.split("under load")[1]
+
+
+def test_the_run_key_carries_the_load_and_nothing_else() -> None:
+    assert run.run_key("cli-qwen-gpu", 0) == "cli-qwen-gpu"
+    assert run.run_key("cli-qwen-gpu", 8) == "cli-qwen-gpu+load8"
+
+
+def test_no_background_load_starts_no_processes() -> None:
+    with run.background_load(0):
+        pass
+
+
+def test_a_background_load_actually_busies_the_machine_and_stops_after() -> None:
+    with run.background_load(4):
+        busy = run.busy_share(sample_s=1.0)
+    assert busy is None or busy > 0.1, busy
+    after = run.busy_share(sample_s=1.0)
+    assert after is None or after < 0.95, after
+
+
+@pytest.mark.parametrize("reasons", [False, True])
+def test_the_recorded_prompt_version_says_whether_reasons_were_asked_for(
+    reasons: bool,
+) -> None:
+    """A results file that does not distinguish the two prompts claims a comparability it
+    does not have: reasons change the prompt, not just the token count."""
+    config = run.Config("probe", "cli", run.QWEN, "test", "", reasons=reasons)
+    recorded = run.machine(config)["prompt_version"]
+    assert recorded.endswith("+reason") is reasons
+    assert recorded.startswith(run.PROMPT_VERSION)

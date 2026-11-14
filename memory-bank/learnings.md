@@ -374,3 +374,36 @@ app outside pytest must launch it with the **repository root** `.venv/Scripts/py
 Windows tests do exactly that via `_python_with_pyside()`.
 - 2026-11-12 · hasan · #33 · **`QT_QPA_PLATFORM=offscreen` set in a pytest process poisons every app the run starts afterwards.** `eval/apps/sample/tests/test_screens.py` set it at import time so the widget tests need no display; a child process inherits it, so the real app came up with no window and `pywinauto`'s `window.wait("visible ready")` timed out 30 s × 30 tests — all 25 sample UIA tests *and* the trial app's 5 errored, while each passed alone (12:40 of pure timeout). Fix: choose the platform in Qt's own argv, `QApplication(["pytest", "-platform", "offscreen"])`, so nothing leaks into the environment; `launch_app()` additionally drops the variable from the child's env, which also covers a CI shell that exports it. Rule: never set a Qt (or any plugin-selecting) environment variable in a test process that starts the application under test as a child.
 - 2026-11-12 · hasan · #33 · **The #199 module-name clash can be green locally and red in CI, because the winner depends on how pytest was started.** `eval/apps/sample/app.py` beside `eval/apps/trial/app.py`: both apps' `tests/conftest.py` do `sys.path.insert(0, <their own folder>)`, so the conftest loaded **last** wins for the whole process. `pytest eval` from the repository root walks folders alphabetically (sample, then trial) and the trial app's `from app import …` got the trial app — green. CI runs bare `pytest` from `eval/`, which loads conftests in `testpaths` order (trial, then sample), and the same import got the *sample* app: `ImportError: cannot import name 'INVALID_MESSAGE' from 'app'` (run 43260442861). Two conclusions: a module you only ever *run* is not exempt from the one-name-per-tree rule, since it is still importable; and `pytest eval` is not the run CI does — reproduce CI with `cd eval; ../.venv/Scripts/python.exe -m pytest -q` before pushing anything that adds a module to `eval/`.
+
+- 2026-11-14 · hasan · #162 · **A warm-up only warms what it actually asks for.**
+  `StepGenerator.warm_up` sends its own minimal body and never goes through `request_body`, so
+  a subclass that changes the request (here `options.num_gpu = 0`) warms the *other*
+  configuration and the first timed request silently pays for the model reload. The symptom is
+  a `warm-up 0.0s` line beside a first request far above the median — in this case 34.5 s
+  against a 15.3 s p50, which produced a false "1 of 10 requests exceeded the 30 s deadline".
+  Anything measuring latency through a subclassed client should check that its warm-up and its
+  measured requests load the same thing.
+- 2026-11-14 · hasan · #162 · **Ollama reuses a runner already loaded CPU-only.** A request
+  that does not mention `num_gpu` does *not* force a reload onto the GPU; it is served by
+  whatever runner is loaded. Measured on Ollama 0.40.16 by pre-loading `qwen3:8b` with
+  `num_gpu: 0` and then calling `POST /ai/generate-steps`, which has no such option:
+  `/api/ps` still reported `size_vram: 0`. This is the only reason a service that builds its
+  own request can be measured CPU-only — and the same fact is a trap in the other direction, so
+  **unload with `ollama stop` before a run that is supposed to use the GPU**, and read
+  `size_vram` rather than trusting the configuration you asked for.
+- 2026-11-14 · hasan · #162 · **A model that fits in VRAM beats a better model that does not,
+  and it reverses the ranking between machines.** `gemma4:e4b-it-qat` loads as 3.1 GB and runs
+  100 % on a 6 GB RTX 3060; `qwen3:8b` loads as 6.0 GB, does not fit, and runs 30 % CPU /
+  70 % GPU. Result: gemma4 is 3.2× faster on Windows while being the *slower* of the two on the
+  M2 Mac. A fully VRAM-resident model is also almost immune to the machine's own CPU load
+  (1.65 → 1.70 s under 59 % busy, against 5.34 → 6.29 s), which matters because AYNA's agent,
+  client and server share the box during a run. So "which model is faster" is a question about
+  the box, not the model.
+- 2026-11-14 · hasan · #162 · **Measure with the deadline raised, then compute the share that
+  would have exceeded it.** The AI service answers 504 at 30 s, so measuring it as shipped
+  censors exactly the tail the question is about. Run with `--timeout 600` and count afterwards.
+- 2026-11-14 · hasan · #162 · **`powershell.exe` is not always on `PATH`** for a process started
+  from the POSIX shell here, so a helper shelling out to it returns nothing and a measurement
+  silently loses its load figure. `ctypes.windll.kernel32.GetSystemTimes` is stdlib, exact and
+  has no `PATH` dependency. `nvidia-smi` is in `C:\Windows\System32`, so it needs the absolute
+  path for the same reason.
