@@ -293,3 +293,8 @@ Append-only. One entry per session, newest at the bottom:
 - #224: `main` merged twice (decisions index, `active.md`), `elementFromPoint` into agent-rpc 1.0. Waits for galip.
 - Reviews: #227 approved after `142a6c6`; #230, #232 and #233 approved.
 - Next: #24 on `omer/24-pick-hotkey`.
+
+## 2026-11-14 — #24 pick hotkey
+- Built the client half of the pick: main calls `elementFromPoint` on the key press, the Spy selects the node or offers capture / capture again; fake agent answers it for `dev:mock`. PR #234 ("Part of #24"), Windows check posted on #24 with `needs-windows-test`.
+- SSH to GitHub still times out; fetch/push over HTTPS with gh credentials worked.
+- Next: CI and reviews on #234, Windows check, then #224 / #44.
