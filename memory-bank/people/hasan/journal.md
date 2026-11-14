@@ -427,6 +427,98 @@ two tests seeded, so #17 starts in seconds. `http://[::1]:8080`, not `localhost`
 incidentally all session — every client start launched the agent and every close logged
 `stdin closed, shutting down` — so the check is presumably about crash and restart.
 
+## 2026-11-10 — eight reviews, then #22 built
+
+- **Reviewed and approved all eight PRs waiting on me** (omer's #217, #218, #219, #220, #222,
+  #223, #224, #225), including the two ADRs `2026-11-08-run-screenshots-and-retention` and
+  `2026-11-08-contracts-v1-freeze`. The queue had been empty on 2026-11-07 and refilled
+  completely; it is empty again.
+- Three of the reviews needed measurements rather than opinions, so I took them here:
+  - **8 MB screenshot limit (#223):** a real 1920×1080 PNG is **222 KB**, the incompressible
+    ceiling at that resolution is **7.92 MB**. So the limit is exactly one raw 1080p frame and has
+    no headroom above that — which is fine only because I committed to #54 sending the *window*.
+  - **`schema_compat.py` (#224):** ran omer's checker myself (28/28) and put six mutations
+    through it against my own `snapshot.schema.json`. It proved that my planned whitespace
+    `pattern` change is **0.1 → 1.0, not 0.2** — a correction to my own plan.
+  - **`DEMO-windows.md` §5.3 (#218):** computed the four tree-search counts against the committed
+    capture; `user` → 2, not the 3 the guide claims. Also checked that #219's leaf-id rule does
+    not change any of them.
+- Two findings I would not have had without reading my own code: **`-32002` has two causes** and
+  the client throws the distinction away, so #219's retry ladder gives exactly the wrong advice
+  when an application is blocked by a modal message box (opened **#226** for it); and **`cell`
+  being grid-only while `rowExists {value, column}` is allowed on a list** is the same column
+  mapping forbidden in one place and required in the other (raised on #220 and #221).
+- Commented on **#221**: the column headers are already in every snapshot as `Header`/`HeaderItem`
+  elements, so its heaviest acceptance criterion — a snapshot-schema ADR with three approvals —
+  may be unnecessary, and `GetColumnHeaders` alone would miss KeePass 2.
+- **Built #22** on `hasan/22-element-from-point`, three commits (backend, galip's `rpc.py`,
+  the contract doc), 31 new tests, 432 agent tests green on real Windows. The design decision
+  worth keeping is in `learnings.md`: a descriptor for one element is not the same thing as a
+  descriptor from a walk, so `elementFromPoint` answers out of the last snapshot. Criteria 1 and 2
+  met and measured (median 3.39 ms against 300 ms); criterion 3 is a manual scaling check, written
+  up in the task note, because this display sits at 125 %.
+- Also learned the hard way that a UIA hit test answers with what is **visible**: the first
+  Windows run failed because pytest's own terminal was over the trial app.
+- Next step: the scaling manual check with the user, then the PR with `Closes #22`.
+
+## 2026-11-12 — #22's review answered, #228 and #229 reviewed, #33 started
+
+- **Answered omer's changes-requested review on PR #227** (`142a6c6`). He was right and it was
+  the dangerous case, not a rare one: `match_in_document` let a single same-bounds candidate win
+  with no COM call, which only holds while a window keeps the same elements in the same
+  rectangles. Every candidate now goes to `CompareElements`, and the deepest-candidate fallback
+  is gated on `controlType` / `name` / `automationId`. The check is free: median 2.2 ms and
+  2.5 ms over two runs of 50, against 3.39 ms *before* it. 436 agent tests pass here including
+  the Windows ones. His real question — do the hit test and the walk agree on identity for real
+  leaves — is answered yes: all 50 calls named an element, the fallback was never taken.
+- Also fixed a flake I caused: `test_a_window_that_was_never_captured_has_no_snapshot_id` failed
+  once with another window's handle, because the module fixture raises the trial window only at
+  setup. Any Windows test about a point has to own the stacking order right before it points.
+- **Ticked #22's criteria 1 and 2 on the issue** with the evidence in a comment, and posted
+  criterion 3 (display scaling) as a manual check with `needs-windows-test` — it needs the user
+  at the machine, and this display sits at 125 %.
+- **Reviewed and approved omer's #228 (#221 grid columns).** Did not take the rule on trust: ran
+  his `GridColumns.of` against real AYNA captures of the Qt probe app and KeePass 2. Both shapes
+  hold, including the part he asked about (Qt's column headers really are `Header` children named
+  with the column text, and the row header is excluded — by exactly one pixel).
+- **Reviewed and approved omer's #229 (#59 HTML run report).** The finding worth having: the
+  endpoint holds every screenshot and the whole HTML in memory, ~58 MB peak in English and ~90 MB
+  in Turkish for his own NFR-09 case, because one `ı` in the Turkish title inflates a
+  15-million-character `StringBuilder` to UTF-16. Offered the streaming fix. Answered his two
+  questions: `category` (FR-35) must be in the step result before the freeze, and the CLI may
+  save the report as an opt-in `--report`, fetched after the last screenshot upload.
+- **Started #33** (sample app v1) on `hasan/33-sample-app` from `main`. Nothing built yet.
+- Next step: read `docs/rs/scenarios.md` for the behaviour the reference scenarios assume of the
+  sample app, write the task note, then build the screens.
+
+## 2026-11-12 (late) — #22's scaling check: run, passed, criterion 3 ticked
+
+- **Ran #22's last acceptance criterion with the user at the machine, and it passes at both
+  scalings.** The user changed the scale in Windows Settings; I ran
+  `pytest tests/test_uia_element_from_point.py -q` at each. **23 passed at 100 % and at 150 %**
+  (and 23 at this machine's own 125 % as a baseline), with no skips, so the five
+  `@pytest.mark.windows` tests really ran against the trial app each time. **The full agent suite
+  passes at 150 % too: 436 passed in 13.65 s.**
+- **Did not take "the tests pass" as proof the scaling changed.** A DPI-unaware process reports
+  96 DPI whatever the scale is, and at 125 % it did exactly that, which would have "confirmed" a
+  scaling nobody set. So I read the DPI from the product instead: `window dpi` 96 against 144,
+  every element's `dpi` likewise, `dpi_awareness()` `per-monitor-v2` both times, and the trial
+  login window 360 × 164 against 540 × 246 physical pixels — exactly 1.5×. Then four points taken
+  at the centre of a rectangle the snapshot itself reported answered with the **same element id**
+  at both scalings (`e4`, `e5`, `e6`, `e8`), which is the property `142a6c6`'s identity check
+  needs. Gotcha written to `learnings.md`.
+- **Ticked criterion 3 on #22**, posted the numbers as an issue comment, removed
+  `needs-windows-test`, and asked omer again for the #227 re-review in a PR comment that says
+  what `142a6c6` changed and what the Spy side needs from the reply shape. #227 is CI 5/5 green
+  and `MERGEABLE`; **#224 is still open, so #227 carries no schema change today.**
+- Also learnt, and it is worth money to the Windows queue: a scale change **needs no sign-out**,
+  it applies to apps started afterwards — so #197's 100 % / 150 % pass can be batched with any
+  other scaling work in one sitting. And `agent/.venv` has no PySide6: a script starting the
+  trial app outside pytest must use the repository root `.venv`.
+- Next step: **#22 and #33 are both waiting only on other people.** Start omer's **#221** Windows
+  check (7 steps, comment on the issue of 2026-11-10: the editor's column dropdown must offer the
+  real header names, not the row headers `1`, `2`, `3`), then **#29** (RQ1 recognition harness,
+  Week 4). #162 is overdue and worth raising with the user first.
 ## 2026-11-12 — #33: the sample app finished, and three faults the first full test run found
 
 The session before this one wrote the app — six screens, `model.py` without Qt, `texts.py`
