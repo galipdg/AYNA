@@ -60,29 +60,73 @@ registered but off by default, as D1 makes it conditional.
 - [x] `eval/rq1/labelling.md` (ground-truth guide) — `ae9ab25`
 - [x] `eval/pyproject.toml`: `rq1/tests` in `testpaths`, `rq1` in ruff's `src`
 - [x] **First captures and first (unlabelled) numbers** — 2026-11-14 on this machine
-      (`3c38247`): KeePass 2 `main` (74 elements, 561 ms) and `entry-editor` (40, 291 ms),
-      HandBrake `main-summary` (149, 1267 ms), all with **0 read errors**.
-- [ ] The four screens that need clicks — **2 of 4 done**: the user captured KeePass 2
-      `open-database` (19 elements, 216 ms) and `options` (87, 1364 ms) on 2026-11-14 at 10:35
-      and 10:51, both 0 read errors. Both verified against `apps.json`'s stated state from the
-      snapshot content: `open-database` carries `m_tbPassword` + the "Master password:" box, and
-      `options` carries the Security tab's own options. **HandBrake `main-video`,
-      `preferences` and `queue` are left.**
+      (`3c38247`, corrected later the same day): KeePass 2 `main` (74 elements, 561 ms) and
+      `entry-editor` (40, 291 ms); HandBrake `main-summary` is the user's 10:53 capture
+      (118, `Open Source` enabled), not my 10:01 one, which caught the source picker. All
+      captures so far have **0 read errors**.
+- [x] **The screens behind a click — all of them, 2026-11-14 on this machine.** KeePass 2
+      `open-database` (19 elements, 216 ms) and `options` (87, 1364 ms) at 10:35 and 10:51;
+      HandBrake `preferences` (74, 826 ms) and `queue` (32, 236 ms) at 11:30 and 11:46. **Every
+      capture 0 read errors**, and each verified against `apps.json`'s stated state from the
+      snapshot content rather than from an impression: `open-database` carries `m_tbPassword`,
+      `options` the Security tab's own options, `preferences` the General page with its
+      `vlcPath` box, `queue` the `queueJobs` list with `0 jobs pending`.
+- [x] **`main-video` is dropped from `apps.json`, not pending** — see below; the registry
+      carries the reason in a `note` on the HandBrake entry.
 - [ ] Ground-truth labelling, so a **labelled** rate exists (criterion 2)
-- [ ] Post the numbers to the team (third criterion)
-- **Next step:** run the eight-step check on #29 with the user (KeePass 2 `open-database` and
-  `options`, HandBrake `main-video`, `preferences`, `queue`), then label one screen per pilot
-  per `labelling.md` and re-run `measure --labels`. Only the labelled rate may be reported.
+- [ ] Post the corrected numbers to the team (third criterion)
+- **Next step:** label one screen per pilot per `labelling.md` (`eval/rq1/labels/<app>-<screen>.csv`,
+  `elementId,label,note`), re-run `measure --labels`, then post the corrected numbers to #29
+  together with the two corrections the check itself produced (the `agent/.venv` interpreter and
+  HandBrake's real path, both wrong in the posted check). Only the labelled rate may be reported.
 
-### First numbers, 2026-11-14 — unlabelled, so not RQ1's rate
+### Numbers after the full check, 2026-11-14 — still unlabelled, so not RQ1's rate
 
 | App | Screens | Controls | Recognised | Ambiguous | No property |
 |---|---|---|---|---|---|
-| HandBrake 1.11.2 (WPF) | 1 | 45 | 44 (97.8 %) | 1 | 0 |
+| HandBrake 1.11.2 (WPF) | 3 | 71 | 67 (94.4 %) | 4 | 0 |
 | KeePass 2 (WinForms) | 4 | 118 | 102 (86.4 %) | 16 | 0 |
+
+**Every one of the 20 unrecognised controls has one of exactly two causes**, which is the
+result worth reporting. HandBrake's 4 are elements carrying **neither `automationId` nor
+`name`** (`main-summary` `e20`, match 8; `preferences` `e28`, match 2; `queue` `e14` and `e19`,
+match 2) — `suggestUses` escalates to `{className, parentPath}`, which their siblings share.
+KeePass 2's 16 are the inner parts of four composite controls (below). The first is a real
+limit of the descriptor; the second is what labelling removes.
+
+**`main-video` cannot be staged and was dropped from the registry** (2026-11-14). Without a
+source loaded **every** HandBrake tab reads `enabled: false`, Summary included, so the tab
+cannot be selected — while loading a source would contradict this screen set's own "no source
+loaded" state. The instruction contradicted itself. Measuring the tab pages needs a second
+screen set with a source, which is not RQ1's question. Recorded as a `note` on the HandBrake
+entry in `apps.json` so a reader does not re-derive it.
+
+**`preferences` shares only 12 identity keys with `main-summary`, and `queue` is its own
+window.** Worth measuring, because HandBrake 1.11 renders Preferences *inside* the main window
+(same title, same bounds), which looks like the double-counting the source picker was deleted
+for. It is not: the 12 shared keys are title-bar chrome, which `measure.py` already excludes,
+whereas the source picker shared the whole menu, toolbar and tab strip.
 
 KeePass 2 was 53 controls / 100 % on two screens; **`open-database` and `options` took it to
 86.4 %**, which is the first evidence that two easy screens were flattering it.
+
+**A capture is only evidence if the screen really was in the state `apps.json` names, and my
+first HandBrake one was not.** The 10:01 capture (149 elements) was taken with the source
+picker still up. It was caught by diffing a fresh capture against it — 118 elements against
+149, and the 31 extra ones were the picker's own panel (`sourceSelection`, `Choose File to
+Scan`, `Cancel`) — and confirmed by `enabled: false` on every toolbar button including
+`Open Source`. The real `main-summary` was captured at 10:53 (118 elements, `Open Source`
+enabled). **The numbers first posted to #29 — HandBrake 45 controls / 97.8 % — came from the
+wrong state and the correction is owed on the issue.** The `e20` finding below survives
+unchanged: it is still 8 toolbar buttons with `e20` alone carrying no `automationId`, no `name`
+and no `nearestLabel`.
+
+The source-picker capture was then **deleted rather than registered as a screen**: it is the
+same window with the same controls in a different `enabled` state, and `enabled` is in
+`NEVER_MATCH` ("state, not identity"), so it adds nothing about *recognition* while
+double-weighting that window. Recoverable from `ec63ef0` if a later question needs it.
+**Check a new capture's state against `apps.json` before trusting it** — the cheap test is
+whether the controls that should be live actually read `enabled: true`.
 
 **The denominator is only what the walk found, and it is wrong in both directions at once** —
 this corrects what the guide and this note used to say. A control the walk missed is invisible
@@ -134,11 +178,28 @@ places to watch on the first real run.
   committed in `3c38247`. **It found a real bug** (a screen was being captured as every window
   of the process, double-counting the main form) and two environment facts: `capture` needs
   `agent/.venv`, and `UiaDesktop.list_windows()`'s `processName` filter works as hoped.
-- **(pending)** · the user, on this machine · the eight-step check posted as a comment on #29 on
-  2026-11-12 (https://github.com/galipdg/AYNA/issues/29#issuecomment-6835118882): KeePass 2
-  `open-database` and `options`, HandBrake `main-summary`, `main-video`, `preferences` and
-  `queue`, then `measure` · result: — · it also asks for the first numbers back, and says plainly
-  that the unlabelled rate is the optimistic one.
+- **PASS, 6 of 8 steps as written; the other two were the check's own mistakes** · 2026-11-14 ·
+  the user staged the screens on this machine, hasan ran the captures · the eight-step check
+  posted on #29 on 2026-11-12
+  (https://github.com/galipdg/AYNA/issues/29#issuecomment-6835118882) · display at 125 %
+  throughout, Windows 11 Pro 10.0.26300, KeePass 2.61.1, HandBrake 1.11.2.
+  - Steps 1, 2, 6, 7 **pass**: `open-database` 19 elements / 216 ms, `options` 87 / 1364 ms,
+    `preferences` 74 / 826 ms, `queue` 32 / 236 ms, **all 0 read errors**, each window title the
+    intended one and each a single file. Step 2 and step 7 both printed the "N more window(s)
+    … skipped" line, which is the `3c38247` topmost-window fix doing its job.
+  - Step 4 **superseded**: `main-summary` already existed, so instead of re-capturing it was
+    captured under a probe name and diffed — which is how the source-picker staging error was
+    found. The probe became the committed `main-summary`.
+  - Step 5 **impossible as written**, and not the operator's fault: HandBrake's tabs are all
+    `enabled: false` without a source. `main-video` is dropped from `apps.json`.
+  - Step 8 **pass**: both tables printed, four CSVs written, and a second `measure` run
+    reproduced the CSVs byte-identically (the `47e2485` LF fix).
+  - **Two errors in the check text itself, to fix before anyone else runs it:** the interpreter
+    must be `agent/.venv/Scripts/python.exe` (the repo-root one fails with
+    `cannot load the UIA backend: No module named 'websockets'`), and HandBrake lives at
+    `C:\ayna-pilots\handbrake\HandBrake\HandBrake.exe`, one level deeper than the check says.
+  - It also asserted the unlabelled rate is the optimistic one. **That is wrong** and is
+    corrected in `labelling.md` and the README: the denominator is wrong in both directions.
 - **(pending)** · hasan + a second labeller · label one screen per pilot per `labelling.md`,
   twice and independently, for the screen that goes into the report · result: —
 

@@ -6,16 +6,12 @@
     "technology": "WPF",
     "process": "HandBrake.exe",
     "pilot": "P1",
+    "note": "A 'main-video' screen (Video tab selected) was registered and then dropped on 2026-11-14: without a source loaded every tab reads enabled false, including Summary, so the tab cannot be selected, and loading a source would contradict this screen set's 'no source loaded' state. Measuring the tab pages needs its own screen set with a source, which is not RQ1's question.",
     "screens": [
       {
         "name": "main-summary",
-        "state": "Main window after a fresh start, no source loaded, Summary tab selected.",
-        "open": "Start HandBrake and cancel the source picker."
-      },
-      {
-        "name": "main-video",
-        "state": "Main window, Video tab selected.",
-        "open": "Click the Video tab."
+        "state": "Main window after a fresh start, no source loaded. The source-picker overlay is dismissed; the tab strip is present but every tab is disabled, which is what no source loaded means here.",
+        "open": "Start HandBrake and dismiss the source picker. Verify before trusting the capture: the toolbar's 'Choose Source' button must read enabled true. If it is false the picker was still up and the capture is of another screen."
       },
       {
         "name": "preferences",
