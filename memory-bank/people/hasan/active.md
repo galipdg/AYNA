@@ -2,22 +2,36 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-14 (#29's first real captures and numbers; #227 and #232 merged).
-  **This copy is the current one** and `main`'s is now only one merge behind it: this branch
-  (#233) is the only place #29's facts live. `origin/main` is merged in as of `d788d64`.
-- Current issue: **#29 (RQ1 recognition measurement harness, Week 4, due 16 Nov) is in progress**
-  on `hasan/29-rq1-measure`, PR #233. The harness, the labelling guide and **35** tests are
-  committed, and **the first captures and numbers are in** (`3c38247`, `47e2485`, `2137882`,
-  pushed 2026-11-14). Posted to the team as a comment on #29.
-- **#29's first numbers are unlabelled and must never be quoted as RQ1's rate**: HandBrake 45
-  controls / 97.8 %, KeePass 2 53 / 100 %. The denominator is only what AYNA's walk found.
-  What is left: the four screens behind a click (the check on #29), then labelling, then a rate.
-- **The useful result is HandBrake's one unidentifiable control.** Of 8 toolbar buttons, 7 have
-  both `automationId` and `name`; `e20` has neither and no `nearestLabel`, so its proposal
-  escalates to `{className, parentPath}`, which all 8 share. **`siblingIndex` is the only
-  property that would separate it, and `suggestUses` deliberately does not escalate to it** —
-  UIA child order is not stable, the same reason #40 refuses "the first match". Asked omer on
-  #29 to confirm it stays out; if he agrees it is a measured limit for #64's report, not a bug.
+- Last update: 2026-11-14, second session (#29's eight-step check run, **first labelled rates**,
+  the `e20` claim retracted). **This copy is the current one** and `main`'s is one merge behind:
+  this branch (#233) is the only place #29's facts live. `origin/main` is merged in as of
+  `d788d64`.
+- Current issue: **#29 (RQ1 recognition measurement harness, Week 4, due 16 Nov)**. Its **three
+  acceptance criteria are all ticked** on the issue and PR #233 is pushed through `afe8343`,
+  but the issue is **deliberately left open** and the PR still has **no `Closes #29`** (the
+  user's call, 2026-11-14): a second independent labeller is owed and two open issues feed #64.
+- **The eight-step check is done** — every screen captured with 0 read errors, 6 steps passing
+  as written and the other two being the check's own mistakes. HandBrake is now 3 screens
+  (`main-summary`, `preferences`, `queue`); `main-video` is **dropped from `apps.json`** because
+  every tab reads `enabled: false` with no source loaded, so the instruction contradicted itself.
+- **The first labelled rates, per screen, are the only ones that may be quoted**: HandBrake
+  `queue` **4/6 = 66.7 %**, KeePass 2 `options` **35/35 = 100 %** (`eval/rq1/labels/*.csv`,
+  `missing` sweep run by the user and empty on both). **Never quote the app totals**:
+  `measure --labels` mixes labelled and unlabelled screens, so KeePass 2's app line reads
+  99 / 100 % while only one of its four screens is labelled.
+- **The `e20` claim is RETRACTED and the question to omer withdrawn.** It is not a control:
+  **no `bounds` key at all**, `enabled: false`, a WPF toolbar template part that is never
+  rendered. So `siblingIndex` was never the issue, and a missing `bounds` is the cheap test for
+  "not a control". Said so on #29 (comment `6874969764`) and in omer's inbox. The *real* limit is
+  **a nameless WPF `MenuItem` inside a named `Menu`**: HandBrake's `Options` split button and
+  `When Done` dropdown carry no `automationId` and no `name`, the name sits on the parent
+  `Menu`, and a per-element descriptor does not reach for an ancestor's identity. That same
+  shape is *recognised* in `main-summary`'s status bar only because it has no sibling — one app
+  pattern giving both a pass and a fail, which belongs in #64.
+- **The unlabelled rate is NOT reliably the optimistic one** — I had this backwards and so did
+  the guide; both are corrected. The denominator is wrong in **both** directions: a missed
+  control flatters it, a composite control's inner parts punish it. KeePass 2's Options screen
+  shows both at once (70.4 % unlabelled → 100 % labelled, all 19 dropped rows non-controls).
 - **#227 and #232 are MERGED** (2026-11-14, `bfcdb35` and `d788d64`), so **#22 is closed** and
   #221's notes are on `main`. Both had been `CONFLICTING` on this file alone; each took an
   `origin/main` merge, and 436 agent tests were re-run green on #227's.
@@ -56,16 +70,27 @@ machine alone for #162.
   `automationId, name, nearestLabel, className, parentPath, controlType` and keeping a property
   only while it narrows. Not `model.primary_property()`, which returns a single property name and
   **is used nowhere** — measuring it would report a number no user ever sees.
-- **The denominator is the honest part.** Without labels it is only what AYNA's walk found, so a
-  control the walk missed pushes the rate up. `labelling.md` is the human enumeration
-  (`control` / `ignore` / `missing`) and `--labels` makes it the denominator; every printed table
-  says which one it used. **Never report the unlabelled rate as RQ1's rate.**
+- **The denominator is the honest part**, and `labelling.md` is the human enumeration
+  (`control` / `ignore` / `missing`) that `--labels` makes it. **Label every row of a screen**:
+  `measure` now refuses a half-labelled screen, because `counted()` keeps only `control` rows,
+  so an unlabelled row used to drop out of the denominator silently and lift the rate.
+- **Two open issues of #29's own, both recorded and neither mine to close.** (1) `INTERACTIVE_TYPES`
+  is #6's 15-type set and omits the **container** types (`List`, `Table`, `DataGrid`, `Tree`)
+  that step schema v0.2 targets with `rowCount` / `rowExists` / `cell` / `SelectRow`, so
+  `queueJobs` and `m_lvEntries` never reach the sheet although both would be recognised — this
+  makes the rate **pessimistic**, and changing the set breaks comparability with #6, so galip
+  was asked for a decision. (2) `measure --labels` prints a **hybrid app total**; a `--by-screen`
+  table is wanted before #64 quotes anything.
 - Pilots are **HandBrake (P1)** and **KeePass 2 (P2)** per D1; KeePassXC is in `apps.json` but
   off by default. `eval/spikes/kp_state.py main|entry` reaches two of KeePass 2's four screens
-  unattended in ~16 s; the rest need clicks and a manual check.
-- PR for #29 **deliberately does not say `Closes #29`**: the harness is reviewable now but the
-  issue's three criteria are not met. Getting galip and omer to agree the *definition* before
-  numbers exist is worth more than after.
+  unattended in ~16 s; the rest need clicks, which the user staged on 2026-11-14. HandBrake is
+  at **`C:/ayna-pilots/handbrake/HandBrake/HandBrake.exe`**, one level deeper than every note
+  said, and **KeePass does not close on `WM_CLOSE`** (it goes to the tray) — ask the user for
+  `File → Exit` rather than killing a password manager with an open vault.
+- PR #233 **deliberately does not say `Closes #29`** even though all three criteria are now
+  ticked (the user's call, 2026-11-14). What is actually left is a **second independent
+  labeller** for the report's screen; the judgement calls worth disagreeing with are listed in
+  the task note's "Manual checks".
 - **#22 is DONE and closed**, all three criteria ticked. The scaling check ran here on
   2026-11-12 at 100 % and 150 % and passed at both; omer's `CHANGES_REQUESTED` was answered in
   `142a6c6`, he approved on 2026-11-14 and PR #227 was squash-merged the same day.

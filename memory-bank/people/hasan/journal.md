@@ -675,3 +675,32 @@ Week 3 and sits outside that order — it needs a decision, not work.
   instead of 2.1 s — retried, nothing fails, but it reads like a crash.
 - **Next step:** the eight-step check on #29 (the four screens behind a click), then ground-truth
   labelling, then the only rate worth reporting.
+
+## 2026-11-14 (second session) — #29, the eight-step check and the first labelled rates
+
+- Ran the check posted on #29 with the user staging each screen. **Every capture 0 read
+  errors.** 6 steps passed as written; the other two were the check's own mistakes — the
+  interpreter must be `agent/.venv` (the root one has no `websockets`) and HandBrake sits one
+  directory deeper than every note claimed.
+- **Caught a staging error in my own committed evidence.** The 2026-11-14 `main-summary` had
+  been taken with HandBrake's source picker still up (149 elements against the real 118). Found
+  by capturing to a probe name and diffing rather than trusting the file. The numbers I had
+  already posted to #29 (45 controls / 97.8 %) came from it.
+- **Retracted the headline I posted.** `e20`, the "control AYNA cannot identify", has no
+  `bounds` key at all and reads `enabled: false` — a WPF template part, not a control. Withdrew
+  the `siblingIndex` question to omer. The real limit is a **nameless `MenuItem` inside a named
+  `Menu`**, where identity lives one level up the tree.
+- **First labelled rates:** HandBrake `queue` 4/6 = 66.7 %, KeePass 2 `options` 35/35 = 100 %.
+  The user's `missing` sweep came back empty on both. Picked those two screens *because* they
+  carry the findings; `main-summary` would have read 100 % and hidden the result.
+- **Found and closed a hole in my own harness:** a half-labelled screen measured silently, since
+  `counted()` keeps only `control` rows. `apply_labels` now refuses it, with two tests.
+- **Another session was working in the same tree** (`.codex/`), mid-merge on my branch. Its work
+  was good — it had reached the composite-control rule independently — so I finished it rather
+  than reverting it. Lesson: check `git status` before trusting a clean tree.
+- `main-video` dropped from `apps.json`: HandBrake's tabs are all `enabled: false` without a
+  source, so the screen's own instruction contradicted itself.
+- Pushed `afe8343`; posted the correction to #29; ticked its three criteria. Issue left open and
+  PR #233 still has no `Closes` — the user's call.
+- **Next step:** a second independent labeller for the report's screen, then #162 (overdue,
+  Week 3), which needs the machine idle.
