@@ -2,10 +2,9 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-14 (#29's first real captures and numbers; #227 and #232 unblocked).
-  **This copy is the current one**: `main` still carries the 2026-11-07 version. `#227` and
-  `#232` now carry their own merged copies with #33's facts folded in, so when either merges,
-  keep **this** file's header and each branch's own sections.
+- Last update: 2026-11-14 (#29's first real captures and numbers; #227 and #232 merged).
+  **This copy is the current one** and `main`'s is now only one merge behind it: this branch
+  (#233) is the only place #29's facts live. `origin/main` is merged in as of `d788d64`.
 - Current issue: **#29 (RQ1 recognition measurement harness, Week 4, due 16 Nov) is in progress**
   on `hasan/29-rq1-measure`, PR #233. The harness, the labelling guide and **35** tests are
   committed, and **the first captures and numbers are in** (`3c38247`, `47e2485`, `2137882`,
@@ -19,10 +18,15 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   property that would separate it, and `suggestUses` deliberately does not escalate to it** —
   UIA child order is not stable, the same reason #40 refuses "the first match". Asked omer on
   #29 to confirm it stays out; if he agrees it is a measured limit for #64's report, not a bug.
-- **Two branches of mine are now APPROVED *and* MERGEABLE, waiting only on omer to merge:**
-  **#227** (`hasan/22-element-from-point`, `Closes #22`) and **#232** (memory only, #221). Both
-  were `CONFLICTING` on `active.md` alone until 2026-11-14; `origin/main` is merged into each and
-  436 agent tests were re-run green on #227's.
+- **#227 and #232 are MERGED** (2026-11-14, `bfcdb35` and `d788d64`), so **#22 is closed** and
+  #221's notes are on `main`. Both had been `CONFLICTING` on this file alone; each took an
+  `origin/main` merge, and 436 agent tests were re-run green on #227's.
+- **Merging a PR is the agent's prohibition, not the user's** (AGENTS.md §6 is addressed to the
+  agent). The user has `push` on the repo, `protect-main` asks only for 1 approval, squash and
+  resolved review threads, and there are **no bypass actors and no CODEOWNERS gate** on who
+  merges. So an approved PR of mine is the user's to merge whenever they want — **do not tell
+  them it is waiting on omer**, which is how the earlier "neither mine to merge" note got
+  misread. The user asked about exactly this on 2026-11-14.
 - **`capture` runs on `agent/.venv`, not the repo-root one** — `recognition/uia.py` takes its
   exception types from `ayna_agent.rpc`, which imports `websockets` at module level. galip has
   the request to decouple it; `rpc.py` is his file and is untouched.
@@ -62,22 +66,20 @@ machine alone for #162.
 - PR for #29 **deliberately does not say `Closes #29`**: the harness is reviewable now but the
   issue's three criteria are not met. Getting galip and omer to agree the *definition* before
   numbers exist is worth more than after.
-- **#22 is complete: all three acceptance criteria are ticked.** The scaling check ran here on
-  2026-11-12 at 100 % and 150 %, passed at both, and the result with its numbers is a comment on
-  the issue; `needs-windows-test` is removed. omer's `CHANGES_REQUESTED` was answered in
-  `142a6c6` and **he approved it on 2026-11-14**. **Nothing is left for me on #22 but his
-  merge.**
+- **#22 is DONE and closed**, all three criteria ticked. The scaling check ran here on
+  2026-11-12 at 100 % and 150 % and passed at both; omer's `CHANGES_REQUESTED` was answered in
+  `142a6c6`, he approved on 2026-11-14 and PR #227 was squash-merged the same day.
 - **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on
   `main`**. Its `active.md` conflicted with this one exactly as expected; resolved on
   `hasan/29-rq1-measure` by keeping this header and folding its unique facts in below.
   **#228 and #231 are merged too**, so omer's grid columns and run history are on `main`.
-- My three open PRs are **#227** and **#232** (both APPROVED and MERGEABLE, see the header) and
-  **#233** (#29, deliberately no `Closes`).
+- **One open PR of mine is left: #233** (#29, deliberately no `Closes`). #227 and #232 merged on
+  2026-11-14; `hasan/221-windows-check-notes` is gone with #232.
 - **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
   2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
-- **A third branch of mine is open: `hasan/221-windows-check-notes`**, cut from `main`, memory
-  only (`learnings.md`, `journal.md`, this file). It exists because nothing of mine may be
-  committed on omer's branch, which is where the #221 check had to run.
+- The `hasan/221-windows-check-notes` branch existed only because nothing of mine may be
+  committed on omer's branch, which is where the #221 check had to run. It merged as #232 and
+  is gone; the pattern is worth reusing the next time a check runs on someone else's branch.
 
 ## omer's #221 Windows check — done 2026-11-12, 7 of 7 pass
 
@@ -132,10 +134,11 @@ both times, and four points taken at a snapshot rectangle's centre answering wit
 element id** at both scalings. Full table in the task note and in the #22 comment. What it does
 *not* cover is the client's DIP → physical conversion (#184 step 8).
 
-**Still to do:** nothing but omer's re-review, plus the schema `$defs` **only if #224 merges
-first** — settled on #227: whichever of the two merges second adds them (#224 first → 1.1 here;
-#227 first → omer folds it into 1.0). #224 was still open on 2026-11-12, so today this PR
-carries no schema change.
+**Still to do: nothing of mine, and the `$defs` are now omer's.** The agreement on #227 was that
+whichever of #227 / #224 merged *second* adds `$defs/elementFromPointRequest` and
+`elementFromPointResult` to the contract. **#227 merged first (2026-11-14, `bfcdb35`) and #224
+is still open**, so omer folds them into 1.0 rather than me bumping anything to 1.1. Worth
+telling him if #224 looks about to land without them.
 
 ## PR #231 (omer, run history, #68) — approved 2026-11-12, with one fix asked for
 
