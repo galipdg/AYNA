@@ -227,21 +227,24 @@ concluding anything — the earlier finding was made without the expand-then-re-
 
 ## Manual checks
 
-- (pending) · the Windows half: every keyword against the sample app (#33) and the two pilots.
-  In the order that makes each one count:
-  1. **`Select` on a Qt combo box** (sample app). This is the one that may *fail*: #33 found
+- **2026-11-14 · posted, pending the Windows session** · the full check is issue comment
+  `6879885017` on #40 and `needs-windows-test` is on the issue; PR is **#237**. It runs against
+  the **sample app** (`eval/apps/sample/sample_app.py`, whose main screen has `cityFilterCombo`
+  and `customerGrid`, and whose grid already sets `SelectionBehavior = SelectRows` —
+  `windows.py:214`), KeePass 2 and HandBrake. In the order that makes each one count:
+  1. **`Select` on the sample app's `cityFilterCombo`**. This is the one that may *fail*: #33 found
      `SelectionItem.Select`, `Invoke` and `ValuePattern.SetValue` all leaving the box
      unchanged, and the items existing only after `ExpandCollapse`. The expand-then-re-read is
      new, so the question is open again — and the second question is whether the popup's items
      are in the window's tree at all or in a window of their own, which would make the
      editable-box `SetValue` the only route. **SC-20 needs this**; if it still refuses, report
      it on #40 and raise it for SC-20 rather than faking a pass.
-  2. **`SelectRow` on the Qt probe table**: does `SelectionItem.Select` on the first cell
+  2. **`SelectRow` on the sample app's `customerGrid`**: does `SelectionItem.Select` on the first cell
      select the whole row (SelectionBehavior = SelectRows), i.e. is the result `passed` with no
      message? A message means the view selects cells, which is a finding, not a bug.
   3. **`SelectRow` and `rowExists` on KeePass 2's entry list** by a key cell in a column, which
      exercises the `ListItem` + `Text`-children shape and the `Header`/`HeaderItem` columns.
-  4. **A `cell` check on the Qt table**, which exercises the `GridItem` grouping and the column
+  4. **A `cell` check on `customerGrid`**, which exercises the `GridItem` grouping and the column
      list that must match the editor's dropdown.
   5. **`Wait` and `Verify` on HandBrake with no source loaded**, where every tab reads
      `enabled: false` (#29) — the case the ready gate exists for.

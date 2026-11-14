@@ -648,3 +648,29 @@ Week 3 and sits outside that order — it needs a decision, not work.
 - **Next step: `Select`**, whose design is written out in the task note -- it is not a pure action
   (the items of a combo box may not exist until it is expanded, #33), and Qt is expected to
   refuse, which matters because SC-20 needs it.
+
+## 2026-11-14 — fifth session: #40 finished, PR #237
+- **All four remaining keywords landed**: `Select` (`f36f1b3`) and `SelectRow` + the three row
+  checkpoints (`dc395c4`), on top of this morning's `Wait` and `Verify`. 612 agent tests pass,
+  ruff clean, `docs/agent-rpc.md`'s `runSteps` section rewritten, **PR #237** with both reviews
+  requested, the three acceptance criteria ticked and the Windows check posted as issue comment
+  `6879885017` with `needs-windows-test`.
+- **`Select` cost two new modules, and the reason is worth keeping**: the item is a *descendant*
+  of the target, so #26's habit of throwing the raw nodes away after `describe_tree` had to
+  stop (`playback/tree.py`), and a closed combo box has no items at all, so the keyword has to
+  expand the box and **read the window again** rather than look harder (`playback/items.py`).
+  Everything about the Qt obstacle from #33 is still unanswered until the Windows session; the
+  code reports it as a finding about the application instead of as a wrong value.
+- **The row work was mostly *reading the measurements right*, not writing code.** Three shapes
+  from the v0.2 ADR, and the rule had to be structural (does the item have cell children? is
+  the target a Table?) rather than per framework, or the next application breaks it. The part
+  that would have been easy to get silently wrong: the column list, which **must** reproduce
+  omer's `GridColumns.java` to the pixel, because that rule fills the dropdown the tester picked
+  the column from — otherwise a `cell` check reads the cell *next to* the one they meant and
+  reports `passed`. Both of them have inbox entries about it.
+- **A defensive test hung pytest with no output**: `model.describe_tree`'s ancestor walk has no
+  seen-set, so a hand-built node that is its own parent loops for ever. Unreachable from a real
+  UIA walk; in `learnings.md` as a fixture hazard and in the task note as a small open issue.
+- **Next step**: nothing of mine blocks #40 — the Windows session answers steps 1 and 3 (SC-20
+  and the cell-selecting case). Still owed: the second labelling round on #29 (a person's hour),
+  #24's Windows check after omer's fix, and my five #10 entries.

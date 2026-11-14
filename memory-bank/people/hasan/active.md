@@ -9,9 +9,10 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
   **All six keywords are implemented and all three acceptance criteria are tested**: `Wait` and
   the ready gate (`826b386`), `Verify` (`ca51c83`), `Select` (`f36f1b3`), and `SelectRow` + the
-  three row checkpoints. **612 agent tests pass, ruff clean (2026-11-14). No PR yet** -- the
-  next step is to ask the user about pushing and opening it, then post the Windows manual check
-  on the issue and add `needs-windows-test`. Nothing in the code waits on anyone.
+  three row checkpoints. **612 agent tests pass, ruff clean (2026-11-14), and PR #237 is open**
+  with both reviews requested, the three criteria ticked, the Windows check posted as issue
+  comment `6879885017` and `needs-windows-test` on the issue. **Nothing of mine blocks it**: the
+  session answers steps 1 (Qt combo box, which SC-20 needs) and 3 (the cell-selecting case).
   **Read `memory-bank/tasks/40-playback-v1.md` before touching any of it**: the three row
   shapes, the duplicated column rule and the message wording are all decisions with reasons.
 - **This file is now spread over four branches and no copy is complete.** `hasan/29-rq1-measure`
