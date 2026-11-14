@@ -2,23 +2,49 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-12, late (#22's scaling check run and passed; #33 built and green)
-- Current issue: **nothing in progress.** #22 and #33 are both finished on my side and each is
-  waiting only on other people's reviews. The next thing to start is omer's **#221** Windows
-  check, then **#29** (RQ1 harness, Week 4) — see the Windows queue below.
-- **#22 is complete: all three acceptance criteria are ticked.** The scaling check ran here on
-  2026-11-12 at 100 % and 150 %, passed at both, and the result with its numbers is a comment on
-  the issue; `needs-windows-test` is removed. omer's `CHANGES_REQUESTED` was answered in
-  `142a6c6` and the re-review is asked for again in a PR comment. **Nothing is left for me on
-  #22 but waiting.**
-- **#227** (`hasan/22-element-from-point`, `Closes #22`) — CI 5/5 green, **APPROVED by omer on
-  2026-11-14**. `origin/main` is merged in here (2026-11-14); the only conflict was this file,
-  resolved by keeping this branch's version and folding #33's unique facts in below.
+- Last update: 2026-11-14. **The current copy of this file lives on `hasan/29-rq1-measure`**,
+  not here: this branch carries only what #221's notes need, plus `main`'s facts as of #227's
+  merge. When this branch merges, keep the 29-branch's header and this branch's own
+  "omer's #221 Windows check" section — it is the one section `main` does not have.
+- Current issue: **#29 (RQ1 harness, Week 4, due 16 Nov) is in progress** on
+  `hasan/29-rq1-measure` (PR #233). This branch is memory only and has nothing left to do but
+  merge. **#162 is still overdue from Week 3** and now has no capture work in front of it.
+- **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
+  2026-11-12 at 100 % and 150 % and passed at both, and **PR #227 was squash-merged on
+  2026-11-14 (`bfcdb35`)**, which closed the issue. Nothing is left on it.
+- **Merging a PR is the agent's prohibition, not the user's** (AGENTS.md §6 is addressed to the
+  agent). The user has `push` on the repo, `protect-main` asks only for 1 approval, squash and
+  resolved review threads, and there are **no bypass actors and no CODEOWNERS gate** on who
+  merges. So an approved PR of mine is the user's to merge whenever they want — do not tell them
+  it is waiting on omer, which is what the earlier "neither mine to merge" note was misread as.
 - **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on `main`**.
   **#228 and #231 are merged too** (omer's grid columns and run history), and **#170, #200, #201**
   landed on 2026-11-07/08, so #161, #26 and the coordinate fixes are on `main`.
+- `origin/main` is merged into this branch too (2026-11-14); this file was the only conflict,
+  resolved by keeping this branch's version and folding #33's unique facts in below.
 - **Review queue: empty.** omer's #228 (#221 grid columns) and #229 (#59 run report) approved
   2026-11-12, both with findings — see "What I owe from the 2026-11-12 reviews" below.
+- **A third branch of mine is open: `hasan/221-windows-check-notes`**, cut from `main`, memory
+  only (`learnings.md`, `journal.md`, this file). It exists because nothing of mine may be
+  committed on omer's branch, which is where the #221 check had to run.
+
+## omer's #221 Windows check — done 2026-11-12, 7 of 7 pass
+
+Result and evidence are a comment on #221; `needs-windows-test` is removed, so **nothing of mine
+blocks #228**. Recorded at the `columns` level rather than "the dropdown looked right", because
+that field feeds the dropdown and is readable from
+`GET /api/apps/{appId}/repo-objects`: KeePass 2 `main.entryList` →
+`['Title','User Name','Password','URL','Notes']`; Qt `probe.customerGrid` →
+`['Ad','Soyad','Şehir']` with **no** `1`/`2`/`3`; HandBrake 1.11.2 `queue.jobs` → `[]`.
+
+**Step 7 did not test what it hoped to, and the report says so.** HandBrake's queue is a `List`
+(`queueJobs`) with no `Header` child, not a WPF `DataGrid`, so it exercised the free-text
+fallback. **The `DataGrid` branch is still unexercised** and nothing in `C:\ayna-pilots\`
+exposes one — if it matters before the #52 freeze it needs another app.
+
+Two deviations from omer's step text, both worth fixing in it: the health check is on **8081**
+here (#208's `.env` escape; another program holds 8080 and answers 404), and the Qt window's
+*title* is `AYNA Grid Probe` while `GridProbeWindow` is only in the automation id.
 
 ## #22, so the next session does not re-derive it
 
@@ -55,10 +81,11 @@ both times, and four points taken at a snapshot rectangle's centre answering wit
 element id** at both scalings. Full table in the task note and in the #22 comment. What it does
 *not* cover is the client's DIP → physical conversion (#184 step 8).
 
-**Still to do:** nothing but omer's re-review, plus the schema `$defs` **only if #224 merges
-first** — settled on #227: whichever of the two merges second adds them (#224 first → 1.1 here;
-#227 first → omer folds it into 1.0). #224 was still open on 2026-11-12, so today this PR
-carries no schema change.
+**Still to do: nothing of mine, and the `$defs` are now omer's.** The agreement on #227 was that
+whichever of #227 / #224 merged *second* adds `$defs/elementFromPointRequest` and
+`elementFromPointResult` to the contract. **#227 merged first (2026-11-14, `bfcdb35`) and #224
+is still open**, so omer folds them into 1.0 rather than me bumping anything to 1.1. Worth
+telling him if #224 is about to land without them.
 
 ## What I owe from the 2026-11-12 reviews
 
@@ -155,9 +182,8 @@ five `HeaderItem`s. No pilot app has a WinForms `DataGridView`.
   twice (#199, #210).
 - For galip: `eval/apps/sample/texts.py` and `uia_check.py --json` are what
   `eval/nl/objects/sample.json` (#36) should be generated from.
-- **#162 is overdue** (Week 3), **#10's five literature entries are still owed** (PR #126 is a
-  draft with no reviewer), and **#28 (G0 gate)** is open with three of four criteria ticked — the
-  last one is galip's #7.
+- **#10's five literature entries are still owed** (PR #126 is a draft with no reviewer), and
+  **#28 (G0 gate)** is open with three of four criteria ticked — the last one is galip's #7.
 - `.codex/` sits untracked in my working tree (another CLI's hooks, my user's). Deliberately not
   committed and not ignored.
 
@@ -174,8 +200,7 @@ All omer's, all needing this machine:
 - **#225/#152** — the load test, for a second data point. Needs omer's `python3` fix first.
 - **#197** — the check popover and the test-list resizer at 100 % **and** 150 %, `npm run demo`,
   and **Ctrl+Z / Ctrl+Y**, which were never pressed (only ⌘Z on macOS).
-- **#221** — the column dropdown in the running app (omer's steps 3–4 and 6); the header rule
-  itself is already verified against real captures, so only the UI is open.
+- ~~**#221** — the column dropdown in the running app~~ **done 2026-11-12, 7 of 7 pass.**
 - ~~**#22** — the scaling check~~ **done 2026-11-12, pass at 100 % and 150 %.** Worth knowing for
   everything else in this queue: a scale change in Settings **needs no sign-out** — it applies to
   apps started afterwards, so a test that launches its own app sees the new scale at once. That
