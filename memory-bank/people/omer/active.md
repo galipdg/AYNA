@@ -2,8 +2,8 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-14 (nineteenth session: PR sweep on omer's instruction "resolve conflicts, review, merge what can be merged")
-- **Current issue: #24** (Object Spy view, Week 3, overdue). Branch `omer/24-pick-hotkey` cut from `main` at `d788d64`; it holds only this memory commit so far. What is left of #24: "hotkey picks the element under the cursor and selects it in the tree". The agent side is on `main` (#227, `elementFromPoint`, `docs/agent-rpc.md`). Client: on the pick IPC (`client/src/main/index.ts`, `ObjectSpy.tsx` shows only the point today) call `elementFromPoint`; treat a `snapshotId` that is not the shown snapshot like null (offer capture), `elementId` null → "window changed, capture again", both set → select the node; ignore AYNA's own window. Hand check at 100 % / 150 % at the Windows session (#184 step 8).
+- Last update: 2026-11-14 (twentieth session: #24 pick hotkey built)
+- **Current issue: #24** (Object Spy, Week 3, overdue). The pick is built and committed (`be6aa43`, worktree `.claude/worktrees/spy-pick-hotkey-5b3942`, local branch `claude/spy-pick-hotkey-5b3942` = `omer/24-pick-hotkey` + that commit; push it as `HEAD:omer/24-pick-hotkey`). Not pushed. Waiting: omer's macOS `dev:mock` check (task note, Manual checks), then PR; Windows check at 100 % / 150 % (task note).
 - **On `main` since 2026-11-12**: #59 (PR #229), #221 (#228), #33 (hasan, #230), #68 (#231, "Part of #68": Electron screen check in hasan's Windows queue, steps on #68, `needs-windows-test`), #22 (hasan, #227), hasan's memory PR #232.
 - **#224 (#52 contracts v1)**: conflict-free with `main` (merged 2026-11-14), `elementFromPoint` added to agent-rpc **1.0**, client 237/237, contract tools OK. **Waits only for galip's approval** (schemas/ change, AGENTS §7); pinged on the PR. Before merging: merge `main` again, `./mvnw test` (regenerates `openapi.yaml`), client tests, contract tools.
 - **Reviewed 2026-11-14**: approved hasan's #233 (#29 RQ1 harness); answered: `suggestUses` is the primary-set rule and I tell hasan before changing it; yes to an issue making the client's escalating rule normative (hasan opens it, galip and omer on it); suggested a drift guard for the generated-id rule. Its `active.md` conflict is hasan's.
@@ -11,7 +11,7 @@ Only omer's agent edits this file. Overwrite it at every session end.
 - ADRs still **Proposed** on `main`, waiting for galip: `2026-11-08-run-screenshots-and-retention` (#51), `2026-11-08-contracts-v1-freeze` (on #224).
 - Local stacks/worktrees: the `ayna68` Compose stack (port 28080) may still run — remove with `docker compose -p ayna68 down -v`. #224's branch is checked out in `.claude/worktrees/pr-review-responses-f36ba1`.
 - **AGENTS.md** §2 lists hasan as `@HasanBerk18`; his login is `hasanberkyanikkaya` (reviewer requests fail with the old one). Changing AGENTS.md needs omer's OK.
-- **Next step** (resume here): #24's pick hotkey on `omer/24-pick-hotkey` (create `memory-bank/tasks/24-*.md` if missing); #224 when galip approves; then #44's client half (after hasan's #40).
+- **Next step** (resume here): macOS check result for #24's pick → push + PR ("Part of #24" + `needs-windows-test` until the Windows check passes); #224 when galip approves; then #44's client half (after hasan's #40).
 - Follow-up issues still open (owner omer): #204 (`needs-windows-test`), #206 (#38 Windows findings). Issues left open on purpose: #17, #24, #183, #184, #185, #38 (see their PRs' "Part of" notes).
 - Inbox: every item up to 2026-11-10 is handled; delete the handled items in a branch of their own (with `merge=union`, deleting them in several branches at once brings them back).
 - Local branches of merged PRs and old worktrees (`omer/195-advisor-demo` in the main folder; `omer/15…`, `omer/53-sdd-final`, `omer/44-run-api`, `omer/221-grid-columns` in `.claude/worktrees/`) are still here; delete them only on omer's OK.
