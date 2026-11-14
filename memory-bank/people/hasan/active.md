@@ -2,22 +2,21 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-12, end of a long session (#22's scaling check passed, omer's #221
-  Windows check passed, #33 green). **This copy is the current one**: `main` still carries the
-  2026-11-07 version, and the copies on `hasan/22-element-from-point` and `hasan/33-sample-app`
-  are each one step behind. When any of those merges, take **this** file's version of the header
-  and keep each branch's own sections.
-- Current issue: **nothing in progress. Start #29** (RQ1 recognition measurement harness, Week 4,
-  due 16 Nov) — it builds on the sample app that just landed in #33. One question for the user
-  first: **#162 is overdue from Week 3**, and by AGENTS.md's earliest-milestone rule it should go
-  before #29. #22 and #33 are both finished on my side and wait only on other people's reviews.
-- **#22 is complete: all three acceptance criteria are ticked.** The scaling check ran here on
-  2026-11-12 at 100 % and 150 %, passed at both, and the result with its numbers is a comment on
-  the issue; `needs-windows-test` is removed. omer's `CHANGES_REQUESTED` was answered in
-  `142a6c6` and the re-review is asked for again in a PR comment. **Nothing is left for me on
-  #22 but waiting.**
-- **#227** (`hasan/22-element-from-point`, `Closes #22`) — CI 5/5 green, **APPROVED by omer on
-  2026-11-14**, `origin/main` merged in there on 2026-11-14 and 436 agent tests re-run green.
+- Last update: 2026-11-14. **The current copy of this file lives on `hasan/29-rq1-measure`**,
+  not here: this branch carries only what #221's notes need, plus `main`'s facts as of #227's
+  merge. When this branch merges, keep the 29-branch's header and this branch's own
+  "omer's #221 Windows check" section — it is the one section `main` does not have.
+- Current issue: **#29 (RQ1 harness, Week 4, due 16 Nov) is in progress** on
+  `hasan/29-rq1-measure` (PR #233). This branch is memory only and has nothing left to do but
+  merge. **#162 is still overdue from Week 3** and now has no capture work in front of it.
+- **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
+  2026-11-12 at 100 % and 150 % and passed at both, and **PR #227 was squash-merged on
+  2026-11-14 (`bfcdb35`)**, which closed the issue. Nothing is left on it.
+- **Merging a PR is the agent's prohibition, not the user's** (AGENTS.md §6 is addressed to the
+  agent). The user has `push` on the repo, `protect-main` asks only for 1 approval, squash and
+  resolved review threads, and there are **no bypass actors and no CODEOWNERS gate** on who
+  merges. So an approved PR of mine is the user's to merge whenever they want — do not tell them
+  it is waiting on omer, which is what the earlier "neither mine to merge" note was misread as.
 - **#230 is merged** (`f86bf8f`, 2026-11-12), so **#33 is done and the sample app is on `main`**.
   **#228 and #231 are merged too** (omer's grid columns and run history), and **#170, #200, #201**
   landed on 2026-11-07/08, so #161, #26 and the coordinate fixes are on `main`.
@@ -82,10 +81,11 @@ both times, and four points taken at a snapshot rectangle's centre answering wit
 element id** at both scalings. Full table in the task note and in the #22 comment. What it does
 *not* cover is the client's DIP → physical conversion (#184 step 8).
 
-**Still to do:** nothing but omer's re-review, plus the schema `$defs` **only if #224 merges
-first** — settled on #227: whichever of the two merges second adds them (#224 first → 1.1 here;
-#227 first → omer folds it into 1.0). #224 was still open on 2026-11-12, so today this PR
-carries no schema change.
+**Still to do: nothing of mine, and the `$defs` are now omer's.** The agreement on #227 was that
+whichever of #227 / #224 merged *second* adds `$defs/elementFromPointRequest` and
+`elementFromPointResult` to the contract. **#227 merged first (2026-11-14, `bfcdb35`) and #224
+is still open**, so omer folds them into 1.0 rather than me bumping anything to 1.1. Worth
+telling him if #224 is about to land without them.
 
 ## What I owe from the 2026-11-12 reviews
 

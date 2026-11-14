@@ -261,6 +261,44 @@ contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), reco
 conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
 version the branch was built on). Always compare the merged tree with what you expect before
 pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
+
+## 2026-11-10 — A descriptor for one element is not the same thing as a descriptor from a walk (hasan, #22)
+
+`elementFromPoint` looked like "hit-test, then describe the element". It is not, and the reason
+generalises to anything that wants a descriptor outside a snapshot walk: **three of the twelve
+descriptor properties are derived from the element's surroundings, not read from it.**
+`nearestLabel` needs its siblings and its parent's siblings (`model.nearest_label` rules 2 and
+3), `parentPath` needs the whole ancestor chain, `siblingIndex` needs its position among all its
+siblings. Fetching those for one element costs a property read per sibling, which is unbounded —
+picking a row in KeePass 2's entry list would read every other row — and far worse, an element
+whose siblings were not read gets `nearestLabel: None`, which is **indistinguishable from "this
+element has no label"**. The same element would then have two different descriptors depending on
+whether a snapshot happened to be open, and a repository object saved from one would not match
+the other.
+
+So `elementFromPoint` answers out of the snapshot the agent took last, returning *that* element,
+and the lookup is by stored bounds first (pure Python, no COM call in the common case) with
+`CompareElements` only when several elements share a rectangle. Measured: median 3.39 ms against
+#22's 300 ms budget.
+
+→ Before deriving a descriptor anywhere new (#23's win32 fallback, #54, a recorder), check which
+properties need the tree. If the tree is not there, say so in the shape of the answer instead of
+returning a quietly weaker descriptor.
+
+## 2026-11-10 — A UIA hit test answers with what is *visible*, which breaks a test runner's own window (hasan, #22)
+
+`ElementFromPoint` returns the deepest element **on screen** at the point, so the first run of
+the #22 Windows test failed with "another window answered": the trial app was behind the terminal
+running pytest, and the hit test was right. The fixture now forces the window topmost with
+`SetWindowPos(HWND_TOPMOST, …, SWP_NOACTIVATE)` — above the others without stealing the keyboard —
+and waits one frame for the compositor.
+
+Two follow-ons. **A container's centre is not its own element**: the second failure was asserting
+that every element is found at the centre of its own rectangle, which is false for anything with
+children (the window's centre answered a check box, correctly). The invariant that does hold is
+"the answer is that element or one of its descendants", with the exact answer asserted only for
+leaves. **And for the Spy:** anything the client draws under the cursor will be hit instead of the
+target, so an overlay has to be click-through.
 - 2026-11-10 · omer · git · **GitHub ignores `merge=union`**: after one memory PR merged, the next PR touching `journal.md` showed CONFLICTING on GitHub although `git merge origin/main` locally was clean (#217 after #222). Merging `main` into the branch locally and pushing clears it. `active.md` is overwrite-only, so every open branch of the same person conflicts on it; take `main`'s side while merging a train of PRs and write the final `active.md` on the last branch to merge.
 - 2026-11-08 · omer · #51 · **A second Compose stack can run beside the one you are using**, for a smoke test on the real image without stopping it: `docker compose -p <other-name> -f docker-compose.yml -f override.yml up -d --build`, where the override has `ports: !reset []` under `neo4j` and `ports: !override ["28080:8080"]` under `server`. The project name gives it its own containers and volumes; `down -v` with the same `-p` and files removes only those.
 
@@ -290,5 +328,49 @@ put only append-only memory (`learnings.md`, `journal.md`) on a small branch of 
 
 → Do **not** reach for `active.md` for this: it is overwrite-merged, so a third divergent copy on
 a third branch is a conflict waiting to happen. It can wait until one of your own PRs merges.
+## 2026-11-12 — A stored rectangle is not an identity (hasan, #22, from omer's #227 review)
+
+Looking an element up in a cached snapshot by its **bounds** is sound only while the window keeps
+the same elements in the same rectangles, and the changes that break that are the ordinary ones: a
+tab switched (HandBrake's settings), a list scrolled (KeePass 2's entry list), a wizard or dialog
+page replaced by one with the same layout. Each leaves the rectangle exactly where it was with a
+different element behind it, so a lookup that trusts geometry answers with the *stale* node and
+nothing in the reply says so — the tester then saves the wrong element as a repository object.
+
+`IUIAutomation::CompareElements` (pywinauto's `UIAElementInfo.__eq__`) is the only honest answer to
+"is this the same element", and it costs about **0.2 ms**: `elementFromPoint`'s median went from
+3.39 ms to 2.2–2.5 ms across runs on the same machine, i.e. the comparison is inside the noise.
+Measure before deciding a correctness check is too expensive to make.
+
+→ Any cache keyed on geometry (the Spy's pick, a recorder, playback resolving a target against a
+previous walk) needs an identity check before it names an element, and a *refusal* ("capture
+again") is a better answer than a plausible wrong one. Where identity cannot be had, comparing the
+cheap properties a provider answers from its own state (`controlType`, `name`, `automationId`)
+catches the replaced-control cases that geometry misses.
+
+## 2026-11-12 — Confirming the display scaling needs a DPI-aware process (hasan, #22)
+
+A `@pytest.mark.windows` criterion of the form "tested at 100 % and 150 %" is only worth anything
+if you can show the process *saw* two different scalings. Asking Windows from the wrong process
+gives a confident wrong answer: a DPI-unaware one (PowerShell, `GetDeviceCaps(LOGPIXELSX)`)
+reports **96 DPI whatever the real scale is**, because Windows virtualises it. At 125 % it also
+answered 96, which would have "confirmed" a scaling that was never set.
+
+Two ways to get the truth, both used for #22's check:
+- call `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2 = -4)` **before** `GetDpiForSystem()`
+  in the probe process (96 / 120 / 144 for 100 / 125 / 150 %);
+- better, read it from the product code: the snapshot's `window.dpi` and every element's `dpi`
+  (`GetDpiForWindow`, #43/#49), with `dpi_awareness()` reporting `per-monitor-v2`. That also shows
+  the *physical* bounds changing — the trial login window went 360 × 164 → 540 × 246, exactly 1.5×
+  — which no virtualised reading would reveal.
+
+The scale change itself needs a person in Settings, but it applies to newly started apps at once:
+no sign-out is needed as long as the test launches its own app, which is why these runs took
+minutes rather than a session.
+
+→ When a criterion names display scalings, record the DPI the product read at each one, not the
+scale you clicked. Also: `agent/.venv` has no PySide6, so a script that starts a pilot or trial
+app outside pytest must launch it with the **repository root** `.venv/Scripts/python.exe` — the
+Windows tests do exactly that via `_python_with_pyside()`.
 - 2026-11-12 · hasan · #33 · **`QT_QPA_PLATFORM=offscreen` set in a pytest process poisons every app the run starts afterwards.** `eval/apps/sample/tests/test_screens.py` set it at import time so the widget tests need no display; a child process inherits it, so the real app came up with no window and `pywinauto`'s `window.wait("visible ready")` timed out 30 s × 30 tests — all 25 sample UIA tests *and* the trial app's 5 errored, while each passed alone (12:40 of pure timeout). Fix: choose the platform in Qt's own argv, `QApplication(["pytest", "-platform", "offscreen"])`, so nothing leaks into the environment; `launch_app()` additionally drops the variable from the child's env, which also covers a CI shell that exports it. Rule: never set a Qt (or any plugin-selecting) environment variable in a test process that starts the application under test as a child.
 - 2026-11-12 · hasan · #33 · **The #199 module-name clash can be green locally and red in CI, because the winner depends on how pytest was started.** `eval/apps/sample/app.py` beside `eval/apps/trial/app.py`: both apps' `tests/conftest.py` do `sys.path.insert(0, <their own folder>)`, so the conftest loaded **last** wins for the whole process. `pytest eval` from the repository root walks folders alphabetically (sample, then trial) and the trial app's `from app import …` got the trial app — green. CI runs bare `pytest` from `eval/`, which loads conftests in `testpaths` order (trial, then sample), and the same import got the *sample* app: `ImportError: cannot import name 'INVALID_MESSAGE' from 'app'` (run 43260442861). Two conclusions: a module you only ever *run* is not exempt from the one-name-per-tree rule, since it is still importable; and `pytest eval` is not the run CI does — reproduce CI with `cd eval; ../.venv/Scripts/python.exe -m pytest -q` before pushing anything that adds a module to `eval/`.
