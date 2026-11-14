@@ -1,4 +1,4 @@
-import type { RepoObjectError, TestError, UsersError } from '../../shared/api.ts'
+import type { RepoObjectError, ReportResult, TestError, UsersError } from '../../shared/api.ts'
 import type { Language } from '../../shared/language.ts'
 import { en, type Strings } from './i18n/en.ts'
 import { tr } from './i18n/tr.ts'
@@ -98,6 +98,26 @@ export function usersErrorText(error: UsersError): string {
 export function repoObjectErrorText(error: RepoObjectError): string[] {
   const main = error.detail ? serverText(error.detail) : strings.repoViewErrors[error.reason]
   return [main, ...(error.fields ?? []).map((field) => serverText(field.message))]
+}
+
+/** A run's or step's length: "850 ms", "2.5 s" / "2,5 sn", "3 min 4 s" / "3 dk 4 sn". */
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return strings.durationMs(String(ms))
+  // Rounded to tenths before choosing the unit, so 59.96 s reads "1 min 0 s", not "60 s".
+  const tenths = Math.round(ms / 100) / 10
+  if (tenths < 60) {
+    const seconds = tenths.toLocaleString(strings.locale, { maximumFractionDigits: 1 })
+    return strings.durationSeconds(seconds)
+  }
+  const total = Math.round(ms / 1000)
+  return strings.durationMinutes(String(Math.floor(total / 60)), String(total % 60))
+}
+
+/** The server's message when it sent one, else ours. */
+export function runsErrorText(error: Exclude<ReportResult, { ok: true }>): string {
+  return 'detail' in error && error.detail && error.reason !== 'write-failed'
+    ? serverText(error.detail)
+    : strings.runsErrors[error.reason]
 }
 
 /** The server's message when it sent one, else ours. Step fields are shown on their rows. */

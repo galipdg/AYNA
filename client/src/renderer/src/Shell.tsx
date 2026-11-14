@@ -8,6 +8,7 @@ import Menu from './Menu.tsx'
 import ObjectSpy from './ObjectSpy.tsx'
 import Page from './Page.tsx'
 import Repository from './Repository.tsx'
+import Runs from './Runs.tsx'
 import SettingsPage from './SettingsPage.tsx'
 import { strings } from './strings.ts'
 import Tests from './Tests.tsx'
@@ -22,7 +23,7 @@ const PLACES: { place: Place; icon: IconName; issue?: number }[] = [
   { place: 'spy', icon: 'spy' },
   { place: 'repository', icon: 'repository' },
   { place: 'tests', icon: 'tests' },
-  { place: 'runs', icon: 'runs', issue: 68 },
+  { place: 'runs', icon: 'runs' },
   { place: 'repairs', icon: 'repairs', issue: 75 },
   { place: 'changes', icon: 'changes', issue: 81 },
 ]
@@ -156,6 +157,7 @@ export default function Shell(props: Props) {
             onSessionEnded={onSessionEnded}
           />
         </div>
+        {place === 'runs' && <Runs key={app.id} app={app} onSessionEnded={onSessionEnded} />}
         {later && <Later place={place as LaterPlace} issue={later} />}
         {place === 'users' && (
           <Users user={user} onSessionEnded={onSessionEnded} onUserChanged={props.onUserChanged} />

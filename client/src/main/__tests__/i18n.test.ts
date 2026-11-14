@@ -39,6 +39,9 @@ const SAME_IN_EVERY_LANGUAGE = new Set([
   'spyProperties.dpi',
   'repoNamePlaceholder',
   'tokenNamePlaceholder',
+  // "Test" is the Turkish word too (docs/ui/style-guide.md glossary).
+  'runsFilterTest',
+  'runsHeaderTest',
 ])
 
 describe('UI texts', () => {

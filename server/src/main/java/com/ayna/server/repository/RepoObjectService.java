@@ -143,6 +143,8 @@ public class RepoObjectService {
 						}
 						RETURN o.id AS id, o.name AS name, o.primary AS primary, o.fallback AS fallback,
 						  e.controlType AS controlType, e.nearestLabel AS nearestLabel,
+						  """ + GridColumns.CHILDREN + """
+						  AS children,
 						  COUNT { MATCH (o)<-[:TARGETS]-(:Step)<-[:HAS_STEP]-(t:TestCase) RETURN DISTINCT t } AS testCount,
 						  COLLECT { MATCH (o)-[r:RESOLVES_TO]->(x:Element)
 						    RETURN {versionId: r.version, elementId: x.id, snapshotId: x.snapshotId,
@@ -152,7 +154,7 @@ public class RepoObjectService {
 					.list(r -> new RepoObjectSummary(r.get("id").asString(), r.get("name").asString(),
 							mapper.readValue(r.get("primary").asString(), PROPERTY_SET),
 							mapper.readValue(r.get("fallback").asString(), PROPERTY_SET), text(r.get("controlType")),
-							text(r.get("nearestLabel")), r.get("testCount").asInt(),
+							text(r.get("nearestLabel")), GridColumns.of(text(r.get("controlType")), r.get("children")), r.get("testCount").asInt(),
 							r.get("resolvesTo").asList(RepoObjectService::resolution)));
 			});
 		}
@@ -287,10 +289,11 @@ public class RepoObjectService {
 				  o.createdBy AS createdBy, c.username AS createdByName, o.createdAt AS createdAt,
 				  o.updatedBy AS updatedBy, u.username AS updatedByName, o.updatedAt AS updatedAt""", Map.of("id", id))
 			.single();
+		Latest latest = latestElement(tx, id);
 		return new RepoObjectResponse(id, r.get("appId").asString(), r.get("name").asString(),
 				mapper.readValue(r.get("primary").asString(), PROPERTY_SET),
 				mapper.readValue(r.get("fallback").asString(), PROPERTY_SET), resolutions(tx, id), usedBy(tx, id),
-				latestElement(tx, id), userRef(r.get("createdBy"), r.get("createdByName")), instant(r.get("createdAt")),
+				latest.element(), latest.columns(), userRef(r.get("createdBy"), r.get("createdByName")), instant(r.get("createdAt")),
 				userRef(r.get("updatedBy"), r.get("updatedByName")), instant(r.get("updatedAt")));
 	}
 
@@ -316,23 +319,28 @@ public class RepoObjectService {
 			.list(row -> new TestRef(row.get("id").asString(), row.get("name").asString()));
 	}
 
-	/** The descriptor of the Element the object resolves to in the most recent capture; empty if none. */
-	private Map<String, Object> latestElement(TransactionContext tx, String id) {
+	/** The Element an object resolves to in the most recent capture: its descriptor and its grid columns. */
+	private record Latest(Map<String, Object> element, List<String> columns) {
+	}
+
+	/** The descriptor and columns of the Element in the most recent capture; both empty if none. */
+	private Latest latestElement(TransactionContext tx, String id) {
 		var rows = tx.run("""
 				MATCH (:RepoObject {id: $id})-[:RESOLVES_TO]->(e:Element)
 				OPTIONAL MATCH (w:Window {snapshotId: e.snapshotId})
-				RETURN properties(e) AS props
-				ORDER BY w.capturedAt DESC LIMIT 1""", Map.of("id", id)).list();
+				WITH e ORDER BY w.capturedAt DESC LIMIT 1
+				RETURN properties(e) AS props, """ + GridColumns.CHILDREN + " AS children", Map.of("id", id)).list();
 		Map<String, Object> element = new LinkedHashMap<>();
-		if (!rows.isEmpty()) {
-			Map<String, Object> props = rows.get(0).get("props").asMap();
-			for (String property : descriptor) {
-				if (props.containsKey(property)) {
-					element.put(property, props.get(property));
-				}
+		if (rows.isEmpty()) {
+			return new Latest(element, List.of());
+		}
+		Map<String, Object> props = rows.get(0).get("props").asMap();
+		for (String property : descriptor) {
+			if (props.containsKey(property)) {
+				element.put(property, props.get(property));
 			}
 		}
-		return element;
+		return new Latest(element, GridColumns.of((String) props.get("controlType"), rows.get(0).get("children")));
 	}
 
 	private static String text(Value value) {
