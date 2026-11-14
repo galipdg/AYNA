@@ -44,6 +44,14 @@ from ayna_agent.playback.actions import (
     type_text,
     uia_patterns,
 )
+from ayna_agent.playback.checkpoint import (
+    CheckpointError,
+    Unreadable,
+    describe,
+    holds,
+)
+from ayna_agent.playback.checkpoint import read as read_property
+from ayna_agent.playback.checkpoint import validate as checkpoint_rules
 from ayna_agent.playback.resolve import (
     Ambiguous,
     NotFound,
@@ -62,7 +70,7 @@ SUPPORTED_STEP_VERSIONS: tuple[str, ...] = ("0.1", "0.2")
 #: Keywords this runner performs. A keyword outside it fails per step, by name, which is the
 #: honest place for "not implemented" to appear: the step editor offers every keyword of the
 #: schema, so a document can always name one playback does not do yet.
-IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type", "Wait"})
+IMPLEMENTED: frozenset[str] = frozenset({"Click", "Type", "Wait", "Verify"})
 
 #: Which keyword may carry which optional field, from the step schema's own words: `value` is
 #: "text for Type and Select, not allowed for the other keywords", `row` is "the row SelectRow
@@ -336,6 +344,27 @@ def _run_one(
         # already happened above, so there is nothing left to do and nothing performed it.
         return done(PASSED, matched=found.which)
 
+    if keyword == "Verify":
+        try:
+            message = _verify_waiting(
+                read_tree,
+                name,
+                target,
+                step.get("checkpoint"),
+                found,
+                timeout_ms=timeout_ms,
+                patterns=patterns,
+                now=now,
+                sleep=sleep,
+            )
+        except CheckpointError as exc:
+            return done(FAILED, f"{name}: {exc}", matched=found.which)
+        except Unreadable as exc:
+            return done(FAILED, f"{name}: {exc}", matched=found.which)
+        if message is None:
+            return done(PASSED, matched=found.which)
+        return done(FAILED, message, matched=found.which)
+
     try:
         if keyword == "Click":
             performed_with = click(found.element, patterns)
@@ -345,6 +374,58 @@ def _run_one(
         return done(FAILED, str(exc), matched=found.which)
 
     return done(PASSED, matched=found.which, performed_with=performed_with)
+
+
+def _verify_waiting(
+    read_tree: ReadTree,
+    name: str,
+    target: Mapping[str, Any],
+    checkpoint: Any,
+    found: Resolution,
+    *,
+    timeout_ms: int,
+    patterns: Patterns,
+    now: Callable[[], float],
+    sleep: Callable[[float], None],
+) -> str | None:
+    """None when the checkpoint holds, else the failure message.
+
+    The checkpoint re-reads on the **same** deadline as the resolution that preceded it: the
+    schema says `timeoutMs` is the longest wait for the target "and for SelectRow and row
+    checks, its row or check" to become ready, so a property that is about to change is not a
+    race. `timeoutMs: 0` checks once.
+
+    The target is resolved again on every poll rather than kept: a re-read gives new live
+    elements, and holding the old one would check a stale handle -- the same reason #22's
+    `elementFromPoint` compares identity instead of trusting a remembered element.
+    """
+    prop, operator, expected = checkpoint_rules(checkpoint)
+    deadline = now() + timeout_ms / 1000
+    while True:
+        actual = read_property(prop, found.descriptor, found.element, patterns)
+        if holds(operator, actual, expected):
+            return None
+        remaining = deadline - now()
+        if timeout_ms == 0 or remaining <= 0:
+            # `after N ms`, not `within`: this waited for a value to change, not for an
+            # element to appear. One wording per kind of wait (the PR #231 review).
+            suffix = f" after {timeout_ms} ms" if timeout_ms else ""
+            return describe(name, prop, operator, expected, actual) + suffix
+        sleep(min(POLL_INTERVAL_S, remaining))
+        nodes, infos = read_tree()
+        descriptors = describe_tree(nodes)
+        try:
+            found = resolve(
+                descriptors,
+                infos,
+                name,
+                target.get("properties") or {},
+                target.get("fallback") or None,
+            )
+        except (NotFound, Ambiguous, Unsupported) as exc:
+            # It was there a moment ago and now it is not: that is the honest report, and it
+            # is a different fact from "the property never took the expected value".
+            return f"{exc} while checking {prop}"
 
 
 def _resolve_waiting(

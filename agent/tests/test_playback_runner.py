@@ -206,7 +206,7 @@ def test_every_step_gets_a_result_even_when_the_first_one_fails():
 # --- what a single step can get wrong ------------------------------------------------------
 
 
-@pytest.mark.parametrize("keyword", ["Select", "Verify", "SelectRow", "Nonsense"])
+@pytest.mark.parametrize("keyword", ["Select", "SelectRow", "Nonsense"])
 def test_a_keyword_this_release_does_not_perform_fails_by_name(keyword):
     """A keyword playback does not do must not be silently reported as passed.
 
@@ -662,3 +662,215 @@ def test_a_field_on_a_keyword_that_forbids_it_is_refused_not_ignored(
     assert field in results[0].message
     assert allowed in results[0].message
     assert patterns.done == [], "nothing was clicked"
+
+
+# --- Verify (#40) --------------------------------------------------------------------------
+
+
+class Reading:
+    """Patterns that answer property reads as well as performing actions."""
+
+    def __init__(self, value=None, toggle=None, selected=None) -> None:
+        self.value, self.toggle, self.selected = value, toggle, selected
+        self.done: list[tuple[str, str, str | None]] = []
+
+    def __call__(self, element: str, name: str) -> object | None:
+        recorder = self
+        if name == "Value" and self.value is not None:
+
+            class V:
+                CurrentIsReadOnly = False
+                CurrentValue = recorder.value
+
+                def SetValue(self, text: str) -> None:
+                    recorder.done.append(("Type", element, text))
+
+            return V()
+        if name == "Toggle" and self.toggle is not None:
+
+            class T:
+                CurrentToggleState = recorder.toggle
+
+            return T()
+        if name == "SelectionItem" and self.selected is not None:
+
+            class S:
+                CurrentIsSelected = recorder.selected
+
+            return S()
+        if name == "Invoke":
+
+            class I:
+                def Invoke(self) -> None:
+                    recorder.done.append(("Click", element, None))
+
+            return I()
+        return None
+
+
+def verify(checkpoint, *, window=None, clock=None, patterns=None, **kwargs):
+    document = {
+        "version": "0.2",
+        "steps": [
+            {
+                "keyword": "Verify",
+                "target": "login.loginButton",
+                "checkpoint": checkpoint,
+                **kwargs,
+            }
+        ],
+    }
+    return run(document, window=window, clock=clock, patterns=patterns)
+
+
+def test_a_checkpoint_that_holds_passes_without_waiting():
+    results, window, clock, _patterns = verify(
+        {"property": "name", "operator": "equals", "expected": "Login"}
+    )
+    assert results[0].status == "passed"
+    assert results[0].matched == "primary"
+    assert results[0].performed_with is None, "a Verify performs nothing"
+    assert window.reads == 1
+    assert clock.slept == []
+
+
+def test_a_checkpoint_that_never_holds_fails_with_the_promised_wording():
+    results, *_ = verify(
+        {"property": "name", "operator": "contains", "expected": "Invalid"},
+        timeoutMs=500,
+    )
+    assert results[0].status == "failed"
+    assert results[0].message == (
+        'login.loginButton: name should contain "Invalid", it is "Login" after 500 ms'
+    )
+
+
+def test_a_checkpoint_with_no_time_says_nothing_about_waiting():
+    """`timeoutMs: 0` checks once, so there is no "after N ms" to report."""
+    results, _window, clock, _patterns = verify(
+        {"property": "name", "operator": "equals", "expected": "Hata"}, timeoutMs=0
+    )
+    assert results[0].message == (
+        'login.loginButton: name should be "Hata", it is "Login"'
+    )
+    assert clock.slept == []
+
+
+def test_a_verify_is_allowed_on_a_disabled_element():
+    """The ready gate would make `enabled: false` unplayable, which is a check a tester
+    writes all the time."""
+    window = Window(content=with_login_button(enabled=False))
+    results, _window, _clock, _patterns = verify(
+        {"property": "enabled", "operator": "equals", "expected": False},
+        window=window,
+    )
+    assert results[0].status == "passed"
+
+
+def test_a_verify_on_an_offscreen_element_is_allowed_too():
+    window = Window(content=with_login_button(offscreen=True))
+    results, *_ = verify(
+        {"property": "visible", "operator": "equals", "expected": False},
+        window=window,
+    )
+    assert results[0].status == "passed"
+
+
+def test_a_checkpoint_that_becomes_true_after_three_seconds_needs_no_fixed_sleep():
+    """#40's second criterion again, on a property rather than on existence."""
+    window = Window(content=with_login_button(name="Please wait"))
+    clock = Clock()
+    original = window.read_tree
+
+    def settling() -> tuple[list[dict], list[str]]:
+        if clock.at >= 3.0:
+            window.content = nodes()
+        return original()
+
+    window.read_tree = settling  # type: ignore[method-assign]
+    results, _window, _clock, _patterns = verify(
+        {"property": "name", "operator": "equals", "expected": "Login"},
+        window=window,
+        clock=clock,
+    )
+    assert results[0].status == "passed"
+    assert clock.at == pytest.approx(3.0)
+    assert set(clock.slept) == {POLL_INTERVAL_S}
+    assert results[0].duration_ms == 3000
+
+
+def test_a_target_that_disappears_mid_check_says_so_rather_than_failing_the_property():
+    """ "It was there and now it is not" is a different fact from "the property never took
+    the expected value", and a tester debugs the two differently."""
+    window = Window()
+    clock = Clock()
+    original = window.read_tree
+
+    def vanishing() -> tuple[list[dict], list[str]]:
+        if window.reads >= 1:
+            window.content = []
+        return original()
+
+    window.read_tree = vanishing  # type: ignore[method-assign]
+    results, *_ = verify(
+        {"property": "name", "operator": "equals", "expected": "Hata"},
+        window=window,
+        clock=clock,
+        timeoutMs=500,
+    )
+    assert results[0].status == "failed"
+    assert "no element matches login.loginButton" in results[0].message
+    assert "while checking name" in results[0].message
+
+
+def test_a_property_that_cannot_be_read_fails_as_unreadable():
+    results, *_ = verify(
+        {"property": "checked", "operator": "equals", "expected": True}
+    )
+    assert results[0].status == "failed"
+    assert "no TogglePattern" in results[0].message
+    assert "login.loginButton" in results[0].message
+
+
+def test_a_live_property_is_read_through_the_patterns():
+    patterns = Reading(value="admin")
+    results, *_ = verify(
+        {"property": "value", "operator": "equals", "expected": "admin"},
+        patterns=patterns,
+    )
+    assert results[0].status == "passed"
+    assert patterns.done == [], "reading a property performs no action"
+
+
+def test_a_verify_without_a_checkpoint_fails_before_reading_anything():
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [{"keyword": "Verify", "target": "login.loginButton"}],
+        }
+    )
+    assert results[0].status == "failed"
+    assert "needs a checkpoint object" in results[0].message
+
+
+def test_a_failed_verify_stops_the_run_like_any_other_failure():
+    results, *_ = run(
+        {
+            "version": "0.2",
+            "steps": [
+                {
+                    "keyword": "Verify",
+                    "target": "login.loginButton",
+                    "checkpoint": {
+                        "property": "name",
+                        "operator": "equals",
+                        "expected": "Hata",
+                    },
+                    "timeoutMs": 0,
+                },
+                {"keyword": "Click", "target": "login.loginButton"},
+            ],
+        }
+    )
+    assert [r.status for r in results] == ["failed", "notRun"]
+    assert results[1].message == "not run: an earlier step failed"

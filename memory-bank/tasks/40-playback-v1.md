@@ -73,12 +73,33 @@ make playback depend on a property `NEVER_MATCH` already calls unreliable.
 ## Status
 
 - [x] Branch, task note, the delta and the "ready" design
-- [ ] `Wait` + the ready gate
-- [ ] `Verify` for the six element properties
+- [x] `Wait` + the ready gate — `826b386`
+- [x] `Verify` for the six element properties — `playback/checkpoint.py`
 - [ ] `Select`
 - [ ] `SelectRow` and the three row checkpoints
 - [ ] The three acceptance criteria, each with its own test
-- Next step: implement the ready gate and `Wait`, with the HandBrake disabled-tab case as a test.
+- Next step: `Select`, down a pattern ladder, with the Qt combo-box obstacle measured rather
+  than assumed.
+
+### What `Verify` turned out to need
+
+- **Three of the six properties are not in a descriptor and are read live**: `value`
+  (`ValuePattern`, then `LegacyIAccessible` — the same ladder `Type` writes down), `checked`
+  (`TogglePattern` state is **On**, so indeterminate is *not* checked) and `selected`
+  (`SelectionItemPattern`). `name`, `enabled` and `visible` come from the descriptor the walk
+  already derived, so they cost nothing beyond the read the runner did.
+- **"Cannot be read" is its own failure, not `false`.** No `TogglePattern` on the target, or a
+  provider that does not report `IsEnabled`: there is no answer, and reporting "expected true,
+  got false" would tell a tester their application is wrong when it is the check that does not
+  apply.
+- **An empty expectation has to match an element with no text.** `expected: ""` is a real check
+  ("the error label is empty") and a nameless target reads as `None`, so `_same` compares
+  `actual or ""` against a string expectation. Otherwise an empty label could never be verified.
+- **A target that disappears mid-check reports that**, not a property failure: "it was there and
+  now it is not" is a different fact and a tester debugs the two differently.
+- **The target is resolved again on every poll** rather than kept. A re-read gives new live
+  elements and holding the old one would read a stale handle — the same reason #22's
+  `elementFromPoint` compares identity instead of trusting a remembered element.
 
 ## Open issues
 
