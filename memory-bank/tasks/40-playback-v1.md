@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/40
 - Owner: hasan · Branch: `hasan/40-playback-v1`
-- Started: 2026-11-14 · Last update: 2026-11-14
+- Started: 2026-11-14 · Last update: 2026-11-14 (Windows check ran, four fixes)
 
 ## Where #26 left it
 
@@ -70,6 +70,32 @@ make playback depend on a property `NEVER_MATCH` already calls unreliable.
   time ran out. **#40 must use exactly these** — I promised omer they would, and his seed data
   and the report's tests are written against them.
 
+- 2026-11-14 — **A pattern rung counts only if the control changed**, read back after every
+  rung. Qt's `SelectionItem.Select()` returns without complaint, changes nothing, and the item
+  then reports `IsSelected` **true** — so the call's own success is no evidence at all, and
+  trusting it is a false `passed`. The **target's** `Value` decides when it has one (that is
+  what a combo box shows and what the next step reads); only a target without one falls back to
+  the item's flag; when neither can be read the rung's success stands, or `Select` would be
+  unplayable on a menu whose item is gone the moment it is invoked.
+- 2026-11-14 — **The read-back is a wait of one `POLL_INTERVAL_S`, not a read.** Qt applies a
+  choice asynchronously: the box still read its old value 11 ms after the call and the new one
+  at 32 ms. Reading once judged the rung a no-op and the *next* rung took the credit — which is
+  how `Select` first reported `SetValue` for a choice `LegacyIAccessible` had already made. One
+  interval and no more, bounded by the step's own deadline: a rung that really did nothing has
+  to reach the next rung inside the same timeout.
+- 2026-11-14 — **The box is expanded whenever it shows no items, not once.** Qt's popup closes
+  itself about a second after `Expand`, so a list that fills later — the late control SC-18 is
+  built around — appeared in a box playback had stopped reopening and could never be found. The
+  guard is "shows no items", so it stops by itself once they are there.
+- 2026-11-14 — **The item count in the message is the most ever seen, not the last.** With a
+  self-closing popup the count at the deadline is 0, and "the target shows no items at all, so
+  its list may be a popup window of its own" is then the opposite of the truth.
+- 2026-11-14 — **The element unwrapping belongs in `uia_patterns`, at the seam**, not at each
+  call site. Every module #40 added passed the walk's `UIAElementInfo` straight to the lookup,
+  which needs the raw element; the lookup turned the `AttributeError` into `None`, so every
+  pattern read as unsupported. Doing it once is what keeps the next module from having to
+  remember.
+
 ## Status
 
 - [x] Branch, task note, the delta and the "ready" design
@@ -79,9 +105,13 @@ make playback depend on a property `NEVER_MATCH` already calls unreliable.
 - [x] `SelectRow` and the three row checkpoints — `playback/rows.py`
 - [x] The three acceptance criteria, each with its own test (see below)
 - [x] `docs/agent-rpc.md`'s `runSteps` section rewritten for all six keywords
-- **612 agent tests pass, ruff clean (2026-11-14).** No PR yet.
-- Next step: ask the user about pushing and opening the PR, then post the Windows manual check
-  on the issue and add `needs-windows-test`. Nothing in the code is waiting on anything.
+- [x] **The Windows check ran here, 7 of 7 pass** — and found four defects in `Select`, fixed
+  in `b28f2b9` (the results are under "Manual checks", the reasons under "Decisions")
+- **623 agent tests pass, ruff clean (2026-11-14).** PR **#237** is open, CI was green before
+  `b28f2b9`.
+- Next step: push `b28f2b9` and the memory with it, post the check result as a comment on #40
+  and **remove `needs-windows-test`**, then re-request both reviews because the PR changed
+  under them. Nothing in the code is waiting on anything.
 
 ### The three acceptance criteria, and where each is tested
 
@@ -106,9 +136,12 @@ exactly this on Qt). So the flow belongs in the runner, where the tree and the r
 
 1. resolve the target and wait for ready (already done by the time the keyword is reached);
 2. look for a descendant of the target whose text is `value` in the tree just read;
-3. if there is none and the target has `ExpandCollapse`, expand it, **re-read the tree**, and
-   look again — the re-read is the point, because the items are new elements;
-4. `SelectionItem.Select()` the item; `Invoke` as a fallback (a menu item answers to Invoke);
+3. whenever it shows no items and the target has `ExpandCollapse`, expand it, **re-read the
+   tree**, and look again — the re-read is the point, because the items are new elements, and
+   it is **every poll** rather than once because Qt's popup closes itself (Windows check);
+4. `SelectionItem.Select()` the item, then `Invoke` (a menu item answers to Invoke), then
+   `LegacyIAccessible.DoDefaultAction()` (the only one Qt honours) — and **each rung is
+   confirmed by reading the control back**, so a silent no-op falls through to the next;
 5. collapse again if step 3 expanded it, so the screen is left as the test found it;
 6. if the target is an editable combo box and none of that worked, `Value.SetValue(value)` —
    last, because it writes text rather than choosing an item, and a combo box that accepts
@@ -124,12 +157,13 @@ target is not a list or combo box at all; it is, and has no item with that text 
 items it does have); and it has the item but the provider refused to select it. The third is
 the Qt case and is a finding about the framework, not about the test.
 
-**Expect Qt to refuse** (`active.md`, from #33): `SelectionItem.Select`, `Invoke` and
-`ValuePattern.SetValue` all leave a Qt combo box unchanged, and the items only exist after
-`ExpandCollapse`. **SC-20 needs `Select` on a combo box**, so if it still refuses after the
-expand-and-re-read above, that is a real obstacle for a reference scenario: report it on #40
-and raise it for SC-20 rather than faking a pass. Measure it on the sample app (#33) before
-concluding anything — the earlier finding was made without the expand-then-re-read step.
+**Qt was expected to refuse, and it does not — measured here 2026-11-14, so SC-20 is
+unblocked.** #33's finding holds for the three routes it tried (`SelectionItem.Select`,
+`Invoke` and the box's `Value.SetValue` all leave a Qt combo box unchanged) but not for
+`LegacyIAccessible.DoDefaultAction()` on the item, which works. The popup's items **are** in
+the window's tree once the box is expanded — they are not a window of their own, which was the
+other open question. So `Select` on a combo box is playable and #33's conclusion was too
+broad; galip has this, since SC-20 was written around it.
 
 ### What `Verify` turned out to need
 
@@ -209,45 +243,71 @@ concluding anything — the earlier finding was made without the expand-then-re-
   parents come from the walker and are strictly upward, and found only because a defensive test
   of mine built such a tree by hand — it hung pytest. Not fixed here: it is outside #40's scope
   and `model.py` is normative under #11. Worth one small issue.
-- **The editable-combo `SetValue` read-back may be too strict on a slow provider.** `write`
-  confirms the text by reading `CurrentValue` straight back; a box that applies the value
-  asynchronously would read as a refusal and the step would report "no item has the text …".
-  Only reachable after the whole timeout has already passed, and it has to be checked on
-  Windows with a real editable combo box before it is defended.
+- **The editable-combo `SetValue` read-back is still too strict on a slow provider, and now
+  we know that provider exists.** `write` confirms the text by reading `CurrentValue` straight
+  back, with no wait — and Qt was measured applying a choice **32 ms** late, which is exactly
+  the shape that would read as a refusal. `choose`'s confirmation got the one-`POLL_INTERVAL_S`
+  wait (`_confirmed`); `write` did not, because it is only reachable after the whole timeout has
+  already passed and **no editable combo box has been found to test it on** — neither the
+  sample app nor either pilot has one. Worth one issue: give `write` the same wait, or find an
+  app with an editable combo and measure it first.
 
-- **UI Automation cannot choose an item in a Qt combo box** (from #33, recorded in `active.md`):
-  `SelectionItem.Select`, `Invoke` and `ValuePattern.SetValue` all leave it unchanged, and the
-  items only exist after `ExpandCollapse`. **SC-20 needs `Select` on a combo box**, so this is a
-  real obstacle for one of the reference scenarios rather than a detail. Plan: implement `Select`
-  through the patterns ladder, expand first when the target offers `ExpandCollapse`, and if Qt
-  still refuses, report it on #40 and raise it for SC-20 rather than faking a pass.
+- ~~UI Automation cannot choose an item in a Qt combo box (#33)~~ — **closed 2026-11-14 by the
+  Windows check.** It can: `LegacyIAccessible.DoDefaultAction()` on the item works, and the
+  popup's items are in the window's tree. SC-20 is unblocked; galip has it, since #33's broader
+  conclusion is in his ADR's territory and SC-20 was written around it.
+- **The one-pattern-read detection of a cell-selecting view is still unexercised by a real
+  app.** Step 3 confirmed the `SelectRows` branch on the sample app (all four cells of the
+  chosen row report `IsSelected`), but nothing in `C:\ayna-pilots\` selects cells, so the
+  `passed`-with-a-message path has never run against a provider. Same gap as the WPF
+  `DataGrid` one from #221.
 - `cell` is grid-only in the schema while `rowExists {value, column}` is allowed on a list — the
   same column mapping, one forbidden and one required. Raised on #220/#221; galip's v0.2 ADR to
   settle. Playback implements what the schema says and the asymmetry stays visible.
 
 ## Manual checks
 
-- **2026-11-14 · posted, pending the Windows session** · the full check is issue comment
-  `6879885017` on #40 and `needs-windows-test` is on the issue; PR is **#237**. It runs against
-  the **sample app** (`eval/apps/sample/sample_app.py`, whose main screen has `cityFilterCombo`
-  and `customerGrid`, and whose grid already sets `SelectionBehavior = SelectRows` —
-  `windows.py:214`), KeePass 2 and HandBrake. In the order that makes each one count:
-  1. **`Select` on the sample app's `cityFilterCombo`**. This is the one that may *fail*: #33 found
-     `SelectionItem.Select`, `Invoke` and `ValuePattern.SetValue` all leaving the box
-     unchanged, and the items existing only after `ExpandCollapse`. The expand-then-re-read is
-     new, so the question is open again — and the second question is whether the popup's items
-     are in the window's tree at all or in a window of their own, which would make the
-     editable-box `SetValue` the only route. **SC-20 needs this**; if it still refuses, report
-     it on #40 and raise it for SC-20 rather than faking a pass.
-  2. **`SelectRow` on the sample app's `customerGrid`**: does `SelectionItem.Select` on the first cell
-     select the whole row (SelectionBehavior = SelectRows), i.e. is the result `passed` with no
-     message? A message means the view selects cells, which is a finding, not a bug.
-  3. **`SelectRow` and `rowExists` on KeePass 2's entry list** by a key cell in a column, which
-     exercises the `ListItem` + `Text`-children shape and the `Header`/`HeaderItem` columns.
-  4. **A `cell` check on `customerGrid`**, which exercises the `GridItem` grouping and the column
-     list that must match the editor's dropdown.
-  5. **`Wait` and `Verify` on HandBrake with no source loaded**, where every tab reads
-     `enabled: false` (#29) — the case the ready gate exists for.
+- **2026-11-14 · RAN HERE, 7 of 7 pass — but only after four fixes (`b28f2b9`)** · hasan at the
+  Windows machine, 125 % scaling, Windows 11 26300, Python 3.13, pywinauto 0.6.9. Driven by a
+  throwaway script that calls `UiaDesktop.run_steps` directly (the `rpc.py` path with the
+  socket taken out), against the sample app on `--screen main`, KeePass 2 with the demo vault,
+  and HandBrake 1.11.2 with no source. Result posted as a comment on #40.
+
+  **Steps 1 and 2 failed on the code the PR shipped.** Everything below is what the providers
+  said, and the four defects are in the commit message; the short version is that #40's whole
+  pattern layer was dead on real Windows and `Select` reported a choice it had not made.
+
+  | step | result |
+  |---|---|
+  | 1 · `Select` on `cityFilterCombo` | `passed`, `performedWith` **`LegacyIAccessible`** (the check's text expected `SelectionItem`), the box really reads `Ankara` and is closed again |
+  | 2 · the same with `Adana` | `failed`: `no item has the text "Adana" after 5000 ms; the target offers 5 items` |
+  | 3 · `SelectRow {index: 2}` on `customerGrid` | `passed` **with no message**, and all four cells of that row report `IsSelected` — `SelectionBehavior = SelectRows` really does select the row |
+  | 4 · `SelectRow {value, column}` on KeePass's entry list | `passed`, `performedWith` `SelectionItem`, and only that row reads selected |
+  | 5 · `cell` on `customerGrid` | `passed`; a wrong column answers `the target has no column "Surname"; it has "Ad", "Soyad", "Şehir", "Durum"` |
+  | 6 · `rowCount` on `customerGrid` | `passed` |
+  | 7 · `Wait` on HandBrake's `videoTab`, no source | `failed`: `main.videoTab: did not become enabled after 2000 ms` — a wait failure, not the action error #26 would have given |
+  | extra · `rowExists {value, column}` on both | `passed` on the Qt table **and** on KeePass's `List` |
+
+  **What the two answers that matter beyond this issue turned out to be:**
+  - **Step 1: SC-20 is unblocked, and #33's finding is overturned.** UI Automation *can* choose
+    an item in a Qt combo box. The popup's items **are** in the window's tree once the box is
+    expanded (they are not a window of their own), and `LegacyIAccessible.DoDefaultAction()` on
+    the item works. What #33 measured — `SelectionItem.Select`, `Invoke` and the box's
+    `Value.SetValue` all leaving it unchanged — is still true of those three. galip has this.
+  - **Step 3 confirms the v0.2 ADR's configuration**: the sample app's `SelectRows` grid is
+    selected by row, with one `SelectionItem.Select` on a cell, and playback reports it with no
+    message. The cell-selecting branch is therefore still unexercised by a real app.
+
+  **Two measurements worth keeping:**
+  - A `Wait` that times out on a 149-element window took **2867 ms for a 2000 ms timeout**: the
+    deadline is checked before sleeping and each poll re-reads the whole window. The timeout is
+    a floor, not a cap, which is right for a tester but will show in #59's report.
+  - The sample app's grid is **empty until a search runs** (`QTableWidget(0, …)`, filled by
+    `on_search`), so every grid step needs a `Click` on `refreshButton` first. The check's text
+    did not say so.
+
+  **Still not exercised by any real app**: a WPF `DataGrid` (HandBrake's queue is a `List`), and
+  an **editable** combo box, so `items.write`'s read-back is still only covered by fakes.
 
 ## Handoff
 

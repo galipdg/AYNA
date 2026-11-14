@@ -674,3 +674,37 @@ Week 3 and sits outside that order — it needs a decision, not work.
 - **Next step**: nothing of mine blocks #40 — the Windows session answers steps 1 and 3 (SC-20
   and the cell-selecting case). Still owed: the second labelling round on #29 (a person's hour),
   #24's Windows check after omer's fix, and my five #10 entries.
+
+## 2026-11-14 (second session) — #40's own Windows check, and the four defects it found
+
+Ran #40's manual check (issue comment `6879885017`) at the Windows machine rather than taking a
+review, because the review queue was empty and the check was the only thing of mine in the
+Windows queue. **7 of 7 pass — but steps 1 and 2 failed on the code PR #237 shipped**, and
+fixing them is `b28f2b9`.
+
+- **No driver existed.** Nothing in the repo plays a step document by hand, so the first half
+  hour went on writing one in the scratchpad: `UiaDesktop()` + `setup()`, `list_windows()`,
+  `desktop.run_steps(handle, document, targets)`. Use `agent/.venv`, not the root one —
+  `ayna_agent` is only installed in the former. Worth a committed `ayna_cli` subcommand (#61).
+- **The pattern lookup never unwrapped the element.** `get_elem_interface` wants the raw
+  `IUIAutomationElement`; the walk hands out a `UIAElementInfo`; only #26's `actions.py`
+  unwrapped it. So on real Windows every pattern read the four new modules make returned `None`
+  — Select, SelectRow, Verify's live properties, `cell`, `rowCount`, all of it — and 612 unit
+  tests were green because a fake patterns function takes the fake element either way. One line
+  at the seam. This is the finding I would most want a future session to remember: **a fake that
+  accepts both shapes cannot tell you which shape the real one needs.**
+- **`Select` reported a choice it had not made.** Qt's `SelectionItem.Select()` returns cleanly,
+  changes nothing, and the item then reports `IsSelected` true. I only caught it because I read
+  the combo's value back instead of trusting the `passed` — the same habit that caught #22's
+  stale-node case. Every rung is now confirmed against the **target**, not the item.
+- Two more from the same probe: `LegacyIAccessible.DoDefaultAction()` is the **only** route Qt
+  honours, and the box was expanded only once while Qt's popup shuts itself after ~1 s, so a
+  late-filling list could never be found. Both pinned by tests that fail on the old behaviour.
+- **Measure from a clean start.** My first pass said three routes worked; re-measuring with a
+  reset between them showed two of those three were inheriting the previous route's result.
+- **SC-20 is unblocked and #33's conclusion was too broad** — UIA can choose in a Qt combo box,
+  and the popup's items are in the window's tree. In galip's inbox.
+- **Next step**: push `b28f2b9` + this memory, post the check result on #40, remove
+  `needs-windows-test`, re-request both reviews (the PR changed under them). Then the Windows
+  queue's other seven are omer's and need him present. Still owed: the second labelling round on
+  #29 (a person's hour), #24's Windows check after omer's fix, my five #10 entries.

@@ -394,3 +394,26 @@ Windows tests do exactly that via `_python_with_pyside()`.
   `__init__.py`, and a module without a `test_` prefix is not collected. Worth knowing before
   copying a fixture into a second test file — the #40 row shapes are measurements, and two
   copies of a measurement drift.
+- 2026-11-14 · hasan · **`get_elem_interface` needs the raw element, and it fails by returning
+  nothing.** pywinauto's pattern lookup wants an `IUIAutomationElement`, while the walk hands
+  every caller a `UIAElementInfo`; given the wrapper it raises `AttributeError`, which the usual
+  `except Exception: return None` turns into "this pattern is not supported". So the mistake is
+  **silent and total**: every pattern read in four of #40's modules read as unsupported on real
+  Windows while 612 unit tests passed, because a fake patterns function accepts the fake element
+  either way. **Unwrap at the seam, in the lookup itself** (`playback/actions.uia_patterns`
+  does now), not at each call site, and when a provider "supports nothing", check the shape of
+  what you handed the lookup before you believe it.
+- 2026-11-14 · hasan · **A UIA call that returns without complaint has not necessarily done
+  anything.** On a Qt (PySide6) `QComboBox`, `SelectionItem.Select()` on a popup item, `Invoke`
+  on the item, `LegacyIAccessible.Select()` and the box's own `Value.SetValue()` all return
+  cleanly and change nothing; only `LegacyIAccessible.DoDefaultAction()` on the item works. The
+  item even reports `IsSelected` **true** afterwards — it records the popup highlight, not the
+  choice. **Read the control back, and read the control rather than the item.** Also: measure
+  each route from a clean start, because the first pass of this measurement said two more
+  routes worked, and they were only inheriting the state the previous route had set.
+- 2026-11-14 · hasan · **Qt applies a choice asynchronously and closes its popup by itself.**
+  The combo box still read its old value 11 ms after the call and the new one at 32 ms, so a
+  confirmation read straight after the call sees the old value; and a popup opened through
+  `ExpandCollapse` shuts about a second later, taking its items out of the tree. Anything that
+  expands a Qt control once and then relies on it staying open will not see a late-filling
+  list — **re-expand while it shows nothing**, and give a read-back one poll interval.

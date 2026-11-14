@@ -7,14 +7,38 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   merge. When this branch merges, keep the 29-branch's header and this branch's own
   "omer's #221 Windows check" section — it is the one section `main` does not have.
 - Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
-  **All six keywords are implemented and all three acceptance criteria are tested**: `Wait` and
-  the ready gate (`826b386`), `Verify` (`ca51c83`), `Select` (`f36f1b3`), and `SelectRow` + the
-  three row checkpoints. **612 agent tests pass, ruff clean (2026-11-14), and PR #237 is open**
-  with both reviews requested, the three criteria ticked, the Windows check posted as issue
-  comment `6879885017` and `needs-windows-test` on the issue. **Nothing of mine blocks it**: the
-  session answers steps 1 (Qt combo box, which SC-20 needs) and 3 (the cell-selecting case).
-  **Read `memory-bank/tasks/40-playback-v1.md` before touching any of it**: the three row
-  shapes, the duplicated column rule and the message wording are all decisions with reasons.
+  All six keywords are implemented, all three criteria are tested, **and the Windows check ran
+  here on 2026-11-14: 7 of 7 pass — but only after four fixes (`b28f2b9`)**. `Wait` and the
+  ready gate (`826b386`), `Verify` (`ca51c83`), `Select` (`f36f1b3`), `SelectRow` + the three
+  row checkpoints, then the four fixes. **623 agent tests pass, ruff clean, PR #237 open** with
+  both reviews requested. **Read `memory-bank/tasks/40-playback-v1.md` before touching any of
+  it**: the three row shapes, the duplicated column rule, the message wording and now the
+  read-back ladder are all decisions with reasons.
+- **The four defects the check found are the lesson of this issue, not a footnote.** All four
+  needed a real provider and all four passed 612 unit tests. (1) **The pattern lookup never
+  unwrapped the element** — `get_elem_interface` needs the raw `IUIAutomationElement`, the walk
+  hands out a `UIAElementInfo`, and only #26's `actions.py` unwrapped it, so on real Windows
+  *every* pattern read #40 added was silently "unsupported": Select, SelectRow, Verify's
+  value/checked/selected, `cell`, `rowCount`. It is now done once inside `uia_patterns`.
+  (2) **`Select` reported a choice it had not made** — Qt's `SelectionItem.Select()` returns
+  cleanly, changes nothing, and the item then says `IsSelected` true. Every rung is now
+  confirmed by reading the **target** back. (3) `LegacyIAccessible.DoDefaultAction` joined the
+  ladder: the only rung Qt honours. (4) The box was expanded **once**, and Qt's popup shuts
+  itself ~1 s later, so a late-filling list stayed invisible for good.
+- **Next on #40: push `b28f2b9` + the memory, post the result as a comment on #40, remove
+  `needs-windows-test`, and re-request both reviews** — the PR changed under them.
+- **SC-20 is unblocked and #33's Qt finding is overturned** (too broad): UIA *can* choose an
+  item in a Qt combo box, the popup's items *are* in the window's tree once expanded, and
+  `LegacyIAccessible.DoDefaultAction()` on the item works. In galip's inbox.
+- **The driver for a manual `runSteps` check does not exist in the repo** and had to be written
+  from scratch (scratchpad, not committed): `UiaDesktop()` + `setup()`, `list_windows()` to pick
+  the handle, then `desktop.run_steps(handle, document, targets)` — the `rpc.py` path with the
+  socket taken out. `ayna_agent` is **not** pip-installed in the root `.venv`; use
+  `agent/.venv/Scripts/python.exe`, which has it editable along with `websockets`. Worth a
+  committed `ayna_cli` subcommand when #61 starts, because every future playback check needs it.
+- **The sample app's grid is empty until a search runs**, so any grid step needs a `Click` on
+  `refreshButton` first, and `--screen main` skips the login. The automation ids are Qt-prefixed:
+  `QApplication.main.customerGrid`, not `customerGrid`.
 - **This file is now spread over four branches and no copy is complete.** `hasan/29-rq1-measure`
   has the long review history and #29; `hasan/162-windows-llm-latency` has #162 and #23's
   summary; this one has #40. **Whichever merges last keeps every branch's own section.** Also:
@@ -69,8 +93,12 @@ measured row shapes for both row test files.
 
 **The five decisions most likely to be re-derived or broken:**
 - **`Select` is not a pure action**: a closed combo box has no items at all, so the target is
-  expanded and the window **read again** before looking (#33). An editable box takes the text
-  through `SetValue` only after the whole wait, and the value is **read back**.
+  expanded and the window **read again** before looking (#33) — **every poll it shows nothing,
+  not once**, because Qt's popup closes itself. The ladder is `SelectionItem` → `Invoke` →
+  `LegacyIAccessible.DoDefaultAction`, **each rung confirmed by reading the target back** with
+  one `POLL_INTERVAL_S` of grace (Qt applies a choice 32 ms late). An editable box takes the
+  text through `SetValue` only after the whole wait, and that value is read back too — with no
+  grace, which is a known open issue now that a late-applying provider is known to exist.
 - **Three row shapes, by structure not by framework**: the item is the row (KeePass 2), the
   items are the cells and only `GridItem` says which row they belong to (Qt has no row
   element), or the item is a one-cell row (`QListWidget`).
