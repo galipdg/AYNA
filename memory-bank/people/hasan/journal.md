@@ -704,3 +704,29 @@ Week 3 and sits outside that order — it needs a decision, not work.
   PR #233 still has no `Closes` — the user's call.
 - **Next step:** a second independent labeller for the report's screen, then #162 (overdue,
   Week 3), which needs the machine idle.
+
+## 2026-11-15 (second session)
+
+- **#47 / PR #239 unblocked.** #238 (#46) had merged, so GitHub had already retargeted #239 to
+  `main`; what it actually needed was an `origin/main` merge, because the squash made every file
+  #46 touched conflict. Resolved "ours" on the three `eval/apps/sample/` files (each is `main`'s
+  content plus #47's additions) and folded four #29 findings that reached `main` through #236
+  into `active.md`'s #29 section rather than letting a one-sided resolution drop them. Pushed
+  with the user's agreement; all six checks green, MERGEABLE / CLEAN.
+- **Found and wrote up an intermittent UIA readiness flake** while verifying that merge: one
+  `eval` run failed on `test_the_right_credentials_are_welcomed_by_name` and the pair
+  `test_bug_uia.py test_sample_uia.py` failed twice more, both with the signature "the text I set
+  did not land". Ruled out a window leak (the tree is clear within 0.3 s of `kill_process_tree`),
+  a cross-window mix-up (two live windows of one class raise `ElementAmbiguousError`), any single
+  bug version, `set_edit_text` on a fresh app, and `test_variant_uia.py` in the same slot. It
+  vanishes under instrumentation, so it went to #69 as flaky-rate data rather than being patched
+  blind. `learnings.md` and the #47 task note have it.
+- **Started and finished the code for #54 (screenshot per step).** Two decisions with the user:
+  the PNG travels as a *path* rather than base64, and there is no Pillow -- `pywin32` captures
+  and `zlib` + `struct` write the file. Moved `frame_bounds` out of `recognition/uia.py` into a
+  new `recognition/frames.py` because importing it dragged in `websockets` and the capture would
+  not run on the root `.venv`. 475 agent tests green, ruff clean, NFR-03 met with room (41 ms at
+  902x564, 91-96 ms at 1920x1020 against 300 ms), and the captured image was opened and checked
+  by eye, not only timed.
+- Next step: push `hasan/54-screenshot-per-step` and open the PR (`Closes #54`), saying in the
+  body that the client side (reading the file and uploading it) is #51's and omer's.
