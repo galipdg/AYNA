@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +44,11 @@ class SecurityConfig {
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.addFilterBefore(new BearerTokenFilter(accounts), AnonymousAuthenticationFilter.class)
 			.authorizeHttpRequests(auth -> auth
+				// A streamed response (the run report, #245) ends on an ASYNC dispatch, and an error
+				// page on an ERROR dispatch. Both continue a REQUEST dispatch that was already
+				// authorized below, but the stateless bearer context is gone by then, so checking
+				// them again would deny a response that is half sent.
+				.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
 				.requestMatchers("/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui.html", "/swagger-ui/**").permitAll()
