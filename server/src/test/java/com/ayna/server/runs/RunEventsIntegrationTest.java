@@ -143,6 +143,8 @@ class RunEventsIntegrationTest {
 		assertThat(step.path("status").asString()).isEqualTo("passed");
 		assertThat(step.path("durationMs").asLong()).isEqualTo(40);
 		assertThat(step.path("message").asString()).isEqualTo("tamam");
+		assertThat(step.has("category")).isTrue();
+		assertThat(step.path("category").isNull()).isTrue();
 
 		post("/api/runs/" + runId + "/finish", Map.of("status", "passed"));
 		JsonNode finished = watcher.next(LIVE);
