@@ -10,9 +10,14 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   every branch's own section** — never resolve this file by taking one side, and when the
   resolution is "ours", check first that the other side holds no fact that lives nowhere else:
   that is how #236's four #29 bullets nearly went missing today.
-- Current issue: **#54 (screenshot per step) — PR #248 open**, `Closes #54`, both reviews
-  requested, both acceptance criteria met and measured. The section below has the numbers.
-- **One PR of mine is still open besides #248: #236 (#23)**, waiting on reviews, not on me.
+- Current issue: **#54 (screenshot per step) — PR #248**, both criteria met and measured, all
+  six checks green. omer requested changes and **both items are done** (the CI test and the
+  schema bump to 1.2); it now waits on his re-review and on galip, not on me. **#236 (#23) is
+  merged**, so #248 is my only open PR.
+- **My review queue is empty.** All six of omer's PRs reviewed on 2026-11-15: approved #241,
+  #243, #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as
+  Planned although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have,
+  and §6.2's Windows row contradicts §6.3 about the `eval` job).
 - **Of Week 7/8, #55 and #62 are blocked on someone else** (#55 waits on omer's #44, #62 on
   #55). The ready one after #54 is **#61** (CLI runner): its only dependency, #40, is now on
   `main`, and it needs `ayna_cli*` added to `agent/pyproject.toml`'s packages (inbox item 1).
@@ -195,6 +200,27 @@ decisions and the numbers; four things a session must not re-derive:
   screenshot" is normal for #59's report and for the client. **Nothing deletes the files**: that
   is in omer's inbox for #51/#59, together with the note that the two fields are not yet in
   `schemas/agent-rpc.schema.json`.
+
+## What #248's review taught, and what is owed either way (2026-11-15)
+
+- **A frozen schema with `additionalProperties: false` *rejects* a field you add; it does not
+  merely fail to mention it.** Every real `runSteps` answer was outside the contract the moment
+  #54 filled `screenshotPath`, and nothing went red because the only step results any test
+  validated were hand-written dicts. Fixed at 1.2, with a guard that validates the **real**
+  `StepResult.to_json()`. The general form is in `learnings.md`.
+- **Found while reviewing #247, fixed on my side:** #44's client sends **one `runSteps` per
+  step**, so the agent opened one screenshot directory per step — seven folders each holding a
+  single `step-0000.png`, and no one folder for omer's cleanup to delete.
+  `new_run_directory(run_id=...)` fixes it, but **`rpc.py` must pass `params["runId"]` through,
+  which is one line and galip's**: in his inbox and written into `docs/agent-rpc.md`.
+- **Owed by galip:** that line, `RPC_VERSION` 1.0 → 1.2, and approval of the ADR
+  `2026-11-15-step-screenshot-transport`.
+- **Owed by me at the weekly Windows session:** #247's check B (run from the editor with the
+  real agent at 100 % and 150 %), #24's pick hotkey including a pick pressed during "capture for
+  longer", and #54's one unverified case — a second display at a different scaling.
+- **#249 already runs green here.** I ran omer's nightly suite on this machine, the one check
+  his PR could not do for itself: v1 green, bug1 fails only the login test, bug4 only the
+  required-name test, and `--expect-failed` turns both into exit 0.
 
 ## #46 and #47 -- the sample app's change and bug versions (2026-11-15)
 
