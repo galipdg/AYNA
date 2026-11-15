@@ -81,7 +81,8 @@ function capturedLine({ capture, app }: Snapshot): string {
 }
 
 function processLabel(win: WindowInfo): string {
-  return `${win.processName ?? strings.spyUnknownProcess} · ${win.processId}`
+  const name = win.processName ?? strings.spyUnknownProcess
+  return win.processId === null ? name : `${name} · ${win.processId}`
 }
 
 /** The last press of the pick key; `gone`: the window to capture has closed since. */

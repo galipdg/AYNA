@@ -320,7 +320,8 @@ export interface WindowInfo {
   handle: number
   title: string
   className: string
-  processId: number
+  /** Null when Windows cannot say which process owns the window. */
+  processId: number | null
   /** Null when the agent cannot read it (e.g. an elevated process). */
   processName: string | null
   bounds: Bounds

@@ -232,7 +232,7 @@ function parseWindow(item: unknown): WindowInfo | null {
     !Number.isInteger(item.handle) ||
     typeof title !== 'string' ||
     typeof className !== 'string' ||
-    !Number.isInteger(item.processId) ||
+    !(item.processId === null || Number.isInteger(item.processId)) ||
     !(item.processName === null || typeof item.processName === 'string') ||
     !isBounds(item.bounds)
   ) {
@@ -242,7 +242,7 @@ function parseWindow(item: unknown): WindowInfo | null {
     handle: item.handle as number,
     title,
     className,
-    processId: item.processId as number,
+    processId: item.processId as number | null,
     processName: item.processName,
     bounds: item.bounds,
   }

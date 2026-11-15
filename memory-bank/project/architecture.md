@@ -28,12 +28,16 @@ Each test machine (Windows)                    Shared, on the closed network
 
 ## Contracts (frozen at G1, week 7)
 
+Frozen as v1 by #52 (ADR `2026-11-08-contracts-v1-freeze`): later versions only add, and a breaking change needs a major version and an ADR. The `contracts` CI job enforces this for `schemas/` and the REST API.
+
 | Contract | Location | Between |
 |---|---|---|
 | Step schema | `schemas/step.schema.json` | editor, NL assistant, recorder, agent, server |
 | Element / snapshot schema | `schemas/element.schema.json`, `schemas/snapshot.schema.json` | agent ↔ server |
+| Healing proposal schema | `schemas/healing-proposal.schema.json` | agent → client / CLI runner → server |
 | REST API | `docs/api/openapi.yaml` (generated) | client ↔ server |
-| Agent JSON-RPC | `docs/agent-rpc.md` | client ↔ agent |
+| Live run status | `schemas/ws-runs.schema.json` (WebSocket `/ws/runs`) | server → clients |
+| Agent JSON-RPC | `docs/agent-rpc.md` (prose), `schemas/agent-rpc.schema.json` (messages) | client ↔ agent |
 | AI service HTTP API | `ai/API.md` | server ↔ AI service |
 | Graph schema | `server/src/main/resources/neo4j/migrations/` + `docs/graph-model.md` | server ↔ Neo4j |
 
