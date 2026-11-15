@@ -21,11 +21,11 @@ JUnit XML + job summary. Suite: `.github/suite/smoke.json` (SC-14 login, SC-34 r
 ## Status
 - [x] runner + 12 unittest tests (macOS, fake player), smoke suite valid against step schema 0.2
 - [x] workflow written, YAML parses
-- [ ] first Windows run: the PR's own `AYNA suite` checks (not pushed yet)
-- Next step: on omer's OK push and open the PR ("Part of #67" until the CLI swap?); read the two jobs' summaries.
+- [x] PR #249 opened (Part of #67). First Windows run 2026-11-15: playback right (none 2/2 passed; bug1 failed the login Verify, bug4 the required-name Verify), but every job crashed printing the summary (cp1252 console) → fixed with stdout reconfigure.
+- Next step: check the re-run is green on all three suite jobs and the summary shows; then hasan's review.
 
 ## Manual checks
-- pending · the PR's CI run on windows-latest is the check: suite job green on `none`, bug-builds green (bug1, bug4 caught), summary table visible.
+- 2026-11-15 · CI (windows-latest) · run 43723769406 · JUnit artifacts right for none/bug1/bug4; jobs red only from the summary print crash · evidence: the run's `junit-*` artifacts
 
 ## Open issues
 - `workflow_dispatch` shows in the Actions UI only once the file is on `main`.

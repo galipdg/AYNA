@@ -308,6 +308,10 @@ def main(argv: Sequence[str] | None = None, player_factory=windows_player) -> in
     args.junit.parent.mkdir(parents=True, exist_ok=True)
     args.junit.write_bytes(junit_xml(suite, outcomes))
     summary = summary_markdown(suite, outcomes, args.expect_failed, args.build)
+    # A Windows runner's console is cp1252: the summary's ✅ and Turkish text would raise
+    # UnicodeEncodeError after the XML was already written (first CI run, PR #249).
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     print(summary)
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
