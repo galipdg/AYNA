@@ -1,5 +1,10 @@
 """Performing Click and Type on an element, through UI Automation patterns only (#26).
 
+The two keywords that act on *one* element and nothing around it. Select needs the target's
+items (`playback.items`) and SelectRow its rows (`playback.rows`), so those live apart; what
+they share with this module is :data:`Patterns` and the rule that a pattern which refuses falls
+through to the next one.
+
 **Never coordinates** (`agent/AGENTS.md`). A click at a remembered point breaks when the window
 moves, when the display scaling changes, or when a list scrolls -- which is most of what makes
 recorded tests brittle, and the thing AYNA exists to avoid. So an action asks the provider to
@@ -40,11 +45,20 @@ class ActionFailed(Exception):
 
 
 def uia_patterns(element: Any, name: str) -> Any:
-    """The real pattern lookup. Windows only; imported lazily so this module loads anywhere."""
+    """The real pattern lookup. Windows only; imported lazily so this module loads anywhere.
+
+    The unwrapping is **here** rather than at the call sites: `get_elem_interface` needs the
+    raw `IUIAutomationElement`, while the walk hands every caller a `UIAElementInfo`, and a
+    lookup given the wrapper raises `AttributeError` -- which this function turns into `None`,
+    so every pattern silently reads as unsupported. Measured on the sample app's Qt combo box
+    (#40 Windows check): it offers `ExpandCollapse`, `Invoke` and `Value`, and `Select` still
+    reported "this element shows no items". Doing it once at the seam is what keeps the next
+    module from having to remember.
+    """
     from pywinauto.uia_defines import get_elem_interface
 
     try:
-        return get_elem_interface(element, name)
+        return get_elem_interface(_element_of(element), name)
     except Exception:  # noqa: BLE001 - see below; both failures mean the same to the caller
         # pywinauto raises NoPatternInterfaceError for "not supported"; a provider that died
         # mid-call raises a COMError. Both mean "not available through this pattern", and the

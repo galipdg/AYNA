@@ -644,6 +644,95 @@ Lesson: on a PR of my own, read the branch's task note before believing the revi
 the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
 Week 3 and sits outside that order — it needs a decision, not work.
 
+## 2026-11-14 — fourth session (continued): #162 and #23 out, #40 started
+
+- Pushed **#162** as PR #235 with the numbers on the issue, then **reviewed PR #234** (omer, #24
+  pick hotkey): CHANGES_REQUESTED for one constant. `pickState` reads #22's three states exactly
+  right, including the two subtle ones, but `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the
+  Spy's own retry ladder captures for 30 s and 120 s, and the agent serialises UIA calls on one
+  worker thread (`rpc.py:72-80`) -- so a pick during a long capture shows a false `agent-error`.
+  Also noted that `highlighter.hide()` is never restored on a pick that selects nothing.
+- **#23 (win32 fallback trial) done in one sitting and the answer is "do not build it".** Built
+  `eval/spikes/win32_probe.py`, ran KeePass 2 twice from two launches and HandBrake once. The
+  elements win32 can see are exactly the ones UIA already names, the control id is literally the
+  same `automationId`, and 7 of 8 changed between launches. HandBrake: 149 elements, **one**
+  HWND. One real finding: a native Win32 `Edit` kept `1001` across the restart, which
+  `_GENERATED_ID` discards -- recorded as an open issue, not a change, because `model.py` is
+  normative under #11 and the sample is one element. PR #236, `Closes #23`.
+- Three of that probe's 19 tests exist because I got it wrong first, each time in the direction
+  that *flattered* the fallback: a zero control id counted as stable, `None` in a match key
+  crashed `compare` on every real run, and absent handles counted as "the handle did not move"
+  (49 of them, which read as evidence against `NEVER_MATCH`). Worth remembering as a shape:
+  measurement bugs are not random, they lean towards the conclusion you set out to test.
+- **Started #40 (Playback v1)** and got two of the four keywords: `Wait` and `Verify`. The useful
+  discovery was in the issue text all along -- "wait until the element exists, is **visible and
+  enabled**" -- which #26's `_resolve_waiting` did not do, so a disabled element resolved at once
+  and failed inside `actions`. #29's HandBrake finding is the real case. `Verify` needed a new
+  module because three of its six properties are state the walk deliberately does not carry.
+- Corrected a stale note: **#28's four criteria are all ticked**; it is open because #24 is.
+- **Next step: `Select`**, whose design is written out in the task note -- it is not a pure action
+  (the items of a combo box may not exist until it is expanded, #33), and Qt is expected to
+  refuse, which matters because SC-20 needs it.
+
+## 2026-11-14 — fifth session: #40 finished, PR #237
+- **All four remaining keywords landed**: `Select` (`f36f1b3`) and `SelectRow` + the three row
+  checkpoints (`dc395c4`), on top of this morning's `Wait` and `Verify`. 612 agent tests pass,
+  ruff clean, `docs/agent-rpc.md`'s `runSteps` section rewritten, **PR #237** with both reviews
+  requested, the three acceptance criteria ticked and the Windows check posted as issue comment
+  `6879885017` with `needs-windows-test`.
+- **`Select` cost two new modules, and the reason is worth keeping**: the item is a *descendant*
+  of the target, so #26's habit of throwing the raw nodes away after `describe_tree` had to
+  stop (`playback/tree.py`), and a closed combo box has no items at all, so the keyword has to
+  expand the box and **read the window again** rather than look harder (`playback/items.py`).
+  Everything about the Qt obstacle from #33 is still unanswered until the Windows session; the
+  code reports it as a finding about the application instead of as a wrong value.
+- **The row work was mostly *reading the measurements right*, not writing code.** Three shapes
+  from the v0.2 ADR, and the rule had to be structural (does the item have cell children? is
+  the target a Table?) rather than per framework, or the next application breaks it. The part
+  that would have been easy to get silently wrong: the column list, which **must** reproduce
+  omer's `GridColumns.java` to the pixel, because that rule fills the dropdown the tester picked
+  the column from — otherwise a `cell` check reads the cell *next to* the one they meant and
+  reports `passed`. Both of them have inbox entries about it.
+- **A defensive test hung pytest with no output**: `model.describe_tree`'s ancestor walk has no
+  seen-set, so a hand-built node that is its own parent loops for ever. Unreachable from a real
+  UIA walk; in `learnings.md` as a fixture hazard and in the task note as a small open issue.
+- **Next step**: nothing of mine blocks #40 — the Windows session answers steps 1 and 3 (SC-20
+  and the cell-selecting case). Still owed: the second labelling round on #29 (a person's hour),
+  #24's Windows check after omer's fix, and my five #10 entries.
+
+## 2026-11-14 (second session) — #40's own Windows check, and the four defects it found
+
+Ran #40's manual check (issue comment `6879885017`) at the Windows machine rather than taking a
+review, because the review queue was empty and the check was the only thing of mine in the
+Windows queue. **7 of 7 pass — but steps 1 and 2 failed on the code PR #237 shipped**, and
+fixing them is `b28f2b9`.
+
+- **No driver existed.** Nothing in the repo plays a step document by hand, so the first half
+  hour went on writing one in the scratchpad: `UiaDesktop()` + `setup()`, `list_windows()`,
+  `desktop.run_steps(handle, document, targets)`. Use `agent/.venv`, not the root one —
+  `ayna_agent` is only installed in the former. Worth a committed `ayna_cli` subcommand (#61).
+- **The pattern lookup never unwrapped the element.** `get_elem_interface` wants the raw
+  `IUIAutomationElement`; the walk hands out a `UIAElementInfo`; only #26's `actions.py`
+  unwrapped it. So on real Windows every pattern read the four new modules make returned `None`
+  — Select, SelectRow, Verify's live properties, `cell`, `rowCount`, all of it — and 612 unit
+  tests were green because a fake patterns function takes the fake element either way. One line
+  at the seam. This is the finding I would most want a future session to remember: **a fake that
+  accepts both shapes cannot tell you which shape the real one needs.**
+- **`Select` reported a choice it had not made.** Qt's `SelectionItem.Select()` returns cleanly,
+  changes nothing, and the item then reports `IsSelected` true. I only caught it because I read
+  the combo's value back instead of trusting the `passed` — the same habit that caught #22's
+  stale-node case. Every rung is now confirmed against the **target**, not the item.
+- Two more from the same probe: `LegacyIAccessible.DoDefaultAction()` is the **only** route Qt
+  honours, and the box was expanded only once while Qt's popup shuts itself after ~1 s, so a
+  late-filling list could never be found. Both pinned by tests that fail on the old behaviour.
+- **Measure from a clean start.** My first pass said three routes worked; re-measuring with a
+  reset between them showed two of those three were inheriting the previous route's result.
+- **SC-20 is unblocked and #33's conclusion was too broad** — UIA can choose in a Qt combo box,
+  and the popup's items are in the window's tree. In galip's inbox.
+- **Next step**: push `b28f2b9` + this memory, post the check result on #40, remove
+  `needs-windows-test`, re-request both reviews (the PR changed under them). Then the Windows
+  queue's other seven are omer's and need him present. Still owed: the second labelling round on
+  #29 (a person's hour), #24's Windows check after omer's fix, my five #10 entries.
 ## 2026-11-14 — #29's first real numbers, and two approved PRs unblocked
 
 - **Unblocked #227 and #232.** Both were APPROVED but `CONFLICTING`, and in both the only

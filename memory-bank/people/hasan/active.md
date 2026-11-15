@@ -13,6 +13,117 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - Current issue: **none in progress.** Four PRs of mine are open and every one waits on reviews,
   not on me: **#239 (#47, now based on `main`)**, **#237 (#40)**, **#236 (#23)**, **#235 (#162)**.
 - **The next issue to pick is in Week 7/8 (#54, #55, #61, #62)**: Week 6's pair is done.
+- **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/40-playback-v1` for PR #237):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/40-playback-v1`" are that branch's copy, unedited; reconcile them at your next session end.
+
+## From `hasan/40-playback-v1`, kept at merge
+
+- Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
+  All six keywords are implemented, all three criteria are tested, **and the Windows check ran
+  here on 2026-11-14: 7 of 7 pass — but only after four fixes (`b28f2b9`)**. `Wait` and the
+  ready gate (`826b386`), `Verify` (`ca51c83`), `Select` (`f36f1b3`), `SelectRow` + the three
+  row checkpoints, then the four fixes. **623 agent tests pass, ruff clean, PR #237 open** with
+  both reviews requested. **Read `memory-bank/tasks/40-playback-v1.md` before touching any of
+  it**: the three row shapes, the duplicated column rule, the message wording and now the
+  read-back ladder are all decisions with reasons.
+- **The four defects the check found are the lesson of this issue, not a footnote.** All four
+  needed a real provider and all four passed 612 unit tests. (1) **The pattern lookup never
+  unwrapped the element** — `get_elem_interface` needs the raw `IUIAutomationElement`, the walk
+  hands out a `UIAElementInfo`, and only #26's `actions.py` unwrapped it, so on real Windows
+  *every* pattern read #40 added was silently "unsupported": Select, SelectRow, Verify's
+  value/checked/selected, `cell`, `rowCount`. It is now done once inside `uia_patterns`.
+  (2) **`Select` reported a choice it had not made** — Qt's `SelectionItem.Select()` returns
+  cleanly, changes nothing, and the item then says `IsSelected` true. Every rung is now
+  confirmed by reading the **target** back. (3) `LegacyIAccessible.DoDefaultAction` joined the
+  ladder: the only rung Qt honours. (4) The box was expanded **once**, and Qt's popup shuts
+  itself ~1 s later, so a late-filling list stayed invisible for good.
+- **#40 is out and nothing of mine is left on it.** Pushed (`75f2b18`), result posted as issue
+  comment `6880618635`, `needs-windows-test` removed, both reviews re-requested because the PR
+  changed under them. It waits on the two reviews and then on a merge.
+- **The Windows queue's other seven are all omer's** (#206, #204, #184, #68, #38, #24, #17) and
+  need him present, so they wait for the weekly session — do not run them alone. #24's is mine
+  to run but only after his fix to PR #234.
+- **SC-20 is unblocked and #33's Qt finding is overturned** (too broad): UIA *can* choose an
+  item in a Qt combo box, the popup's items *are* in the window's tree once expanded, and
+  `LegacyIAccessible.DoDefaultAction()` on the item works. In galip's inbox.
+- **The driver for a manual `runSteps` check does not exist in the repo** and had to be written
+  from scratch (scratchpad, not committed): `UiaDesktop()` + `setup()`, `list_windows()` to pick
+  the handle, then `desktop.run_steps(handle, document, targets)` — the `rpc.py` path with the
+  socket taken out. `ayna_agent` is **not** pip-installed in the root `.venv`; use
+  `agent/.venv/Scripts/python.exe`, which has it editable along with `websockets`. Worth a
+  committed `ayna_cli` subcommand when #61 starts, because every future playback check needs
+  it — **the user decided on 2026-11-14 that this stays inside #61's scope**, not its own issue.
+- **The sample app's grid is empty until a search runs**, so any grid step needs a `Click` on
+  `refreshButton` first, and `--screen main` skips the login. The automation ids are Qt-prefixed:
+  `QApplication.main.customerGrid`, not `customerGrid`.
+- **This file is now spread over four branches and no copy is complete.** `hasan/29-rq1-measure`
+  has the long review history and #29; `hasan/162-windows-llm-latency` has #162 and #23's
+  summary; this one has #40. **Whichever merges last keeps every branch's own section.** Also:
+  `eval/pyproject.toml`'s `testpaths` line is edited on the #29 *and* #162 branches and **will
+  conflict** -- keep both entries (`rq1/tests` and `llm-latency/tests`).
+- **#162 and #23 are delivered and out; #29 is waiting on a human.** PR **#235** (#162, no
+  `Closes`: criterion 5 is galip's files) + issue comment `6876199863`. PR **#236** (#23,
+  `Closes #23`) + comment `6876502627`. PR **#233** (#29, deliberately no `Closes`) needs the
+  second labelling round, which the user postponed on 2026-11-14 -- the blind sheets and
+  `measure.py agree` are committed and ready, so it needs a person's hour and nothing else.
+- **PR #234 (omer, #24) reviewed 2026-11-14, CHANGES_REQUESTED**: `pickState` reads #22's three
+  states correctly, but `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the Spy's own retry ladder
+  captures for 30 s and 120 s and the agent serialises UIA calls on one worker thread -- so a
+  pick pressed during a long capture shows a false `agent-error`. **I owe #24 its Windows check**
+  after his fix: it is the first real test of the client's DIP -> physical conversion at 100 %
+  and 150 %, the half #22's scaling evidence does not cover.
+- **The Project status is settable again, and all four of mine are now `In progress`** (#23,
+  #29, #40, #162). The token was missing `project`; the user granted it on 2026-11-14 with
+  `gh auth refresh --hostname github.com --scopes project`. **`--hostname` is required**, because
+  the shell here is non-interactive and `gh auth refresh -s project` alone exits with
+  "--hostname required when not running interactively" -- which is what blocked every earlier
+  session from touching the board.
+- **#28's four acceptance criteria are all ticked** -- the earlier note saying "three of four,
+  the last is galip's #7" was wrong. It stays open because its dependency **#24** is still open.
+- **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
+  2026-11-12 at 100 % and 150 % and passed at both, and **PR #227 was squash-merged on
+  2026-11-14 (`bfcdb35`)**, which closed the issue. Nothing is left on it.
+- **#29 is MERGED and CLOSED, and the second labeller is still owed.** PR **#233** was
+  squash-merged by the user on 2026-11-14 (`6fd87a9`), which **closed #29 even though the PR
+  deliberately carried no `Closes`** — the PR was linked to the issue in GitHub's Development
+  panel, and a linked issue closes on merge regardless of keywords. So **the closing is a
+  side effect of the link, not a judgement that the work is done**: a second independent
+  labeller is still owed and two open issues still feed #64. If that matters, reopen #29 or
+  carry the remainder as a new issue. **Watch for this on every PR that omits `Closes` on
+  purpose** — unlink it in the Development panel, or the omission buys nothing.
+- **The eight-step check is done** — every screen captured with 0 read errors, 6 steps passing
+  as written and the other two being the check's own mistakes. HandBrake is now 3 screens
+  (`main-summary`, `preferences`, `queue`); `main-video` is **dropped from `apps.json`** because
+  every tab reads `enabled: false` with no source loaded, so the instruction contradicted itself.
+- **The first labelled rates, per screen, are the only ones that may be quoted**: HandBrake
+  `queue` **4/6 = 66.7 %**, KeePass 2 `options` **35/35 = 100 %** (`eval/rq1/labels/*.csv`,
+  `missing` sweep run by the user and empty on both). **Never quote the app totals**:
+  `measure --labels` mixes labelled and unlabelled screens, so KeePass 2's app line reads
+  99 / 100 % while only one of its four screens is labelled.
+- **The `e20` claim is RETRACTED and the question to omer withdrawn.** It is not a control:
+  **no `bounds` key at all**, `enabled: false`, a WPF toolbar template part that is never
+  rendered. So `siblingIndex` was never the issue, and a missing `bounds` is the cheap test for
+  "not a control". Said so on #29 (comment `6874969764`) and in omer's inbox. The *real* limit is
+  **a nameless WPF `MenuItem` inside a named `Menu`**: HandBrake's `Options` split button and
+  `When Done` dropdown carry no `automationId` and no `name`, the name sits on the parent
+  `Menu`, and a per-element descriptor does not reach for an ancestor's identity. That same
+  shape is *recognised* in `main-summary`'s status bar only because it has no sibling — one app
+  pattern giving both a pass and a fail, which belongs in #64.
+- **The unlabelled rate is NOT reliably the optimistic one** — I had this backwards and so did
+  the guide; both are corrected. The denominator is wrong in **both** directions: a missed
+  control flatters it, a composite control's inner parts punish it. KeePass 2's Options screen
+  shows both at once (70.4 % unlabelled → 100 % labelled, all 19 dropped rows non-controls).
+- **#227 and #232 are MERGED** (2026-11-14, `bfcdb35` and `d788d64`), so **#22 is closed** and
+  #221's notes are on `main`. Both had been `CONFLICTING` on this file alone; each took an
+  `origin/main` merge, and 436 agent tests were re-run green on #227's.
+- **Merging a PR is the agent's prohibition, not the user's** (AGENTS.md §6 is addressed to the
+  agent). The user has `push` on the repo, `protect-main` asks only for 1 approval, squash and
+  resolved review threads, and there are **no bypass actors and no CODEOWNERS gate** on who
+  merges. So an approved PR of mine is the user's to merge whenever they want — **do not tell
+  them it is waiting on omer**, which is how the earlier "neither mine to merge" note got
+  misread. The user asked about exactly this on 2026-11-14.
+- **`capture` runs on `agent/.venv`, not the repo-root one** — `recognition/uia.py` takes its
+  exception types from `ayna_agent.rpc`, which imports `websockets` at module level. galip has
+  the request to decouple it; `rpc.py` is his file and is untouched.
 
 ## #46 and #47 -- the sample app's change and bug versions (2026-11-15)
 
@@ -52,6 +163,110 @@ file is **23 tests / 17 app launches** and #47's is **5 / 5**. #238's five CI jo
 **What neither issue proves, and must not be claimed:** that a correct AYNA test catches these
 bugs, or that a healer repairs these changes. That needs #62 (scenarios in the editor), #54/#55
 (played by the agent) and #63 (triage); `bugs.md`'s last section and both task notes say so.
+
+## #40, so the next session does not re-derive it
+
+`playback/runner.py` had the shape from #26 and `IMPLEMENTED = {"Click", "Type"}`; it is now
+every keyword of step schema v0.2, with four new modules: `playback/checkpoint.py` (one
+property of one element), `playback/tree.py` (one read of the window, plus the schema's single
+rule for the text a cell or an item shows), `playback/items.py` (`Select`) and
+`playback/rows.py` (`SelectRow` and the row checks). `agent/tests/grids.py` holds the three
+measured row shapes for both row test files.
+
+**The five decisions most likely to be re-derived or broken:**
+- **`Select` is not a pure action**: a closed combo box has no items at all, so the target is
+  expanded and the window **read again** before looking (#33) — **every poll it shows nothing,
+  not once**, because Qt's popup closes itself. The ladder is `SelectionItem` → `Invoke` →
+  `LegacyIAccessible.DoDefaultAction`, **each rung confirmed by reading the target back** with
+  one `POLL_INTERVAL_S` of grace (Qt applies a choice 32 ms late). An editable box takes the
+  text through `SetValue` only after the whole wait, and that value is read back too — with no
+  grace, which is a known open issue now that a late-applying provider is known to exist.
+- **Three row shapes, by structure not by framework**: the item is the row (KeePass 2), the
+  items are the cells and only `GridItem` says which row they belong to (Qt has no row
+  element), or the item is a one-cell row (`QListWidget`).
+- **`playback/rows.py:columns_of` duplicates `server/.../GridColumns.java` on purpose** and
+  must stay identical: that rule fills the dropdown the tester picked the column from, so a
+  divergence reads the cell *next to* the one they meant. omer has this in his inbox.
+- **`SelectRow` never uses `Invoke`** (it would *activate* the row and open a window); the
+  fallback is MSAA's `LegacyIAccessible.Select`, which KeePass 2 needs.
+- **A `SelectRow` on a cell-selecting view passes with a `message`** — the first passing step
+  that carries one, which the ADR asks for and the run report (#59) renders.
+
+- **"Ready" is the pre-step wait and it is more than "resolves"**: a step waits until the target
+  resolves *and* is neither disabled nor off screen -- what the issue text asks for ("exists, is
+  visible and enabled") and what the schema calls ready. #26 waited only for resolution, so a
+  disabled element resolved at once and the step then failed inside `actions` for an unstated
+  reason. **HandBrake is the real case from #29**: with no source loaded *every* tab reads
+  `enabled: false`.
+- `enabled`/`offscreen` of **`None` count as ready** -- a provider reporting neither is common
+  and `NEVER_MATCH` already calls both unreliable, so refusing would time out every step of such
+  an application.
+- **A `Verify` waits only for resolution**, because a checkpoint may be *about* a disabled or
+  offscreen element and would otherwise be unplayable.
+- **Three of `Verify`'s six properties are not in a descriptor** and are read live: `value`
+  (`ValuePattern`, then `LegacyIAccessible` -- the ladder `Type` writes down), `checked`
+  (`TogglePattern` **On**, so indeterminate is *not* checked) and `selected`
+  (`SelectionItemPattern`). `name`, `enabled` and `visible` come from the walk's descriptor.
+- **"Cannot be read" is its own failure, not `false`** -- no `TogglePattern` on the target means
+  the check does not apply, and "expected true, got false" would blame the application instead.
+- **`expected: ""` matches an element with no text**, or an empty error label could never be
+  verified. A target that vanishes mid-check reports *that*, not a property failure.
+- **The target is re-resolved on every poll**, never kept: a re-read gives new live elements and
+  the old one is a stale handle (the same reason #22 compares identity rather than geometry).
+- **Message wording is fixed by the PR #231 review and the tests assert the exact strings**,
+  because the run report (#59) is written against them. ` after N ms` for a check that re-read
+  until the time ran out, `within N ms` for an element that never appeared -- two waits, two
+  words. **#40's third criterion says "after N ms" for element-not-found while #26 shipped
+  "within": keep `within`** and say so on the issue rather than changing it silently.
+- **A field on a keyword that forbids it is refused, not ignored** (`value` on a Click, `row` on
+  a Verify): ignoring it would play a mis-built document as something else and report `passed`.
+
+## #23 -- the win32 fallback, answered and deliberately not built
+
+- The elements win32 can see are exactly the ones UIA already names, the number it offers is
+  literally the same `automationId`, and it is **not stable across runs** (7 of 8 control ids
+  changed between two launches). Everything UIA cannot name has **no HWND at all**: 58 of 74 in
+  KeePass 2, and HandBrake is 149 elements with **one** HWND, the window. WPF and Qt cannot gain
+  anything, structurally.
+- **The one genuine finding**: `e58`, a native Win32 `Edit` (class `Edit`, no `WindowsForms10.`
+  prefix), kept control id **1001** across a restart -- real identity that `_GENERATED_ID` throws
+  away for being a bare number. Candidate rule: trust a bare number from a native Win32 class,
+  not from `WindowsForms10.*`. **Sample size one**, and `model.py` is normative under #11, so it
+  needs an ADR and a `FEATURE_VERSION` bump. Open issue, not a change.
+- `eval/spikes/win32_probe.py`, 19 tests off Windows; report `eval/spikes/win32-fallback.md`.
+  **Three of those tests exist because the probe got it wrong first, each in the direction that
+  flatters the fallback** -- do not simplify them away.
+- **`UiaDesktop()` needs `setup()` called by hand** in a script; #29's harness and this probe
+  both tripped over it. Asked galip for a line in `agent/AGENTS.md`.
+- `eval/spikes/` is excluded from ruff and has no CI job, so its tests only run when someone
+  names the path. Worth one issue together with `eval/pyproject.toml`'s `testpaths`.
+
+## #162 -- NFR-12 on Windows, so it is not re-measured
+
+Report `eval/llm-latency/report.md`, 13 result files under `eval/llm-latency/results/`.
+
+- **The issue's premise was wrong about this machine**: it has an **RTX 3060 Laptop, 6 GB**, so
+  the default numbers beat the Mac's. Forced CPU-only it is **2.7x slower than the Mac**.
+- **`qwen3:8b` does not fit in 6 GB** (6.0 GB loaded, 30 % CPU / 70 % GPU); **`gemma4:e4b-it-qat`
+  does** (3.1 GB, 100 % GPU). So gemma4 is **3.2x faster here** and matched the expected keywords
+  **10/10 against 9/10** -- while being the *slower* of the two on the M2. "Which model is
+  faster" is a question about the box, not the model.
+- p50/p95 s: CLI qwen GPU **5.34 / 8.38**, CLI gemma GPU **1.65 / 2.47**, CLI qwen CPU
+  **15.30 / 22.68**, HTTP qwen GPU **8.59 / 16.04**, HTTP qwen CPU **23.24 / 41.30**.
+- **Recommended: a 60 s Windows deadline, not 30 s** (~1.4x the worst measured p95 of 43.33 s),
+  and **`reasons` opt-in per request, default off** (#78) -- CPU-only it is p95 22.68 s with 0/10
+  over the deadline against 43.10 s with 2/10.
+- **A fully VRAM-resident model is almost immune to the machine's own load** (gemma4 1.65 ->
+  1.70 s at 59 % busy; qwen3 5.34 -> 6.29 s). Under load the damage is in the **tail**.
+- **Warm every offered model, not just the default**: a first request against a non-default model
+  pays 14.71 s on the GPU and **25-51 s CPU-only**.
+- **Output is not reproducible run to run at temperature 0 with seed 42** -- 1 of 10 sentences
+  differed between two runs that differed only in machine load. Contradicts
+  `ai/spikes/llm-smoke.md` and matters for **RQ3 (#77)**. In galip's inbox with the `reasons`
+  toggle and criterion 5.
+- Two gotchas now in `learnings.md`: a subclassed warm-up that skips `request_body` warms the
+  wrong offload, and **Ollama reuses a runner already loaded CPU-only** (so `ollama stop` before
+  a GPU run, and read `size_vram` instead of trusting the configuration you asked for).
 
 ## What is waiting on someone else
 
