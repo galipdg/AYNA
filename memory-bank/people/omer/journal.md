@@ -303,3 +303,8 @@ Append-only. One entry per session, newest at the bottom:
 - Session start: `main` unchanged (`d788d64`), no review requests, inbox handled. PR #234 CI green, no reviews yet; #224 still waits for galip; #40 still open, so #44 waits.
 - omer ran the `dev:mock` pick check on macOS: all steps pass (task note).
 - Next: reviews on #234, Windows check at the weekly session, then #224 / #44.
+
+## 2026-11-15 — #24 review fix, PR sweep
+- hasan's changes on #234: `AgentQueue` so a pick waits behind a longer capture; `Highlighter.suspend()` brings the frame back. 252 tests green, pushed, re-review asked.
+- Reviewed and approved hasan's #235–#239; merged #236 and #238 on omer's word. #235, #237 and #239 conflict in hasan's files after that, so they are left to him (comments on each).
+- Next: re-review of #234, Windows check, #224 (galip), #44 after #237.
