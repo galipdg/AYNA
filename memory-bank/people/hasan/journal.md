@@ -908,3 +908,19 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   `capture` no longer needs `agent/.venv`. In `learnings.md`, in galip's inbox, and the claims
   it made stale in `frames.py`, the task note, `active.md` and the PR body are all corrected.
 - **PR #248 is open** for #54 (`Closes #54`), both reviews requested.
+- Third stretch, 2026-11-15: cleared the review queue — approved omer's #241, #243, #234, #249
+  and #247, and requested changes on #242 (SDD v0.5 has #40 under "Planned" though it merged at
+  12:52Z, #47's row lost the **Built** marker, and §6.2's Windows row contradicts §6.3 about the
+  `eval` job). For #249 I ran his nightly suite on this Windows machine, the one check his PR
+  could not do for itself: v1 green, bug1 fails only the login test, bug4 only the required-name
+  test. For #234 both of my earlier objections were fixed, the timeout one better than I asked.
+- Then the two changes omer requested on my #248. The CI one was already fixed; the second was a
+  real break — `additionalProperties: false` on `stepResult` meant every real `runSteps` answer
+  was outside the frozen contract, caught by a person and by no job. Schema to 1.2, an ADR, and
+  a guard that validates the real `StepResult.to_json()` rather than a fake of it. Reviewing
+  #247 also turned up that #44's one-call-per-step design scattered a run's screenshots into one
+  directory per step; the agent half is fixed, the one-line `rpc.py` pass-through is galip's.
+- Next step: nothing of mine is blocked on me. #248 waits on omer's re-review and galip; the
+  Windows queue (#247's check B, #24, #54's second-display case) waits for the weekly session.
+  The next issue to start is **#61** (CLI runner): #40 is on `main` and `ayna_cli*` has to go
+  into `agent/pyproject.toml`'s packages.
