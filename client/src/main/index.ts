@@ -565,9 +565,25 @@ function sweepReports() {
   }
 }
 
-app.on('will-quit', sweepReports)
+// A second instance that quits at once must not sweep the first one's open reports.
+app.on('will-quit', () => {
+  if (primaryInstance) sweepReports()
+})
+
+// One client per user-data folder: two would share `run-outbox.json`, and each rewrites the
+// whole file (#44). Another folder (`--user-data-dir`) is another client.
+const primaryInstance = app.requestSingleInstanceLock()
+if (!primaryInstance) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow?.isMinimized()) mainWindow.restore()
+    mainWindow?.focus()
+  })
+}
 
 app.whenReady().then(() => {
+  if (!primaryInstance) return
   sweepReports()
   hardenSession()
   registerIpc()
@@ -582,7 +598,7 @@ app.whenReady().then(() => {
 // Quit waits for the agent to stop, so no agent outlives the client.
 let agentStopped = false
 app.on('before-quit', (event) => {
-  if (agentStopped) return
+  if (agentStopped || !primaryInstance) return
   event.preventDefault()
   agent.stop().finally(() => {
     agentStopped = true

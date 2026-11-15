@@ -70,12 +70,16 @@ interface Setup {
   objects?: RepoObjectSummary[]
   createRun?: RunnerDeps['createRun']
   capturedElement?: RunnerDeps['capturedElement']
+  /** The outbox's `add` rejects from this call on (0-based), as on a full disk. */
+  addFailsFrom?: number
   agentConnected?: boolean
 }
 
 function setup(options: Setup = {}) {
   const played: PlayRequest[] = []
   const outbox: OutboxEntry[] = []
+  const opened: string[] = []
+  let adds = 0
   const states: LiveRun[] = []
   let now = 0
   const clock: Clock = {
@@ -110,12 +114,19 @@ function setup(options: Setup = {}) {
       },
     },
     outbox: {
+      async opened(serverUrl, runId) {
+        opened.push(`${serverUrl} ${runId} before ${outbox.length} entries`)
+      },
       async add(entry) {
+        if (options.addFailsFrom !== undefined && adds++ >= options.addFailsFrom) {
+          throw new Error('ENOSPC: no space left on device')
+        }
         outbox.push(entry)
       },
     },
     serverUrl: 'http://server',
     clock,
+    log: () => {},
   }
   const runner = new Runner(deps)
   runner.onChange((run) => states.push(run))
@@ -132,7 +143,7 @@ function setup(options: Setup = {}) {
     outbox.map((entry) =>
       entry.kind === 'result' ? `${entry.stepIndex}:${String(entry.body.status)}` : `finish:${entry.status}`,
     )
-  return { runner, played, outbox, states, finished, summaryOf }
+  return { runner, played, outbox, opened, states, finished, summaryOf }
 }
 
 /** Resolves once `test` holds for the runner's current run. */
@@ -343,5 +354,23 @@ describe('the runner', () => {
     assert.equal(run.choosing, null)
     assert.deepEqual(asked.sort(), ['id-login.okButton', 'id-login.passwordInput', 'id-login.userInput'])
     assert.equal(playedBeforeLastRead, false)
+  })
+
+  it('marks the run open in the outbox before the first step', async () => {
+    const { runner, opened, finished } = setup()
+    await runner.start('t1', 'v1')
+    await finished()
+    assert.deepEqual(opened, ['http://server r1 before 0 entries'])
+  })
+
+  it('ends the run when the outbox cannot write, and can start again', async () => {
+    const { runner, finished } = setup({ addFailsFrom: 1 })
+    await runner.start('t1', 'v1')
+    const run = await finished()
+    assert.equal(run.status, 'aborted')
+    assert.equal(run.current, null)
+    assert.equal(run.problem, 'not-stored')
+    const again = await runner.start('t1', 'v1')
+    assert.equal(again.ok, true, 'not busy any more')
   })
 })

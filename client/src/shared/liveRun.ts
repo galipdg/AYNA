@@ -153,3 +153,11 @@ export function rowState(run: LiveRun | null, stepIndex: number, now: number): R
   }
   return { kind: 'pending' }
 }
+
+/**
+ * Whether the editor's steps are read-only: only while this client plays them. Another
+ * client's run is shown, but it must not lock the test here (a stale one could for an hour).
+ */
+export function locksEditor(run: LiveRun | null): boolean {
+  return run !== null && run.mine && run.status === 'running'
+}

@@ -161,6 +161,9 @@ describe('the run outbox', () => {
 
   it("skips another server's entries and lists unfinished runs", async () => {
     const first = await Outbox.open(file, sender(['hang']), fakeClock().clock, quiet)
+    await first.opened(SERVER, 'A')
+    await first.opened('http://other', 'X')
+    await first.opened(SERVER, 'B')
     await first.add(result('A', 0))
     await first.add(result('X', 0, 'http://other'))
     await first.add(result('B', 0))
@@ -189,6 +192,27 @@ describe('the run outbox', () => {
     assert.deepEqual(outbox.unfinishedRuns(SERVER), [])
     assert.equal(await readFile(`${file}.bad`, 'utf8'), '{ not json')
     assert.equal(lines.length, 1)
+    await outbox.close()
+  })
+
+  it('remembers an opened run whose results were all delivered, across a restart', async () => {
+    const first = await Outbox.open(file, sender(), fakeClock().clock, quiet)
+    await first.opened(SERVER, 'A')
+    await first.add(result('A', 0))
+    await first.idle()
+    await first.close()
+    assert.deepEqual((await onDisk()).entries, [])
+    const second = await Outbox.open(file, sender(), fakeClock().clock, quiet)
+    assert.deepEqual(second.unfinishedRuns(SERVER), ['A'])
+    await second.add(finish('A'))
+    assert.deepEqual(second.unfinishedRuns(SERVER), [])
+    await second.close()
+  })
+
+  it('reads an outbox file written before runs were marked open', async () => {
+    await writeFile(file, JSON.stringify({ entries: [result('A', 0)], setAside: [] }), 'utf8')
+    const outbox = await Outbox.open(file, sender(['hang']), fakeClock().clock, quiet)
+    assert.deepEqual(outbox.unfinishedRuns(SERVER), [])
     await outbox.close()
   })
 })

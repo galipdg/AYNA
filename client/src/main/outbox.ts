@@ -17,6 +17,11 @@ export interface OutboxFile {
   entries: OutboxEntry[]
   /** Entries the server will never take; kept so nothing is lost without a trace. */
   setAside: SetAsideEntry[]
+  /**
+   * Runs started on this machine whose finish is not queued yet. Results leave the file as
+   * soon as they are delivered, so this is how a run cut short by a crash is still known.
+   */
+  open: { serverUrl: string; runId: string }[]
 }
 
 /** Sends one entry to the server it belongs to; `serverUrl` is the server signed in to now. */
@@ -64,7 +69,7 @@ export class Outbox {
     clock: Clock = systemClock,
     log: (line: string) => void = console.log,
   ): Promise<Outbox> {
-    let state: OutboxFile = { entries: [], setAside: [] }
+    let state: OutboxFile = { entries: [], setAside: [], open: [] }
     let text: string | null = null
     try {
       text = await readFile(file, 'utf8')
@@ -85,8 +90,17 @@ export class Outbox {
     return outbox
   }
 
+  /** Marks a run as started here; it is on disk when this resolves. Its finish clears it. */
+  async opened(serverUrl: string, runId: string): Promise<void> {
+    this.state.open.push({ serverUrl, runId })
+    await this.save()
+  }
+
   /** Queues an entry; it is on disk when this resolves. */
   async add(entry: OutboxEntry): Promise<void> {
+    if (entry.kind === 'finish') {
+      this.state.open = this.state.open.filter((run) => run.runId !== entry.runId)
+    }
     if (this.isSetAside(entry.runId)) {
       this.state.setAside.push({ ...entry, answer: this.setAsideAnswer(entry.runId) })
     } else {
@@ -102,16 +116,9 @@ export class Outbox {
     void this.send()
   }
 
-  /** Runs on `serverUrl` with queued entries but no finish among them. */
+  /** Runs on `serverUrl` started here whose finish was never queued. */
   unfinishedRuns(serverUrl: string): string[] {
-    const runs: string[] = []
-    const finished = new Set<string>()
-    for (const entry of this.state.entries) {
-      if (entry.serverUrl !== serverUrl) continue
-      if (entry.kind === 'finish') finished.add(entry.runId)
-      else if (!runs.includes(entry.runId)) runs.push(entry.runId)
-    }
-    return runs.filter((runId) => !finished.has(runId))
+    return this.state.open.filter((run) => run.serverUrl === serverUrl).map((run) => run.runId)
   }
 
   onSetAside(listener: (runId: string) => void): () => void {
@@ -201,7 +208,9 @@ function parseFile(text: string): OutboxFile | null {
   try {
     const value = JSON.parse(text) as Partial<OutboxFile>
     if (Array.isArray(value.entries) && Array.isArray(value.setAside)) {
-      return { entries: value.entries, setAside: value.setAside }
+      // A file from before runs were marked open has no `open`.
+      const open = Array.isArray(value.open) ? value.open : []
+      return { entries: value.entries, setAside: value.setAside, open }
     }
   } catch {
     // Unreadable.

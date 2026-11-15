@@ -45,7 +45,7 @@ import Resizer from './Resizer.tsx'
 import RunBar, { useLiveRun } from './RunBar.tsx'
 import StepTable, { problemText } from './StepTable.tsx'
 import { formatDate, formatTime, runsErrorText, strings, testErrorText } from './strings.ts'
-import { rowState } from '../../shared/liveRun.ts'
+import { locksEditor, rowState } from '../../shared/liveRun.ts'
 
 type List =
   | { state: 'loading' }
@@ -524,7 +524,8 @@ function TestEditor({
   }
 
   const first = problems[0]
-  const running = live.run?.status === 'running'
+  // Only this client's own run locks the steps; another client's is only shown.
+  const running = locksEditor(live.run)
   const canSave = dirty && !busy && !first && !running
   const runBlocker = running
     ? null

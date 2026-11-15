@@ -27,7 +27,8 @@ export interface RunnerDeps {
   agentConnected(): boolean
   agent: AgentCaller
   player: StepPlayer
-  outbox: Pick<Outbox, 'add'>
+  outbox: Pick<Outbox, 'add' | 'opened'>
+  log?: (line: string) => void
   serverUrl: string
   clock?: Clock
 }
@@ -91,7 +92,38 @@ export class Runner {
     if (this.run?.runId === runId) this.update({ ...this.run, problem: 'not-stored' })
   }
 
-  private async play({ run, document }: CreatedRun, appVersionId: string): Promise<void> {
+  /**
+   * Plays the run; never rejects. Anything that goes wrong outside a step (the outbox cannot
+   * write to disk, say) ends the run as `aborted`, so the client is not left busy.
+   */
+  private async play(created: CreatedRun, appVersionId: string): Promise<void> {
+    try {
+      await this.deps.outbox.opened(this.deps.serverUrl, created.run.id)
+      await this.playSteps(created, appVersionId)
+    } catch (error) {
+      const log = this.deps.log ?? console.error
+      log(`[runner] run ${created.run.id} ended: ${error instanceof Error ? error.message : String(error)}`)
+      try {
+        await this.deps.outbox.add({
+          kind: 'finish',
+          serverUrl: this.deps.serverUrl,
+          runId: created.run.id,
+          status: 'aborted',
+        })
+      } catch {
+        // The disk is the problem; the server's idle timeout ends the run (#51).
+      }
+      this.update({
+        ...this.run!,
+        status: 'aborted',
+        current: null,
+        choosing: null,
+        problem: 'not-stored',
+      })
+    }
+  }
+
+  private async playSteps({ run, document }: CreatedRun, appVersionId: string): Promise<void> {
     const objects = new Map((await this.deps.repoObjects())?.map((object) => [object.name, object]))
     const chosen = new Map<string, number>()
     const steps = document.steps

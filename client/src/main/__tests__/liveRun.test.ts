@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import type { RunSummary } from '../../shared/api.ts'
 import {
   fromSummary,
+  locksEditor,
   rowState,
   runBarState,
   stepOutcomeFrom,
@@ -131,5 +132,12 @@ describe('live run', () => {
     assert.equal(rowState(run, 2, 0).kind, 'pending')
     const playing = rowState({ ...fromSummary(summary, true), current: { stepIndex: 0, startedAt: 1000, timeoutMs: 20_000 } }, 0, 3100)
     assert.deepEqual([playing.kind, playing.waitedMs, playing.timeoutMs], ['playing', 2100, 20_000])
+  })
+
+  it("locksEditor only for this client's playing run", () => {
+    assert.equal(locksEditor(null), false)
+    assert.equal(locksEditor(fromSummary(summary, true)), true)
+    assert.equal(locksEditor(fromSummary(summary, false)), false, "another client's run")
+    assert.equal(locksEditor(fromSummary({ ...summary, status: 'passed' }, true)), false)
   })
 })

@@ -83,7 +83,7 @@ Acceptance criteria against the halves:
 5. Run again and press **Stop** during step 2–3. *Expected:* "Stopped at step n"; later rows "– Skipped".
 6. Set one Type step's value to `fail`, save, run. *Expected:* that row "✕ Check failed" with "mock failure" under it; later rows Skipped; bar "✕ Failed at step n · Check failed · mock failure".
 7. Switch the language to Türkçe and repeat step 3. *Expected:* "Çalıştır", "Çalışıyor · 7 adımın n. adımı", "Başarılı".
-8. Second client: start another `npm run demo` window on the same test (or `npm run dev` pointing at the same server, logged in as another user) and run from the first. *Expected:* the second shows "Running, started by admin · step n of 7" without Stop, and the same ✓ rows within 1 s.
+8. Second client: a second instance needs its own data folder (one client per folder, #44): `npm run dev -- -- --user-data-dir=/tmp/ayna-second`, server `http://127.0.0.1:8080`, log in, open the same test; run from the first window. Also check that a plain second `npm run demo` only brings the first window to the front. *Expected:* the second shows "Running, started by admin · step n of 7" without Stop, and the same ✓ rows within 1 s.
 **Report back:** pass/fail per step; for a failure a screenshot and the client console lines.
 
 ### By-hand check B — Windows session (real agent, after #237 merges)
