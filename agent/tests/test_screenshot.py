@@ -294,3 +294,51 @@ def test_each_step_gets_its_own_file(tmp_path):
         "step-0001.png",
         "step-0002.png",
     ]
+
+
+# --- where a run's images go ---------------------------------------------------------------
+
+
+def test_a_run_id_keys_the_directory_so_one_run_is_one_folder(tmp_path):
+    """#44's client sends one `runSteps` per step; without this each step got its own folder."""
+    first = shot.new_run_directory(
+        tmp_path, run_id="7a3c2f4e-1b2d-4c5e-8f9a-0b1c2d3e4f5a"
+    )
+    second = shot.new_run_directory(
+        tmp_path, run_id="7a3c2f4e-1b2d-4c5e-8f9a-0b1c2d3e4f5a"
+    )
+    assert first == second == tmp_path / "run-7a3c2f4e-1b2d-4c5e-8f9a-0b1c2d3e4f5a"
+
+
+def test_two_runs_do_not_share_a_directory(tmp_path):
+    assert shot.new_run_directory(tmp_path, run_id="run-a") != shot.new_run_directory(
+        tmp_path, run_id="run-b"
+    )
+
+
+def test_without_a_run_id_every_call_gets_its_own_directory(tmp_path):
+    from datetime import datetime
+
+    early = shot.new_run_directory(
+        tmp_path, moment=datetime(2026, 11, 15, 14, 3, 11, 4812)
+    )
+    late = shot.new_run_directory(tmp_path, moment=datetime(2026, 11, 15, 14, 9, 0, 1))
+    assert early != late
+    assert early.name < late.name, "timestamped names sort by when the run started"
+
+
+@pytest.mark.parametrize(
+    "run_id",
+    ["../../etc", "..", "a/b", r"C:\windows", "", "x" * 65, ".hidden", "a b"],
+)
+def test_a_run_id_that_cannot_be_a_directory_name_falls_back(tmp_path, run_id):
+    """`runId` crosses a process boundary, so it is a name to check, not a name to trust."""
+    directory = shot.new_run_directory(tmp_path, run_id=run_id)
+    assert directory.parent == tmp_path, f"{run_id!r} escaped to {directory}"
+    assert directory.name.startswith("run-20")
+
+
+def test_the_fallback_is_announced_rather_than_silent(tmp_path, caplog):
+    with caplog.at_level("WARNING"):
+        shot.new_run_directory(tmp_path, run_id="../escape")
+    assert "cannot name a directory" in caplog.text

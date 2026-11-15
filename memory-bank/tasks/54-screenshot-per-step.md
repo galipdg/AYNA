@@ -102,10 +102,20 @@ stacked branch.
   temporary directory and cannot know when the client has finished uploading them, so cleanup
   belongs to whoever owns the run. Said so in `docs/agent-rpc.md` and in omer's inbox (#51/#59);
   the client already removes report files for the same reason.
-- **`screenshotPath` and `screenshotAt` are not in `schemas/agent-rpc.schema.json`.** omer's #52
-  note says added optional fields are a minor bump (`$defs/version`), but `schemas/` is shared
-  and frozen at v1, so this PR documents the fields and leaves the schema to the review. The
-  `contracts` CI job will say whether it minds.
+- ~~`screenshotPath` and `screenshotAt` are not in the schema.~~ **Done, and it was a real
+  break, not paperwork.** omer's #248 review found that `stepResult` has
+  `additionalProperties: false`, so **every real `runSteps` answer was outside the frozen
+  contract** and nothing noticed: the only step results any test validated were hand-written
+  dicts that happened not to carry the new fields. Fixed here — `$defs/version` 1.1 -> 1.2, the
+  two optional fields, ADR `2026-11-15-step-screenshot-transport`, and two guards:
+  `test_what_the_runner_really_writes_is_in_the_contract` validates the **real**
+  `StepResult.to_json()` in four shapes, and the fake backend's results now carry screenshots.
+  Checked by reverting the schema: both guards fail, so they defend what they claim.
+  `schema_compat.py --base origin/main` reports no breaking change.
+- **`RPC_VERSION` is still `"1.0"` while the schema is 1.2.** Nothing is red --
+  `test_rpc_version_is_within_the_schemas_version` allows the schema to lead -- but by #240's
+  convention the agent answers the minor version in the change that fills it. `rpc.py` is
+  galip's; asked in his inbox.
 - **NFR-03 has no margin for an incompressible window.** Not a problem for any AYNA pilot app,
   but if it ever is, the lever is the image, not the encoder: capture at a reduced size or drop
   to a palette. Worth an issue only if a real app hits it.
@@ -118,6 +128,16 @@ stacked branch.
   `ayna_agent.errors`, and `import ayna_agent.recognition.uia` works on the repo-root `.venv`
   for the first time. **#29's `capture` no longer needs `agent/.venv`**; that note in
   `active.md` and `learnings.md` is now out of date.
+
+## Open issues (found reviewing #247, 2026-11-15)
+
+- **One `runSteps` call per step means one screenshot directory per step.** #44's client sends a
+  step at a time so it can show live status, and `_run_steps` drops the `runId` it is given, so
+  the agent falls back to a timestamp per call: a seven-step run leaves seven folders, each with
+  one `step-0000.png`, and omer's cleanup ("the client deletes the run's folder") has no folder.
+  The agent half is done here -- `new_run_directory(run_id=...)` keys the directory on the run,
+  validates the id (a name that cannot be a directory falls back and logs) and is tested -- but
+  the pass-through is one line in `rpc.py`, which is galip's. In his inbox and said on #247.
 
 ## Handoff
 - **The capture is on by default for every `runSteps` call** (`UiaDesktop.run_steps`), which is

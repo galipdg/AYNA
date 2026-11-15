@@ -12,7 +12,7 @@
   "$defs": {
     "version": {
       "description": "Version of this contract, the rpcVersion an agent that implements exactly this file answers. Bump it on every change: minor for additions, major for a breaking change.",
-      "const": "1.1"
+      "const": "1.2"
     },
     "id": {
       "description": "Request id, chosen by the caller; replies come in any order and are matched by it.",
@@ -293,7 +293,17 @@
         "message": { "type": "string" },
         "matched": { "enum": ["primary", "fallback"] },
         "performedWith": { "type": "string" },
-        "category": { "$ref": "#/$defs/failureCategory" }
+        "category": { "$ref": "#/$defs/failureCategory" },
+        "screenshotPath": {
+          "description": "Absolute path to this step's PNG on the machine the agent runs on (#54, FR-19). The client reads the bytes from there and uploads them; the image never travels in this message, because a 50-step run is about 15 MB of PNG. Absent whenever there is no image, which is normal rather than an error: a notRun step is never photographed, and a capture that fails is logged and skipped instead of failing the step.",
+          "type": "string",
+          "minLength": 1
+        },
+        "screenshotAt": {
+          "description": "When that PNG was taken, to the millisecond, so a reader can say how much older the image is than anything measured after it (#54).",
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
     "failureCategory": {

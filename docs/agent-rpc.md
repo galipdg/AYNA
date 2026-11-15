@@ -320,6 +320,14 @@ must treat a missing screenshot as normal.
 Nothing deletes these files. The agent cannot know when the client has finished uploading them,
 so whoever owns the run owns the cleanup.
 
+**One directory per run — once `runId` reaches the backend.** `UiaDesktop.run_steps` names the
+directory after the run when it is given the run id, and falls back to a timestamp otherwise.
+`_run_steps` still only accepts `runId` and drops it (the table above), so **today every call
+opens its own directory**. That is invisible to a caller that plays a whole run in one call, and
+wrong for one that sends a step at a time as #44's client does: a seven-step run leaves seven
+folders, each with a single `step-0000.png`, and there is no one folder for the client to delete.
+Passing `params["runId"]` through is one line in `rpc.py` (#54, asked of galip).
+
 ```json
 → {"jsonrpc": "2.0", "id": 7, "method": "runSteps", "params": {
     "handle": 657704,

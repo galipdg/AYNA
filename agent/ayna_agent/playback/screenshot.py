@@ -33,6 +33,7 @@ Three things here are deliberate and cost something, so they are worth stating:
 from __future__ import annotations
 
 import logging
+import re
 import struct
 import zlib
 from collections.abc import Callable
@@ -400,13 +401,31 @@ def step_capture(
 SCREENSHOT_ROOT = "ayna-screenshots"
 
 
-def new_run_directory(
-    root: Path | str | None = None, *, moment: datetime | None = None
-) -> Path:
-    """A fresh directory for one run's step PNGs, named so runs sort by when they started.
+#: What may appear in a run id used as a directory name. `runId` is a UUID in the contract, but
+#: it arrives from another process, and a value such as `..` would put a run's images somewhere
+#: nobody will look for them. Anything else falls back to a timestamp.
+_SAFE_RUN_ID = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 
-    Not created here: `write_step_png` makes it on the first image, so a run whose every
-    capture failed leaves nothing behind.
+
+def new_run_directory(
+    root: Path | str | None = None,
+    *,
+    run_id: str | None = None,
+    moment: datetime | None = None,
+) -> Path:
+    """The directory for one run's step PNGs.
+
+    **Pass the `runId` whenever there is one.** A caller that plays a whole run in one
+    `runSteps` call could do without it, but #44's client sends **one call per step** so that it
+    can show live status, and each call would otherwise open its own directory: a seven-step run
+    would leave seven folders, each holding a single `step-0000.png`, and "delete the run's
+    folder" would have no one folder to delete. Keyed on the run id, a run's steps land together.
+
+    Without a run id -- or with one that cannot safely be a directory name -- it falls back to a
+    timestamp, which sorts runs by when they started and is unique enough for one agent.
+
+    Not created here: `write_step_png` makes it on the first image, so a run whose every capture
+    failed leaves nothing behind.
     """
     import tempfile
 
@@ -415,5 +434,9 @@ def new_run_directory(
         if root is not None
         else Path(tempfile.gettempdir()) / SCREENSHOT_ROOT
     )
+    if run_id is not None:
+        if _SAFE_RUN_ID.match(run_id):
+            return base / f"run-{run_id}"
+        log.warning("run id %r cannot name a directory; using a timestamp", run_id)
     stamp = (moment or datetime.now()).strftime("%Y%m%d-%H%M%S-%f")
     return base / f"run-{stamp}"

@@ -337,6 +337,7 @@ class UiaDesktop:
         steps: dict[str, Any],
         targets: dict[str, Any],
         default_timeout_ms: int | None = None,
+        run_id: str | None = None,
         screenshot_directory: str | None = None,
     ) -> list[dict[str, Any]]:
         """Play a step document against one window and return one result per step (#26).
@@ -354,9 +355,10 @@ class UiaDesktop:
         A step that simply fails comes back as a `failed` result instead.
 
         Every step that runs is photographed (#54, FR-19) into `screenshot_directory`, or into
-        a fresh directory under the system temporary directory when none is given; each result
+        a directory under the system temporary directory named after `run_id`; each result
         carries the absolute path, so the caller needs no agreement with the agent about where
-        the files are. A capture that fails is logged and leaves that step without an image --
+        the files are. **Pass `run_id` when the caller sends one step per call**, as #44's
+        client does, or each call opens a directory of its own and a run's images scatter. A capture that fails is logged and leaves that step without an image --
         it never turns a passing step into a failing one.
         """
         from ayna_agent.playback import screenshot as shot
@@ -367,7 +369,7 @@ class UiaDesktop:
         directory = (
             screenshot_directory
             if screenshot_directory is not None
-            else shot.new_run_directory()
+            else shot.new_run_directory(run_id=run_id)
         )
         try:
             results = play(
