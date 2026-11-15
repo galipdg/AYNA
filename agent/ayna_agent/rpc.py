@@ -33,8 +33,19 @@ from websockets.http11 import Request, Response
 
 from ayna_agent import __version__
 
+# Defined without the WebSocket server's imports, so a backend can raise them on its own
+# (#29); re-exported here because the names were contractual before the move.
+from ayna_agent.errors import (
+    BadStepDocument,
+    SnapshotTimeout,
+    UiaUnavailable,
+    WindowNotFound,
+)
+
 HOST = "127.0.0.1"
-RPC_VERSION = "0.1"
+# `$defs/version` of schemas/agent-rpc.schema.json that this agent implements (ADR
+# contracts-v1-freeze). Bump it with the schema: an addition is a minor version.
+RPC_VERSION = "1.0"
 TOKEN_ENV = "AYNA_AGENT_TOKEN"
 MIN_TOKEN_LENGTH = 16
 MAX_TIMEOUT_MS = 600_000
@@ -50,25 +61,6 @@ UIA_UNAVAILABLE = -32001
 SNAPSHOT_TIMEOUT = -32002
 
 log = logging.getLogger(__name__)
-
-
-class WindowNotFound(Exception):
-    """No top-level window has the requested handle (it may have closed)."""
-
-
-class UiaUnavailable(Exception):
-    """UI Automation cannot run here: not Windows, or no backend yet."""
-
-
-class SnapshotTimeout(Exception):
-    """The snapshot walk ran out of its time budget before it finished."""
-
-
-class BadStepDocument(Exception):
-    """`runSteps` was given something that is not a step document it can read (#26).
-
-    Only for a document that cannot be read *at all* -- an unknown version, a missing `steps`.
-    Everything a single step can get wrong is that step's `failed` result instead."""
 
 
 class Desktop(Protocol):
@@ -496,8 +488,8 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     # The recognition backend reads UI Automation and sets this process's DPI awareness in
-    # its setup(); if it cannot run here (not Windows, no pywinauto) the server does not
-    # start, which is the right outcome -- it could only answer -32001 to everything.
+    # its setup(). Where it cannot run (not Windows, no pywinauto) the server still starts
+    # and every UIA method answers -32001 with the reason (`UiaDesktop.setup`).
     from ayna_agent.recognition.uia import UiaDesktop
 
     desktop: Desktop = UiaDesktop()
