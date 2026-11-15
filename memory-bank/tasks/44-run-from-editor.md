@@ -18,7 +18,7 @@ Acceptance criteria against the halves:
 - "A second client watching the same test sees the run live": server half sends it; the screen is the client half.
 - "The Run stores the id of the user (or API token)": server half. A CI service account is an ordinary tester account (ADR accounts), so a user id covers tokens.
 
-## Client half design (2026-11-15, waiting for omer's approval)
+## Client half design (2026-11-15, approved by omer)
 
 **Intent.** The Run button in the test editor plays the saved test through the local agent, shows each step's result in its row as it arrives, and stores the run on the server; another client with the same test open sees the same run live (FR-20, SC-17, NFR-06 1 s). The screen is wireframe 8 (`docs/ui/wireframes.md`): a run bar above the step table, a Result column, Stop.
 
@@ -62,13 +62,38 @@ Acceptance criteria against the halves:
 - [x] `/ws/runs` (`RunEvents`, `RunEventsConfig`), 60 s token re-check; `RunEventsIntegrationTest` (real port, real client)
 - [x] `docs/graph-model.md` v0.3, SDD rows, OpenAPI regenerated; 86 server tests
 - [x] PR #193 (`Part of #44`), reviewers galip and hasan, 2026-11-05
-- [ ] Client half: Run panel, outbox, `runSteps` (needs #38 on `main` and #40)
+- [x] 2026-11-15: client half built on `omer/44-run-from-editor` from the plan `44-run-from-editor-plan.md` (Tasks 1–10): `liveRun.ts`, `runs.ts` calls, `runWindows.ts`, `stepPlayer.ts`, `outbox.ts`, `runner.ts`, `runEvents.ts`, IPC, `RunBar.tsx`, Result column; mock agent answers `runSteps`. 288 client tests.
+- [ ] Client half: by-hand check of the screen (below), then PR (`Closes #44` only after the Windows check)
 - [x] 2026-11-07: hasan's review fixes (`durationMs`, ADR `repairProposed`); 86 server tests, OpenAPI regenerated
 - [x] 2026-11-07: PR #193 squash-merged (`4d0c98a`) on omer's yes, before #182
 - 2026-11-15: client half started on `omer/44-run-from-editor`; design above, approaches chosen by omer.
-- Next step: omer approves the client-half design, then an implementation plan.
+- Next step: whole-branch review, then omer's by-hand check of the screen with `npm run demo`, then push + PR.
 
 ## Manual checks
+- 2026-11-15 · agent · main-process chain end to end, real server (Docker `ayna44`, port 28044) + mock agent through the real `AgentManager`, script in the session scratchpad · **pass 8/8**: run created, 7/7 results stored as `passed`, a second `RunEvents` client saw it live (13 updates), Stop → stored `aborted` with later steps `notRun`, server stopped mid-run → run played to the end and the outbox delivered 7/7 after the server came back. The outage check first **failed** (run hung in the window chooser) and found a bug: titles from the last capture were read from the server step by step; fixed in `78bb137` (read before the first step) with a runner test. Stack torn down after.
+- Pending (omer, macOS): the screen, with `npm run demo` — checklist below.
+- Pending (Windows session, after hasan's #237 merges): real agent and trial app — checklist below; post as an issue comment with `needs-windows-test`.
+
+### By-hand check A — the screen on macOS (`npm run demo`)
+**Setup:** in `client/`: `npm ci`, then `npm run demo`; log in as admin; choose "AYNA Deneme Uygulaması"; version 1.0; open Tests → "Geçerli kullanıcıyla giriş".
+1. Look at the header. *Expected:* **Run** next to Save, enabled; its tooltip is empty.
+2. Change a step without saving. *Expected:* Run disabled, tooltip "Save the steps first." Undo the change.
+3. Press **Run**. *Expected:* the bar "Running · step n of 7 · m:ss" with Stop; rows turn ✓ one by one (≈0.3 s each), the current row shows "● waiting…"; the steps cannot be edited or dragged.
+4. When it ends. *Expected:* "✓ Passed" + **Run details**, which opens the report; the run is in Runs.
+5. Run again and press **Stop** during step 2–3. *Expected:* "Stopped at step n"; later rows "– Skipped".
+6. Set one Type step's value to `fail`, save, run. *Expected:* that row "✕ Check failed" with "mock failure" under it; later rows Skipped; bar "✕ Failed at step n · Check failed · mock failure".
+7. Switch the language to Türkçe and repeat step 3. *Expected:* "Çalıştır", "Çalışıyor · 7 adımın n. adımı", "Başarılı".
+8. Second client: start another `npm run demo` window on the same test (or `npm run dev` pointing at the same server, logged in as another user) and run from the first. *Expected:* the second shows "Running, started by admin · step n of 7" without Stop, and the same ✓ rows within 1 s.
+**Report back:** pass/fail per step; for a failure a screenshot and the client console lines.
+
+### By-hand check B — Windows session (real agent, after #237 merges)
+**Setup:** Hasan's machine; `git switch omer/44-run-from-editor`; start the trial app (`eval/apps/trial`); server running; in `client/`: `npm ci && npm run dev`; log in; the trial app's application and version; a test that logs in and then checks something in the main window.
+1. Run the login test. *Expected:* steps on the login window, then on the main window after it opens (each step finds its own window by title); ✓ Passed.
+2. Open two trial app windows with the same title, run. *Expected:* the bar asks which window, one button per window; the choice is kept for the rest of the run.
+3. Close the trial app mid-run. *Expected:* the next step fails "Unexpected window" after its wait; later steps Skipped.
+4. Second client on another machine or user with the same test open (SC-17). *Expected:* live within 1 s.
+5. Repeat step 1 at 100 % and 150 % scaling.
+**Report back:** pass/fail per step and scaling; a screenshot, the `[agent]` console lines, Windows version and scaling for a failure.
 - 2026-11-05 · agent · real Docker image on a fresh volume, Node's WebSocket as in `client/src/main/agent.ts` · pass, 15/15: bad or missing token refused, no `Origin` header needed, all three events reach the watcher, repeat not broadcast, 409 as a problem, step to watcher 69 ms (NFR-06: 1 s), logout closes with 1008 after 58.7 s through the real scheduler · evidence: run log in this session; the first run's one failure was the smoke script's stale waiter, not the server.
 - Retry path checked by removing it: `overlappingRetriesStoreOneResult` then fails with `ConstraintValidationFailed`.
 - Server half: no human step needed. Plan a check for the client half (two clients on one test, SC-17) while designing that screen.
@@ -76,10 +101,12 @@ Acceptance criteria against the halves:
 ## Open issues
 - `docs/agent-rpc.md` says the REST contract is #51's and #74's. Galip's file: note on the PR.
 - A run whose client never comes back stays `running` until #51's idle timeout.
+- 2026-11-15: **Stop finishes `aborted`**, while the runs ADR says `aborted` means a crash. Ask galip and hasan on the PR; if they want a `stopped` status, that is an ADR change and a server change.
+- 2026-11-15: the client sets `category: unexpectedWindow` itself when no window has the step's title; #63 says the agent fills categories. Say so on the PR (hasan).
+- Screenshots per step (#54) are not sent yet: the agent does not take them.
 
 ## Handoff
-- SSH to GitHub times out: fetch with `git -c url."https://github.com/".insteadOf="git@github.com:" fetch origin`.
-- This work runs in the worktree `.claude/worktrees/pr-review-merge-stack-a13b07`; the main checkout is on `omer/38-step-editor`.
-- Expect conflicts with the stack only in generated or shared docs: `docs/api/openapi.yaml`, `docs/graph-model.md`, `OpenApiConfig.java`. The stack adds no migration, so `V0004` is free.
+- 2026-11-15: client half in the worktree `.claude/worktrees/pr-reviews-windows-queue-13fdc7`, branch `omer/44-run-from-editor`. SSH to GitHub works again (port 443).
+- The plan and its ledger: `memory-bank/tasks/44-run-from-editor-plan.md`; the ledger itself is git-ignored scratch in `.superpowers/sdd/`.
 
 ## Outcome (fill when the issue closes)
