@@ -13,9 +13,13 @@ Run it from the repository root, on any platform:
     .venv/Scripts/python.exe eval/apps/sample/sample_app.py          # Windows
     .venv/bin/python eval/apps/sample/sample_app.py                  # macOS, Linux
 
-The one option worth knowing is the search delay, which SC-18 is built on:
+Three options are worth knowing: the search delay, which SC-18 is built on; the change version
+(#46), which runs the same app with one kind of UI change applied; and the bug version (#47),
+which runs it with one functional bug a correct test must catch:
 
     .venv/Scripts/python.exe eval/apps/sample/sample_app.py --search-delay-ms 0
+    .venv/Scripts/python.exe eval/apps/sample/sample_app.py --variant v2a --screen main
+    .venv/Scripts/python.exe eval/apps/sample/sample_app.py --bug bug2 --screen detail
 
 The rules live in `model.py` (no Qt, so they are tested anywhere), every visible string in
 `texts.py`, and the screens in `windows.py`.
@@ -34,7 +38,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PySide6.QtWidgets import QApplication
 
+import bug_patch
 import texts
+import variant_patch
+from bugs import BUG_CHOICES, NO_BUG
+from variants import BASELINE, VARIANT_CHOICES
 from windows import DEFAULT_SEARCH_DELAY_MS, LoginWindow
 
 SCREENS = ("login", "main", "detail", "settings", "wizard")
@@ -60,6 +68,26 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         choices=SCREENS,
         default="login",
         help="which screen to open first (default: login)",
+    )
+    parser.add_argument(
+        "--variant",
+        choices=VARIANT_CHOICES,
+        default=BASELINE,
+        help=(
+            "which of #46's controlled change versions to run (default: v1, the unchanged "
+            "app); the version is in every window title and the changes are in "
+            "eval/apps/sample/variants.md"
+        ),
+    )
+    parser.add_argument(
+        "--bug",
+        choices=BUG_CHOICES,
+        default=NO_BUG,
+        help=(
+            "run one of #47's bug-injected versions instead of the correct app (default: "
+            "none); each has one functional bug and names the reference scenario that must "
+            "fail -- eval/apps/sample/bugs.md"
+        ),
     )
     parser.add_argument(
         "--version", action="version", version=f"{texts.APP_NAME} {texts.VERSION}"
@@ -92,6 +120,12 @@ def open_screen(name: str, delay_ms: int):
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     app = QApplication([sys.argv[0]])
+    # Before the first window: every window's `__init__` applies the active version itself,
+    # so the screens this one opens later are changed too.
+    variant_patch.set_active(args.variant)
+    # A bug version patches module globals and class methods, so it goes in before the first
+    # window exists: a slot Qt has already connected would otherwise keep the correct method.
+    bug_patch.install(args.bug)
     window = open_screen(args.screen, args.search_delay_ms)
     window.show()
     return app.exec()

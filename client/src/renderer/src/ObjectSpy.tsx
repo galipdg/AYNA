@@ -79,7 +79,8 @@ function capturedLine({ capture, app }: Snapshot): string {
 }
 
 function processLabel(win: WindowInfo): string {
-  return `${win.processName ?? strings.spyUnknownProcess} · ${win.processId}`
+  const name = win.processName ?? strings.spyUnknownProcess
+  return win.processId === null ? name : `${name} · ${win.processId}`
 }
 
 /** The chosen element in one line: its text (or AutomationId) and its type in plain words. */
