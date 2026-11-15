@@ -67,13 +67,13 @@ Acceptance criteria against the halves:
 - [x] 2026-11-07: hasan's review fixes (`durationMs`, ADR `repairProposed`); 86 server tests, OpenAPI regenerated
 - [x] 2026-11-07: PR #193 squash-merged (`4d0c98a`) on omer's yes, before #182
 - 2026-11-15: client half started on `omer/44-run-from-editor`; design above, approaches chosen by omer.
-- Next step: whole-branch review, then omer's by-hand check of the screen with `npm run demo`, then push + PR.
+- Next step: push + PR (`Part of #44` until check B passes on Windows after #237 merges); once #241 and #246 merge, merge `origin/main` in and open Run details once more.
 
 ## Manual checks
 - 2026-11-15 · agent · main-process chain end to end, real server (Docker `ayna44`, port 28044) + mock agent through the real `AgentManager`, script in the session scratchpad · **pass 8/8**: run created, 7/7 results stored as `passed`, a second `RunEvents` client saw it live (13 updates), Stop → stored `aborted` with later steps `notRun`, server stopped mid-run → run played to the end and the outbox delivered 7/7 after the server came back. The outage check first **failed** (run hung in the window chooser) and found a bug: titles from the last capture were read from the server step by step; fixed in `78bb137` (read before the first step) with a runner test. Stack torn down after.
 - 2026-11-15 · omer · check A on macOS (`npm run demo`), screenshots on omer's Desktop (15.16.52–15.17.07) · **steps 1, 3, 4 (bar and Runs list), 5 pass**: Run next to Save; rows ✓ one by one; "✓ Başarılı"; Stop → "4. adımda durduruldu" with later rows "– Atlandı"; the runs listed as Başarılı / Yarıda kesildi. **Run details fails** with "Sunucuya ulaşılamadı", and so does "Raporu aç" on the Runs screen: a bug in #59's report on `main`, not in #44 (`report.html` streams through `StreamingResponseBody`; Spring Security re-authorizes the async dispatch without the bearer context and throws `AccessDenied` after the body has started, so the client gets a truncated response; `curl` shows 200 and exit 18). Step 8 first used plain `npm run dev`, which starts the real agent (not on macOS); the command is fixed below. Steps 2, 6, 7, 8 not reported yet.
 - 2026-11-15 · omer · check A steps 2 (Run disabled while unsaved), 7 (English) and 8 (second client with its own data folder sees the run live) · **pass**. Result cell aligned with the inputs after omer's screenshot (`c3bb9e4`). The Runs row shift seen there is #241's fix, not on `main` yet.
-- Pending (omer, macOS): check A step 6 (a Type step's value `fail`).
+- 2026-11-15 · omer · check A step 6 (a Type step's value `fail`: ✕ with the category word, later rows Skipped) · **pass**. Check A passes; Run details / Raporu aç waits on #246 (#245) and the Runs row line on #241, both on other branches.
 - Pending (Windows session, after hasan's #237 merges): real agent and trial app — checklist below; post as an issue comment with `needs-windows-test`.
 
 ### By-hand check A — the screen on macOS (`npm run demo`)
