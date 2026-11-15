@@ -4,11 +4,11 @@ How the Electron client talks to the automation agent on the same machine. Part 
 
 Everything up to [Trying it by hand](#trying-it-by-hand) is **1.0**, as built: v0.1 plus `runSteps` (#26) and `elementFromPoint` (#22), frozen at G1 (#52, ADR `2026-11-08-contracts-v1-freeze`). `schemas/agent-rpc.schema.json` fixes the message shapes and is checked by both sides (`client/src/main/__tests__/agentContract.test.ts`, `agent/tests/test_rpc_contract.py`). The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-draft), is a draft for a later 1.x that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
 
-> **Version numbers, settled 2026-11-15 (galip).** The freeze made everything built before it **1.0**, `runSteps` and `elementFromPoint` included, so they do not need a 1.1 of their own; `ping` answers `"1.0"`. **1.1** is a failed step's `category` (FR-35, ADR `2026-11-15-failure-category`, #63): the agent answers `"1.1"` in the change that fills it. The healing draft below takes the next minor number when it is built. A line further down that still says `"0.1"` predates this note.
+> **Version numbers, settled 2026-11-15 (galip).** The freeze made everything built before it **1.0**, `runSteps` and `elementFromPoint` included, so they do not need a 1.1 of their own; `ping` answers `"1.0"`. **1.1** is a failed step's `category` (FR-35, #63; proposed in PR #240 with ADR `2026-11-15-failure-category`): the agent answers `"1.1"` in the change that fills it. The healing draft below takes the next minor number when it is built. A line further down that still says `"0.1"` predates this note.
 
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over one WebSocket on `127.0.0.1`.
 - Only the client's main process connects. The renderer goes through the preload API, as for everything else.
-- `rpcVersion` (returned by `ping`) changes when this contract changes: minor for additions, major for anything that breaks an existing client. It always equals `$defs/version` in `schemas/agent-rpc.schema.json` (`RPC_VERSION` in `rpc.py`; a test keeps the two equal). A 1.x client accepts any 1.y agent.
+- `rpcVersion` (returned by `ping`) changes when this contract changes: minor for additions, major for anything that breaks an existing client. It is `RPC_VERSION` in `rpc.py` and follows `$defs/version` in `schemas/agent-rpc.schema.json`: the same major version, and never a minor version the schema does not have yet. The schema may be ahead while a field it adds is not built (a test checks both). A 1.x client accepts any 1.y agent.
 
 ## Starting the agent
 
@@ -395,7 +395,7 @@ One notification per step of the run, in step order, when the step has finished 
 | `snapshot` | object | Only with `repairProposed`: the snapshot document (`schemas/snapshot.schema.json`, #12) of the window the candidates came from, captured when the wait ended. |
 | `healingProposal` | object | Only with `repairProposed`: a document per `schemas/healing-proposal.schema.json` (below). |
 
-The other fields are the ones `runSteps` already returns per step: `durationMs` and `message` (#40; the name `durationMs` matches `timeoutMs` and `budgetMs`, hasan on #193), `matched` and `performedWith`, and for a failed step `category` (#63, ADR `2026-11-15-failure-category`). #54 adds the screenshot's.
+The other fields are the ones `runSteps` returns per step: `durationMs` and `message` (#40; the name `durationMs` matches `timeoutMs` and `budgetMs`, hasan on #193), `matched` and `performedWith`. #63 adds a failed step's `category` (proposed in PR #240), and #54 adds the screenshot's.
 
 **Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`; the names are #54's and #40's to settle), so the approval screen can say how much older the image is than the geometry. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image itself travels as #54 and #51 decide; the proposal carries none.
 

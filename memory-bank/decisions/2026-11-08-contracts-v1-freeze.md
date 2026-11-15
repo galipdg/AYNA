@@ -1,7 +1,7 @@
 # Contracts v1: what the G1 freeze means and how CI enforces it
 
 - Date: 2026-11-08
-- Status: Accepted (#52). Ömerfaruk proposed; Hasan approved PR #224 (2026-11-10), Galip on #240 (2026-11-15). The agent's half (`rpcVersion` 1.0 and its contract test) followed on `galip/inbox-2026-11-15`.
+- Status: Accepted (#52). Ömerfaruk proposed; Hasan approved PR #224 (2026-11-10), Galip on #240 (2026-11-15). The agent's half (`rpcVersion` 1.0 and its contract test) followed in Galip's next PR.
 - Deciders: Ömerfaruk (server, client, CI), Galip (agent RPC), Hasan (playback, CLI runner)
 - Issue: #52 (NFR-34, NFR-42; gate G1 #56). Depends on #31 (REST v0) and #16 (agent JSON-RPC v0.1), both closed.
 - Extends: ADR *Agent JSON-RPC v0* (`2026-10-27`), ADR *Runs API and live run updates* (`2026-11-05`). The step, element, snapshot and healing-proposal schemas keep their own ADRs and numbers.

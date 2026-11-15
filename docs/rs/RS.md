@@ -8,8 +8,8 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Requirements Specification in the style of ISO/IEC/IEEE 29148:2018 §9.6 [40] |
-| Version | 0.8 — draft |
-| Date | 2026-11-02 |
+| Version | 0.9 — draft |
+| Date | 2026-11-15 |
 | Status | Draft, reviewed by Ömerfaruk and Hasan (#35, PR #143); their comments are folded in. The use cases are the team's proposal until the advisor agrees them (#19, Appendix E.2). Final PDF: #41, due 23 Nov 2026 |
 
 ## Document history

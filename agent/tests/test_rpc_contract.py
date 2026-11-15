@@ -146,9 +146,18 @@ def request(method, params=None):
 # --- versions --------------------------------------------------------------------------
 
 
-def test_rpc_version_is_the_schemas_version():
-    """`ping` claims exactly the contract this file describes: bump both together."""
-    assert SCHEMA["$defs"]["version"]["const"] == RPC_VERSION
+def test_rpc_version_is_within_the_schemas_version():
+    """`ping` never claims more than the schema describes, nor another major version.
+
+    The schema may be a minor version ahead while what it adds is not built yet: 1.1's
+    `category` (#240) lands before playback fills it (#63), and only then does the agent
+    answer 1.1."""
+    agent_major, agent_minor = map(int, RPC_VERSION.split("."))
+    schema_major, schema_minor = map(
+        int, SCHEMA["$defs"]["version"]["const"].split(".")
+    )
+    assert agent_major == schema_major
+    assert agent_minor <= schema_minor
 
 
 # --- results ----------------------------------------------------------------------------
