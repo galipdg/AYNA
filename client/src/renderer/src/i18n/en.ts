@@ -460,6 +460,42 @@ export const en = {
   durationMs: (ms: string) => `${ms} ms`,
   durationSeconds: (seconds: string) => `${seconds} s`,
   durationMinutes: (minutes: string, seconds: string) => `${minutes} min ${seconds} s`,
+  runRun: 'Run',
+  runStarting: 'Starting…',
+  runStop: 'Stop',
+  runDetails: 'Run details',
+  runNeedsSave: 'Save the steps first.',
+  runNeedsSteps: 'Add a step first.',
+  runNeedsFix: 'Fix the marked steps first.',
+  runNeedsAgent: 'The local agent is not connected.',
+  runNeedsVersion: 'Choose a version in the top bar first.',
+  runRunning: (step: number, of: number, elapsed: string) =>
+    `Running · step ${count(step)} of ${count(of)} · ${elapsed}`,
+  runRunningBy: (user: string, step: number, of: number) =>
+    `Running, started by ${user} · step ${count(step)} of ${count(of)}`,
+  runChooseWindow: (title: string | null) =>
+    title === null
+      ? 'This element does not say which window it is in. Which window should the test use?'
+      : `More than one window is titled “${title}”. Which one should the test use?`,
+  runPassed: 'Passed',
+  runFailedAt: (step: number) => `Failed at step ${count(step)}`,
+  runStoppedAt: (step: number) => `Stopped at step ${count(step)}`,
+  runNotStored:
+    'The server did not keep this run, so it will not be in the history. The test may have been deleted.',
+  runHeaderResult: 'Result',
+  runWaiting: (waited: string, of: string) => `waiting… ${waited} of ${of}`,
+  runSkipped: 'Skipped',
+  runCategories: {
+    elementNotFound: 'Element not found',
+    unexpectedWindow: 'Unexpected window',
+    assertionFailed: 'Check failed',
+    timeout: 'Timed out',
+    searchIncomplete: 'Search incomplete',
+  } as Record<string, string>,
+  runStartErrors: {
+    busy: 'Another run is still going.',
+    'agent-not-connected': 'The local agent is not connected.',
+  },
   runsErrors: {
     'no-server': 'No server is set. Connect to a server first.',
     unreachable: 'Could not reach the server. Check that it is running.',

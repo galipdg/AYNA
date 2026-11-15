@@ -887,3 +887,15 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   queue (#247's check B, #24, #54's second-display case) waits for the weekly session. The next
   unblocked issue of mine is **#66** (the CLI's JUnit XML), which would stack on #250's branch
   until that merges — worth waiting for rather than stacking again.
+- Fourth stretch, 2026-11-15: #61, the CLI runner (`ayna run`), PR #250 with all six checks
+  green. Built to FR-23 rather than the issue's summary, which omits the token, the delivery
+  condition and exit 2. Ran it for real twice, and the second run is the reason to keep doing
+  that: against the Docker stack it found that the test list carries no steps (so a server run
+  would have played nothing), that the step-result body needs `runId`, and that my client was
+  printing a problem's `detail` while throwing away the `errors[]` that would have explained
+  the other two immediately. Also forced the output to UTF-8 after a pipe mangled the Turkish —
+  on a CI runner that is a `UnicodeEncodeError` in the middle of reporting a test result.
+- Next step: nothing is blocked on me. #250 and #248 wait on reviews; the Windows queue
+  (#247's check B, #24, #54's second-display case) waits for the weekly session. After that the
+  open Week 8 issue is **#62**, which needs omer's #44 (PR #247) merged first, or **#66** (the
+  CLI's JUnit XML), which is mine and unblocked by #250.

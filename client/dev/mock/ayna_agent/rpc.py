@@ -93,7 +93,34 @@ def handle_request(request):
         return {"jsonrpc": "2.0", "id": rid, "result": {"windows": load_json(WINDOWS_FILE)}}
     if method == "snapshot":
         return snapshot(rid, request.get("params"))
+    if method == "runSteps":
+        return run_steps(rid, request.get("params"))
     return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": "Method not found"}}
+
+
+STEP_MS = 300  # how long each mock step "takes", so a run can be watched (#44)
+
+
+def run_steps(rid, params):
+    """Plays nothing: every step passes after STEP_MS, except one whose value is "fail",
+    which fails as a check would (FR-35 `assertionFailed`); the steps after it are notRun."""
+    steps = ((params or {}).get("steps") or {}).get("steps") or []
+    results, failed = [], False
+    for index, step in enumerate(steps):
+        if failed:
+            results.append({"stepIndex": index, "status": "notRun", "durationMs": 0})
+            continue
+        time.sleep(STEP_MS / 1000)
+        result = {"stepIndex": index, "durationMs": STEP_MS, "matched": "primary"}
+        if step.get("value") == "fail":
+            failed = True
+            result.update(status="failed", message="mock failure", category="assertionFailed")
+        else:
+            result.update(status="passed", performedWith="Invoke")
+        if step.get("id"):
+            result["stepId"] = step["id"]
+        results.append(result)
+    return {"jsonrpc": "2.0", "id": rid, "result": {"results": results}}
 
 
 def recv_exact(conn, n):
