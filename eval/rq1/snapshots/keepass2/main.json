@@ -1,0 +1,1604 @@
+{
+  "version": "0.1",
+  "snapshotId": "79808b70-1cd8-4135-b475-1dd1f831689e",
+  "capture": {
+    "startedAt": "2026-11-14T09:58:50+03:00",
+    "durationMs": 561,
+    "budgetMs": 5000,
+    "elementCount": 74,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "KeePass.exe",
+    "fileVersion": "2.61.1.0"
+  },
+  "window": {
+    "handle": 132768,
+    "title": "ayna-demo.kdbx - KeePass",
+    "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+    "processId": 10392,
+    "bounds": [
+      515,
+      187,
+      1405,
+      832
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "automationId": "MainForm",
+        "name": "ayna-demo.kdbx - KeePass",
+        "controlType": "Window",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          515,
+          187,
+          1405,
+          832
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 132768
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_splitHorizontal",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          281,
+          1396,
+          796
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 327778
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e1",
+      "element": {
+        "automationId": "1573994",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          281,
+          1396,
+          710
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 1573994
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_splitVertical",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          281,
+          1396,
+          710
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263884
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e3",
+      "element": {
+        "automationId": "1574486",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          281,
+          742,
+          710
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 1574486
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e4",
+      "element": {
+        "automationId": "m_tvGroups",
+        "controlType": "Tree",
+        "className": "WindowsForms10.SysTreeView32.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          281,
+          742,
+          710
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 655690
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e5",
+      "element": {
+        "name": "ayna-demo",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          552,
+          283,
+          635,
+          305
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e6",
+      "element": {
+        "name": "General",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          575,
+          305,
+          630,
+          327
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree/TreeItem",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e6",
+      "element": {
+        "name": "Windows",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          575,
+          327,
+          640,
+          349
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree/TreeItem",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e6",
+      "element": {
+        "name": "Network",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          575,
+          349,
+          635,
+          371
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree/TreeItem",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e6",
+      "element": {
+        "name": "Internet",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          575,
+          371,
+          630,
+          393
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree/TreeItem",
+        "siblingIndex": 3,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e6",
+      "element": {
+        "name": "eMail",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          575,
+          393,
+          616,
+          415
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree/TreeItem",
+        "siblingIndex": 4,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e6",
+      "element": {
+        "name": "Homebanking",
+        "controlType": "TreeItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          575,
+          415,
+          673,
+          437
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/Tree/TreeItem",
+        "siblingIndex": 5,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e3",
+      "element": {
+        "automationId": "393998",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          747,
+          281,
+          1396,
+          710
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 393998
+      }
+    },
+    {
+      "id": "e14",
+      "parentId": "e13",
+      "element": {
+        "automationId": "m_lvEntries",
+        "controlType": "List",
+        "className": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          747,
+          281,
+          1396,
+          710
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 852846
+      }
+    },
+    {
+      "id": "e15",
+      "parentId": "e14",
+      "element": {
+        "automationId": "Header",
+        "name": "Header Control",
+        "controlType": "Header",
+        "className": "SysHeader32",
+        "frameworkId": "Win32",
+        "bounds": [
+          749,
+          283,
+          1394,
+          309
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 525180
+      }
+    },
+    {
+      "id": "e16",
+      "parentId": "e15",
+      "element": {
+        "automationId": "HeaderItem 0",
+        "name": "Title",
+        "controlType": "HeaderItem",
+        "bounds": [
+          749,
+          283,
+          870,
+          309
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/Header",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e17",
+      "parentId": "e15",
+      "element": {
+        "automationId": "HeaderItem 1",
+        "name": "User Name",
+        "controlType": "HeaderItem",
+        "bounds": [
+          870,
+          283,
+          991,
+          309
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/Header",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e18",
+      "parentId": "e15",
+      "element": {
+        "automationId": "HeaderItem 2",
+        "name": "Password",
+        "controlType": "HeaderItem",
+        "bounds": [
+          991,
+          283,
+          1112,
+          309
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/Header",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e19",
+      "parentId": "e15",
+      "element": {
+        "automationId": "HeaderItem 3",
+        "name": "URL",
+        "controlType": "HeaderItem",
+        "bounds": [
+          1112,
+          283,
+          1233,
+          309
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/Header",
+        "siblingIndex": 3,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e20",
+      "parentId": "e15",
+      "element": {
+        "automationId": "HeaderItem 4",
+        "name": "Notes",
+        "controlType": "HeaderItem",
+        "bounds": [
+          1233,
+          283,
+          1354,
+          309
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/Header",
+        "siblingIndex": 4,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e21",
+      "parentId": "e14",
+      "element": {
+        "name": "Sample Entry",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          749,
+          309,
+          1354,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e22",
+      "parentId": "e21",
+      "element": {
+        "name": "Sample Entry",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          749,
+          309,
+          1354,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e23",
+      "parentId": "e21",
+      "element": {
+        "name": "User Name",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          870,
+          309,
+          991,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e24",
+      "parentId": "e21",
+      "element": {
+        "name": "********",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          991,
+          309,
+          1112,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 2,
+        "nearestLabel": "User Name",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e25",
+      "parentId": "e21",
+      "element": {
+        "name": "https://keepass.info/",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1112,
+          309,
+          1233,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 3,
+        "nearestLabel": "********",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e26",
+      "parentId": "e21",
+      "element": {
+        "name": "Notes",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1233,
+          309,
+          1354,
+          333
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 4,
+        "nearestLabel": "https://keepass.info/",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e27",
+      "parentId": "e14",
+      "element": {
+        "name": "Sample Entry #2",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          749,
+          333,
+          1354,
+          357
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e28",
+      "parentId": "e27",
+      "element": {
+        "name": "Sample Entry #2",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          749,
+          333,
+          1354,
+          357
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e29",
+      "parentId": "e27",
+      "element": {
+        "name": "Michael321",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          870,
+          333,
+          991,
+          357
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e30",
+      "parentId": "e27",
+      "element": {
+        "name": "********",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          991,
+          333,
+          1112,
+          357
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 2,
+        "nearestLabel": "Michael321",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e31",
+      "parentId": "e27",
+      "element": {
+        "name": "https://keepass.info/help/kb/testform.html",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1112,
+          333,
+          1233,
+          357
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 3,
+        "nearestLabel": "********",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e32",
+      "parentId": "e27",
+      "element": {
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1233,
+          333,
+          1354,
+          357
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane/Pane/Pane/List/ListItem",
+        "siblingIndex": 4,
+        "nearestLabel": "https://keepass.info/help/kb/testform.html",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e33",
+      "parentId": "e1",
+      "element": {
+        "automationId": "1705060",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          715,
+          1396,
+          796
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 1705060
+      }
+    },
+    {
+      "id": "e34",
+      "parentId": "e33",
+      "element": {
+        "automationId": "m_richEntryView",
+        "name": "RichEdit Control",
+        "controlType": "Document",
+        "className": "WindowsForms10.RICHEDIT50W.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          715,
+          1396,
+          796
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Pane/Pane",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329320
+      }
+    },
+    {
+      "id": "e35",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_statusMain",
+        "controlType": "StatusBar",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          796,
+          1396,
+          823
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 657010
+      }
+    },
+    {
+      "id": "e36",
+      "parentId": "e35",
+      "element": {
+        "name": "Grip",
+        "controlType": "Thumb",
+        "bounds": [
+          527,
+          796,
+          532,
+          818
+        ],
+        "dpi": 120,
+        "parentPath": "Window/StatusBar",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e37",
+      "parentId": "e35",
+      "element": {
+        "name": "Ready.",
+        "controlType": "Text",
+        "bounds": [
+          700,
+          799,
+          1377,
+          821
+        ],
+        "dpi": 120,
+        "parentPath": "Window/StatusBar",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e38",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_toolMain",
+        "controlType": "ToolBar",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          253,
+          1396,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 394352
+      }
+    },
+    {
+      "id": "e39",
+      "parentId": "e38",
+      "element": {
+        "name": "Grip",
+        "controlType": "Thumb",
+        "bounds": [
+          526,
+          253,
+          531,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e40",
+      "parentId": "e38",
+      "element": {
+        "name": "New Database",
+        "controlType": "Button",
+        "bounds": [
+          533,
+          254,
+          557,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e41",
+      "parentId": "e38",
+      "element": {
+        "name": "Open Database",
+        "controlType": "Button",
+        "bounds": [
+          557,
+          254,
+          581,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e42",
+      "parentId": "e38",
+      "element": {
+        "name": "Save Database",
+        "controlType": "Button",
+        "bounds": [
+          581,
+          254,
+          605,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 3,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e43",
+      "parentId": "e38",
+      "element": {
+        "controlType": "Separator",
+        "bounds": [
+          605,
+          253,
+          611,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 4,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e44",
+      "parentId": "e38",
+      "element": {
+        "name": "Add Entry",
+        "controlType": "Button",
+        "bounds": [
+          611,
+          254,
+          650,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 5,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e45",
+      "parentId": "e38",
+      "element": {
+        "controlType": "Separator",
+        "bounds": [
+          650,
+          253,
+          656,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 6,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e46",
+      "parentId": "e38",
+      "element": {
+        "name": "Copy User Name",
+        "controlType": "Button",
+        "bounds": [
+          656,
+          254,
+          680,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 7,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e47",
+      "parentId": "e38",
+      "element": {
+        "name": "Copy Password",
+        "controlType": "Button",
+        "bounds": [
+          680,
+          254,
+          704,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 8,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e48",
+      "parentId": "e38",
+      "element": {
+        "name": "Open URL(s)",
+        "controlType": "Button",
+        "bounds": [
+          704,
+          254,
+          743,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 9,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e49",
+      "parentId": "e38",
+      "element": {
+        "name": "Copy URL(s)",
+        "controlType": "Button",
+        "bounds": [
+          743,
+          254,
+          767,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 10,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e50",
+      "parentId": "e38",
+      "element": {
+        "name": "Perform Auto-Type",
+        "controlType": "Button",
+        "bounds": [
+          767,
+          254,
+          791,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 11,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": false,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e51",
+      "parentId": "e38",
+      "element": {
+        "controlType": "Separator",
+        "bounds": [
+          791,
+          253,
+          797,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 12,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e52",
+      "parentId": "e38",
+      "element": {
+        "name": "Find",
+        "controlType": "Button",
+        "bounds": [
+          797,
+          254,
+          821,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 13,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e53",
+      "parentId": "e38",
+      "element": {
+        "name": "Find Entries",
+        "controlType": "Button",
+        "bounds": [
+          821,
+          254,
+          855,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 14,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e54",
+      "parentId": "e38",
+      "element": {
+        "controlType": "Separator",
+        "bounds": [
+          855,
+          253,
+          861,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 15,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e55",
+      "parentId": "e38",
+      "element": {
+        "name": "Lock Workspace",
+        "controlType": "Button",
+        "bounds": [
+          861,
+          254,
+          885,
+          279
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 16,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e56",
+      "parentId": "e38",
+      "element": {
+        "controlType": "Separator",
+        "bounds": [
+          885,
+          253,
+          891,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 17,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e57",
+      "parentId": "e38",
+      "element": {
+        "automationId": "198282",
+        "controlType": "ComboBox",
+        "className": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          892,
+          253,
+          1052,
+          281
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar",
+        "siblingIndex": 18,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 198282
+      }
+    },
+    {
+      "id": "e58",
+      "parentId": "e57",
+      "element": {
+        "automationId": "1001",
+        "controlType": "Edit",
+        "className": "Edit",
+        "frameworkId": "Win32",
+        "bounds": [
+          895,
+          256,
+          1028,
+          278
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar/ComboBox",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "helpText": "Search...",
+        "nativeWindowHandle": 1574460
+      }
+    },
+    {
+      "id": "e59",
+      "parentId": "e57",
+      "element": {
+        "name": "Open",
+        "controlType": "Button",
+        "bounds": [
+          1032,
+          254,
+          1051,
+          280
+        ],
+        "dpi": 120,
+        "parentPath": "Window/ToolBar/ComboBox",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "helpText": "Search...",
+        "accessKey": "Alt+Down Arrow"
+      }
+    },
+    {
+      "id": "e60",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_menuMain",
+        "controlType": "MenuBar",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          524,
+          225,
+          1396,
+          253
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 3,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 1181354
+      }
+    },
+    {
+      "id": "e61",
+      "parentId": "e60",
+      "element": {
+        "name": "File",
+        "controlType": "MenuItem",
+        "bounds": [
+          532,
+          227,
+          576,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+f"
+      }
+    },
+    {
+      "id": "e62",
+      "parentId": "e60",
+      "element": {
+        "name": "Group",
+        "controlType": "MenuItem",
+        "bounds": [
+          576,
+          227,
+          638,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+g"
+      }
+    },
+    {
+      "id": "e63",
+      "parentId": "e60",
+      "element": {
+        "name": "Entry",
+        "controlType": "MenuItem",
+        "bounds": [
+          638,
+          227,
+          692,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+e"
+      }
+    },
+    {
+      "id": "e64",
+      "parentId": "e60",
+      "element": {
+        "name": "Find",
+        "controlType": "MenuItem",
+        "bounds": [
+          692,
+          227,
+          741,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 3,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+i"
+      }
+    },
+    {
+      "id": "e65",
+      "parentId": "e60",
+      "element": {
+        "name": "View",
+        "controlType": "MenuItem",
+        "bounds": [
+          741,
+          227,
+          794,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 4,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+v"
+      }
+    },
+    {
+      "id": "e66",
+      "parentId": "e60",
+      "element": {
+        "name": "Tools",
+        "controlType": "MenuItem",
+        "bounds": [
+          794,
+          227,
+          850,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 5,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+t"
+      }
+    },
+    {
+      "id": "e67",
+      "parentId": "e60",
+      "element": {
+        "name": "Help",
+        "controlType": "MenuItem",
+        "bounds": [
+          850,
+          227,
+          903,
+          251
+        ],
+        "dpi": 120,
+        "parentPath": "Window/MenuBar",
+        "siblingIndex": 6,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+h"
+      }
+    },
+    {
+      "id": "e68",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          544,
+          190,
+          1396,
+          225
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 4,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e69",
+      "parentId": "e68",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          524,
+          196,
+          552,
+          224
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e70",
+      "parentId": "e69",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          524,
+          196,
+          552,
+          224
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e71",
+      "parentId": "e68",
+      "element": {
+        "name": "Minimize",
+        "controlType": "Button",
+        "bounds": [
+          1218,
+          188,
+          1278,
+          225
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e72",
+      "parentId": "e68",
+      "element": {
+        "name": "Maximize",
+        "controlType": "Button",
+        "bounds": [
+          1278,
+          188,
+          1337,
+          225
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 2,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e73",
+      "parentId": "e68",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          1337,
+          188,
+          1397,
+          225
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 3,
+        "windowTitle": "ayna-demo.kdbx - KeePass",
+        "enabled": true,
+        "offscreen": false
+      }
+    }
+  ]
+}
