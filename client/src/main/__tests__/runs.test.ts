@@ -3,7 +3,16 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net'
 import { after, before, describe, it } from 'node:test'
 import { formatDuration, setStringsLanguage } from '../../renderer/src/strings.ts'
-import { fetchReport, listRuns, reportFileName } from '../runs.ts'
+import {
+  createRun,
+  fetchReport,
+  finishRun,
+  getRun,
+  listRunningRuns,
+  listRuns,
+  putResult,
+  reportFileName,
+} from '../runs.ts'
 
 /** A run as the server's `RunSummary` sends it (#44). */
 const summary = {
@@ -158,5 +167,97 @@ describe('formatDuration', () => {
     assert.equal(formatDuration(184_000), '3 dk 4 sn')
     setStringsLanguage('en')
     assert.equal(formatDuration(2500), '2.5 s')
+  })
+})
+
+/** A `fetch` that answers `status` with `body` and records what was asked. */
+function fakeFetch(status: number, body: unknown, seen: { url?: string; init?: RequestInit } = {}) {
+  return (async (url: string, init?: RequestInit) => {
+    seen.url = url
+    seen.init = init
+    return new Response(body === undefined ? null : JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    })
+  }) as unknown as typeof globalThis.fetch
+}
+
+const throwing = (async () => {
+  throw new TypeError('fetch failed')
+}) as unknown as typeof globalThis.fetch
+
+describe('a run from the editor (#44)', () => {
+  const base = 'http://server'
+
+  it('createRun posts the test and version and returns the copied document', async () => {
+    const seen: { url?: string; init?: RequestInit } = {}
+    const document = { version: '0.2', steps: [{ keyword: 'Click', target: 'login.okButton' }] }
+    const answer = await createRun(base, 't1', 'v1', {
+      fetch: fakeFetch(201, { ...summary, status: 'running', finishedAt: null, durationMs: null, document, results: [] }, seen),
+    })
+    assert.equal(seen.url, `${base}/api/runs`)
+    assert.equal(seen.init?.method, 'POST')
+    assert.deepEqual(JSON.parse(String(seen.init?.body)), { testId: 't1', appVersionId: 'v1' })
+    assert.ok(answer.ok)
+    assert.equal(answer.created.document.steps.length, 1)
+    assert.equal(answer.created.run.startedBy, 'ayse')
+    const bad = await createRun(base, 't1', 'v1', { fetch: fakeFetch(400, { detail: 'no steps' }) })
+    assert.deepEqual(bad, { ok: false, reason: 'invalid', detail: 'no steps' })
+    const gone = await createRun(base, 't1', 'v1', { fetch: fakeFetch(404, {}) })
+    assert.deepEqual(gone, { ok: false, reason: 'not-found' })
+  })
+
+  it('putResult maps statuses', async () => {
+    const cases: [number, string][] = [
+      [201, 'stored'],
+      [200, 'stored'],
+      [401, 'unauthorized'],
+      [404, 'gone'],
+      [409, 'conflict'],
+      [400, 'conflict'],
+      [503, 'retry'],
+    ]
+    for (const [status, expected] of cases) {
+      const answer = await putResult(base, 'r1', { stepIndex: 0, status: 'passed' }, { fetch: fakeFetch(status, {}) })
+      assert.equal(answer, expected, `HTTP ${status}`)
+    }
+    assert.equal(await putResult(base, 'r1', { stepIndex: 0 }, { fetch: throwing }), 'retry')
+    assert.equal(await putResult(null, 'r1', { stepIndex: 0 }, {}), 'retry')
+    const seen: { url?: string; init?: RequestInit } = {}
+    await putResult(base, 'r/1', { runId: 'r/1', stepIndex: 3, status: 'passed' }, { fetch: fakeFetch(201, {}, seen) })
+    assert.equal(seen.url, `${base}/api/runs/r%2F1/results/3`)
+    assert.equal(seen.init?.method, 'PUT')
+  })
+
+  it('finishRun posts the status', async () => {
+    const seen: { url?: string; init?: RequestInit } = {}
+    assert.equal(await finishRun(base, 'r1', 'aborted', { fetch: fakeFetch(200, summary, seen) }), 'stored')
+    assert.equal(seen.url, `${base}/api/runs/r1/finish`)
+    assert.deepEqual(JSON.parse(String(seen.init?.body)), { status: 'aborted' })
+    assert.equal(await finishRun(base, 'r1', 'passed', { fetch: fakeFetch(409, {}) }), 'conflict')
+  })
+
+  it('getRun reads results', async () => {
+    const results = [
+      { id: 'b', stepIndex: 1, stepId: null, status: 'failed', durationMs: 4, message: 'x', receivedAt: 'z' },
+      { id: 'a', stepIndex: 0, stepId: 's1', status: 'passed', durationMs: 3, message: null, receivedAt: 'z' },
+    ]
+    const answer = await getRun(base, 'r1', { fetch: fakeFetch(200, { ...summary, document: {}, results }) })
+    assert.ok(answer.ok)
+    assert.deepEqual(
+      answer.outcomes.map((o) => [o.stepIndex, o.status]),
+      [
+        [0, 'passed'],
+        [1, 'failed'],
+      ],
+    )
+  })
+
+  it('listRunningRuns asks for the running runs of one test', async () => {
+    const seen: { url?: string; init?: RequestInit } = {}
+    const answer = await listRunningRuns(base, 't 1', { fetch: fakeFetch(200, [summary], seen) })
+    assert.equal(seen.url, `${base}/api/tests/t%201/runs?status=running`)
+    assert.ok(answer.ok)
+    assert.equal(answer.runs.length, 1)
   })
 })
