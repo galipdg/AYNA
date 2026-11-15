@@ -1,0 +1,1518 @@
+{
+  "window": {
+    "title": "HandBrake",
+    "processName": "HandBrake.exe"
+  },
+  "capture": {
+    "startedAt": "2026-11-14T14:10:15+03:00",
+    "durationMs": 1307,
+    "budgetMs": 5000,
+    "elementCount": 149,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "elements": [
+    {
+      "elementId": "e0",
+      "controlType": "Window",
+      "automationId": "shellView",
+      "name": "HandBrake",
+      "className": "Window",
+      "nativeWindowHandle": 526726,
+      "uiaIdUsable": true,
+      "win32": {
+        "className": "HwndWrapper[HandBrake;;779c87d4-f40b-45f5-a916-6b886b8a2fc6]",
+        "control_id": 0,
+        "text": "HandBrake",
+        "friendlyClassName": "HwndWrapper[HandBrake;;779c87d4-f40b-45f5-a916-6b886b8a2fc6]",
+        "bounds": [
+          -32000,
+          -32000,
+          -31801,
+          -31966
+        ]
+      }
+    },
+    {
+      "elementId": "e1",
+      "controlType": "TitleBar",
+      "automationId": null,
+      "name": null,
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e2",
+      "controlType": "MenuBar",
+      "automationId": "MenuBar",
+      "name": "System",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e3",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "System",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e4",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Restore",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e5",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Maximize",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e6",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Close",
+      "className": null,
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e7",
+      "controlType": "Custom",
+      "automationId": "MainViewModel",
+      "name": null,
+      "className": "MainView",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e8",
+      "controlType": "Menu",
+      "automationId": "mainAppMenu",
+      "name": null,
+      "className": "Menu",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e9",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "File",
+      "className": "MenuItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e10",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "_File",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e11",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Tools",
+      "className": "MenuItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e12",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "_Tools",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e13",
+      "controlType": "MenuItem",
+      "automationId": "presetMenu",
+      "name": "Presets",
+      "className": "MenuItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e14",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "_Presets",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e15",
+      "controlType": "MenuItem",
+      "automationId": "queueMenu",
+      "name": "Queue",
+      "className": "MenuItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e16",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "_Queue",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e17",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": "Help",
+      "className": "MenuItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e18",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "_Help",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e19",
+      "controlType": "ToolBar",
+      "automationId": null,
+      "name": null,
+      "className": "ToolBar",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e20",
+      "controlType": "Button",
+      "automationId": null,
+      "name": null,
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e21",
+      "controlType": "Button",
+      "automationId": "Choose Source",
+      "name": "Open Source",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e22",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e23",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Open Source",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e24",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Open Source",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e25",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": "Separator",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e26",
+      "controlType": "Button",
+      "automationId": "AddToQueueBtn",
+      "name": "Add to Queue",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e27",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e28",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Add to Queue",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e29",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Add to Queue",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e30",
+      "controlType": "Button",
+      "automationId": "Start",
+      "name": "Start Encode",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e31",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e32",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Start Encode",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e33",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Start Encode",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e34",
+      "controlType": "Separator",
+      "automationId": null,
+      "name": null,
+      "className": "Separator",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e35",
+      "controlType": "Button",
+      "automationId": "ShowQueue",
+      "name": "Queue",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e36",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e37",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Queue",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e38",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Queue",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e39",
+      "controlType": "Button",
+      "automationId": "Preview",
+      "name": "Preview",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e40",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e41",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Preview",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e42",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Preview",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e43",
+      "controlType": "Button",
+      "automationId": "ActivityWindow",
+      "name": "Activity Window",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e44",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e45",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Activity Log",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e46",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Activity Log",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e47",
+      "controlType": "Button",
+      "automationId": "presetbtn",
+      "name": "Presets",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e48",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e49",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Presets",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e50",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Presets",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e51",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Source:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e52",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Select 'Source' to continue",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e53",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e54",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Title:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e55",
+      "controlType": "ComboBox",
+      "automationId": "Titles",
+      "name": null,
+      "className": "ComboBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e56",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Angle:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e57",
+      "controlType": "ComboBox",
+      "automationId": "Angles",
+      "name": null,
+      "className": "ComboBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e58",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Range:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e59",
+      "controlType": "ComboBox",
+      "automationId": "PointToPointMode",
+      "name": null,
+      "className": "ComboBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e60",
+      "controlType": "ComboBox",
+      "automationId": "StartPoint",
+      "name": null,
+      "className": "ComboBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e61",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "-",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e62",
+      "controlType": "ComboBox",
+      "automationId": "EndPoint",
+      "name": null,
+      "className": "ComboBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e63",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Duration:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e64",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "--:--:--",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e65",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Preset:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e66",
+      "controlType": "Button",
+      "automationId": "SelectPresetsButton",
+      "name": null,
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e67",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Fast 1080p30",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e68",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Reload",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e69",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Reload",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e70",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Save New Preset",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e71",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Save New Preset",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e72",
+      "controlType": "Tab",
+      "automationId": "tabControl",
+      "name": null,
+      "className": "TabControl",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e73",
+      "controlType": "TabItem",
+      "automationId": "summaryTab",
+      "name": "Summary",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e74",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Summary",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e75",
+      "controlType": "Custom",
+      "automationId": null,
+      "name": null,
+      "className": "SummaryView",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e76",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Format:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e77",
+      "controlType": "ComboBox",
+      "automationId": "Container",
+      "name": "Format:",
+      "className": "ComboBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e78",
+      "controlType": "CheckBox",
+      "automationId": "WebOptimized",
+      "name": "Web Optimized",
+      "className": "CheckBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e79",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Web Optimized",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e80",
+      "controlType": "CheckBox",
+      "automationId": "AlignAVStart",
+      "name": "Align A/V Start",
+      "className": "CheckBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e81",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Align A/V Start",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e82",
+      "controlType": "CheckBox",
+      "automationId": "iPod5G",
+      "name": "iPod 5G Support",
+      "className": "CheckBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e83",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "iPod 5G Support",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e84",
+      "controlType": "CheckBox",
+      "automationId": "Metadata",
+      "name": "Passthru Common Metadata",
+      "className": "CheckBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e85",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Passthru Common Metadata",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e86",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Tracks:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e87",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "No Tracks",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e88",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e89",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e90",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e91",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Filters:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e92",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "No Filters",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e93",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Size:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e94",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "No Source",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e95",
+      "controlType": "TabItem",
+      "automationId": "pictureTab",
+      "name": "Dimensions",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e96",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Dimensions",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e97",
+      "controlType": "TabItem",
+      "automationId": "filtersTab",
+      "name": "Filters",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e98",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Filters",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e99",
+      "controlType": "TabItem",
+      "automationId": "videoTab",
+      "name": "Video",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e100",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Video",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e101",
+      "controlType": "TabItem",
+      "automationId": "audioTab",
+      "name": "Audio",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e102",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Audio",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e103",
+      "controlType": "TabItem",
+      "automationId": "subtitlesTab",
+      "name": "Subtitles",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e104",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Subtitles",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e105",
+      "controlType": "TabItem",
+      "automationId": "chaptersTab",
+      "name": "Chapters",
+      "className": "TabItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e106",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Chapters",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e107",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Save As:",
+      "className": "Text",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e108",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Save As:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e109",
+      "controlType": "Edit",
+      "automationId": "Destination",
+      "name": null,
+      "className": "TextBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e110",
+      "controlType": "Button",
+      "automationId": "DestinationBrowser",
+      "name": "Browse",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e111",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Browse",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e112",
+      "controlType": "StatusBar",
+      "automationId": "statusBar",
+      "name": null,
+      "className": "StatusBar",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e113",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Ready",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e114",
+      "controlType": "Menu",
+      "automationId": null,
+      "name": null,
+      "className": "Menu",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e115",
+      "controlType": "MenuItem",
+      "automationId": null,
+      "name": null,
+      "className": "MenuItem",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e116",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "When Done:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e117",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Do nothing",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e118",
+      "controlType": "Custom",
+      "automationId": "sourceSelection",
+      "name": null,
+      "className": "SourceSelection",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e119",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Source Selection",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e120",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Optionally choose a specific title:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e121",
+      "controlType": "Custom",
+      "automationId": null,
+      "name": null,
+      "className": "NumberBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e122",
+      "controlType": "Edit",
+      "automationId": "numberBox",
+      "name": null,
+      "className": "TextBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e123",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Increase Number",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e124",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Decrease Number",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e125",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Then choose the video(s) you'd like to encode:",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e126",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Choose Folder to Scan",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e127",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e128",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Folder (Batch Scan)",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e129",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Open a folder with one or more files.",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e130",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Choose File to Scan",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e131",
+      "controlType": "Image",
+      "automationId": null,
+      "name": null,
+      "className": "Image",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e132",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "File",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e133",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Open video file(s).",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e134",
+      "controlType": "List",
+      "automationId": null,
+      "name": null,
+      "className": "ListBox",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e135",
+      "controlType": "Button",
+      "automationId": null,
+      "name": "Cancel",
+      "className": "Button",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e136",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Cancel",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e137",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e138",
+      "controlType": "Hyperlink",
+      "automationId": "Preferences",
+      "name": null,
+      "className": "Hyperlink",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e139",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Preferences",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e140",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "|",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e141",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e142",
+      "controlType": "Hyperlink",
+      "automationId": "help",
+      "name": null,
+      "className": "Hyperlink",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e143",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Help",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e144",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "|",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e145",
+      "controlType": "Text",
+      "automationId": null,
+      "name": null,
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e146",
+      "controlType": "Hyperlink",
+      "automationId": "AboutHandBrake",
+      "name": null,
+      "className": "Hyperlink",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": true,
+      "win32": null
+    },
+    {
+      "elementId": "e147",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "About HandBrake",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    },
+    {
+      "elementId": "e148",
+      "controlType": "Text",
+      "automationId": null,
+      "name": "Or drop a file, set of files or folder here ...",
+      "className": "TextBlock",
+      "nativeWindowHandle": null,
+      "uiaIdUsable": false,
+      "win32": null
+    }
+  ]
+}
