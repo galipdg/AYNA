@@ -172,7 +172,7 @@ describe('AgentManager', () => {
     agent.start()
     assert.equal((await connected).restarts, 0)
     assert.deepEqual(seen, ['starting', 'connected'])
-    assert.deepEqual(await agent.call('ping'), { agentVersion: '0.0.0', rpcVersion: '0.1' })
+    assert.deepEqual(await agent.call('ping'), { agentVersion: '0.0.0', rpcVersion: '1.0' })
     await assert.rejects(agent.call('noSuchMethod'), (error: unknown) => {
       assert.ok(error instanceof AgentRpcError)
       assert.equal(error.code, -32601)

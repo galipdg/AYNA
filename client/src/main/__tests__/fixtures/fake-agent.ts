@@ -55,7 +55,7 @@ function handle(socket: Socket, text: string) {
     send(socket, {
       jsonrpc: '2.0',
       id: request.id,
-      result: { agentVersion: '0.0.0', rpcVersion: '0.1' },
+      result: { agentVersion: '0.0.0', rpcVersion: '1.0' },
     })
   } else if (request.method === 'block') {
     // Like a long UI Automation call; the real agent answers other requests meanwhile.

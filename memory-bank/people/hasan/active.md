@@ -2,19 +2,17 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15 (Week 6's pair: #46 and #47 both delivered and out).
-  **This copy carries #46 and #47 and nothing is newer than it**: it was written on
-  `hasan/47-bug-injected-versions`, which is stacked on `hasan/46-ui-change-versions`, which has
-  `origin/main` merged as of `6fd87a9`. Three other copies are still behind and each holds its
-  own issue's section: `hasan/40-playback-v1` (#40), `hasan/162-windows-llm-latency` (#162) and
-  `hasan/23-win32-fallback` (#23). **Whichever merges last keeps every branch's own section** --
-  never resolve this file by taking one side.
-- Current issue: **none in progress.** Five PRs of mine are open and every one of them waits on
-  reviews, not on me: **#238 (#46)**, **#239 (#47, stacked on #238)**, **#237 (#40)**,
-  **#236 (#23)**, **#235 (#162)**.
-- **The next issue to pick is in Week 7/8 (#54, #55, #61, #62), not #46/#47**: both of Week 6's
-  eval issues are done. My review queue was empty on 2026-11-15 -- check it again at session
-  start, and read the body of each listed PR.
+- Last update: 2026-11-15, second session. **#46 is merged** (PR #238, squash `ab7edf9`) and
+  this copy has `origin/main` merged as of `e147a94` (#224, the v1 contract freeze). It is
+  written on `hasan/47-bug-injected-versions` and carries #46's and #47's sections. Two other
+  copies are still behind and each holds its own issue's section: `hasan/40-playback-v1` (#40)
+  and `hasan/162-windows-llm-latency` (#162). **Whichever merges last keeps every branch's own
+  section** -- never resolve this file by taking one side. When the resolution is "ours", check
+  first that the other side holds no fact that lives nowhere else; that is how #236's four #29
+  bullets nearly went missing on 2026-11-15.
+- Current issue: **none in progress.** Four PRs of mine are open and every one waits on reviews,
+  not on me: **#239 (#47, now based on `main`)**, **#237 (#40)**, **#236 (#23)**, **#235 (#162)**.
+- **The next issue to pick is in Week 7/8 (#54, #55, #61, #62)**: Week 6's pair is done.
 
 ## #46 and #47 -- the sample app's change and bug versions (2026-11-15)
 
@@ -57,9 +55,9 @@ bugs, or that a healer repairs these changes. That needs #62 (scenarios in the e
 
 ## What is waiting on someone else
 
-- **PR #238 (#46)** and **PR #239 (#47)**: both reviews requested from omer and galip. #239's
-  base is `hasan/46-ui-change-versions` -- **retarget it with `gh pr edit 239 --base main` once
-  #238 merges.**
+- **PR #239 (#47)**: both reviews requested from omer and galip. It is **already based on
+  `main`** -- GitHub retargeted it by itself when #238 merged, so no `gh pr edit` was needed;
+  what it did need was an `origin/main` merge, because #238 was squashed.
 - **galip owes an answer on where `bug3` belongs** (in his inbox): the plan asks for a "wrong
   saved value" bug and the RS has no scenario for one, so it sits where SC-20 catches it (the
   wizard's summary carries the role instead of the department). Moving it is a one-row change.
@@ -88,7 +86,23 @@ bugs, or that a healer repairs these changes. That needs #62 (scenarios in the e
   change.
 - **#29**: the first labelled rates, per screen, are the only quotable ones -- HandBrake `queue`
   **4/6 = 66.7 %**, KeePass 2 `options` **35/35 = 100 %**. Never quote the app totals, because
-  `measure --labels` mixes labelled and unlabelled screens.
+  `measure --labels` mixes labelled and unlabelled screens. Three more of its findings, kept here
+  because `main` held them only in a preamble that this session replaced:
+  - **The `e20` claim is retracted**: it is not a control (no `bounds` key at all,
+    `enabled: false`, a WPF toolbar template part that is never rendered), so `siblingIndex` was
+    never the issue and **a missing `bounds` is the cheap test for "not a control"**. The *real*
+    limit is a **nameless WPF `MenuItem` inside a named `Menu`** (HandBrake's `Options` split
+    button, `When Done` dropdown): the name sits on the parent, and a per-element descriptor does
+    not reach for an ancestor's identity. The same shape is *recognised* in `main-summary`'s
+    status bar only because it has no sibling -- one pattern giving both a pass and a fail, which
+    belongs in #64.
+  - **The unlabelled rate is not reliably the optimistic one** (I had this backwards and so did
+    the guide; both are corrected). The denominator is wrong in **both** directions: a missed
+    control flatters it, a composite control's inner parts punish it. KeePass 2's Options screen
+    shows both at once (70.4 % unlabelled -> 100 % labelled, all 19 dropped rows non-controls).
+  - **The eight-step capture check is done**, every screen with 0 read errors. HandBrake is
+    3 screens (`main-summary`, `preferences`, `queue`); `main-video` is **dropped from
+    `apps.json`**, because every tab reads `enabled: false` with no source loaded.
 - **Four inbox items are still live**: (1) add `ayna_cli*` to `agent/pyproject.toml`'s packages
   when #61 starts; (2) galip's four Qt measurements from #147; (3) build
   `eval/nl/objects/sample.json` from `uia_check.py --json`, plus my §8 points for #57; (4)

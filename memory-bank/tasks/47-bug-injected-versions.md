@@ -78,6 +78,26 @@ what a buggy build is -- the defect is in the code, not in one window.
   SC-31 ask for coming from #63's triage. `bugs.md` says so in its last section.
 - **No scenario asks for a wrong saved value** (bug3's placement above). galip's call; in his
   inbox.
+- **`test_sample_uia.py` flakes when the bug tests run before it, and the cause is not found.**
+  Measured on 2026-11-15, resolving #239's merge: the CI invocation failed once with
+  `test_the_right_credentials_are_welcomed_by_name` ("wrong credentials" for `admin`/`admin`),
+  and the pair `test_bug_uia.py test_sample_uia.py` then failed twice running on its own, the
+  second time on `test_saving_without_a_name_shows_the_required_message` ("Kayit kaydedildi"
+  instead of the required-field message). Both symptoms are "the text I set did not land", so
+  the suspect is the readiness gate, not the bug versions. What was ruled out:
+  - **Not a window leak.** `kill_process_tree` leaves 0 windows of the app's classes in the UIA
+    tree the moment it returns (measured 3x, the tree is clear within 0.3 s).
+  - **Not a cross-window mix-up either way.** Two live windows of one class make pywinauto raise
+    `ElementAmbiguousError` at `wait("visible ready")`, so a stale window would error, not answer.
+  - **Not any single bug version**: each bug test followed by the two sample tests passes.
+  - **Not `set_edit_text` on a fresh app**: 12 launches of the login screen, text read back
+    correctly every time.
+  - **Not `eval/`'s other UIA file**: `test_variant_uia.py` then `test_sample_uia.py` is 48/48.
+  It is a Heisenbug: four runs of the failing pair under a plugin that enumerates windows around
+  every launch, find and kill all passed, and the full suite is **185 green** on the re-run that
+  the merge was committed on. Left alone deliberately -- `test_sample_uia.py` is #33's file and a
+  fix guessed at without a reproduction is worse than the flake. It is **#69 data** (RQ2
+  flaky-rate), and the diagnostic plugin is worth rebuilding there.
 - A bug version and a #46 change version can be run together (`--variant v2a --bug bug1`) and
   nothing stops it. That is a combination nobody has asked for; it is not tested and the title
   then reads `1.0-v2a-bug1`. Worth a scenario only if #86 wants "heal a changed *and* broken
