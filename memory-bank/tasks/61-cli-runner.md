@@ -65,8 +65,9 @@ server is a **2**, not a 0. A CI job that reported success there would be lying 
       failure and so exit 2. Dead until #248 merges, because `screenshotPath` is #54's.
 - [x] **A `--server` run against the real server**, which found three things no fake had
       (below)
-- Next step: open the PR (`Closes #61`), asking omer about the two readings under Open
-  issues (what `--suite NAME` means, and whether the last version is the newest).
+- [x] **PR #250 open** (`Closes #61`), both reviews requested, all six checks green; the two
+      readings are a comment on the issue as well as in the PR body.
+- Next step: nothing of mine. It waits on reviews.
 
 ## Measurements and manual checks
 
