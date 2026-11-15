@@ -2,29 +2,40 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, fifth stretch. This copy is on **`hasan/63-failure-triage`**,
-  branched from `main` at `02d44d5`, and carries #63's section. Week 6's pair and #40, #162 and
-  #23 are all **merged**; the copies still behind `main` are `hasan/54-screenshot-per-step`
-  (#54's section), `hasan/61-cli-runner` (#61's) and this one. **Whichever merges last keeps
-  every branch's own section** -- never resolve this file by taking one side, and when the
-  resolution is "ours", check first that the other side holds no fact that lives nowhere else:
-  that is how #236's four #29 bullets nearly went missing today.
-- Current issue: **#63 (failure triage + decision log), PR #251**, all six checks green.
-  **Three PRs of mine are open and every one waits on others, not on me**: #251 (#63),
-  **#250** (#61, the CLI runner, run for real against the sample app *and* the real server) and
-  **#248** (#54, omer's two change-request items both done).
-- **My review queue is empty.** All six of omer's PRs reviewed today: approved #241, #243,
-  #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as Planned
-  although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have, and
-  §6.2's Windows row contradicts §6.3 about the `eval` job).
-- **Next, when something is needed:** **#66** (the CLI's JUnit XML) is the only unblocked one
-  left, and it would have to stack on `hasan/61-cli-runner` until #250 merges -- worth waiting
-  for rather than stacking again, after what #239 cost. **#62** needs omer's #44 (PR #247) on
-  `main`. The Windows queue -- #247's check B, #24's pick hotkey, #54's second-display case --
-  waits for the weekly session.
-- **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/40-playback-v1` for PR #237):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/40-playback-v1`" are that branch's copy, unedited; reconcile them at your next session end.
+- Last update: 2026-11-15, seventh stretch. On **`hasan/66-junit-xml`**, branched from `main`
+  at `0c9896c`. Nearly everything of mine merged today; the copies of this file still behind
+  `main` are `hasan/54-screenshot-per-step` (#54), `hasan/64-rq1-report` (#64) and this one.
+- **CI IS DOWN FOR THE WHOLE REPOSITORY, and it is billing, not code.** From about 18:35Z every
+  job fails to start in 1-2 s: "recent account payments have failed or your spending limit
+  needs to be increased". My 18:13Z run passed all six; nothing in between touched CI. Only
+  **galip's** billing settings can clear it (the repo is `galipdg/AYNA`) -- in his inbox, on
+  PR #254, and in `learnings.md`. **Do not debug a branch over this**: the tell is a 1-2 s job
+  with no log at all.
+- Current issue: **#66 (CLI JUnit XML), PR #254**, opened as *Part of #66* -- criterion 1 is met
+  and proved, criterion 2 ("a GitHub Actions test reporter displays it") is a decision in
+  `.github/` and omer's. Verified locally instead: 782 agent tests under CI's own invocation,
+  ruff clean, and a real run whose file validates against the schema.
+- **My other open PRs: #248 (#54), #253 (#64).** All three wait on reviews, and now also on CI.
+- **Reviewed today**: approved #241, #243, #234, #249, #247 and **#252** (omer's switch of #67
+  to `ayna run` -- I ran all three of its jobs on Windows for him); changes requested on #242.
 
-## #63 -- the triage rule, and the one decision it had to make (2026-11-15)
+## #66 -- JUnit XML, and what the schema actually says (2026-11-15)
+
+PR #254. `memory-bank/tasks/66-cli-junit-xml.md` has it; four things not to re-derive:
+
+- **The format this project wrote from #249 until now does not validate**, in four ways:
+  `<testsuites name=…>` takes no `name` and a nested suite needs `package`/`id`; `<properties>`
+  is required and first; `<system-out>`/`<system-err>` belong to the **suite** and are both
+  required; `timestamp` and `hostname` are required. Checked against a file the stand-in really
+  produced, not asserted.
+- **`timestamp` may not carry a timezone** -- the schema says so outright. This is the one place
+  the project departs from "always an offset"; the offset stamp is kept as a `<property>`.
+- **A delivery failure goes in `<system-err>` and the testcases stay green.** FR-23's exit 2
+  with all tests passing would otherwise read as a reporting bug.
+- **`xmlschema` is a `[dev]`-only dependency and the XSD is vendored** (Apache-2.0, noted in
+  `agent/tests/data/README.md`). No product module imports either.
+
+#63 -- the triage rule, and the one decision it had to make (2026-11-15)
 
 PR #251. `memory-bank/tasks/63-failure-triage.md` has the mapping; what not to re-derive:
 

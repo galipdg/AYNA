@@ -899,3 +899,18 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   (#247's check B, #24, #54's second-display case) waits for the weekly session. After that the
   open Week 8 issue is **#62**, which needs omer's #44 (PR #247) merged first, or **#66** (the
   CLI's JUnit XML), which is mine and unblocked by #250.
+- Seventh stretch, 2026-11-15: reviewed omer's #252 first (it switches #67 to my CLI) and ran
+  all three of its jobs on Windows for him — good build green, bug1 and bug4 each failing only
+  their own test. Then #66, the CLI's JUnit XML, PR #254 as *Part of #66*.
+- The substance was taking the criterion literally. Fetching the real schema and validating
+  against it changed the design four times, and showed that **the format we have been writing
+  since #249 does not validate at all** — checked against a file the stand-in really produced,
+  not argued. Also two judgement calls: the timestamp drops its timezone because the schema
+  forbids one (the offset stamp survives as a property), and a delivery failure goes in
+  `system-err` with the testcases left green, so FR-23's exit 2 has a visible reason.
+- **CI went down repo-wide at ~18:35Z on billing** ("spending limit needs to be increased"),
+  not on anything in my branch — my 18:13Z run was green. In galip's inbox, on #254, and in
+  `learnings.md` with the tell: a 1-2 s job with no log.
+- Next step: nothing is blocked on me. #248, #253 and #254 wait on reviews and on CI coming
+  back. Ask omer which way he wants #66's criterion 2 (reporter action, or the XML parsed into
+  the job summary — `summary_of()` is there for it).
