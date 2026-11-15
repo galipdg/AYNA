@@ -54,8 +54,8 @@ const window = {
 }
 
 describe('agent JSON-RPC contract, client side', () => {
-  it('is version 1.0', () => {
-    assert.equal(contract.$defs.version.const, '1.0')
+  it('is version 1.1', () => {
+    assert.equal(contract.$defs.version.const, '1.1')
   })
 
   it('sends requests the contract allows', async () => {
@@ -151,6 +151,7 @@ describe('agent JSON-RPC contract, client side', () => {
           durationMs: 10000,
           stepId: 'b6f0',
           message: 'Element not found',
+          category: 'elementNotFound',
         },
         { stepIndex: 2, status: 'notRun', durationMs: 0 },
       ],

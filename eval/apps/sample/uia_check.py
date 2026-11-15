@@ -87,7 +87,10 @@ READY_TIMEOUT = 30.0
 
 
 def launch_app(
-    screen: str = "login", delay_ms: int = 0, variant: str = "v1"
+    screen: str = "login",
+    delay_ms: int = 0,
+    variant: str = "v1",
+    bug: str = "none",
 ) -> subprocess.Popen[bytes]:
     """Start `sample_app.py` on one screen as a separate process.
 
@@ -96,7 +99,8 @@ def launch_app(
 
     `variant` is one of #46's change versions, so the same dump answers "what did UI
     Automation make of this change" -- which is the only way to know what a cleared
-    `objectName` becomes.
+    `objectName` becomes. `bug` is one of #47's bug-injected versions, which is how a bug's
+    symptom is read the way playback will read it (a Save button's `enabled`, a label's Name).
     """
     # A child inherits QT_QPA_PLATFORM, and a value such as `offscreen` would start the app
     # with no real window, so UI Automation would never find it and every lookup here would
@@ -114,6 +118,8 @@ def launch_app(
             str(delay_ms),
             "--variant",
             variant,
+            "--bug",
+            bug,
         ],
         env=env,
     )

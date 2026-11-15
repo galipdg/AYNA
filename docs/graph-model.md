@@ -9,6 +9,7 @@ The server's Neo4j schema. Part of the graph-schema contract (with `server/src/m
 - v0.3 (#44, ADR `2026-11-05-runs-api-and-live-updates`, proposed, migration `V0004`) adds `ON_VERSION` from Run, a unique `(runId, stepIndex)` on StepResult, the Run properties `stepCount`, `document`, `finishedAt` and the StepResult properties that make a write repeatable.
 - v0.4 (#15, ADR `2026-11-07-window-snapshot-unique`, proposed, migration `V0005`) makes `Window.snapshotId` unique, so one snapshot import creates one Window.
 - v0.5 (#51, ADR `2026-11-08-run-screenshots-and-retention`, proposed, no migration) adds `lastActivityAt` and `endedBy` to Run and `screenshotHash`, `screenshotReceivedAt` to StepResult; `screenshotPath` is relative to the screenshot folder.
+- v0.6 (#63, ADR `2026-11-15-failure-category`, proposed, no migration) adds `category` to StepResult: why a failed step failed (FR-35), absent on every other result.
 - Migrations run automatically when the server starts ([neo4j-migrations](https://michael-simons.github.io/neo4j-migrations/); applied versions are stored as `__Neo4jMigration` nodes).
 
 ## Diagram
@@ -47,7 +48,7 @@ graph LR
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
 | Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `durationMs`, `lastActivityAt` (creation, new result or new screenshot; the idle timeout reads it), `endedBy` (`idleTimeout` when the server aborted it) | unique `id` · index `startedAt` |
-| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `durationMs`, `message`, `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` (relative to the screenshot folder, `<runId>/<stepIndex>.png`), `screenshotHash` (SHA-256 of the PNG, to recognise a repeat), `screenshotReceivedAt` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
+| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `durationMs`, `message`, `category` (only on a failed result: `elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete`), `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` (relative to the screenshot folder, `<runId>/<stepIndex>.png`), `screenshotHash` (SHA-256 of the PNG, to recognise a repeat), `screenshotReceivedAt` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
 | HealingProposal | `score`, per-property contributions, `decision` | unique `id` |
 | Rule | learned matching rule | unique `id` |
 | User | `username` (lower-case), `passwordHash` (BCrypt), `role` (`admin` / `tester`), `createdAt`; `removedAt` once removed (the node stays) | unique `id` · unique `username` (`V0003`) |
