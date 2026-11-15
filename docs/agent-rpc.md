@@ -395,7 +395,7 @@ One notification per step of the run, in step order, when the step has finished 
 | `snapshot` | object | Only with `repairProposed`: the snapshot document (`schemas/snapshot.schema.json`, #12) of the window the candidates came from, captured when the wait ended. |
 | `healingProposal` | object | Only with `repairProposed`: a document per `schemas/healing-proposal.schema.json` (below). |
 
-#40 (duration, message), #54 (screenshot) and #63 (failure category) add their own fields to this message.
+The other fields are the ones `runSteps` already returns per step: `durationMs` and `message` (#40; the name `durationMs` matches `timeoutMs` and `budgetMs`, hasan on #193), `matched` and `performedWith`, and for a failed step `category` (#63, ADR `2026-11-15-failure-category`). #54 adds the screenshot's.
 
 **Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`; the names are #54's and #40's to settle), so the approval screen can say how much older the image is than the geometry. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image itself travels as #54 and #51 decide; the proposal carries none.
 
