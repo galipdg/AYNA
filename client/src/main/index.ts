@@ -46,7 +46,21 @@ import {
   listVersions,
   updateRepoObject,
 } from './repository.ts'
-import { fetchReport, listRuns, reportFileName } from './runs.ts'
+import {
+  createRun,
+  fetchReport,
+  finishRun,
+  getRun,
+  listRunningRuns,
+  listRuns,
+  putResult,
+  reportFileName,
+} from './runs.ts'
+import type { LiveRun } from '../shared/liveRun.ts'
+import { Outbox } from './outbox.ts'
+import { Runner } from './runner.ts'
+import { RunEvents, type WebSocketLike } from './runEvents.ts'
+import { perStepPlayer } from './stepPlayer.ts'
 import { checkServer } from './server.ts'
 import {
   createTest,
@@ -149,6 +163,14 @@ agent.onStatus((status) => {
   }
 })
 
+/** A run's changes go to every window: this client's run and the followed test's runs. */
+function sendRun(run: LiveRun) {
+  for (const window of BrowserWindow.getAllWindows()) window.webContents.send(IPC.run, run)
+}
+
+/** The run outbox's file in the user's data folder (#44). */
+export const OUTBOX_FILE = 'run-outbox.json'
+
 /** `ipcMain.handle` that refuses calls from any frame other than the app's own page. */
 function handle(
   channel: string,
@@ -209,6 +231,8 @@ function registerIpc() {
     if (result.ok) {
       const settings = await loadSettings(settingsFile)
       await saveSettings(settingsFile, withServer(settings, result.url))
+      // The session belongs to the previous server; so do its live runs.
+      runEvents.setServer(null, null)
     }
     return result
   })
@@ -336,16 +360,113 @@ function registerIpc() {
     active: pickHotkey.set(enabled === true),
     label: pickHotkeyLabel(process.platform),
   }))
+  // Running a test from the editor (#44): results go through the outbox, which sends each to
+  // the server it belongs to while a session for that server exists.
+  const outboxReady = Outbox.open(join(app.getPath('userData'), OUTBOX_FILE), {
+    serverUrl: () => session?.serverUrl ?? null,
+    put: async (entry) => {
+      const token = session && session.serverUrl === entry.serverUrl ? session.token : null
+      if (!token) return 'unauthorized'
+      const answer =
+        entry.kind === 'result'
+          ? await putResult(entry.serverUrl, entry.runId, entry.body, { token })
+          : await finishRun(entry.serverUrl, entry.runId, entry.status, { token })
+      if (answer === 'unauthorized') session = null
+      return answer
+    },
+  })
+  const runEvents = new RunEvents({
+    connect: (url, token) => {
+      // Node's WebSocket (undici) takes handshake headers in its init object, as for the agent.
+      const init = { headers: { Authorization: `Bearer ${token}` } } as unknown as string[]
+      return new WebSocket(url, init) as unknown as WebSocketLike
+    },
+    catchUp: {
+      running: async (testId) => {
+        const { serverUrl, token } = await server()
+        return track(await listRunningRuns(serverUrl, testId, { token }))
+      },
+      get: async (runId) => {
+        const { serverUrl, token } = await server()
+        return track(await getRun(serverUrl, runId, { token }))
+      },
+    },
+  })
+  runEvents.onRun((run) => {
+    // This client's own run is told by the runner, which also knows the step being played.
+    if (run.runId !== runner?.current()?.runId) sendRun(run)
+  })
+  let runner: Runner | null = null
+  void outboxReady.then((outbox) =>
+    outbox.onSetAside((runId) => runner?.markNotStored(runId)),
+  )
+
+  /** After a sign-in: deliver what waits, close runs a crash left open, follow live runs. */
+  async function signedIn() {
+    const { serverUrl, token } = await server()
+    const outbox = await outboxReady
+    if (serverUrl) {
+      const playing = runner?.current()?.status === 'running' ? runner.current()!.runId : null
+      for (const runId of outbox.unfinishedRuns(serverUrl)) {
+        if (runId !== playing) {
+          await outbox.add({ kind: 'finish', serverUrl, runId, status: 'aborted' })
+        }
+      }
+    }
+    outbox.resume()
+    runEvents.setServer(serverUrl, token)
+  }
+
+  handle(IPC.startRun, async (_event, testId: unknown, appVersionId: unknown) => {
+    const { serverUrl, token } = await server()
+    if (runner?.current()?.status === 'running') return { ok: false, reason: 'busy' }
+    const { applicationId } = await loadSettings(settingsFile)
+    const outbox = await outboxReady
+    const next = new Runner({
+      createRun: async (test, version) =>
+        track(await createRun(serverUrl, test, version, { token })),
+      repoObjects: async () => {
+        if (!applicationId) return null
+        const answer = track(await listRepoObjects(serverUrl, applicationId, { token }))
+        return answer.ok ? answer.objects : null
+      },
+      capturedElement: async (objectId) => {
+        const answer = track(await getRepoObject(serverUrl, objectId, { token }))
+        return answer.ok ? answer.object.element : undefined
+      },
+      agentConnected: () => agent.getStatus().state === 'connected',
+      agent,
+      player: perStepPlayer(agent),
+      outbox,
+      serverUrl: serverUrl ?? '',
+    })
+    next.onChange(sendRun)
+    const answer = await next.start(String(testId), String(appVersionId))
+    if (answer.ok) runner = next
+    return answer
+  })
+  handle(IPC.stopRun, () => runner?.stop())
+  handle(IPC.chooseRunWindow, (_event, handle: unknown) =>
+    runner?.choose(typeof handle === 'number' ? handle : null),
+  )
+  handle(IPC.watchRuns, (_event, testId: unknown) => {
+    const id = typeof testId === 'string' ? testId : null
+    runEvents.watch(id)
+    const mine = runner?.current() ?? null
+    return mine && mine.testId === id ? mine : null
+  })
   handle(IPC.login, async (_event, username: unknown, password: unknown) => {
     const { serverUrl } = await server()
     const answer = await login(serverUrl, String(username), String(password))
     if (!answer.ok) return answer
     session = { ...answer.session, serverUrl: serverUrl! }
+    await signedIn()
     return { ok: true, user: answer.session.user }
   })
   handle(IPC.logout, async () => {
     const { serverUrl, token } = await server()
     session = null
+    runEvents.setServer(null, null)
     if (token) await logout(serverUrl, token)
   })
   handle(IPC.currentUser, async () => {
@@ -481,9 +602,25 @@ function sweepReports() {
   }
 }
 
-app.on('will-quit', sweepReports)
+// A second instance that quits at once must not sweep the first one's open reports.
+app.on('will-quit', () => {
+  if (primaryInstance) sweepReports()
+})
+
+// One client per user-data folder: two would share `run-outbox.json`, and each rewrites the
+// whole file (#44). Another folder (`--user-data-dir`) is another client.
+const primaryInstance = app.requestSingleInstanceLock()
+if (!primaryInstance) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow?.isMinimized()) mainWindow.restore()
+    mainWindow?.focus()
+  })
+}
 
 app.whenReady().then(() => {
+  if (!primaryInstance) return
   sweepReports()
   hardenSession()
   registerIpc()
@@ -498,7 +635,7 @@ app.whenReady().then(() => {
 // Quit waits for the agent to stop, so no agent outlives the client.
 let agentStopped = false
 app.on('before-quit', (event) => {
-  if (agentStopped) return
+  if (agentStopped || !primaryInstance) return
   event.preventDefault()
   agent.stop().finally(() => {
     agentStopped = true

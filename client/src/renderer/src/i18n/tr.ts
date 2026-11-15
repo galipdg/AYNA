@@ -444,6 +444,42 @@ export const tr: Strings = {
   durationMs: (ms: string) => `${ms} ms`,
   durationSeconds: (seconds: string) => `${seconds} sn`,
   durationMinutes: (minutes: string, seconds: string) => `${minutes} dk ${seconds} sn`,
+  runRun: 'Çalıştır',
+  runStarting: 'Başlatılıyor…',
+  runStop: 'Durdur',
+  runDetails: 'Çalıştırma ayrıntıları',
+  runNeedsSave: 'Önce adımları kaydedin.',
+  runNeedsSteps: 'Önce bir adım ekleyin.',
+  runNeedsFix: 'Önce işaretli adımları düzeltin.',
+  runNeedsAgent: 'Yerel aracı bağlı değil.',
+  runNeedsVersion: 'Önce üst çubuktan bir sürüm seçin.',
+  runRunning: (step: number, of: number, elapsed: string) =>
+    `Çalışıyor · ${count(of)} adımın ${count(step)}. adımı · ${elapsed}`,
+  runRunningBy: (user: string, step: number, of: number) =>
+    `Çalışıyor, başlatan: ${user} · ${count(of)} adımın ${count(step)}. adımı`,
+  runChooseWindow: (title: string | null) =>
+    title === null
+      ? 'Bu öğe hangi pencerede olduğunu söylemiyor. Test hangi pencereyi kullansın?'
+      : `“${title}” başlıklı birden fazla pencere var. Test hangisini kullansın?`,
+  runPassed: 'Başarılı',
+  runFailedAt: (step: number) => `${count(step)}. adımda başarısız`,
+  runStoppedAt: (step: number) => `${count(step)}. adımda durduruldu`,
+  runNotStored:
+    'Sunucu bu çalıştırmayı saklamadı, geçmişte görünmeyecek. Test silinmiş olabilir.',
+  runHeaderResult: 'Sonuç',
+  runWaiting: (waited: string, of: string) => `bekleniyor… ${waited} / ${of}`,
+  runSkipped: 'Atlandı',
+  runCategories: {
+    elementNotFound: 'Öğe bulunamadı',
+    unexpectedWindow: 'Beklenmeyen pencere',
+    assertionFailed: 'Kontrol tutmadı',
+    timeout: 'Zaman aşımı',
+    searchIncomplete: 'Arama tamamlanamadı',
+  } as Record<string, string>,
+  runStartErrors: {
+    busy: 'Başka bir çalıştırma sürüyor.',
+    'agent-not-connected': 'Yerel aracı bağlı değil.',
+  },
   runsErrors: {
     'no-server': 'Sunucu ayarlanmamış. Önce bir sunucuya bağlanın.',
     unreachable: 'Sunucuya ulaşılamadı. Çalıştığını kontrol edin.',

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC, type AgentStatus, type AynaApi, type PickEvent } from '../shared/api.ts'
+import type { LiveRun } from '../shared/liveRun.ts'
 
 const api: AynaApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
@@ -29,6 +30,15 @@ const api: AynaApi = {
   listRuns: (appId, filter) => ipcRenderer.invoke(IPC.listRuns, appId, filter),
   openReport: (runId) => ipcRenderer.invoke(IPC.openReport, runId),
   saveReport: (runId, fileName) => ipcRenderer.invoke(IPC.saveReport, runId, fileName),
+  startRun: (testId, appVersionId) => ipcRenderer.invoke(IPC.startRun, testId, appVersionId),
+  stopRun: () => ipcRenderer.invoke(IPC.stopRun),
+  chooseRunWindow: (handle) => ipcRenderer.invoke(IPC.chooseRunWindow, handle),
+  watchRuns: (testId) => ipcRenderer.invoke(IPC.watchRuns, testId),
+  onRun: (listener) => {
+    const forward = (_event: IpcRendererEvent, run: LiveRun) => listener(run)
+    ipcRenderer.on(IPC.run, forward)
+    return () => ipcRenderer.removeListener(IPC.run, forward)
+  },
   getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
   onAgentStatus: (listener) => {
     const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)
