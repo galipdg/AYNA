@@ -57,9 +57,11 @@ what a buggy build is -- the defect is in the code, not in one window.
 - [x] `tests/test_bugs.py` (25, offscreen) and `tests/test_bug_uia.py` (5, Windows)
 - [x] Both acceptance criteria met (≥5 bugs; every bug names the scenario that must fail), each
       with a test — the scenario check reads `docs/rs/scenarios.md` itself
-- [ ] Commit, push, PR
-- Next step: commit and open the PR against `hasan/46-ui-change-versions` (retarget to `main`
-  once #46's PR #238 merges), then ask galip about a scenario for the wrong-saved-value bug.
+- [x] Committed (`11c28e1`), pushed, **PR #239** open **against `hasan/46-ui-change-versions`**
+      (stacked on #238), both reviews requested, both criteria ticked on the issue; galip has the
+      wrong-saved-value question in his inbox and in the PR body
+- Next step: **retarget PR #239 to `main` once #238 merges** (`gh pr edit 239 --base main`), and
+  take galip's answer on where bug3 belongs.
 
 ## Manual checks
 - 2026-11-15 · hasan · `pytest eval/apps/sample/tests/test_bug_uia.py` (5 app launches, each

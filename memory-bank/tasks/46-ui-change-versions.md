@@ -67,9 +67,11 @@ The hook is in each window's `__init__` (`variant_patch.apply_active(self)`), no
 - [x] Windows run: **23 of 23 pass**, after the four corrections under "Manual checks"
 - [x] All three acceptance criteria met (≥5 versions, a mapping for every changed control, a
       change log describing each change), each with a test that checks it
-- [ ] PR + review request
-- Next step: commit, push the branch and open the PR (`Closes #46`), asking omer and galip for
-  review; say in the body that the expected output deviates from the issue by agreement.
+- [x] Committed (`478630e`), pushed, **PR #238** open with both reviews requested and the
+      issue's three criteria ticked; all five CI jobs pass, including `eval` on the Windows
+      runner (1m28s), so the 23 UIA tests run in CI too
+- Next step: nothing of mine. It waits on the two reviews and then on a merge. #47's branch is
+  stacked on this one (PR #239) and gets retargeted to `main` when this merges.
 
 ## Manual checks
 - 2026-11-15 · hasan · `pytest eval/apps/sample/tests/test_variant_uia.py` (17 app launches,
