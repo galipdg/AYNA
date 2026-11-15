@@ -1,6 +1,7 @@
 // Contract between the preload bridge and the renderer. The renderer only ever
 // sees `window.ayna`, shaped like `AynaApi`; every method maps to one IPC channel.
 
+import type { LiveRun, StartRunResult } from './liveRun.ts'
 import type { ElementDescriptor } from './element.ts'
 import type { Language } from './language.ts'
 import type { PropertySet } from './repository.ts'
@@ -398,6 +399,16 @@ export interface AynaApi {
   openReport(runId: string): Promise<ReportResult>
   /** Asks where to save the run's report, suggesting `fileName`, and writes it there. */
   saveReport(runId: string, fileName: string): Promise<ReportResult>
+  /** Runs the test's saved steps on the version through the local agent (#44). */
+  startRun(testId: string, appVersionId: string): Promise<StartRunResult>
+  /** Ends this client's run after the step being played. */
+  stopRun(): Promise<void>
+  /** Answers the window chooser: a window's handle, or null to stop. */
+  chooseRunWindow(handle: number | null): Promise<void>
+  /** Follows `testId`'s runs (null: none); answers this client's run of it, if one is shown. */
+  watchRuns(testId: string | null): Promise<LiveRun | null>
+  /** Every change of a followed run, this client's or another's. */
+  onRun(listener: (run: LiveRun) => void): () => void
   /** Replaces the test's steps; the answer has them as stored, with their ids. */
   saveSteps(id: string, document: StepDocument): Promise<TestResult>
   /** Checks `document` against `schemas/step.schema.json`; empty when it is valid. */
@@ -471,6 +482,11 @@ export const IPC = {
   listRuns: 'runs:list',
   openReport: 'runs:open-report',
   saveReport: 'runs:save-report',
+  startRun: 'runs:start',
+  stopRun: 'runs:stop',
+  chooseRunWindow: 'runs:choose-window',
+  watchRuns: 'runs:watch',
+  run: 'runs:changed',
   getAgentStatus: 'agent:get-status',
   retryAgent: 'agent:retry',
   listWindows: 'spy:list-windows',

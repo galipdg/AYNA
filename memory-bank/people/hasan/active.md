@@ -2,18 +2,46 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, second session. **#46 is merged** (PR #238, squash `ab7edf9`) and
-  this copy has `origin/main` merged as of `e147a94` (#224, the v1 contract freeze). It is
-  written on `hasan/47-bug-injected-versions` and carries #46's and #47's sections. Two other
-  copies are still behind and each holds its own issue's section: `hasan/40-playback-v1` (#40)
-  and `hasan/162-windows-llm-latency` (#162). **Whichever merges last keeps every branch's own
-  section** -- never resolve this file by taking one side. When the resolution is "ours", check
-  first that the other side holds no fact that lives nowhere else; that is how #236's four #29
-  bullets nearly went missing on 2026-11-15.
-- Current issue: **none in progress.** Four PRs of mine are open and every one waits on reviews,
-  not on me: **#239 (#47, now based on `main`)**, **#237 (#40)**, **#236 (#23)**, **#235 (#162)**.
-- **The next issue to pick is in Week 7/8 (#54, #55, #61, #62)**: Week 6's pair is done.
+- Last update: 2026-11-15, fourth stretch. This copy is on **`hasan/61-cli-runner`**, branched
+  from `main` at `02d44d5`. Week 6's pair and #40, #162 and #23 are all **merged**; the copies
+  still behind `main` are `hasan/54-screenshot-per-step` (#54's section) and this one (#61's).
+  **Whichever merges last keeps every branch's own section** -- never resolve this file by
+  taking one side, and when the resolution is "ours", check first that the other side holds no
+  fact that lives nowhere else: that is how #236's four #29 bullets nearly went missing today.
+- Current issue: **#61 (CLI runner), PR #250**, all three criteria met, run for real against the
+  sample app *and* the real server, all six checks green. **#54's PR #248** is also open: omer's
+  two change-request items are both done and it waits on his re-review and on galip.
+- **My review queue is empty.** All six of omer's PRs reviewed today: approved #241, #243,
+  #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as Planned
+  although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have, and
+  §6.2's Windows row contradicts §6.3 about the `eval` job).
+- **Next, when something is needed:** **#66** (the CLI's JUnit XML) is mine and unblocked by
+  #250. **#62** needs omer's #44 (PR #247) on `main` first. The Windows queue -- #247's check B,
+  #24's pick hotkey, #54's second-display case -- waits for the weekly session.
 - **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/40-playback-v1` for PR #237):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/40-playback-v1`" are that branch's copy, unedited; reconcile them at your next session end.
+
+## #61 -- the CLI runner, and what only a real server found (2026-11-15)
+
+PR #250. `memory-bank/tasks/61-cli-runner.md` has it all; five things not to re-derive:
+
+- **Build to FR-23, not to the issue.** The issue omits the API token, the delivery condition on
+  exit 0, and exit 2 entirely. A green suite whose results were not stored exits **2** -- the
+  command printed exactly that against the real server before the `runId` fix, with one test
+  passing.
+- **`GET /api/apps/{id}/tests` carries no steps** (`{id, name, stepCount}`), so a server run
+  plays the run's **own copy** from `POST /api/runs` -- which the runs ADR wanted anyway.
+- **The step-result body must carry `runId`** matching the path, and a client must print a
+  problem's `errors[]` and not only its `detail`: the second would have explained the first at
+  once.
+- **Output is forced to UTF-8.** A CI pipe falls back to cp1252, which has no ş or ı, and the
+  command would have died with a `UnicodeEncodeError` *while reporting a test result*.
+- **The Docker stack is stopped again, not deleted** (`ayna_neo4j-data` intact), and it ran on
+  **28081** this time via `AYNA_SERVER_PORT`, not the `.env` default 8081. Docker Desktop has to
+  be started by hand first.
+- Open for omer, asked on the issue and in the PR: what `--suite NAME` means (there is no suite
+  entity), whether the last version is the newest, whether the Spy should keep a window title
+  (no seeded object has one, hence `--window`), and why the run detail does not echo `matched`
+  or `performedWith`.
 
 ## From `hasan/40-playback-v1`, kept at merge
 

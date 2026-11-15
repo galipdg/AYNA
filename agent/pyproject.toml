@@ -10,6 +10,10 @@ dependencies = [
     "pywinauto>=0.6.9",
 ]
 
+[project.scripts]
+# FR-23's command. `ayna run --from-file suite.json`, or `--server URL --suite NAME`.
+ayna = "ayna_cli.cli:console_entry"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff~=0.17.2", "jsonschema~=4.26"]
 
@@ -18,7 +22,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["ayna_agent*"]
+include = ["ayna_agent*", "ayna_cli*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

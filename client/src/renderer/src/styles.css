@@ -1449,3 +1449,52 @@ ul.message {
   gap: 8px;
   white-space: nowrap;
 }
+
+/* Running a test from the editor (#44, wireframe 8). */
+.steps-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.steps .col-result {
+  width: 150px;
+}
+
+.step-result {
+  /* On the inputs' text line, as the step number is. */
+  padding-top: 10px !important;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.result-passed {
+  color: var(--success);
+}
+
+.result-failed,
+.step-failure td {
+  color: var(--danger);
+}
+
+.result-playing {
+  color: var(--text);
+}
+
+.result-skipped,
+.result-pending {
+  color: var(--text-muted);
+}
+
+.step-failure td {
+  padding-top: 0 !important;
+  font-size: 12.5px;
+}
+
+.run-bar .run-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}

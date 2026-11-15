@@ -15,7 +15,7 @@
   "$defs": {
     "version": {
       "description": "Version of this contract. It is not sent on the wire; bump it on every change (minor for additions, major for a breaking change).",
-      "const": "1.0"
+      "const": "1.1"
     },
     "id": {
       "description": "A server id (UUID text).",
@@ -91,7 +91,11 @@
         "stepId": { "type": ["string", "null"] },
         "status": { "$ref": "#/$defs/stepStatus" },
         "durationMs": { "type": ["integer", "null"], "minimum": 0 },
-        "message": { "type": ["string", "null"] }
+        "message": { "type": ["string", "null"] },
+        "category": {
+          "description": "Since 1.1 (FR-35, #63): why a failed step failed, as the agent sent it; null for any other step and when the agent did not say. A server older than 1.1 leaves it out.",
+          "oneOf": [{ "$ref": "#/$defs/failureCategory" }, { "type": "null" }]
+        }
       }
     },
     "error": {
@@ -107,6 +111,10 @@
     "runStatus": {
       "description": "Status of a run. New values may be added in a minor version (#74 adds repairProposed); show an unknown one as it is.",
       "enum": ["running", "passed", "failed", "aborted"]
+    },
+    "failureCategory": {
+      "description": "The categories of agent-rpc.schema.json $defs/failureCategory (FR-35, TBD-5). New values may be added in a minor version: show an unknown one as it is.",
+      "enum": ["elementNotFound", "unexpectedWindow", "assertionFailed", "timeout", "searchIncomplete"]
     },
     "stepStatus": {
       "description": "Status of a step result. New values may be added in a minor version (#74 adds repairProposed); show an unknown one as it is.",

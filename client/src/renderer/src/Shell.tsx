@@ -154,6 +154,7 @@ export default function Shell(props: Props) {
             key={app.id}
             app={app}
             active={place === 'tests'}
+            version={version}
             onSessionEnded={onSessionEnded}
           />
         </div>
