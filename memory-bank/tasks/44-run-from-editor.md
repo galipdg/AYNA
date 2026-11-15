@@ -106,6 +106,7 @@ Acceptance criteria against the halves:
 - 2026-11-15: **Stop finishes `aborted`**, while the runs ADR says `aborted` means a crash. Ask galip and hasan on the PR; if they want a `stopped` status, that is an ADR change and a server change.
 - 2026-11-15: the client sets `category: unexpectedWindow` itself when no window has the step's title; #63 says the agent fills categories. Say so on the PR (hasan).
 - Screenshots per step (#54) are not sent yet: the agent does not take them.
+- Deferred minors from the 2026-11-15 branch review (PR #247): the `startRun` busy check races across awaits in main (the renderer's starting flag covers one window); the bar says "Stopped at step n" when the agent went away, the reason only under the row; a step can wait about twice its time (window wait + agent call); an unreadable repository makes every step "not in the repository"; client-made failure messages are English in the Turkish UI (also stored on the server); "Run details" shows for a run the server did not keep; the no-title chooser has only Stop when no window is listed; `/ws/runs` retries every 30 s with a dead token after a 401 upgrade (close 1006); an outbox 401 ends the session without telling the screen.
 
 ## Handoff
 - 2026-11-15: client half in the worktree `.claude/worktrees/pr-reviews-windows-queue-13fdc7`, branch `omer/44-run-from-editor`. SSH to GitHub works again (port 443).
