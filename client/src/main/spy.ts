@@ -68,13 +68,15 @@ export async function snapshot(
   agent: AgentCaller,
   handle: unknown,
   budgetMs?: unknown,
+  queue?: AgentQueue,
 ): Promise<SnapshotResult> {
   const budget = isBudget(budgetMs) ? budgetMs : undefined
   const params = budget === undefined ? { handle } : { handle, timeoutMs: budget }
   const wait = (budget ?? DEFAULT_SNAPSHOT_BUDGET_MS) + SNAPSHOT_MARGIN_MS
   let result: unknown
   try {
-    result = await agent.call('snapshot', params, wait)
+    const call = agent.call('snapshot', params, wait)
+    result = await (queue ? queue.track(wait, call) : call)
   } catch (error) {
     return { ok: false, ...describeFailure(error) }
   }
@@ -91,9 +93,43 @@ export async function snapshot(
 }
 
 /**
- * A hit test takes milliseconds (#22: under 3.5 ms median), but UI Automation calls run one at
- * a time on the agent, so a pick pressed during a capture waits for it: this covers a walk on
- * the default budget.
+ * The agent runs its UI Automation calls one at a time, in arrival order, so a call sent while
+ * others are in flight waits for them. This keeps the latest time the client still waits for
+ * one of them, so a quick call sent behind a capture can wait as long as the capture may run
+ * (#24: a pick pressed during "capture for longer" must not give up at 10 s).
+ */
+export class AgentQueue {
+  private readonly deadlines = new Map<symbol, number>()
+
+  private readonly now: () => number
+
+  constructor(now: () => number = Date.now) {
+    this.now = now
+  }
+
+  /** Counts `call`, which the client waits `waitMs` for, as in flight until it settles. */
+  async track<T>(waitMs: number, call: Promise<T>): Promise<T> {
+    const key = Symbol()
+    this.deadlines.set(key, this.now() + waitMs)
+    try {
+      return await call
+    } finally {
+      this.deadlines.delete(key)
+    }
+  }
+
+  /** How long the calls in flight may still take, as far as the client waits for them; 0 if none. */
+  busyMs(): number {
+    const now = this.now()
+    let latest = now
+    for (const deadline of this.deadlines.values()) latest = Math.max(latest, deadline)
+    return latest - now
+  }
+}
+
+/**
+ * A hit test alone takes milliseconds (#22: under 3.5 ms median); this is the wait for the hit
+ * test itself. A pick sent behind a capture also waits for what `AgentQueue` says is in flight.
  */
 export const ELEMENT_FROM_POINT_TIMEOUT_MS = 10_000
 
@@ -104,12 +140,14 @@ export const ELEMENT_FROM_POINT_TIMEOUT_MS = 10_000
 export async function elementFromPoint(
   agent: AgentCaller,
   point: ScreenPoint,
+  queue?: AgentQueue,
 ): Promise<ElementFromPointResult> {
   // The agent refuses anything but integers.
   const params = { x: Math.round(point.x), y: Math.round(point.y) }
   let result: unknown
   try {
-    result = await agent.call('elementFromPoint', params, ELEMENT_FROM_POINT_TIMEOUT_MS)
+    const wait = ELEMENT_FROM_POINT_TIMEOUT_MS + (queue?.busyMs() ?? 0)
+    result = await agent.call('elementFromPoint', params, wait)
   } catch (error) {
     return { ok: false, ...describeFailure(error) }
   }
@@ -144,7 +182,9 @@ export function parseElementHit(result: unknown): ElementHit | null {
 
 /**
  * The window handle in Electron's `getNativeWindowHandle()` buffer (an HWND on Windows, in the
- * machine's little-endian order), as the agent reports handles.
+ * machine's little-endian order), as the agent reports handles. A JS number is exact only up to
+ * 2^53, so a handle above that would never match; that is fine because Windows window handles
+ * fit in 32 bits (they are shared with 32-bit processes) and the agent sends them the same way.
  */
 export function nativeHandle(bytes: Uint8Array): number {
   let value = 0

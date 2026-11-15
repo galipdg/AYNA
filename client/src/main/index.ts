@@ -73,6 +73,7 @@ import {
   isBounds,
   listWindows,
   nativeHandle,
+  AgentQueue,
   PickHotkey,
   pickHotkeyLabel,
   snapshot,
@@ -107,6 +108,7 @@ const agent = new AgentManager({
   }),
 })
 const highlighter = new Highlighter()
+const agentQueue = new AgentQueue()
 let mainWindow: BrowserWindow | undefined
 
 const pickHotkey = new PickHotkey(globalShortcut, () => void pick())
@@ -122,9 +124,11 @@ async function pick() {
   const cursor = screen.getCursorScreenPoint()
   const { x, y } = process.platform === 'win32' ? screen.dipToScreenPoint(cursor) : cursor
   // The agent answers with what is visible at the point; the frame must not be that.
-  highlighter.hide()
-  const result = await elementFromPoint(agent, { x, y })
+  const restoreFrame = highlighter.suspend()
+  const result = await elementFromPoint(agent, { x, y }, agentQueue)
   if (target.isDestroyed()) return
+  // A pick that selects a node frames it; any other answer leaves the frame that was showing.
+  restoreFrame()
   const event: PickEvent = result.ok
     ? { point: { x, y }, ...result, ownWindow: isOwnWindow(result.hit.handle) }
     : { point: { x, y }, ...result }
@@ -321,7 +325,9 @@ function registerIpc() {
   handle(IPC.getAgentStatus, () => agent.getStatus())
   handle(IPC.retryAgent, () => agent.retry())
   handle(IPC.listWindows, () => listWindows(agent))
-  handle(IPC.snapshot, (_event, windowHandle, budgetMs) => snapshot(agent, windowHandle, budgetMs))
+  handle(IPC.snapshot, (_event, windowHandle, budgetMs) =>
+    snapshot(agent, windowHandle, budgetMs, agentQueue),
+  )
   // Anything that is not a valid rectangle (null included) removes the frame.
   handle(IPC.highlight, (_event, bounds) =>
     isBounds(bounds) ? highlighter.show(bounds) : highlighter.hide(),

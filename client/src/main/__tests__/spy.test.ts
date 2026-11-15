@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import { AgentNotConnectedError, AgentRpcError, AgentTimeoutError } from '../agent.ts'
 import {
+  AgentQueue,
   describeFailure,
   ELEMENT_FROM_POINT_TIMEOUT_MS,
   elementFromPoint,
@@ -400,8 +401,44 @@ describe('elementFromPoint', () => {
     assert.deepEqual(result, { ok: false, reason: 'bad-response' })
   })
 
-  it('waits longer than a default capture, which a pick may queue behind', () => {
-    assert.ok(ELEMENT_FROM_POINT_TIMEOUT_MS > DEFAULT_SNAPSHOT_BUDGET_MS)
+  it('waits for a capture in flight on top of its own wait (#24)', async () => {
+    let now = 1_000
+    const queue = new AgentQueue(() => now)
+    let finish: (value: unknown) => void = () => {}
+    const capture = new Promise((resolve) => (finish = resolve))
+    const longer = 30_000
+    const tracked = snapshot({ call: () => capture }, 657704, longer, queue)
+    now += 4_000 // the pick comes 4 s into "capture for longer"
+    const calls: unknown[][] = []
+    await elementFromPoint(agentAnswering(hit, calls), { x: 1, y: 1 }, queue)
+    assert.equal(calls[0][2], ELEMENT_FROM_POINT_TIMEOUT_MS + longer + SNAPSHOT_MARGIN_MS - 4_000)
+    finish(trialLogin)
+    await tracked
+    await elementFromPoint(agentAnswering(hit, calls), { x: 1, y: 1 }, queue)
+    assert.equal(calls[1][2], ELEMENT_FROM_POINT_TIMEOUT_MS)
+  })
+})
+
+describe('AgentQueue', () => {
+  it('is idle with nothing in flight', () => {
+    assert.equal(new AgentQueue(() => 0).busyMs(), 0)
+  })
+
+  it('reports the latest wait of the calls in flight, until each settles', async () => {
+    let now = 0
+    const queue = new AgentQueue(() => now)
+    let failShort: (error: Error) => void = () => {}
+    let endLong: (value: string) => void = () => {}
+    const short = queue.track(15_000, new Promise((_, reject) => (failShort = reject)))
+    const long = queue.track(40_000, new Promise<string>((resolve) => (endLong = resolve)))
+    now = 5_000
+    assert.equal(queue.busyMs(), 35_000)
+    endLong('done')
+    assert.equal(await long, 'done')
+    assert.equal(queue.busyMs(), 10_000)
+    failShort(new Error('gone'))
+    await assert.rejects(short, /gone/)
+    assert.equal(queue.busyMs(), 0)
   })
 })
 
