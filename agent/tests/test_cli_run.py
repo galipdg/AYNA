@@ -19,6 +19,7 @@ from ayna_cli.run import (
     PASSED,
     NoSink,
     ServerSink,
+    StartedRun,
     play_suite,
 )
 from ayna_cli.server import ServerError
@@ -61,7 +62,9 @@ class FakePlayer:
 class FakeSink:
     """Records what was delivered; can be told to fail at any of the three moments."""
 
-    def __init__(self, fail_start=(), fail_result=(), fail_finish=()):
+    def __init__(self, fail_start=(), fail_result=(), fail_finish=(), document=None):
+        #: What the server answers as the run's own copy of the steps; None keeps the suite's.
+        self.document = document
         self.fail_start = set(fail_start)
         self.fail_result = set(fail_result)
         self.fail_finish = set(fail_finish)
@@ -73,7 +76,7 @@ class FakeSink:
         if test.name in self.fail_start:
             raise ServerError(f"could not create a run for {test.name}")
         self.started.append(test.name)
-        return f"run-{test.name}"
+        return StartedRun(run_id=f"run-{test.name}", document=self.document)
 
     def result(self, run_id, index, result):
         if run_id in {f"run-{name}" for name in self.fail_result}:
@@ -353,3 +356,44 @@ def test_screenshots_can_be_turned_off(tmp_path):
         "run-t1", 0, {"stepIndex": 0, "status": "passed", "screenshotPath": str(image)}
     )
     assert server.screenshots == []
+
+
+# --- the run's own copy of the steps, not the test's --------------------------------------
+
+
+def test_the_run_s_own_document_is_what_gets_played():
+    """`POST /api/runs` answers the run's copy, and that is what the ADR says to play.
+
+    It is also the only way a server run plays anything at all: `GET /api/apps/{id}/tests`
+    answers `{id, name, stepCount}` with no steps, which a real server showed and a fake of my
+    own writing had not.
+    """
+    played: list[dict] = []
+
+    class Recording(FakePlayer):
+        def play(self, test):
+            played.append(dict(test.document))
+            return super().play(test)
+
+    run_copy = {
+        "version": "0.2",
+        "steps": [{"keyword": "Click", "target": "from-the-run"}],
+    }
+    suite = Suite("smoke", [a_test("one")])
+    play_suite(suite, Recording(), FakeSink(document=run_copy))
+
+    assert played == [run_copy], "the suite's placeholder document was replaced"
+
+
+def test_without_a_run_document_the_suites_own_steps_are_played():
+    """`--from-file` has no server, so its document is the only one there is."""
+    played: list[dict] = []
+
+    class Recording(FakePlayer):
+        def play(self, test):
+            played.append(dict(test.document))
+            return super().play(test)
+
+    suite = Suite("smoke", [a_test("one")])
+    play_suite(suite, Recording(), NoSink())
+    assert played[0]["steps"][0]["target"] == "a"

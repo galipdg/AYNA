@@ -95,11 +95,21 @@ class AynaServer:
     ) -> None:
         """`PUT …/results/{stepIndex}`. 201 stored, 200 the same body again.
 
+        **The body carries `runId` as well as the path**, and the server rejects it otherwise
+        (`$.runId: runId must be the run in the path`). That is the server's requirement and
+        not part of the agent's `stepResult`, so it is added here rather than in playback —
+        the agent has no idea which run its results belong to. Found by running against a real
+        server; every fake until then had accepted the agent's shape unchanged.
+
         A **409** is not a transport hiccup and is never retried: it means a *different* result
         is already stored for this step, so one of the two is wrong and overwriting would hide
         that.
         """
-        self._call("PUT", f"/api/runs/{_q(run_id)}/results/{step_index}", result)
+        self._call(
+            "PUT",
+            f"/api/runs/{_q(run_id)}/results/{step_index}",
+            {**result, "runId": run_id},
+        )
 
     def upload_screenshot(self, run_id: str, step_index: int, png: bytes) -> None:
         """`PUT …/results/{stepIndex}/screenshot`, raw bytes, after the result (#51)."""
@@ -169,6 +179,11 @@ class AynaServer:
             problem = json.loads(exc.read())
             if isinstance(problem, dict):
                 detail = str(problem.get("detail") or problem.get("title") or "")
+                # A validation 400 carries `errors: [{path, message}]`, and *that* is the part
+                # worth printing. The server answered "The step result is invalid" as `detail`
+                # and "$.runId: runId must be the run in the path" in `errors`; a CI log with
+                # only the first costs someone the afternoon the second would have saved.
+                detail = self._with_field_errors(detail, problem.get("errors"))
         except Exception:  # noqa: BLE001 - any unreadable body leaves `detail` empty
             detail = ""
         message = f"{method} {path}: {exc.code} {exc.reason}"
@@ -180,6 +195,22 @@ class AynaServer:
                 status=exc.code,
             )
         return ServerError(message, status=exc.code)
+
+    @staticmethod
+    def _with_field_errors(detail: str, errors: Any) -> str:
+        """Append the `{path, message}` pairs of an RFC 9457 validation problem, up to five."""
+        if not isinstance(errors, list):
+            return detail
+        said = [
+            f"{item.get('path')}: {item.get('message')}"
+            for item in errors[:5]
+            if isinstance(item, dict)
+        ]
+        if not said:
+            return detail
+        more = f" (+{len(errors) - len(said)} more)" if len(errors) > len(said) else ""
+        joined = "; ".join(said) + more
+        return f"{detail} -- {joined}" if detail else joined
 
     @staticmethod
     def _as_list(answer: Any) -> list[dict[str, Any]]:

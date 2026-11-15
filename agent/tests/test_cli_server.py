@@ -13,7 +13,7 @@ import urllib.error
 
 import pytest
 
-from ayna_cli.cli import _targets_from, _window_title_of, console_entry, main
+from ayna_cli.cli import _targets_from, _window_title_in, console_entry, main
 from ayna_cli.exits import OPERATIONAL_FAILURE
 from ayna_cli.server import (
     TOKEN_VARIABLE,
@@ -198,35 +198,36 @@ def test_repository_objects_become_targets_with_their_fallbacks():
     assert "broken" not in targets, "an object with no usable primary set is skipped"
 
 
-def test_the_window_comes_from_the_first_targets_window_title():
-    """#40's rule, and the reason a server suite needs no `window` of its own."""
-    document = {
-        "version": "0.2",
-        "steps": [
-            {"keyword": "Click", "target": "unknown"},
-            {"keyword": "Click", "target": "login.loginButton"},
-        ],
+def test_the_window_comes_from_a_targets_window_title():
+    """#40's rule, and the reason a server suite can sometimes do without `--window`."""
+    targets = {
+        "login.userNameInput": {"properties": {"automationId": "u"}},
+        "login.loginButton": {"properties": {"windowTitle": "Giriş"}},
     }
-    targets = {"login.loginButton": {"properties": {"windowTitle": "Giriş"}}}
-    assert _window_title_of(document, targets) == "Giriş"
+    assert _window_title_in(targets) == "Giriş"
 
 
 def test_a_window_title_on_the_fallback_set_counts_too():
-    document = {"steps": [{"keyword": "Click", "target": "a"}]}
     targets = {
         "a": {
             "properties": {"automationId": "a"},
             "fallback": {"windowTitle": "Ayarlar"},
         }
     }
-    assert _window_title_of(document, targets) == "Ayarlar"
+    assert _window_title_in(targets) == "Ayarlar"
 
 
 def test_no_window_title_anywhere_is_none_rather_than_a_guess():
-    document = {"steps": [{"keyword": "Click", "target": "a"}]}
-    assert (
-        _window_title_of(document, {"a": {"properties": {"automationId": "a"}}}) is None
-    )
+    """What the trial app's five seeded objects actually look like, so `--window` is needed."""
+    targets = {
+        "login.userNameInput": {
+            "properties": {"automationId": "QApplication.loginWindow.usernameInput"}
+        },
+        "login.loginButton": {
+            "properties": {"automationId": "QApplication.loginWindow.loginButton"}
+        },
+    }
+    assert _window_title_in(targets) is None
 
 
 # --- the command line -------------------------------------------------------------------------

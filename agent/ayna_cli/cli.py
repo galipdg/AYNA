@@ -13,6 +13,7 @@ import argparse
 import os
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from typing import Any, TextIO
 
 from ayna_cli.exits import OPERATIONAL_FAILURE
@@ -51,6 +52,15 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="ID",
         help="the application version a run is recorded against; default its newest",
     )
+    parser.add_argument(
+        "--window",
+        metavar="TITLE",
+        help=(
+            "the window every test plays against, by its title. With --server this is often "
+            "needed: a repository object carries a windowTitle only if whoever captured it "
+            "kept one, and the trial app's five objects on our own server carry none"
+        ),
+    )
     return parser
 
 
@@ -84,14 +94,26 @@ def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int
 
 def _prepare(args: argparse.Namespace) -> tuple[Suite, Any]:
     if args.from_file:
-        return read_suite_file(args.from_file), NoSink()
+        suite = read_suite_file(args.from_file)
+        if args.window:
+            suite = Suite(
+                suite.name,
+                [
+                    replace(test, window_title=args.window, window_class=None)
+                    for test in suite.tests
+                ],
+            )
+        return suite, NoSink()
 
     server = AynaServer(args.server, os.environ.get(TOKEN_VARIABLE, ""))
-    return suite_from_server(server, args.suite, args.app_version)
+    return suite_from_server(server, args.suite, args.app_version, args.window)
 
 
 def suite_from_server(
-    server: AynaServer, name: str, app_version_id: str | None
+    server: AynaServer,
+    name: str,
+    app_version_id: str | None,
+    window_title: str | None = None,
 ) -> tuple[Suite, ServerSink]:
     """Build a suite from an application's tests and its repository.
 
@@ -112,18 +134,17 @@ def suite_from_server(
     targets = _targets_from(server.repo_objects_of(app_id))
     tests = []
     for test in server.tests_of(app_id):
-        document = test.get("document")
-        if not isinstance(document, dict):
-            # Not fatal for the suite: the other tests are still worth running, and the
-            # run's own copy of the steps comes from `POST /api/runs` anyway.
-            document = {"version": "0.2", "steps": []}
+        # The list is `{id, name, stepCount}` — no steps. They come from the run's own copy
+        # (`POST /api/runs`), which is what the ADR says should be played anyway; the empty
+        # document here is a placeholder that `ServerSink.start` replaces.
+        document: dict[str, Any] = {"version": "0.2", "steps": []}
         tests.append(
             SuiteTest(
                 name=str(test.get("name") or test.get("id")),
                 document=document,
                 targets=targets,
                 test_id=str(test["id"]),
-                window_title=_window_title_of(document, targets),
+                window_title=window_title or _window_title_in(targets),
             )
         )
     if not tests:
@@ -158,19 +179,15 @@ def _targets_from(objects: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return targets
 
 
-def _window_title_of(
-    document: dict[str, Any], targets: dict[str, dict[str, Any]]
-) -> str | None:
-    """#40's rule: the window comes from a target's `windowTitle`, primary then fallback."""
-    steps = document.get("steps")
-    if not isinstance(steps, list):
-        return None
-    for step in steps:
-        if not isinstance(step, dict):
-            continue
-        target = targets.get(step.get("target", ""))
-        if not target:
-            continue
+def _window_title_in(targets: dict[str, dict[str, Any]]) -> str | None:
+    """#40's rule: the window comes from a target's `windowTitle`, primary then fallback.
+
+    Often `None` in practice, which is why `--window` exists: an object only carries a
+    `windowTitle` if whoever captured it kept one, and none of the trial app's five objects on
+    our own server does. The steps are not consulted, because at this point there are none —
+    the test list has no document (see `suite_from_server`).
+    """
+    for target in targets.values():
         for properties in (target.get("properties"), target.get("fallback")):
             title = (properties or {}).get("windowTitle")
             if isinstance(title, str) and title:

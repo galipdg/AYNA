@@ -63,7 +63,8 @@ server is a **2**, not a 0. A CI job that reported success there would be lying 
       the PNG goes **after** its result, because the server answers 404 before it. A file
       that is named but gone is logged, not fatal; a server that refuses it is a delivery
       failure and so exit 2. Dead until #248 merges, because `screenshotPath` is #54's.
-- [ ] A `--server` run against a real server, which needs the Docker stack up
+- [x] **A `--server` run against the real server**, which found three things no fake had
+      (below)
 - Next step: open the PR (`Closes #61`), asking omer about the two readings under Open
   issues (what `--suite NAME` means, and whether the last version is the newest).
 
@@ -77,10 +78,46 @@ server is a **2**, not a 0. A CI job that reported success there would be lying 
   Two useful accidents on the way: a stray second app proved the ambiguity guard
   (`2 windows have className 'LoginWindow'; playback never picks one`), and piping the output
   mangled the Turkish, which is now fixed (see below).
-- Not yet done: a `--server` run end to end. Every REST path is tested against a fake opener,
-  but nothing has talked to the real server.
+- 2026-11-15 · hasan · **`ayna run --server` against the real stack** (Docker, seeded
+  `ayna_neo4j-data`, server on 28081, trial app up) · **pass, after three fixes it found** ·
+  `--suite "AYNA Trial" --window "AYNA Trial - Login"` played both seeded tests, stored
+  **4 of 4** step results with their durations for *Giriş Denemesi* (`status: passed` on the
+  server) and finished *İkinci Test* as `failed`. Exit **1**, correctly: that test does a
+  `Select` on `login.cancelButton`, which the repository maps to the remember-me check box, so
+  the seeded test is wrong and playback says so in one line. The error paths were run too: no
+  token exits **2** naming `AYNA_SERVER_TOKEN`, and an unknown application exits **2** listing
+  the six that exist.
+
+### What the real server found that every fake had missed
+
+1. **`GET /api/apps/{id}/tests` carries no steps** -- it is `{id, name, stepCount}`. The CLI was
+   building its suite from a `document` that is never there, so a server run would have played
+   nothing at all. The fix is also the more correct design: `POST /api/runs` answers the run's
+   **own copy** of the steps, and the ADR says that copy is what a run plays, because a test
+   edited mid-run must not change what its results mean. `Sink.start` now returns a
+   `StartedRun(run_id, document)`.
+2. **The step-result body must carry `runId`**, matching the path, or the server answers
+   `400 $.runId: runId must be the run in the path`. That is the server's requirement and not
+   part of the agent's `stepResult`, so the CLI adds it; the agent has no idea which run its
+   results belong to.
+3. **The client was throwing away the most useful half of a problem body.** The server said
+   `detail: "The step result is invalid"` *and* `errors: [{path: "$.runId", message: …}]`, and
+   only the first reached the log. `_with_field_errors` now appends up to five `path: message`
+   pairs -- which is exactly the line that would have explained finding 2 immediately.
+
+**The first exit-2 run was worth keeping as evidence**: both tests played, both results were
+refused, and the command printed
+`2 of 2 were not stored on the server …, so this run is not in the record` and exited 2 while
+one test had passed. That is FR-23's third code doing its job against a real server.
 
 ## Open issues
+- **No repository object on our own server carries a `windowTitle`**, so with `--server` the
+  CLI cannot know which window to attach to. `--window TITLE` is the escape hatch and the live
+  run needed it. Worth asking whether the Spy should keep the window title when it captures,
+  which would make a server run need no option at all -- omer's and mine (#24, #25).
+- **The server's run detail does not echo `matched` or `performedWith`** (both `None` on all
+  four stored results, though the agent sends them). Either it does not store them or the
+  response omits them; #63's decision log and #73's healing both want `matched`. For omer.
 - **The server has no suite.** FR-23 says `--server URL --suite NAME`, but `docs/api/openapi.yaml`
   has applications, tests and runs — no suite entity, and nothing names a set of tests. For the
   skeleton `NAME` resolves to an **application**, and the command runs that application's tests

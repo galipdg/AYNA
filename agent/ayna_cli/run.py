@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -39,10 +39,26 @@ class Player(Protocol):
     def play(self, test: SuiteTest) -> list[dict[str, Any]]: ...
 
 
+@dataclass(frozen=True)
+class StartedRun:
+    """What starting a run gives back: where results go, and what to play.
+
+    The **document** matters as much as the id. `POST /api/runs` answers with the run's *own
+    copy* of the steps, and that copy — not the test as it stands now — is what the run plays
+    (ADR *Runs API and live run updates*): a test edited while a run is in flight must not
+    change what its results mean. The test list does not carry a document at all
+    (`GET /api/apps/{id}/tests` is `{id, name, stepCount}`), so without this the CLI would
+    play nothing. Found by running against a real server.
+    """
+
+    run_id: str | None = None
+    document: Mapping[str, Any] | None = None
+
+
 class Sink(Protocol):
     """Where a test's results go. Every method may raise `ServerError`."""
 
-    def start(self, test: SuiteTest) -> str | None: ...
+    def start(self, test: SuiteTest) -> StartedRun: ...
 
     def result(
         self, run_id: str | None, index: int, result: Mapping[str, Any]
@@ -101,8 +117,8 @@ class SuiteOutcome:
 class NoSink:
     """`--from-file` with no server: results are played and reported, never stored."""
 
-    def start(self, test: SuiteTest) -> str | None:
-        return None
+    def start(self, test: SuiteTest) -> StartedRun:
+        return StartedRun()
 
     def result(self, run_id: str | None, index: int, result: Mapping[str, Any]) -> None:
         return None
@@ -129,7 +145,7 @@ class ServerSink:
         self.app_version_id = app_version_id
         self.screenshots = screenshots
 
-    def start(self, test: SuiteTest) -> str | None:
+    def start(self, test: SuiteTest) -> StartedRun:
         if test.test_id is None:
             raise ServerError(
                 f"{test.name}: no server id, so its run cannot be created"
@@ -137,7 +153,11 @@ class ServerSink:
         run = self.server.create_run(
             app_version_id=self.app_version_id, test_id=test.test_id
         )
-        return str(run["id"])
+        document = run.get("document")
+        return StartedRun(
+            run_id=str(run["id"]),
+            document=document if isinstance(document, Mapping) else None,
+        )
 
     def result(self, run_id: str | None, index: int, result: Mapping[str, Any]) -> None:
         if run_id is None:
@@ -200,13 +220,17 @@ def play_suite(
 
 
 def _play_one(test: SuiteTest, player: Player, sink: Sink) -> TestOutcome:
-    run_id: str | None = None
     try:
-        run_id = sink.start(test)
+        started = sink.start(test)
     except ServerError as exc:
         # The run was never created, so there is nowhere to put results. Playing the test
         # anyway would throw away the evidence, so play it and record that it is undelivered.
         return _played_without_a_run(test, player, str(exc))
+
+    run_id = started.run_id
+    # The run's copy of the steps wins over the suite's, for the reason in `StartedRun`.
+    if started.document is not None:
+        test = replace(test, document=started.document)
 
     try:
         results = player.play(test)
