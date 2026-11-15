@@ -71,7 +71,8 @@ Acceptance criteria against the halves:
 
 ## Manual checks
 - 2026-11-15 · agent · main-process chain end to end, real server (Docker `ayna44`, port 28044) + mock agent through the real `AgentManager`, script in the session scratchpad · **pass 8/8**: run created, 7/7 results stored as `passed`, a second `RunEvents` client saw it live (13 updates), Stop → stored `aborted` with later steps `notRun`, server stopped mid-run → run played to the end and the outbox delivered 7/7 after the server came back. The outage check first **failed** (run hung in the window chooser) and found a bug: titles from the last capture were read from the server step by step; fixed in `78bb137` (read before the first step) with a runner test. Stack torn down after.
-- Pending (omer, macOS): the screen, with `npm run demo` — checklist below.
+- 2026-11-15 · omer · check A on macOS (`npm run demo`), screenshots on omer's Desktop (15.16.52–15.17.07) · **steps 1, 3, 4 (bar and Runs list), 5 pass**: Run next to Save; rows ✓ one by one; "✓ Başarılı"; Stop → "4. adımda durduruldu" with later rows "– Atlandı"; the runs listed as Başarılı / Yarıda kesildi. **Run details fails** with "Sunucuya ulaşılamadı", and so does "Raporu aç" on the Runs screen: a bug in #59's report on `main`, not in #44 (`report.html` streams through `StreamingResponseBody`; Spring Security re-authorizes the async dispatch without the bearer context and throws `AccessDenied` after the body has started, so the client gets a truncated response; `curl` shows 200 and exit 18). Step 8 first used plain `npm run dev`, which starts the real agent (not on macOS); the command is fixed below. Steps 2, 6, 7, 8 not reported yet.
+- Pending (omer, macOS): check A steps 2, 6, 7, 8.
 - Pending (Windows session, after hasan's #237 merges): real agent and trial app — checklist below; post as an issue comment with `needs-windows-test`.
 
 ### By-hand check A — the screen on macOS (`npm run demo`)
@@ -83,7 +84,7 @@ Acceptance criteria against the halves:
 5. Run again and press **Stop** during step 2–3. *Expected:* "Stopped at step n"; later rows "– Skipped".
 6. Set one Type step's value to `fail`, save, run. *Expected:* that row "✕ Check failed" with "mock failure" under it; later rows Skipped; bar "✕ Failed at step n · Check failed · mock failure".
 7. Switch the language to Türkçe and repeat step 3. *Expected:* "Çalıştır", "Çalışıyor · 7 adımın n. adımı", "Başarılı".
-8. Second client: a second instance needs its own data folder (one client per folder, #44): `npm run dev -- -- --user-data-dir=/tmp/ayna-second`, server `http://127.0.0.1:8080`, log in, open the same test; run from the first window. Also check that a plain second `npm run demo` only brings the first window to the front. *Expected:* the second shows "Running, started by admin · step n of 7" without Stop, and the same ✓ rows within 1 s.
+8. Second client: a second instance needs its own data folder (one client per folder, #44) and the demo's fake agent (plain `npm run dev` starts the real one, which is not installed on macOS). From `client/`: `AYNA_AGENT_PYTHON=python3 PYTHONPATH="$PWD/dev/mock" AYNA_MOCK_WINDOWS="$PWD/dev/demo/windows.json" AYNA_MOCK_SNAPSHOT="$PWD/../schemas/examples/snapshot/trial-login.json" npm run dev -- -- --user-data-dir=/tmp/ayna-second`; server `http://127.0.0.1:8080`, log in, open the same test; run from the first window. Also check that a plain second `npm run demo` only brings the first window to the front. *Expected:* the second shows "Running, started by admin · step n of 7" without Stop, and the same ✓ rows within 1 s.
 **Report back:** pass/fail per step; for a failure a screenshot and the client console lines.
 
 ### By-hand check B — Windows session (real agent, after #237 merges)
