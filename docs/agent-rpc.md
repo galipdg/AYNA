@@ -266,6 +266,29 @@ known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback mat
 heals) and `performedWith` (the pattern that did it). **A failed step stops the run** and every
 step after it is `notRun` (TBD-6).
 
+**The screenshot (#54, FR-19).** Every step that *ran* is photographed straight after it acted,
+and its result carries `screenshotPath` and `screenshotAt`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `screenshotPath` | string, optional | Absolute path to the PNG **on the machine the agent runs on**. The client reads the bytes from there and uploads them under #51's contract (`PUT /api/runs/{runId}/results/{stepIndex}/screenshot`). |
+| `screenshotAt` | string, optional | When the image was taken: ISO 8601 with a UTC offset, to the millisecond. |
+
+The image travels as a path, not as base64 in this message: a 50-step run is about 15 MB of PNG,
+base64 would add a third to that, and the agent and the client always share a machine. The PNG is
+cropped to the window as a person sees it — DWM's extended frame bounds, not `GetWindowRect` with
+its invisible resize border — so the image and a candidate's `bounds` are in one coordinate space
+(physical pixels, virtual-desktop coordinates; see [Starting the agent](#starting-the-agent)).
+
+**Both fields are absent whenever there is no image, and that is not an error.** A `notRun` step
+is never photographed, because it never reached a screen; and a capture that fails is logged and
+skipped rather than failing the step, since the commonest reason a step fails is that the window
+is not what the test expected — including gone. A reader (#59's report, the client's step list)
+must treat a missing screenshot as normal.
+
+Nothing deletes these files. The agent cannot know when the client has finished uploading them,
+so whoever owns the run owns the cleanup.
+
 ```json
 → {"jsonrpc": "2.0", "id": 7, "method": "runSteps", "params": {
     "handle": 657704,
@@ -277,16 +300,21 @@ step after it is `notRun` (TBD-6).
       "login.loginButton": {"properties": {"automationId": "QApplication.loginWindow.loginButton"},
                             "fallback": {"name": "Login", "controlType": "Button"}}}}}
 ← {"jsonrpc": "2.0", "id": 7, "result": {"results": [
-    {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue"},
-    {"stepIndex": 1, "status": "passed", "durationMs": 44, "matched": "primary", "performedWith": "Invoke"}]}}
+    {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue",
+     "screenshotPath": "C:\\Users\\you\\AppData\\Local\\Temp\\ayna-screenshots\\run-20261115-140311-004812\\step-0000.png",
+     "screenshotAt": "2026-11-15T14:03:11.250+03:00"},
+    {"stepIndex": 1, "status": "passed", "durationMs": 44, "matched": "primary", "performedWith": "Invoke",
+     "screenshotPath": "C:\\Users\\you\\AppData\\Local\\Temp\\ayna-screenshots\\run-20261115-140311-004812\\step-0001.png",
+     "screenshotAt": "2026-11-15T14:03:11.402+03:00"}]}}
 ```
 
 A document the agent cannot read at all is `-32602`; a handle that is not a top-level window is
 `-32000`, and a window that cannot be read inside its budget is `-32002`, because reading the
 window is how a target is resolved.
 
-**Not yet, and all #40's:** the other keywords, checkpoints, screenshots, healing, the
-`run.stepResult` notifications below, and finding the window without a handle. `ping` still
+**Not yet, and all #40's:** the other keywords, checkpoints, healing, the `run.stepResult`
+notifications below, and finding the window without a handle. (Screenshots are no longer on that
+list: #54 added them above.) `ping` still
 answers `rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
 `elementFromPoint` belong to.
 

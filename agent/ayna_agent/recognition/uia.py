@@ -50,6 +50,7 @@ from typing import Any
 from ayna_agent import __version__
 from ayna_agent.model import text_value
 from ayna_agent.recognition import snapshot as snap
+from ayna_agent.recognition.frames import frame_bounds
 from ayna_agent.rpc import (
     BadStepDocument,
     SnapshotTimeout,
@@ -80,10 +81,6 @@ _WS_CHILD = 0x4000_0000
 #: 11 keep several per session (suspended UWP apps, the "Windows Input Experience"), and a Spy
 #: picker that lists them is listing windows a tester cannot see.
 _DWMWA_CLOAKED = 14
-
-#: DWMWA_EXTENDED_FRAME_BOUNDS: the rectangle the window *appears* to occupy. See
-#: `_frame_bounds` for why `GetWindowRect` is the wrong answer.
-_DWMWA_EXTENDED_FRAME_BOUNDS = 9
 
 
 class UiaDesktop:
@@ -193,7 +190,7 @@ class UiaDesktop:
                     "className": _quiet(lambda: info.class_name) if info else None,
                     "processId": process_id,
                     "processName": _exe_name(process_id),
-                    "bounds": _frame_bounds(handle),
+                    "bounds": frame_bounds(handle),
                 }
             )
             return True
@@ -340,6 +337,7 @@ class UiaDesktop:
         steps: dict[str, Any],
         targets: dict[str, Any],
         default_timeout_ms: int | None = None,
+        screenshot_directory: str | None = None,
     ) -> list[dict[str, Any]]:
         """Play a step document against one window and return one result per step (#26).
 
@@ -354,11 +352,23 @@ class UiaDesktop:
         inside its budget -- the same three as `snapshot`, because reading the window is how a
         target is resolved -- plus `BadStepDocument` for a document that cannot be read at all.
         A step that simply fails comes back as a `failed` result instead.
+
+        Every step that runs is photographed (#54, FR-19) into `screenshot_directory`, or into
+        a fresh directory under the system temporary directory when none is given; each result
+        carries the absolute path, so the caller needs no agreement with the agent about where
+        the files are. A capture that fails is logged and leaves that step without an image --
+        it never turns a passing step into a failing one.
         """
+        from ayna_agent.playback import screenshot as shot
         from ayna_agent.playback.runner import DEFAULT_TIMEOUT_MS, StepDocumentError
         from ayna_agent.playback.runner import run_steps as play
 
         self._require_ready()
+        directory = (
+            screenshot_directory
+            if screenshot_directory is not None
+            else shot.new_run_directory()
+        )
         try:
             results = play(
                 steps,
@@ -369,6 +379,7 @@ class UiaDesktop:
                     if default_timeout_ms is None
                     else default_timeout_ms
                 ),
+                capture=shot.step_capture(handle, directory),
             )
         except StepDocumentError as exc:
             # The server owns the error vocabulary and imports nothing from a backend, so the
@@ -793,40 +804,6 @@ def _set_dpi_awareness() -> None:
             error,
             got,
         )
-
-
-def _frame_bounds(handle: int) -> list[int]:
-    """The rectangle the window appears to occupy, in physical pixels.
-
-    **Not `GetWindowRect`.** Since Windows 10 a resizable window carries an *invisible* resize
-    border outside its visible frame, and `GetWindowRect` includes it -- which is why a
-    maximised browser reports a negative origin. Measured on this window at 150 % scaling:
-
-        GetWindowRect              472 x 261   (8 px of nothing on the left, right and bottom)
-        DWM extended frame bounds  456 x 253   <- what a person sees
-        UIA BoundingRectangle      450 x 213   (38 px short at the top: no title bar)
-
-    So the Spy's red frame around a *window* used to be drawn outside the window, which is what
-    a tester notices first (#184, 2026-11-07). DWM's extended frame bounds is the only one of
-    the three that means "the window as it looks": it drops the invisible border and keeps the
-    title bar. UIA's rectangle stays the right answer for an *element*, and that is what a
-    snapshot reports.
-
-    Falls back to `GetWindowRect` when DWM declines, which it does for a window that is already
-    gone -- a wrong-by-8-pixels rectangle beats no window in the list.
-    """
-    rect = ctypes.wintypes.RECT()
-    status = ctypes.WinDLL("dwmapi").DwmGetWindowAttribute(
-        ctypes.wintypes.HWND(handle),
-        ctypes.c_uint(_DWMWA_EXTENDED_FRAME_BOUNDS),
-        ctypes.byref(rect),
-        ctypes.sizeof(rect),
-    )
-    if status == 0:
-        return [rect.left, rect.top, rect.right, rect.bottom]
-    import win32gui
-
-    return list(win32gui.GetWindowRect(handle))
 
 
 def _is_window(handle: int) -> bool:

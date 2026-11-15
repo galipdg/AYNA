@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from ayna_agent.model import describe_tree
@@ -45,6 +45,7 @@ from ayna_agent.playback.resolve import (
     Unsupported,
     resolve,
 )
+from ayna_agent.playback.screenshot import StepCapture
 
 #: Step-document versions this runner reads. A *consumer* lists what it understands instead of
 #: deriving one version from the schema file, which it does not ship: Click and Type are
@@ -94,6 +95,12 @@ class StepResult:
     #: log (#63) and because "it clicked, through LegacyIAccessible" is a different fact from
     #: "it clicked".
     performed_with: str | None = None
+    #: Absolute path to this step's PNG on the agent's machine, and when it was taken (#54).
+    #: Absent when there is no image: a `notRun` step is never photographed, and a capture that
+    #: failed does not fail the step (`playback.screenshot.step_capture`). So a reader -- #59's
+    #: report, the client's step list -- treats "no screenshot" as normal.
+    screenshot_path: str | None = None
+    screenshot_at: str | None = None
 
     def to_json(self) -> dict[str, Any]:
         """camelCase, absent values left out, so it can be sent as it is."""
@@ -108,6 +115,8 @@ class StepResult:
             ("message", self.message),
             ("matched", self.matched),
             ("performedWith", self.performed_with),
+            ("screenshotPath", self.screenshot_path),
+            ("screenshotAt", self.screenshot_at),
         ):
             if value is not None:
                 out[key] = value
@@ -123,12 +132,18 @@ def run_steps(
     patterns: Patterns = uia_patterns,
     now: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
+    capture: StepCapture | None = None,
 ) -> list[StepResult]:
     """Play `document`'s steps and return one result per step, in order.
 
     `targets` maps a logical name to `{"properties": {...}, "fallback": {...}}` -- the
     repository object's primary and fallback sets (#25). Extra members (`serverElementId`,
     `featureVersion`, which healing needs) are ignored here.
+
+    `capture` is #54's screenshot, built by `playback.screenshot.step_capture` and bound to the
+    window under test; it is called after each step that ran, never for a `notRun` one. Injected
+    rather than taken as a window handle so this module stays testable with no desktop, and
+    because the handle belongs to the caller that opened the window, not to the runner.
 
     Raises `StepDocumentError` only for a document that cannot be read at all; everything a
     single step can get wrong becomes that step's `failed` result, because a run that returns
@@ -148,18 +163,27 @@ def run_steps(
                 )
             )
             continue
-        results.append(
-            _run_one(
-                index,
-                step,
-                targets,
-                read_tree,
-                default_timeout_ms=default_timeout_ms,
-                patterns=patterns,
-                now=now,
-                sleep=sleep,
-            )
+        result = _run_one(
+            index,
+            step,
+            targets,
+            read_tree,
+            default_timeout_ms=default_timeout_ms,
+            patterns=patterns,
+            now=now,
+            sleep=sleep,
         )
+        # After the step, not before: FR-19's image is the evidence of what the step did, and
+        # for a failed step it is the evidence of what the screen looked like when it failed.
+        if capture is not None:
+            image = capture(index)
+            if image is not None:
+                result = replace(
+                    result,
+                    screenshot_path=image.path,
+                    screenshot_at=image.taken_at,
+                )
+        results.append(result)
     return results
 
 
