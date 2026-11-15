@@ -378,13 +378,97 @@ app outside pytest must launch it with the **repository root** `.venv/Scripts/py
 Windows tests do exactly that via `_python_with_pyside()`.
 - 2026-11-12 · hasan · #33 · **`QT_QPA_PLATFORM=offscreen` set in a pytest process poisons every app the run starts afterwards.** `eval/apps/sample/tests/test_screens.py` set it at import time so the widget tests need no display; a child process inherits it, so the real app came up with no window and `pywinauto`'s `window.wait("visible ready")` timed out 30 s × 30 tests — all 25 sample UIA tests *and* the trial app's 5 errored, while each passed alone (12:40 of pure timeout). Fix: choose the platform in Qt's own argv, `QApplication(["pytest", "-platform", "offscreen"])`, so nothing leaks into the environment; `launch_app()` additionally drops the variable from the child's env, which also covers a CI shell that exports it. Rule: never set a Qt (or any plugin-selecting) environment variable in a test process that starts the application under test as a child.
 - 2026-11-12 · hasan · #33 · **The #199 module-name clash can be green locally and red in CI, because the winner depends on how pytest was started.** `eval/apps/sample/app.py` beside `eval/apps/trial/app.py`: both apps' `tests/conftest.py` do `sys.path.insert(0, <their own folder>)`, so the conftest loaded **last** wins for the whole process. `pytest eval` from the repository root walks folders alphabetically (sample, then trial) and the trial app's `from app import …` got the trial app — green. CI runs bare `pytest` from `eval/`, which loads conftests in `testpaths` order (trial, then sample), and the same import got the *sample* app: `ImportError: cannot import name 'INVALID_MESSAGE' from 'app'` (run 43260442861). Two conclusions: a module you only ever *run* is not exempt from the one-name-per-tree rule, since it is still importable; and `pytest eval` is not the run CI does — reproduce CI with `cd eval; ../.venv/Scripts/python.exe -m pytest -q` before pushing anything that adds a module to `eval/`.
+- 2026-11-14 · hasan · **`gh auth refresh` needs `--hostname` in this shell.** Plain
+  `gh auth refresh -s project` exits with "--hostname required when not running
+  interactively", which is why several sessions recorded "the agent cannot set the Project
+  status" as if it were a permission problem. The working form is
+  `gh auth refresh --hostname github.com --scopes project`; the user runs it (it is a device
+  flow, so it needs a browser), and afterwards `gh project item-edit` works from the agent.
+- 2026-11-14 · hasan · **`model.describe_tree` loops for ever on a node that is its own
+  ancestor.** Its ancestor walk is `while walker is not None: walker = by_id.get(...)` with no
+  seen-set, so a hand-written tree where a node's `parent` is itself hangs pytest with no
+  output — which is exactly how I lost a test run on #40. Unreachable from a real UIA walk
+  (parents come from the walker and only go upward), so it is a fixture hazard, not a bug in
+  the product: **when you build tree fixtures by hand, give every node a parent above it**.
+  Noted as an open issue in the #40 task note rather than fixed, because `model.py` is
+  normative under #11.
+- 2026-11-14 · hasan · **A helper module next to the tests is importable by its bare name.**
+  `agent/tests/grids.py` is imported as `import grids` from two test files: pytest's default
+  import mode prepends each test file's directory to `sys.path` when there is no
+  `__init__.py`, and a module without a `test_` prefix is not collected. Worth knowing before
+  copying a fixture into a second test file — the #40 row shapes are measurements, and two
+  copies of a measurement drift.
+- 2026-11-14 · hasan · **`get_elem_interface` needs the raw element, and it fails by returning
+  nothing.** pywinauto's pattern lookup wants an `IUIAutomationElement`, while the walk hands
+  every caller a `UIAElementInfo`; given the wrapper it raises `AttributeError`, which the usual
+  `except Exception: return None` turns into "this pattern is not supported". So the mistake is
+  **silent and total**: every pattern read in four of #40's modules read as unsupported on real
+  Windows while 612 unit tests passed, because a fake patterns function accepts the fake element
+  either way. **Unwrap at the seam, in the lookup itself** (`playback/actions.uia_patterns`
+  does now), not at each call site, and when a provider "supports nothing", check the shape of
+  what you handed the lookup before you believe it.
+- 2026-11-14 · hasan · **A UIA call that returns without complaint has not necessarily done
+  anything.** On a Qt (PySide6) `QComboBox`, `SelectionItem.Select()` on a popup item, `Invoke`
+  on the item, `LegacyIAccessible.Select()` and the box's own `Value.SetValue()` all return
+  cleanly and change nothing; only `LegacyIAccessible.DoDefaultAction()` on the item works. The
+  item even reports `IsSelected` **true** afterwards — it records the popup highlight, not the
+  choice. **Read the control back, and read the control rather than the item.** Also: measure
+  each route from a clean start, because the first pass of this measurement said two more
+  routes worked, and they were only inheriting the state the previous route had set.
+- 2026-11-14 · hasan · **Qt applies a choice asynchronously and closes its popup by itself.**
+  The combo box still read its old value 11 ms after the call and the new one at 32 ms, so a
+  confirmation read straight after the call sees the old value; and a popup opened through
+  `ExpandCollapse` shuts about a second later, taking its items out of the tree. Anything that
+  expands a Qt control once and then relies on it staying open will not see a late-filling
+  list — **re-expand while it shows nothing**, and give a read-back one poll interval.
 
+- 2026-11-14 · hasan · #162 · **A warm-up only warms what it actually asks for.**
+  `StepGenerator.warm_up` sends its own minimal body and never goes through `request_body`, so
+  a subclass that changes the request (here `options.num_gpu = 0`) warms the *other*
+  configuration and the first timed request silently pays for the model reload. The symptom is
+  a `warm-up 0.0s` line beside a first request far above the median — in this case 34.5 s
+  against a 15.3 s p50, which produced a false "1 of 10 requests exceeded the 30 s deadline".
+  Anything measuring latency through a subclassed client should check that its warm-up and its
+  measured requests load the same thing.
+- 2026-11-14 · hasan · #162 · **Ollama reuses a runner already loaded CPU-only.** A request
+  that does not mention `num_gpu` does *not* force a reload onto the GPU; it is served by
+  whatever runner is loaded. Measured on Ollama 0.40.16 by pre-loading `qwen3:8b` with
+  `num_gpu: 0` and then calling `POST /ai/generate-steps`, which has no such option:
+  `/api/ps` still reported `size_vram: 0`. This is the only reason a service that builds its
+  own request can be measured CPU-only — and the same fact is a trap in the other direction, so
+  **unload with `ollama stop` before a run that is supposed to use the GPU**, and read
+  `size_vram` rather than trusting the configuration you asked for.
+- 2026-11-14 · hasan · #162 · **A model that fits in VRAM beats a better model that does not,
+  and it reverses the ranking between machines.** `gemma4:e4b-it-qat` loads as 3.1 GB and runs
+  100 % on a 6 GB RTX 3060; `qwen3:8b` loads as 6.0 GB, does not fit, and runs 30 % CPU /
+  70 % GPU. Result: gemma4 is 3.2× faster on Windows while being the *slower* of the two on the
+  M2 Mac. A fully VRAM-resident model is also almost immune to the machine's own CPU load
+  (1.65 → 1.70 s under 59 % busy, against 5.34 → 6.29 s), which matters because AYNA's agent,
+  client and server share the box during a run. So "which model is faster" is a question about
+  the box, not the model.
+- 2026-11-14 · hasan · #162 · **Measure with the deadline raised, then compute the share that
+  would have exceeded it.** The AI service answers 504 at 30 s, so measuring it as shipped
+  censors exactly the tail the question is about. Run with `--timeout 600` and count afterwards.
+- 2026-11-14 · hasan · #162 · **`powershell.exe` is not always on `PATH`** for a process started
+  from the POSIX shell here, so a helper shelling out to it returns nothing and a measurement
+  silently loses its load figure. `ctypes.windll.kernel32.GetSystemTimes` is stdlib, exact and
+  has no `PATH` dependency. `nvidia-smi` is in `C:\Windows\System32`, so it needs the absolute
+  path for the same reason.
 - 2026-11-14 · hasan · #29 · **The recognition backend cannot be imported without `websockets`.** `agent/ayna_agent/recognition/uia.py` takes its four exception types from `ayna_agent.rpc`, which imports `websockets.asyncio.server` at module level, so any consumer of the UIA backend needs the WebSocket server dependency. RQ1's `capture` is the first consumer that is not the RPC server, and it fails on the repo-root `.venv` with `cannot load the UIA backend: No module named 'websockets'`. Run `capture` on `agent/.venv`. Fix requested in galip's inbox (move the exceptions to a dependency-free module and re-export).
 - 2026-11-14 · hasan · #29 · **A screen is the topmost window, not every window of the process.** `measure.py capture` used to snapshot all of a process's windows and number the files, so KeePass 2's `Add Entry` state wrote `entry-editor-1.json` (the dialog) *and* `entry-editor-2.json` (the main form behind it). `measure` counts every snapshot file of an app, so the main window's controls were counted twice and the rate was wrong. `list_windows` comes from `EnumWindows`, which answers in Z-order with the top window first, so `windows[0]` is the staged screen; the foreground window is **not** usable for this, because the terminal running the command is in front. Any harness that captures "a screen" by process has this bug waiting.
 - 2026-11-14 · hasan · #29 · **Leave no UIA-driven app open when running the `eval` suite.** With KeePass 2 and HandBrake open, `eval/apps/trial/tests/test_uia.py` printed a `Windows fatal exception: code 0x8001010d` traceback (`RPC_E_CANTCALLOUT_ININPUTSYNCCALL`) and the run took 57 s; with them closed, the same five tests pass in 2.1 s and print nothing. pywinauto's `wait_until_passes` retries through it so nothing fails — but the dump reads exactly like a crash in a CI log.
 - 2026-11-14 · hasan · #29 · **A capture proves nothing unless the screen was in the state the registry names, and `enabled` is the cheap tell.** My first HandBrake RQ1 capture was taken with the source picker still up; the giveaway was that *every* toolbar button, including `Open Source`, read `enabled: false`. It was named `main-summary` and the numbers derived from it (45 controls / 97.8 %) went to the issue before anyone noticed; the real `main-summary` has 36 controls / 97.2 %. Before trusting a capture, check that the controls which should be live actually read `enabled: true`. Two captures of one window in different enabled states are **not** two screens for recognition purposes: `enabled` is in `NEVER_MATCH`, so the identity properties are identical and measuring both only double-weights that window.
 - 2026-11-14 · hasan · #29 · **A nameless WPF `MenuItem` inside a named `Menu` is the one control shape AYNA cannot identify today, and an element with no `bounds` is not a control at all.** HandBrake's `Options` split button and its two `When Done` dropdowns reach UIA as `MenuItem`s with no `automationId` and no `name`; the name sits on the parent `Menu`, which the descriptor does not reach for, so `suggestUses` escalates to `{className, parentPath}` and sibling dropdowns match each other. That is a real recognition failure on controls a tester targets (HandBrake's Queue screen measures 4/6 = 66.7 % against KeePass 2's Options 35/35). It is **not** the `siblingIndex` question the first RQ1 comment raised: that one was `e20`, a toolbar `Button` with **no `bounds` key**, `enabled: false` and no identity -- a WPF template part that is never rendered. Two lessons for anything reading a snapshot: a missing `bounds` is the cheap test for "not a control", and identity that lives on an ancestor is invisible to a per-element descriptor (#11, #40, #73).
+- 2026-11-14 · hasan · **Close the sample app before running `eval`'s suite.** A leftover
+  instance makes `apps/sample/tests/test_sample_uia.py` fail four tests on the `main` screen:
+  the tests launch their own copy, two windows then carry the same title, and the lookup finds
+  two where it expects one. The failures read like real UIA bugs — "no automation id", "fewer
+  than eight interactive controls" — and say nothing about a second window, which cost me a
+  diagnosis. Same hazard for any pilot app left open from a manual check.
 - 2026-11-15 · hasan · #46 · **Clearing a Qt widget's `objectName` does not remove its AutomationId -- Qt puts the class name there instead.** `login.loginButton` with an empty `objectName` reaches UIA as `QApplication.login.QPushButton`, measured for `QPushButton`, `QLineEdit` and `QTableWidget` on three screens (`eval/apps/sample/tests/test_variant_uia.py`, 23 of 23 pass). Three consequences for anything that reasons about ids: a control that "lost its id" still has one, so a check that counts controls *without* an AutomationId (#33's second criterion, `uia_check.py`) passes on a screen where every scenario's locator fails; the id is no longer the logical name; and it is not unique, because two same-class siblings that both lose their name would collide. The ground truth for #46's `v2e` predicted an empty id and had to be regenerated.
 - 2026-11-15 · hasan · #46 · **A grid's inner UIA elements inherit the grid's AutomationId.** `QApplication.main.customerGrid` is reported by the `QTableWidget` *and* by its Pane and its four Headers -- six elements with one id -- because those are not Qt widgets and have no name of their own. So a lookup by AutomationId must filter to the app's own widgets (`uia_check.is_app_widget`: UIA ClassName starts with `Q`), the same rule that excludes the window frame's Minimize/Maximize/Close. Anything resolving a step by id alone (playback, #73's healer, a measurement harness) will otherwise see an ambiguous match on every grid.
 - 2026-11-15 · hasan · #46 · **`isVisible()` is `False` for every widget of a window that has not been shown, so never copy it when replacing a widget during construction.** #46's retype layer built the replacement with `setVisible(old.isVisible())` inside `__init__` and hid all five retyped controls for good: they were absent from the UIA tree entirely, which looked like Qt refusing the retype rather than a visibility bug. `isHidden()` is the property that means "explicitly hidden" and is the one to carry over. Related: a retyped widget is created last, and Qt's UIA tree follows child order rather than layout order, so the control also moves to the end of its parent's tree order -- there is no supported way to reorder a parent's children.
 - 2026-11-15 · omer · #245 · **With stateless bearer auth, a `StreamingResponseBody` (or any async return) must let the ASYNC dispatch through Spring Security, and MockMvc tests will not tell you.** Spring MVC finishes such a response on a second, ASYNC dispatch; `authorizeHttpRequests` checks it again, the bearer filter's context is gone, and `AuthorizationDeniedException` fires after the 200 and part of the body are committed: clients see a truncated chunked body (`curl` exit 18), and the server logs only "response is already committed". `SecurityConfig` now permits `DispatcherType.ASYNC` and `ERROR` (both continue a REQUEST dispatch that was already authorized). MockMvc missed it because `SignedIn`'s test security context survives `asyncDispatch`; only a `RANDOM_PORT` test with a real token and HTTP client reproduces it (`auth/RunReportOverHttpIntegrationTest`).
+- 2026-11-15 · galip · memory · **Clearing an inbox while teammates' PRs still append to it brings the deleted entries back.** `inbox.md` merges with `merge=union`: a deletion that reaches the line where another branch appended becomes a conflict hunk, and union resolves it by keeping both sides, so every deleted entry returns. Tried with `git merge-tree` against four open PRs. With the file's last entry kept as an anchor, the two branches cut from today's `main` merged cleanly, but the two cut from an older `main` brought all 43 entries back. So delete handled inbox items only once the open PRs that touch your inbox have merged, and check first with `git merge-tree --write-tree HEAD origin/<branch>`. This is probably also how the descriptor entry got into galip's inbox three times.
+- 2026-11-15 · hasan · #47 · **A Qt signal keeps calling the method that existed when `connect` ran, so a behaviour patch has to replace the *class* method (or a module global), never the instance's.** #47's bug-injected versions patch behaviour, and the obvious shape -- a per-window hook at the end of `__init__`, as #46's UI-change layer uses -- cannot work: `windows.py` connects its slots inside `__init__`, and `self.on_login = …` afterwards leaves every connected signal on the original bound method. So a bug version is installed **before the first window exists** (`sample_app.py` reads `--bug` before `open_screen`) and patches `model`/`windows.<Class>`; `bug_patch.reset()` restores the originals, because the patches are process-wide and one pytest process compares the correct build with the broken one. A second trap in the same file: `model.py` does `from texts import …`, so a text bug must patch `model.LOGIN_WELCOME` -- patching `texts.LOGIN_WELCOME` changes nothing, because the from-import copied the value at import time.
+- 2026-11-15 · hasan · #47 #69 · **Two live windows of one class in the UIA tree raise `ElementAmbiguousError`, so a stale app is never silently mistaken for the new one -- which also means "it answered the wrong value" has to be a readiness race, not a window mix-up.** Resolving #239's merge, the `eval` suite failed once on `test_the_right_credentials_are_welcomed_by_name` and twice more on the pair `test_bug_uia.py test_sample_uia.py`, both with the signature "the text I set did not land". The obvious culprit, a bug-injected app outliving its fixture, is measurably not it: `kill_process_tree` leaves the tree clear within 0.3 s, and pywinauto's `window.wait("visible ready")` on a class that matches twice raises instead of resolving (measured by launching the same screen twice). What `wait("visible ready")` does **not** promise is that a Qt window will accept input: the flake survives every narrowing (each bug version alone, 12 fresh `set_edit_text` read-backs, `test_variant_uia.py` in the same slot) and disappears under a plugin that enumerates windows around each launch, which is itself evidence that it is timing. Carried to #69 as flaky-rate data rather than patched blind; the lesson for any UIA harness is that a window-identity gate and an input-readiness gate are two different gates, and only the first one is cheap to assert.

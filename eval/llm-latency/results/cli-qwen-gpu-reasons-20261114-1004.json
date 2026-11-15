@@ -1,0 +1,531 @@
+{
+  "config": {
+    "id": "cli-qwen-gpu-reasons",
+    "path": "cli",
+    "model": "qwen3:8b",
+    "group": "A-gpu",
+    "why": "what reasons cost: same path, one flag",
+    "format": "schema",
+    "reasons": true,
+    "gpu": true,
+    "port": 8090
+  },
+  "note": "group A, machine idle",
+  "finished_at": "2026-11-14T10:06:03+00:00",
+  "busy_before": 0.054,
+  "busy_after": 0.131,
+  "machine": {
+    "platform": "Windows-11-10.0.26300-SP0",
+    "processor": "AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD",
+    "python": "3.13.0",
+    "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 6144 MiB, 566.07",
+    "ollama_ps": [
+      {
+        "name": "qwen3:8b",
+        "model": "qwen3:8b",
+        "size": 5986561554,
+        "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen3",
+          "families": [
+            "qwen3"
+          ],
+          "parameter_size": "8.2B",
+          "quantization_level": "Q4_K_M"
+        },
+        "expires_at": "2026-11-14T13:11:03.1603015+03:00",
+        "size_vram": 4206582824,
+        "context_length": 4096,
+        "runner": "llamacpp"
+      }
+    ],
+    "prompt_version": "3"
+  },
+  "summary": {
+    "n": 10,
+    "ok": 10,
+    "ok_rate": 1.0,
+    "by_status": {
+      "ok": 10
+    },
+    "latency_p50_s": 8.48,
+    "latency_p95_s": 14.23,
+    "latency_max_s": 15.54,
+    "output_tokens_median": 103.0,
+    "steps_dropped": 0,
+    "step_limit_reached": 0,
+    "keyword_match": 9,
+    "wall_s": 89.9,
+    "latency_mean_s": 8.98
+  },
+  "deadline": {
+    "deadline_s": 30.0,
+    "over": 0,
+    "share": 0.0,
+    "worst_s": 15.54
+  },
+  "rows": [
+    {
+      "id": 1,
+      "text": "Kullanıcı adı alanına admin yaz, şifre alanına 1234 yaz ve giriş butonuna tıkla.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Type",
+            "target": "login.userNameInput",
+            "value": "admin"
+          },
+          {
+            "keyword": "Type",
+            "target": "login.passwordInput",
+            "value": "1234"
+          },
+          {
+            "keyword": "Click",
+            "target": "login.loginButton"
+          }
+        ]
+      },
+      "reasons": [
+        "Kullanıcı adı alanına admin yaz",
+        "Şifre alanına 1234 yaz",
+        "Giriş butonuna tıkla"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\", \"reason\": \"Kullanıcı adı alanına admin yaz\"}, {\"keyword\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"1234\", \"reason\": \"Şifre alanına 1234 yaz\"}, {\"keyword\": \"Click\", \"target\": \"login.loginButton\", \"reason\": \"Giriş butonuna tıkla\"}]}",
+      "errors": [],
+      "latency_s": 10.328,
+      "load_s": 0.009,
+      "prompt_tokens": 498,
+      "output_tokens": 119,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "expected": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 2,
+      "text": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Verify",
+            "target": "main.statusLabel",
+            "checkpoint": {
+              "property": "name",
+              "operator": "equals",
+              "expected": "Hoş geldiniz"
+            }
+          }
+        ]
+      },
+      "reasons": [
+        "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula."
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Verify\", \"target\": \"main.statusLabel\", \"checkpoint\": {\"property\": \"name\", \"operator\": \"equals\", \"expected\": \"Hoş geldiniz\"}, \"reason\": \"Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.\"}]}",
+      "errors": [],
+      "latency_s": 6.734,
+      "load_s": 0.01,
+      "prompt_tokens": 486,
+      "output_tokens": 76,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Verify"
+      ],
+      "expected": [
+        "Verify"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 3,
+      "text": "Yeni müşteri butonuna bas, ad alanına Ayşe, soyad alanına Yılmaz gir.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Click",
+            "target": "main.newCustomerButton"
+          },
+          {
+            "keyword": "Type",
+            "target": "customer.nameInput",
+            "value": "Ayşe"
+          },
+          {
+            "keyword": "Type",
+            "target": "customer.surnameInput",
+            "value": "Yılmaz"
+          }
+        ]
+      },
+      "reasons": [
+        "Yeni müşteri butonuna bas",
+        "ad alanına Ayşe, soyad alanına Yılmaz gir",
+        "ad alanına Ayşe, soyad alanına Yılmaz gir"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Click\", \"target\": \"main.newCustomerButton\", \"reason\": \"Yeni müşteri butonuna bas\"}, {\"keyword\": \"Type\", \"target\": \"customer.nameInput\", \"value\": \"Ayşe\", \"reason\": \"ad alanına Ayşe, soyad alanına Yılmaz gir\"}, {\"keyword\": \"Type\", \"target\": \"customer.surnameInput\", \"value\": \"Yılmaz\", \"reason\": \"ad alanına Ayşe, soyad alanına Yılmaz gir\"}]}",
+      "errors": [],
+      "latency_s": 10.711,
+      "load_s": 0.009,
+      "prompt_tokens": 491,
+      "output_tokens": 127,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "expected": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 4,
+      "text": "Şehir listesinden Ankara'yı seç ve kaydet düğmesine tıkla.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Select",
+            "target": "customer.cityCombo",
+            "value": "Ankara"
+          },
+          {
+            "keyword": "Click",
+            "target": "customer.saveButton"
+          }
+        ]
+      },
+      "reasons": [
+        "Şehir listesinden Ankara'yı seç",
+        "kaydet düğmesine tıkla"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Select\", \"target\": \"customer.cityCombo\", \"value\": \"Ankara\", \"reason\": \"Şehir listesinden Ankara'yı seç\"}, {\"keyword\": \"Click\", \"target\": \"customer.saveButton\", \"reason\": \"kaydet düğmesine tıkla\"}]}",
+      "errors": [],
+      "latency_s": 6.733,
+      "load_s": 0.011,
+      "prompt_tokens": 489,
+      "output_tokens": 83,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Select",
+        "Click"
+      ],
+      "expected": [
+        "Select",
+        "Click"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 5,
+      "text": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Wait",
+            "target": "main.customerGrid",
+            "timeoutMs": 5000
+          }
+        ]
+      },
+      "reasons": [
+        "Müşteri tablosu görünene kadar en fazla 5 saniye bekle."
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Wait\", \"target\": \"main.customerGrid\", \"reason\": \"Müşteri tablosu görünene kadar en fazla 5 saniye bekle.\", \"timeoutMs\": 5000}]}",
+      "errors": [],
+      "latency_s": 5.215,
+      "load_s": 0.009,
+      "prompt_tokens": 489,
+      "output_tokens": 64,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Wait"
+      ],
+      "expected": [
+        "Wait"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 6,
+      "text": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla, ardından tabloda Yılmaz'ın listelendiğini kontrol et.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Type",
+            "target": "main.searchInput",
+            "value": "Yılmaz"
+          },
+          {
+            "keyword": "Click",
+            "target": "main.searchButton"
+          },
+          {
+            "keyword": "Verify",
+            "target": "main.customerGrid",
+            "checkpoint": {
+              "property": "name",
+              "operator": "contains",
+              "expected": "Yılmaz"
+            }
+          }
+        ]
+      },
+      "reasons": [
+        "Arama kutusuna Yılmaz yazıp ara butonuna tıkla",
+        "Arama kutusuna Yılmaz yazıp ara butonuna tıkla",
+        "tabloda Yılmaz'ın listelendiğini kontrol et"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Type\", \"target\": \"main.searchInput\", \"value\": \"Yılmaz\", \"reason\": \"Arama kutusuna Yılmaz yazıp ara butonuna tıkla\"}, {\"keyword\": \"Click\", \"target\": \"main.searchButton\", \"reason\": \"Arama kutusuna Yılmaz yazıp ara butonuna tıkla\"}, {\"keyword\": \"Verify\", \"target\": \"main.customerGrid\", \"checkpoint\": {\"property\": \"name\", \"operator\": \"contains\", \"expected\": \"Yılmaz\"}, \"reason\": \"tabloda Yılmaz'ın listelendiğini kontrol et\"}]}",
+      "errors": [],
+      "latency_s": 12.619,
+      "load_s": 0.01,
+      "prompt_tokens": 502,
+      "output_tokens": 154,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 7,
+      "text": "Müşteri tipini Kurumsal olarak seç.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Select",
+            "target": "customer.typeCombo",
+            "value": "Kurumsal"
+          }
+        ]
+      },
+      "reasons": [
+        "Müşteri tipini Kurumsal olarak seç."
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Select\", \"target\": \"customer.typeCombo\", \"value\": \"Kurumsal\", \"reason\": \"Müşteri tipini Kurumsal olarak seç.\"}]}",
+      "errors": [],
+      "latency_s": 4.934,
+      "load_s": 0.01,
+      "prompt_tokens": 480,
+      "output_tokens": 55,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Select"
+      ],
+      "expected": [
+        "Select"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 8,
+      "text": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula ve Tamam'a tıkla.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Verify",
+            "target": "dialog.messageLabel",
+            "checkpoint": {
+              "property": "name",
+              "operator": "equals",
+              "expected": "Kayıt başarılı"
+            }
+          },
+          {
+            "keyword": "Click",
+            "target": "dialog.okButton"
+          }
+        ]
+      },
+      "reasons": [
+        "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula",
+        "Tamam'a tıkla"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Verify\", \"target\": \"dialog.messageLabel\", \"checkpoint\": {\"property\": \"name\", \"operator\": \"equals\", \"expected\": \"Kayıt başarılı\"}, \"reason\": \"Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula\"}, {\"keyword\": \"Click\", \"target\": \"dialog.okButton\", \"reason\": \"Tamam'a tıkla\"}]}",
+      "errors": [],
+      "latency_s": 8.667,
+      "load_s": 0.009,
+      "prompt_tokens": 498,
+      "output_tokens": 106,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Verify",
+        "Click"
+      ],
+      "expected": [
+        "Click",
+        "Verify",
+        "Click"
+      ],
+      "keyword_match": false
+    },
+    {
+      "id": 9,
+      "text": "Kullanıcı adına admin, şifreye yanlis123 yaz, girişe tıkla ve hata mesajının 'Hatalı şifre' olduğunu doğrula.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Type",
+            "target": "login.userNameInput",
+            "value": "admin"
+          },
+          {
+            "keyword": "Type",
+            "target": "login.passwordInput",
+            "value": "yanlis123"
+          },
+          {
+            "keyword": "Click",
+            "target": "login.loginButton"
+          },
+          {
+            "keyword": "Verify",
+            "target": "login.errorLabel",
+            "checkpoint": {
+              "property": "name",
+              "operator": "equals",
+              "expected": "Hatalı şifre"
+            }
+          }
+        ]
+      },
+      "reasons": [
+        "Kullanıcı adı alanı için 'admin' yaz",
+        "Şifre alanı için 'yanlis123' yaz",
+        "Giriş butonuna tıkla",
+        "Hata mesajının 'Hatalı şifre' olduğunu doğrula"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Type\", \"target\": \"login.userNameInput\", \"value\": \"admin\", \"reason\": \"Kullanıcı adı alanı için 'admin' yaz\"}, {\"keyword\": \"Type\", \"target\": \"login.passwordInput\", \"value\": \"yanlis123\", \"reason\": \"Şifre alanı için 'yanlis123' yaz\"}, {\"keyword\": \"Click\", \"target\": \"login.loginButton\", \"reason\": \"Giriş butonuna tıkla\"}, {\"keyword\": \"Verify\", \"target\": \"login.errorLabel\", \"checkpoint\": {\"property\": \"name\", \"operator\": \"equals\", \"expected\": \"Hatalı şifre\"}, \"reason\": \"Hata mesajının 'Hatalı şifre' olduğunu doğrula\"}]}",
+      "errors": [],
+      "latency_s": 15.541,
+      "load_s": 0.011,
+      "prompt_tokens": 509,
+      "output_tokens": 188,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Type",
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Type",
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true
+    },
+    {
+      "id": 10,
+      "text": "İptal butonuna tıkla ve ana ekrandaki arama kutusunun boş olduğunu doğrula.",
+      "status": "ok",
+      "document": {
+        "version": "0.2",
+        "steps": [
+          {
+            "keyword": "Click",
+            "target": "customer.cancelButton"
+          },
+          {
+            "keyword": "Verify",
+            "target": "main.searchInput",
+            "checkpoint": {
+              "property": "value",
+              "operator": "equals",
+              "expected": ""
+            }
+          }
+        ]
+      },
+      "reasons": [
+        "İptal butonuna tıkla",
+        "Ana ekrandaki arama kutusunun boş olduğunu doğrula"
+      ],
+      "dropped": [],
+      "step_limit_reached": false,
+      "output": "{\"version\": \"0.2\", \"steps\": [{\"keyword\": \"Click\", \"target\": \"customer.cancelButton\", \"reason\": \"İptal butonuna tıkla\"}, {\"keyword\": \"Verify\", \"target\": \"main.searchInput\", \"checkpoint\": {\"property\": \"value\", \"operator\": \"equals\", \"expected\": \"\"}, \"reason\": \"Ana ekrandaki arama kutusunun boş olduğunu doğrula\"}]}",
+      "errors": [],
+      "latency_s": 8.285,
+      "load_s": 0.01,
+      "prompt_tokens": 495,
+      "output_tokens": 100,
+      "done_reason": "stop",
+      "ok": true,
+      "keywords": [
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true
+    }
+  ]
+}

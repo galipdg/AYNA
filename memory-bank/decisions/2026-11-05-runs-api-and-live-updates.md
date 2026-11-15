@@ -1,7 +1,7 @@
 # Runs API and live run updates
 
 - Date: 2026-11-05
-- Status: Proposed (#44). Hasan approved it on #193 (2026-11-07) with two amendments, both applied here (`durationMs`; `repairProposed` as a run status). Needs Galip's approval.
+- Status: Accepted (#44). Ömerfaruk proposed; Hasan approved it on #193 (2026-11-07) with two amendments, both applied here (`durationMs`; `repairProposed` as a run status); Galip approved it on #240 (2026-11-15).
 - Deciders: Ömerfaruk (server, client, graph), Galip (agent RPC, healing transport), Hasan (playback, CLI runner)
 - Issue: #44 (builds on #39, #60; consumers #40, #51, #61, #68, #74)
 - Extends: ADR *Healing proposal transport* (`2026-10-28`), ADR *Healing proposal schema 0.2* (`2026-10-31`). Answers SDD open item 5 (how live updates are framed).

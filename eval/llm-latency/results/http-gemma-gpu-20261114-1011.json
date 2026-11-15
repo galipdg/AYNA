@@ -1,0 +1,298 @@
+{
+  "config": {
+    "id": "http-gemma-gpu",
+    "path": "http",
+    "model": "gemma4:e4b-it-qat",
+    "group": "A-gpu",
+    "why": "the service on the second model",
+    "format": "schema",
+    "reasons": true,
+    "gpu": true,
+    "port": 8090
+  },
+  "note": "group A, machine idle, warmed",
+  "finished_at": "2026-11-14T10:11:46+00:00",
+  "busy_before": 0.054,
+  "busy_after": 0.075,
+  "machine": {
+    "platform": "Windows-11-10.0.26300-SP0",
+    "processor": "AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD",
+    "python": "3.13.0",
+    "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 6144 MiB, 566.07",
+    "ollama_ps": [
+      {
+        "name": "gemma4:e4b-it-qat",
+        "model": "gemma4:e4b-it-qat",
+        "size": 3093592800,
+        "digest": "ee665637121887cf3befff38abbb1be4ee117c7db867d97a67e29049ecd7e15f",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "gemma4",
+          "families": [
+            "gemma4"
+          ],
+          "parameter_size": "7.5B",
+          "quantization_level": "Q4_0"
+        },
+        "expires_at": "2026-11-14T13:16:46.6164335+03:00",
+        "size_vram": 3093592800,
+        "context_length": 4096,
+        "runner": "llamacpp"
+      }
+    ],
+    "prompt_version": "3"
+  },
+  "summary": {
+    "n": 10,
+    "ok": 10,
+    "ok_rate": 1.0,
+    "by_status": {
+      "ok": 10
+    },
+    "latency_p50_s": 2.36,
+    "latency_p95_s": 3.56,
+    "latency_max_s": 3.97,
+    "output_tokens_median": null,
+    "steps_dropped": 0,
+    "step_limit_reached": 0,
+    "keyword_match": 10,
+    "wall_s": 26.7,
+    "warmup_s": 2.85,
+    "latency_mean_s": 2.38
+  },
+  "deadline": {
+    "deadline_s": 30.0,
+    "over": 0,
+    "share": 0.0,
+    "worst_s": 3.97
+  },
+  "rows": [
+    {
+      "id": 1,
+      "text": "Kullanıcı adı alanına admin yaz, şifre alanına 1234 yaz ve giriş butonuna tıkla.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 2.425,
+      "service_latency_ms": 2424,
+      "keywords": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "expected": [
+        "Type",
+        "Type",
+        "Click"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 2,
+      "text": "Durum etiketinde 'Hoş geldiniz' yazdığını doğrula.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 1.955,
+      "service_latency_ms": 1953,
+      "keywords": [
+        "Verify"
+      ],
+      "expected": [
+        "Verify"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 3,
+      "text": "Yeni müşteri butonuna bas, ad alanına Ayşe, soyad alanına Yılmaz gir.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 2.548,
+      "service_latency_ms": 2546,
+      "keywords": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "expected": [
+        "Click",
+        "Type",
+        "Type"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 4,
+      "text": "Şehir listesinden Ankara'yı seç ve kaydet düğmesine tıkla.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 1.958,
+      "service_latency_ms": 1944,
+      "keywords": [
+        "Select",
+        "Click"
+      ],
+      "expected": [
+        "Select",
+        "Click"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 5,
+      "text": "Müşteri tablosu görünene kadar en fazla 5 saniye bekle.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 1.388,
+      "service_latency_ms": 1386,
+      "keywords": [
+        "Wait"
+      ],
+      "expected": [
+        "Wait"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 6,
+      "text": "Arama kutusuna Yılmaz yazıp ara butonuna tıkla, ardından tabloda Yılmaz'ın listelendiğini kontrol et.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 3.057,
+      "service_latency_ms": 3039,
+      "keywords": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 7,
+      "text": "Müşteri tipini Kurumsal olarak seç.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 1.313,
+      "service_latency_ms": 1294,
+      "keywords": [
+        "Select"
+      ],
+      "expected": [
+        "Select"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 8,
+      "text": "Kaydet'e bastıktan sonra çıkan mesajda 'Kayıt başarılı' yazdığını doğrula ve Tamam'a tıkla.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 2.913,
+      "service_latency_ms": 2911,
+      "keywords": [
+        "Click",
+        "Verify",
+        "Click"
+      ],
+      "expected": [
+        "Click",
+        "Verify",
+        "Click"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 9,
+      "text": "Kullanıcı adına admin, şifreye yanlis123 yaz, girişe tıkla ve hata mesajının 'Hatalı şifre' olduğunu doğrula.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 3.973,
+      "service_latency_ms": 3972,
+      "keywords": [
+        "Type",
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Type",
+        "Type",
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    },
+    {
+      "id": 10,
+      "text": "İptal butonuna tıkla ve ana ekrandaki arama kutusunun boş olduğunu doğrula.",
+      "code": 200,
+      "status": "ok",
+      "ok": true,
+      "latency_s": 2.288,
+      "service_latency_ms": 2264,
+      "keywords": [
+        "Click",
+        "Verify"
+      ],
+      "expected": [
+        "Click",
+        "Verify"
+      ],
+      "keyword_match": true,
+      "reasons": null,
+      "dropped": [],
+      "output_tokens": null,
+      "step_limit_reached": false
+    }
+  ]
+}
