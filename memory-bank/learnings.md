@@ -261,6 +261,7 @@ contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), reco
 conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
 version the branch was built on). Always compare the merged tree with what you expect before
 pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
+- 2026-11-08 · omer · #52 · **oasdiff `breaking` does not flag a removed response field when the field is optional** (1.34.1: `response-optional-property-removed` is INFO, so even `--fail-on WARN` passes). springdoc marks no response property as required, so in our generated `openapi.yaml` every response field is optional. `.github/contracts/oasdiff-levels.txt` raises that check to ERR. Check a level with `oasdiff checks changelog | grep <id>`.
 
 ## 2026-11-10 — A descriptor for one element is not the same thing as a descriptor from a walk (hasan, #22)
 
