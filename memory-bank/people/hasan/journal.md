@@ -704,3 +704,40 @@ Week 3 and sits outside that order — it needs a decision, not work.
   PR #233 still has no `Closes` — the user's call.
 - **Next step:** a second independent labeller for the report's screen, then #162 (overdue,
   Week 3), which needs the machine idle.
+
+## 2026-11-15 — #46 and #47, the sample app's change and bug versions
+
+Session start found nothing of mine left on #40 (PR #237 green, both reviews requested), an
+empty review queue and one stale inbox item: the five #10 literature entries had merged as
+PR #171 on 31 October, so that debt was already paid. Took Week 6's pair instead.
+
+- **#46 (controlled UI-change versions), PR #238, five CI jobs green.** Six versions, one change
+  kind each plus a combined one, as **one declarative layer** rather than the six directories the
+  issue asked for — the user agreed, and the reason that decided it is that `ground_truth.json`
+  is generated from the same declaration the app applies, so the mapping cannot drift. 35 declared
+  changes, 48 mapping rows once the form labels and the neighbours a change pushed are counted.
+  26 offscreen tests, 23 through real UI Automation (17 app launches).
+- **The Windows run corrected three derived values, and one is a finding for #73**: clearing a Qt
+  widget's `objectName` does not remove its AutomationId — Qt substitutes the class name
+  (`QApplication.login.QPushButton`), so v2e still passes #33's criterion while every scenario's
+  locator fails. Also: a grid's inner UIA elements inherit the grid's id (six matches for one
+  lookup), and a `QGroupBox` is a `Group`. One bug of my own: `setVisible(old.isVisible())` during
+  `__init__` hid every retyped control for good.
+- **#47 (bug-injected versions), PR #239, five CI jobs green**, stacked on #238. Five bugs, and
+  four of them were already specified by `docs/rs/scenarios.md` down to the control, so the work
+  was reading the RS rather than inventing: SC-21 wants the **login** status label, SC-19 the
+  detail form's Save button disabled, SC-31 a login that opens the wrong screen, SC-34 the missing
+  validation. The fifth (wrong saved value) has no scenario, so it sits where SC-20's Verify
+  catches it; galip has the question. 25 offscreen tests, 5 through UIA, all green first run.
+- **The constraint that shaped #47**: a Qt signal keeps calling the method that existed when
+  `connect` ran, so #46's per-window hook shape cannot inject a behaviour bug. The bugs patch
+  module globals and class methods before the first window exists, and `reset()` undoes them
+  because one pytest process compares the correct build with the broken one.
+- Both issues' criteria are ticked and each criterion has a test that checks it, including the
+  change log and the "every bug names a scenario that exists" check, which reads the RS itself.
+- Side effects: `uia_check.kill_process_tree` now waits for the killed process (a reaped-too-late
+  app gave two `DetailWindow`s and an `ElementAmbiguousError`), and two flaky UIA tests are
+  recorded in the app README as #69 data rather than re-run away.
+
+Next step: nothing of mine is blocked on me. Retarget PR #239 to `main` once #238 merges, take
+galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 or #62).
