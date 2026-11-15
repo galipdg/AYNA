@@ -49,8 +49,13 @@ attributes.
 - [x] **Run for real** against the live sample app on `--bug bug1`: exit 1, and the file it
       wrote **validates against the schema**
 - [x] 782 agent tests pass under CI's own invocation (`.venv/Scripts/pytest.exe`), ruff clean
-- [ ] Commit, PR
-- Next step: commit and open the PR.
+- [x] Commit, **PR #254** open as *Part of #66*
+- [ ] **CI has not run**: every job on this branch failed to start with "recent account
+      payments have failed or your spending limit needs to be increased". Account-level and
+      repo-wide -- my 18:13Z run on #64 passed and the 18:35Z run here never started. Only the
+      repository owner can clear it; said so on the PR and in galip's inbox.
+- Next step: nothing of mine. Re-run the checks once billing is clear, and ask omer which way
+  he wants criterion 2 (a reporter action, or the XML into the job summary).
 
 ## The claim about the old format, checked rather than asserted
 
