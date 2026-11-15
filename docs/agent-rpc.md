@@ -297,6 +297,25 @@ known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback mat
 heals) and `performedWith` (the pattern that did it). **A failed step stops the run** and every
 step after it is `notRun` (TBD-6).
 
+**Why a step failed (#63, FR-35).** A `failed` step may carry a `category`, one of
+`elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete` (ADR
+*A failed step's category*). It appears **only** with `status: failed`, never more than one, and
+a reader shows an unknown value as it is, because new ones come in a minor version.
+
+**It is absent whenever the failure was not about the application under test**, and that is a
+decision rather than a gap. A keyword this agent has not implemented, a step document it
+refuses, a property set it cannot match on, a provider that refuses the action — none of those
+is evidence about the application, and the field is read by RQ2 and RQ5. A `timeout` that was
+really "this agent has no `SelectRow` yet" would be AYNA measuring its own unfinished state and
+filing it under the application's flakiness, and nothing downstream could separate the two
+again. `agent/ayna_agent/playback/triage.py` is the single place that decides, and the agent's
+decision log keeps a finer `reason` for every failure, including the uncategorised ones.
+
+Two of the five have a boundary worth stating. **More than one element matched is
+`elementNotFound`** — no *unique* element matched and playback never picks one. **An element
+that matched but never became visible and enabled is `timeout`, not `elementNotFound`** — the
+difference tells a tester whether to fix the locator or to wait longer.
+
 ```json
 → {"jsonrpc": "2.0", "id": 7, "method": "runSteps", "params": {
     "handle": 657704,
@@ -309,7 +328,9 @@ step after it is `notRun` (TBD-6).
                             "fallback": {"name": "Login", "controlType": "Button"}}}}}
 ← {"jsonrpc": "2.0", "id": 7, "result": {"results": [
     {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue"},
-    {"stepIndex": 1, "status": "passed", "durationMs": 44, "matched": "primary", "performedWith": "Invoke"}]}}
+    {"stepIndex": 1, "status": "failed", "durationMs": 10000, "matched": "primary",
+     "category": "elementNotFound",
+     "message": "no element matches login.loginButton (automationId=…) within 10000 ms"}]}}
 ```
 
 A document the agent cannot read at all is `-32602`; a handle that is not a top-level window is

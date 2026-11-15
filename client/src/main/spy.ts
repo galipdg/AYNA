@@ -4,6 +4,9 @@
 import type {
   AgentFailure,
   Bounds,
+  ElementFromPointResult,
+  ElementHit,
+  ScreenPoint,
   SnapshotResult,
   WindowInfo,
   WindowsResult,
@@ -65,13 +68,15 @@ export async function snapshot(
   agent: AgentCaller,
   handle: unknown,
   budgetMs?: unknown,
+  queue?: AgentQueue,
 ): Promise<SnapshotResult> {
   const budget = isBudget(budgetMs) ? budgetMs : undefined
   const params = budget === undefined ? { handle } : { handle, timeoutMs: budget }
   const wait = (budget ?? DEFAULT_SNAPSHOT_BUDGET_MS) + SNAPSHOT_MARGIN_MS
   let result: unknown
   try {
-    result = await agent.call('snapshot', params, wait)
+    const call = agent.call('snapshot', params, wait)
+    result = await (queue ? queue.track(wait, call) : call)
   } catch (error) {
     return { ok: false, ...describeFailure(error) }
   }
@@ -87,6 +92,106 @@ export async function snapshot(
   return parsed ? { ok: true, snapshot: parsed } : { ok: false, reason: 'bad-response' }
 }
 
+/**
+ * The agent runs its UI Automation calls one at a time, in arrival order, so a call sent while
+ * others are in flight waits for them. This keeps the latest time the client still waits for
+ * one of them, so a quick call sent behind a capture can wait as long as the capture may run
+ * (#24: a pick pressed during "capture for longer" must not give up at 10 s).
+ */
+export class AgentQueue {
+  private readonly deadlines = new Map<symbol, number>()
+
+  private readonly now: () => number
+
+  constructor(now: () => number = Date.now) {
+    this.now = now
+  }
+
+  /** Counts `call`, which the client waits `waitMs` for, as in flight until it settles. */
+  async track<T>(waitMs: number, call: Promise<T>): Promise<T> {
+    const key = Symbol()
+    this.deadlines.set(key, this.now() + waitMs)
+    try {
+      return await call
+    } finally {
+      this.deadlines.delete(key)
+    }
+  }
+
+  /** How long the calls in flight may still take, as far as the client waits for them; 0 if none. */
+  busyMs(): number {
+    const now = this.now()
+    let latest = now
+    for (const deadline of this.deadlines.values()) latest = Math.max(latest, deadline)
+    return latest - now
+  }
+}
+
+/**
+ * A hit test alone takes milliseconds (#22: under 3.5 ms median); this is the wait for the hit
+ * test itself. A pick sent behind a capture also waits for what `AgentQueue` says is in flight.
+ */
+export const ELEMENT_FROM_POINT_TIMEOUT_MS = 10_000
+
+/**
+ * The element at `point` (physical pixels, sent as the OS gave it: the agent converts nothing).
+ * A point over nothing is not an error; the answer then has nulls.
+ */
+export async function elementFromPoint(
+  agent: AgentCaller,
+  point: ScreenPoint,
+  queue?: AgentQueue,
+): Promise<ElementFromPointResult> {
+  // The agent refuses anything but integers.
+  const params = { x: Math.round(point.x), y: Math.round(point.y) }
+  let result: unknown
+  try {
+    const wait = ELEMENT_FROM_POINT_TIMEOUT_MS + (queue?.busyMs() ?? 0)
+    result = await agent.call('elementFromPoint', params, wait)
+  } catch (error) {
+    return { ok: false, ...describeFailure(error) }
+  }
+  const hit = parseElementHit(result)
+  return hit ? { ok: true, hit } : { ok: false, reason: 'bad-response' }
+}
+
+/**
+ * The `elementFromPoint` result, or null if a field has the wrong type. A field left out reads
+ * as null, the value the contract gives it when there is nothing to report.
+ */
+export function parseElementHit(result: unknown): ElementHit | null {
+  if (!isRecord(result)) return null
+  const hit = {
+    handle: result.handle ?? null,
+    bounds: result.bounds ?? null,
+    snapshotId: result.snapshotId ?? null,
+    elementId: result.elementId ?? null,
+    element: result.element ?? null,
+  }
+  if (
+    !(hit.handle === null || Number.isInteger(hit.handle)) ||
+    !(hit.bounds === null || isBounds(hit.bounds)) ||
+    !(hit.snapshotId === null || typeof hit.snapshotId === 'string') ||
+    !(hit.elementId === null || typeof hit.elementId === 'string') ||
+    !(hit.element === null || isRecord(hit.element))
+  ) {
+    return null
+  }
+  return hit as ElementHit
+}
+
+/**
+ * The window handle in Electron's `getNativeWindowHandle()` buffer (an HWND on Windows, in the
+ * machine's little-endian order), as the agent reports handles. A JS number is exact only up to
+ * 2^53, so a handle above that would never match; that is fine because Windows window handles
+ * fit in 32 bits (they are shared with 32-bit processes) and the agent sends them the same way.
+ */
+export function nativeHandle(bytes: Uint8Array): number {
+  let value = 0
+  for (let i = Math.min(bytes.length, 8) - 1; i >= 0; i--) value = value * 256 + bytes[i]
+  return value
+}
+
 /** Maps an error from `AgentManager.call` to a reason the UI has a message for. */
 export function describeFailure(error: unknown): { reason: AgentFailure; detail?: string } {
   if (error instanceof AgentNotConnectedError) return { reason: 'not-connected' }
@@ -96,7 +201,8 @@ export function describeFailure(error: unknown): { reason: AgentFailure; detail?
     if (error.code === WINDOW_NOT_FOUND) return { reason: 'window-gone' }
     // The agent's message says why the walk stopped (a blocked application or a slow window);
     // #226 will add a structured flag for the blocked case.
-    if (error.code === SNAPSHOT_TIMEOUT) return { reason: 'snapshot-timeout', detail: error.rpcMessage }
+    if (error.code === SNAPSHOT_TIMEOUT)
+      return { reason: 'snapshot-timeout', detail: error.rpcMessage }
     return { reason: 'agent-error', detail: error.rpcMessage }
   }
   return { reason: 'agent-error', detail: error instanceof Error ? error.message : String(error) }

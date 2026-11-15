@@ -128,7 +128,7 @@ Sonra depo kökünde çalıştırın (kullanıcı adı ve parola `admin`):
 | Öğe ağacı | Kayıtlı yakalama | Seçilen pencere o anda okunur (`snapshot`, #12) |
 | Konum ve boyut | Yakalamadaki sabit değerler | O anki gerçek değerler |
 
-Dinamik yakalamanın aracı kodu `main` dalında hazır ve Windows'ta çalışıyor: deneme penceresi 28–32 ms'de yakalandı. Yeni Nesne Gözcüsü ekranı gerçek aracıyla Windows'ta 2026-11-07'de denendi (#184): 285 öğeli bir pencere 723 ms'de yakalandı, kırmızı çerçeve %150 ölçekte de öğeyi tam sardı. Eksik olan imleçle öğe seçmedir (#22). Mac'te dinamik yakalama planlanmıyor, çünkü UI Automation bir Windows özelliğidir ve birinci dönem hedefi Windows masaüstüdür.
+Dinamik yakalamanın aracı kodu `main` dalında hazır ve Windows'ta çalışıyor: deneme penceresi 28–32 ms'de yakalandı. Yeni Nesne Gözcüsü ekranı gerçek aracıyla Windows'ta 2026-11-07'de denendi (#184): 285 öğeli bir pencere 723 ms'de yakalandı, kırmızı çerçeve %150 ölçekte de öğeyi tam sardı. İmleçle öğe seçme (Ctrl+Shift+A, #22, #24) de hazır; %100 ve %150 ölçekte Windows denemesi bekliyor. Mac'te dinamik yakalama planlanmıyor, çünkü UI Automation bir Windows özelliğidir ve birinci dönem hedefi Windows masaüstüdür.
 
 ## Bugüne kadar yapılanlar
 
@@ -148,7 +148,7 @@ Hepsi `main` dalında (2026-11-08):
 |---|---|
 | Testi istemciden çalıştırma | Sunucu tarafı (#44) ve aracının Click/Type oynatması (#26) hazır. İstemci ekranı tüm anahtar kelimeleri oynatan aracıyı (#40) bekliyor. Oynatma bugün aracı testleriyle görülebilir ([DEMO-windows.md](DEMO-windows.md#6-testi-çalıştırma-bugün)). |
 | Gerçek Windows penceresi yakalama | Windows'ta gerçek aracıyla çalışıyor ([DEMO-windows.md](DEMO-windows.md)). Bu demo Mac'te olduğu için sahte aracı kullanıyor. |
-| İmleçle öğe seçme | Aracı tarafı (#22) bitmedi. Ekrandaki kısayol ipucu bu yüzden henüz çalışmaz. |
+| İmleçle öğe seçme | Windows'ta gerçek aracıyla çalışır (#22, #24). Mac demosunda sahte aracı, ekranda gerçekten ne olduğuna değil kayıtlı yakalamadaki sabit konumlara bakar; kısayol imlecin altındaki gerçek öğeyi göstermez. |
 | Türkçe komutla test üretme | Servis hazır, editördeki panel (#78) başlamadı. |
 | Otomatik onarım, raporlar, değişiklik etkisi | Plandaki sonraki haftalarda. |
 

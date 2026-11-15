@@ -238,8 +238,16 @@ export const en = {
   spyHotkeyHint: (label: string) => `Press ${label} with the mouse over an element to pick it.`,
   spyHotkeyTaken: (label: string) =>
     `${label} is in use by another program, so picking with the keyboard is off.`,
-  spyPicked: (x: number, y: number) =>
-    `Picked the point ${x}, ${y}. Finding the element under it needs a newer agent.`,
+  /** The point is in physical pixels, as the element's bounds are. */
+  spyPicked: (x: number, y: number) => `Picked the element at ${x}, ${y}.`,
+  spyPickNotCaptured: (x: number, y: number) =>
+    `The window at ${x}, ${y} is not the one captured here. Capture it, then press the key again.`,
+  spyPickCapture: 'Capture this window',
+  spyPickChanged:
+    'The window has changed since it was captured, so the element under the cursor is not in this tree. Capture again, then press the key again.',
+  spyPickOwnWindow: "That is AYNA's own window. Point at the application you are testing.",
+  spyPickNoWindow: (x: number, y: number) => `There is no window at ${x}, ${y}.`,
+  spyPickGone: 'That window is not in the window list any more.',
   spyPropertiesTitle: 'Properties',
   spyWindowOnly: 'From the window list only, because the window could not be captured.',
   spyNotCaptured: 'not captured',
