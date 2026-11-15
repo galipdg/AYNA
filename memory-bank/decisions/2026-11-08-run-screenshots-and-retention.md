@@ -1,7 +1,7 @@
 # Run screenshots, idle timeout and retention
 
 - Date: 2026-11-08
-- Status: Proposed (#51). Hasan approved it on #223 (2026-11-10); needs Galip's approval.
+- Status: Accepted (#51). Ömerfaruk proposed; Hasan approved it on #223 (2026-11-10), Galip on #240 (2026-11-15).
 - Deciders: Ömerfaruk (server, client, graph), Hasan (playback screenshots #54, CLI runner #61), Galip (healing transport)
 - Issue: #51 (builds on #44; consumers #54, #59, #61, #68, #74, #75)
 - Extends: ADR *Runs API and live run updates* (`2026-11-05`). Changes one point of it and of the transport ADR (`2026-10-28`): `repairProposed` moves from #51 to #74.
