@@ -897,3 +897,14 @@ PR #171 on 31 October, so that debt was already paid. Took Week 6's pair instead
 
 Next step: nothing of mine is blocked on me. Retarget PR #239 to `main` once #238 merges, take
 galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 or #62).
+- Later the same session: the user merged #47, #40 and #162 while #54 was being written, so
+  #54's branch took an `origin/main` merge. It was the small reconciliation the task note had
+  predicted — `runner.py`'s import block and nothing else; `_run_one`'s signature was identical
+  on both sides and the capture hook dropped into #40's loop unchanged. 677 agent tests green.
+  **The merge also turned up a real find**: galip's `ayna_agent/errors.py` was on `main` and
+  `rpc.py` re-exported all four exceptions, but `recognition/uia.py` was still importing them
+  *from* `ayna_agent.rpc`, so the decoupling that file exists for had never taken effect and the
+  UIA backend still could not be imported without `websockets`. One line fixed it; #29's
+  `capture` no longer needs `agent/.venv`. In `learnings.md`, in galip's inbox, and the claims
+  it made stale in `frames.py`, the task note, `active.md` and the PR body are all corrected.
+- **PR #248 is open** for #54 (`Closes #54`), both reviews requested.
