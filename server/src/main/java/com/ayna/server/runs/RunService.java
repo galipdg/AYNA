@@ -74,6 +74,10 @@ public class RunService {
 
 	private static final Set<String> RESULT_STATUSES = Set.of(PASSED, FAILED, NOT_RUN);
 
+	/** Why a failed step failed (FR-35, TBD-5; `$defs/failureCategory` in the agent and WebSocket schemas). */
+	static final Set<String> FAILURE_CATEGORIES = Set.of("elementNotFound", "unexpectedWindow", "assertionFailed",
+			"timeout", "searchIncomplete");
+
 	/** What Neo4j reports when a uniqueness constraint refuses a write. */
 	private static final String CONSTRAINT_FAILED = "Neo.ClientError.Schema.ConstraintValidationFailed";
 
@@ -200,7 +204,8 @@ public class RunService {
 	/**
 	 * Stores one step's result: the `params` of the agent's `run.stepResult`, unchanged. An
 	 * identical repeat changes nothing; another body for the same step is a 409. Members this
-	 * version does not read stay in the stored body (#40, #54 and #63 add their own).
+	 * version does not read stay in the stored body (#40 and #54 add their own). `category` (#63)
+	 * is read and kept on the node as well.
 	 */
 	public StoredResult writeResult(String runId, int stepIndex, JsonNode body) {
 		checkBody(runId, stepIndex, body);
@@ -220,7 +225,8 @@ public class RunService {
 		if (stored.created()) {
 			events.publish(stored.testId(),
 					new Events.StepResult(Events.STEP_RESULT, stored.testId(), runId, stepIndex, text(body, "stepId"),
-							body.path("status").asString(), number(body, "durationMs"), text(body, "message")));
+							body.path("status").asString(), number(body, "durationMs"), text(body, "message"),
+							text(body, "category")));
 		}
 		return new StoredResult(stored.id(), stored.created());
 	}
@@ -456,6 +462,7 @@ public class RunService {
 				params.put("status", body.path("status").asString());
 				params.put("durationMs", number(body, "durationMs"));
 				params.put("message", text(body, "message"));
+				params.put("category", text(body, "category"));
 				params.put("hash", hash);
 				params.put("body", canonical);
 				tx.run("""
@@ -463,7 +470,7 @@ public class RunService {
 						SET r.lastActivityAt = datetime()
 						CREATE (r)-[:HAS_RESULT]->(:StepResult {id: $id, runId: $runId, stepIndex: $stepIndex,
 						  stepId: $stepId, status: $status, durationMs: $durationMs, message: $message,
-						  bodyHash: $hash, body: $body, receivedAt: datetime()})""", params).consume();
+						  category: $category, bodyHash: $hash, body: $body, receivedAt: datetime()})""", params).consume();
 				// No link if the step was deleted after the run started; `stepIndex` still points into the copy.
 				if (stepId != null) {
 					tx.run("""
@@ -507,6 +514,16 @@ public class RunService {
 		JsonNode message = body.path("message");
 		if (!message.isMissingNode() && !message.isNull() && !message.isString()) {
 			errors.add(new FieldError("$.message", "message must be a string or null"));
+		}
+		JsonNode category = body.path("category");
+		if (!category.isMissingNode() && !category.isNull()) {
+			if (!category.isString() || !FAILURE_CATEGORIES.contains(category.asString())) {
+				errors.add(new FieldError("$.category", "category is one of " + String.join(", ",
+						FAILURE_CATEGORIES.stream().sorted().toList()) + ", or null"));
+			}
+			else if (!status.equals(FAILED)) {
+				errors.add(new FieldError("$.category", "Only a failed step has a category, not a " + status + " one"));
+			}
 		}
 		if (!errors.isEmpty()) {
 			throw new InvalidRequestException("The step result is invalid", errors);
@@ -602,7 +619,7 @@ public class RunService {
 				: "/api/runs/" + result.get("runId").asString() + "/results/" + stepIndex + "/screenshot";
 		return new StepResultResponse(result.get("id").asString(), stepIndex, result.get("stepId").asString(null),
 				result.get("status").asString(), longOrNull(result.get("durationMs")), result.get("message").asString(null),
-				instant(result.get("receivedAt")), screenshotUrl);
+				instant(result.get("receivedAt")), screenshotUrl, result.get("category").asString(null));
 	}
 
 	private static Instant instant(Value value) {

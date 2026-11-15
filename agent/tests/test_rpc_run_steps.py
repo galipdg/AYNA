@@ -134,10 +134,12 @@ def test_a_default_timeout_is_passed_through():
     assert desktop.calls[0][3] == 2_000
 
 
-def test_ping_does_not_claim_the_v0_2_messages_yet():
-    """`runSteps` without the `run.stepResult` notifications is not rpcVersion 0.2 (#40)."""
+def test_ping_answers_the_frozen_contract_version():
+    """1.0 is v0.1 as built plus `runSteps` and `elementFromPoint` (ADR contracts-v1-freeze).
+
+    Playback does not fill a failed step's `category` yet, so it must not claim 1.1 (#63)."""
     reply = call(PlayingDesktop(), None, method="ping")
-    assert reply["result"]["rpcVersion"] == RPC_VERSION == "0.1"
+    assert reply["result"]["rpcVersion"] == RPC_VERSION == "1.0"
 
 
 # --- params the server refuses -------------------------------------------------------------

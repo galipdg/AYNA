@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import Ajv2020 from 'ajv/dist/2020.js'
 import { parseListening, rpcRequest } from '../agent.ts'
+import { perStepPlayer } from '../stepPlayer.ts'
 import { listWindows, parseSnapshot, parseWindows, snapshot } from '../spy.ts'
 
 const schemas = join(import.meta.dirname, '..', '..', '..', '..', 'schemas')
@@ -54,8 +55,8 @@ const window = {
 }
 
 describe('agent JSON-RPC contract, client side', () => {
-  it('is version 1.0', () => {
-    assert.equal(contract.$defs.version.const, '1.0')
+  it('is version 1.1', () => {
+    assert.equal(contract.$defs.version.const, '1.1')
   })
 
   it('sends requests the contract allows', async () => {
@@ -74,6 +75,21 @@ describe('agent JSON-RPC contract, client side', () => {
       method: 'snapshot',
       params: { handle: 657704 },
     })
+  })
+
+  it('sends a one-step runSteps the contract allows (#44)', async () => {
+    const recorded = recordingAgent({ results: [{ stepIndex: 0, status: 'passed', durationMs: 31 }] })
+    await perStepPlayer(recorded.agent).play({
+      step: { id: 's1', keyword: 'Type', target: 'login.userNameInput', value: 'admin', timeoutMs: 2000 },
+      stepIndex: 3,
+      stepId: 's1',
+      version: '0.2',
+      handle: 657704,
+      target: { properties: { automationId: 'usernameInput' }, fallback: { name: 'User name' } },
+      runId: '7a3c2f4e-1b2d-4c5e-8f9a-0b1c2d3e4f5a',
+      appVersionId: '9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d',
+    })
+    matches('request')(recorded.sent[0])
   })
 
   it('reads every window the contract allows, also with values Windows could not read', () => {
@@ -151,6 +167,7 @@ describe('agent JSON-RPC contract, client side', () => {
           durationMs: 10000,
           stepId: 'b6f0',
           message: 'Element not found',
+          category: 'elementNotFound',
         },
         { stepIndex: 2, status: 'notRun', durationMs: 0 },
       ],

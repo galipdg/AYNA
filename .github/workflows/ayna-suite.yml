@@ -1,0 +1,116 @@
+# The sample suite on a Windows runner (#67): the sample app is started, the suite is played
+# with the agent's playback, and the results are written as JUnit XML.
+#
+# Until the CLI exists (#61, #66) the suite is run by `.github/suite/run_suite.py`, a stand-in
+# for `ayna run --from-file suite.json --junit out.xml`. When the CLI lands, the "Run the
+# suite" steps call it instead and run_suite.py goes.
+#
+# Results are shown on the run's page (job summary, written by the runner) and kept as the
+# `junit-*` artifact. No third-party reporter action.
+name: AYNA suite
+
+on:
+  schedule:
+    - cron: "30 1 * * *" # nightly, 04:30 in Türkiye
+  workflow_dispatch:
+    inputs:
+      bug:
+        description: "Sample app build: none is the correct app, bug1…bug5 are #47's bug-injected builds"
+        type: choice
+        default: none
+        options: [none, bug1, bug2, bug3, bug4, bug5]
+  # Also on pull requests that change what this job depends on, so a change in playback or
+  # in the sample app is caught before it reaches the nightly run.
+  pull_request:
+    paths:
+      - .github/workflows/ayna-suite.yml
+      - .github/suite/**
+      - agent/ayna_agent/**
+      - eval/apps/sample/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ayna-suite-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suite:
+    name: smoke suite (sample app, ${{ inputs.bug || 'none' }})
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      BUG: ${{ inputs.bug || 'none' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            agent/pyproject.toml
+            eval/pyproject.toml
+      # The agent (pywinauto) and the sample app (PySide6) in one interpreter.
+      - run: pip install -e ./agent -e ./eval
+      - name: Runner tests
+        run: python -m unittest discover -s .github/suite -v
+      # A bug build fails this job: that is what a dispatch with bug1…bug5 shows.
+      - name: Run the suite
+        run: >
+          python .github/suite/run_suite.py .github/suite/smoke.json
+          --app eval/apps/sample/sample_app.py
+          --app-arg=--search-delay-ms --app-arg=0
+          --app-arg=--bug --app-arg=$env:BUG
+          --build $env:BUG
+          --junit out/junit.xml
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-${{ env.BUG }}
+          path: out/junit.xml
+          if-no-files-found: ignore
+
+  # Nightly and on pull requests: each bug build must fail the test that is there to catch it.
+  # The job passes when it does, and fails when a bug slips through.
+  bug-builds:
+    name: bug build ${{ matrix.bug }} is caught
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - bug: bug1 # wrong label (SC-21)
+            test: Login succeeds
+          - bug: bug4 # missing validation (SC-34)
+            test: Detail form refuses an empty name
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            agent/pyproject.toml
+            eval/pyproject.toml
+      - run: pip install -e ./agent -e ./eval
+      - name: Run the suite, expecting one failure
+        env:
+          BUG: ${{ matrix.bug }}
+          TEST: ${{ matrix.test }}
+        run: >
+          python .github/suite/run_suite.py .github/suite/smoke.json
+          --app eval/apps/sample/sample_app.py
+          --app-arg=--search-delay-ms --app-arg=0
+          --app-arg=--bug --app-arg=$env:BUG
+          --build $env:BUG
+          --expect-failed "$env:TEST"
+          --junit out/junit.xml
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-${{ matrix.bug }}
+          path: out/junit.xml
+          if-no-files-found: ignore
