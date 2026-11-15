@@ -1463,6 +1463,8 @@ ul.message {
 }
 
 .step-result {
+  /* On the inputs' text line, as the step number is. */
+  padding-top: 10px !important;
   white-space: nowrap;
   font-size: 13px;
 }
