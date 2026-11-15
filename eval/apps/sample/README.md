@@ -31,12 +31,15 @@ python -m venv .venv
 ```
 
 It opens on the login screen; `admin` / `admin` gets in and opens the customer list, which
-leads to the other screens. Two options matter:
+leads to the other screens. Four options matter, the last two being the changed and the
+bug-injected builds of this same app:
 
 | Option | What it does |
 |---|---|
 | `--screen login\|main\|detail\|settings\|wizard` | Open that screen straight away |
 | `--search-delay-ms MS` | How long after a search the grid fills and **Aç** becomes enabled (default 3000; `0` fills it at once) |
+| `--variant v1\|v2a…v2f` | Run one of #46's controlled UI-change versions (default `v1`, the unchanged app) — see [`variants.md`](variants.md) |
+| `--bug none\|bug1…bug5` | Run one of #47's bug-injected versions (default `none`, the correct app) — see [`bugs.md`](bugs.md) |
 
 The delay is what SC-18 is built on: playback has to wait for a control to become enabled
 rather than sleep for a fixed time.
@@ -84,6 +87,39 @@ Two more measured details:
   Windows, not the app — so every check here looks only at controls whose UIA ClassName
   starts with `Q`.
 
+## The change versions (#46)
+
+Six versions of this app with one kind of UI change each -- renamed captions, moved controls, a
+different control type, a new parent, a cleared AutomationId -- plus one combining all five.
+They are what the healing work is measured against, and every control they touch has a
+generated old -> new mapping in `ground_truth.json`.
+
+```powershell
+.venv/Scripts/python.exe eval/apps/sample/sample_app.py --variant v2a --screen main
+.venv/Scripts/python.exe eval/apps/sample/ground_truth.py --write      # regenerate the mapping
+.venv/Scripts/python.exe eval/apps/sample/uia_check.py --variant v2e --screen login --table
+```
+
+Each version's window titles carry it (`AYNA Örnek 1.0-v2a - Giriş`) while the ClassName stays
+`LoginWindow`, so everything here still finds the screens the same way. The change log, the
+mapping's shape and what the Windows run measured are in [`variants.md`](variants.md); the
+change sets themselves are declared in `variants.py`, not copied into six directories, and
+`variants.md` says why.
+
+## The bug-injected versions (#47)
+
+Five versions with **one real functional bug** each -- a wrong label, a Save button that stays
+disabled, a wrong saved value, a validation rule that is gone, a login that opens the wrong
+screen -- and each naming the reference scenario that must fail on it (SC-21, SC-19, SC-20,
+SC-34, SC-31). Four of the five are specified by `docs/rs/scenarios.md` down to the control.
+
+```powershell
+.venv/Scripts/python.exe eval/apps/sample/sample_app.py --bug bug2 --screen detail
+```
+
+The bug is installed before the first window exists, because Qt binds a slot when `connect` is
+called; `bugs.md` has the log, the symptom of each bug and what each one patches.
+
 ## The acceptance check
 
 One command answers both of #33's control criteria, for every screen, and exits non-zero
@@ -119,8 +155,20 @@ OK  wizard      8 interactive,  22 elements, 0 without an AutomationId
 | `tests/test_model.py` | no | The rules in `model.py`: login, search, validation, the wizard summary |
 | `tests/test_screens.py` | no | Control counts per screen, tab and page, the object names and the titles, on Qt's offscreen platform |
 | `tests/test_sample_uia.py` | **yes** (`@pytest.mark.windows`) | #33's criteria through UI Automation, plus the behaviour the scenarios need |
+| `tests/test_variants.py` | no | #46's change versions: the change sets, what they do to the widgets, that each changed screen still works, and that `ground_truth.json` is what the generator writes |
+| `tests/test_variant_uia.py` | **yes** (`@pytest.mark.windows`) | Every row of `ground_truth.json` against a real provider, 17 app launches |
+| `tests/test_bugs.py` | no | #47's bug versions: the bug set, that every scenario it names exists in the RS, that each version shows **exactly** its own bug, and that `reset()` puts the app back |
+| `tests/test_bug_uia.py` | **yes** (`@pytest.mark.windows`) | Each bug's symptom as a step sees it: a Name, a Save button's `enabled`, a window that is not there |
 
-57 tests, all green on 2026-11-12; `pytest eval` (the trial and sample apps together) is 125.
+136 tests, all green on 2026-11-15 (#46 added 49 of them and #47 another 30); `pytest eval`
+from the repository root is 241 and the CI invocation,
+`cd eval; ../.venv/Scripts/python.exe -m pytest -q`, is 185.
+
+Two of the UIA tests here are **flaky under load**, both seen once on 2026-11-15 and both green
+on a re-run: `test_leaving_an_edited_form_opens_a_modal_dialog_of_its_own[detail]` (the modal
+dialog had not reached the tree yet) and a `detail` case that found *two* `DetailWindow`s
+because a previous app had been killed but not yet reaped — which is why `kill_process_tree`
+now waits for the process. Data for #69 (RQ2, flaky rate), not something to re-run away.
 
 The offscreen platform is chosen in Qt's own argv and **not** with `QT_QPA_PLATFORM`: that
 variable is inherited by every process started later in the same pytest run, and both this

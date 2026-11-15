@@ -103,6 +103,47 @@ jobs:
       - run: ruff format --check .
       - run: pytest
 
+  # The frozen contracts (#52, ADR contracts-v1-freeze): a change that could break the other side
+  # fails unless it comes with a new major version. Each side's own tests check that it matches the
+  # contract; this job compares the contract with the one on the base branch.
+  contracts:
+    name: contracts (breaking changes)
+    runs-on: ubuntu-latest
+    env:
+      OASDIFF_VERSION: "1.34.1"
+      OASDIFF_SHA256: 75775f65b0adebd26a8e013af51a799342dfdc6262d89efa9e3b7bdf89657d90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Base to compare with
+        id: base
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            echo "ref=origin/$BASE_REF" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=$BEFORE" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checker tests
+        run: python -m unittest discover -s .github/contracts -v
+      - name: Schemas (step, element, snapshot, healing proposal, ws-runs, agent-rpc)
+        run: python .github/contracts/schema_compat.py --base "${{ steps.base.outputs.ref }}"
+      - name: Install oasdiff
+        run: |
+          curl -fsSL -o /tmp/oasdiff.tar.gz \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz"
+          echo "${OASDIFF_SHA256}  /tmp/oasdiff.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/oasdiff.tar.gz -C /tmp oasdiff
+      - name: REST (docs/api/openapi.yaml)
+        run: .github/contracts/rest_compat.sh "${{ steps.base.outputs.ref }}" /tmp/oasdiff
+
   eval:
     name: eval (ruff + pytest, Windows)
     # Windows so the trial app's UI Automation tests (@pytest.mark.windows) run too.

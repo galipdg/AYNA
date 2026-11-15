@@ -86,11 +86,21 @@ MIN_INTERACTIVE = 8
 READY_TIMEOUT = 30.0
 
 
-def launch_app(screen: str = "login", delay_ms: int = 0) -> subprocess.Popen[bytes]:
+def launch_app(
+    screen: str = "login",
+    delay_ms: int = 0,
+    variant: str = "v1",
+    bug: str = "none",
+) -> subprocess.Popen[bytes]:
     """Start `sample_app.py` on one screen as a separate process.
 
     The search delay defaults to 0 here: the dump reads a window, it does not wait for a
     grid, and three seconds per screen of dumping is three seconds wasted.
+
+    `variant` is one of #46's change versions, so the same dump answers "what did UI
+    Automation make of this change" -- which is the only way to know what a cleared
+    `objectName` becomes. `bug` is one of #47's bug-injected versions, which is how a bug's
+    symptom is read the way playback will read it (a Save button's `enabled`, a label's Name).
     """
     # A child inherits QT_QPA_PLATFORM, and a value such as `offscreen` would start the app
     # with no real window, so UI Automation would never find it and every lookup here would
@@ -106,18 +116,32 @@ def launch_app(screen: str = "login", delay_ms: int = 0) -> subprocess.Popen[byt
             screen,
             "--search-delay-ms",
             str(delay_ms),
+            "--variant",
+            variant,
+            "--bug",
+            bug,
         ],
         env=env,
     )
 
 
-def kill_process_tree(proc: subprocess.Popen[bytes]) -> None:
-    """Kill the launcher and the interpreter child that owns the window."""
+def kill_process_tree(proc: subprocess.Popen[bytes], timeout: float = 10.0) -> None:
+    """Kill the launcher and the interpreter child that owns the window, and wait for it.
+
+    The wait is not politeness: `taskkill` returns before the window has left the UIA tree,
+    and the next test looking for the same ClassName then finds two windows and fails with
+    `ElementAmbiguousError` -- which is what one run of the suite did on 2026-11-15 while #46
+    was dumping its change versions beside it.
+    """
     subprocess.run(
         ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
         capture_output=True,
         check=False,
     )
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        pass
 
 
 def find_window(screen: str, timeout: float = READY_TIMEOUT):
@@ -183,9 +207,11 @@ def print_table(rows: list[dict[str, str]]) -> None:
         )
 
 
-def dump_screen(screen: str, attach: bool = False) -> list[dict[str, str]]:
+def dump_screen(
+    screen: str, attach: bool = False, variant: str = "v1"
+) -> list[dict[str, str]]:
     """Start the screen (unless attaching), read its tree, close it again."""
-    proc = None if attach else launch_app(screen)
+    proc = None if attach else launch_app(screen, variant=variant)
     try:
         return collect_controls(find_window(screen))
     finally:
@@ -236,6 +262,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--table", action="store_true", help="print every control")
     parser.add_argument("--json", action="store_true", help="print rows as JSON")
+    parser.add_argument(
+        "--variant",
+        default="v1",
+        help=(
+            "dump one of #46's change versions instead of the unchanged app (v1). #33's "
+            "criteria are v1's promise: v2e clears AutomationIds on purpose, so it reports "
+            "them as missing and exits non-zero -- that is the measurement, not a failure"
+        ),
+    )
     args = parser.parse_args(argv)
 
     # Every Name on these screens is Turkish, and a redirected stdout on a Turkish Windows
@@ -249,7 +284,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--attach dumps one running screen; name it with --screen")
 
     screens = list(WINDOW_CLASSES) if args.screen == "all" else [args.screen]
-    dumps = {screen: dump_screen(screen, args.attach) for screen in screens}
+    dumps = {
+        screen: dump_screen(screen, args.attach, args.variant) for screen in screens
+    }
+    if args.variant != "v1" and not args.json:
+        print(f"change version {args.variant} (#46); v1 is the unchanged app\n")
 
     if args.json:
         print(json.dumps(dumps, indent=2, ensure_ascii=False))

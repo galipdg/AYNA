@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Import;
 import com.ayna.server.TestcontainersConfiguration;
 import com.ayna.server.auth.AccountService;
 import com.ayna.server.auth.AynaPrincipal;
+import com.ayna.server.schema.SchemaFile;
 import com.ayna.server.tests.StepSchema;
 
 import tools.jackson.databind.JsonNode;
@@ -39,7 +40,9 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * `/ws/runs` on a real port, with a real client that sends the Bearer header as the Electron
- * main process does, and real logins (needs Docker).
+ * main process does, and real logins (needs Docker). Every message the server sends, and every
+ * well-formed one the test sends, is checked against the frozen contract
+ * `schemas/ws-runs.schema.json` (#52).
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration.class)
@@ -70,6 +73,8 @@ class RunEventsIntegrationTest {
 	@Autowired
 	StepSchema stepSchema;
 
+	SchemaFile contract;
+
 	final HttpClient http = HttpClient.newHttpClient();
 
 	String token;
@@ -82,6 +87,7 @@ class RunEventsIntegrationTest {
 
 	@BeforeEach
 	void setUp() throws Exception {
+		contract = new SchemaFile(mapper, "schemas/ws-runs.schema.json");
 		driver.executableQuery("""
 				MATCH (n) WHERE NOT any(l IN labels(n) WHERE l STARTS WITH '__')
 				DETACH DELETE n""").execute();
@@ -180,7 +186,7 @@ class RunEventsIntegrationTest {
 	void unsubscribingStopsTheEvents() throws Exception {
 		Listener watcher = connect(token);
 		subscribe(watcher, testId);
-		watcher.send(Map.of("type", "unsubscribe", "testId", testId));
+		watcher.sendValid(Map.of("type", "unsubscribe", "testId", testId));
 		// A later subscribe answers on the same connection, so the unsubscribe has been handled.
 		subscribe(watcher, "some-other-test");
 
@@ -234,7 +240,7 @@ class RunEventsIntegrationTest {
 	}
 
 	private void subscribe(Listener listener, String test) throws Exception {
-		listener.send(Map.of("type", "subscribe", "testId", test));
+		listener.sendValid(Map.of("type", "subscribe", "testId", test));
 		JsonNode reply = listener.next(LIVE);
 		assertThat(reply.path("type").asString()).isEqualTo("subscribed");
 		assertThat(reply.path("testId").asString()).isEqualTo(test);
@@ -336,9 +342,17 @@ class RunEventsIntegrationTest {
 			socket.sendText(mapper.writeValueAsString(message), true).get(5, TimeUnit.SECONDS);
 		}
 
+		/** Sends a message the contract allows, after checking that it does. */
+		void sendValid(Map<String, Object> message) throws Exception {
+			assertThat(contract.validate(mapper.valueToTree(message))).as("client message %s", message).isEmpty();
+			send(message);
+		}
+
+		/** The next message from the server, which must match the contract. */
 		JsonNode next(Duration within) throws InterruptedException {
 			JsonNode message = received.poll(within.toMillis(), TimeUnit.MILLISECONDS);
 			assertThat(message).as("a message within " + within).isNotNull();
+			assertThat(contract.validate(message)).as("server message %s", message).isEmpty();
 			return message;
 		}
 
