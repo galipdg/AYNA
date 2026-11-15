@@ -181,6 +181,30 @@ class RunReportTest {
 	}
 
 	@Test
+	void namesAFailedStepsCategoryBeforeItsMessage() {
+		StepResultResponse notFound = withCategory(result(2, "failed", 20_000L, "login.loginButton: no match"),
+				"elementNotFound");
+		StepResultResponse bare = withCategory(result(0, "failed", 1L, null), "timeout");
+		StepResultResponse future = withCategory(result(1, "failed", 1L, null), "newKind<x>");
+
+		assertThat(render(Lang.EN, Map.of(), notFound))
+			.contains("<td class=\"msg\"><strong class=\"category\">Element not found</strong>\n"
+					+ "login.loginButton: no match</td>");
+		assertThat(render(Lang.TR, Map.of(), notFound)).contains("<strong class=\"category\">Öğe bulunamadı</strong>");
+		assertThat(render(Lang.TR, Map.of(), bare))
+			.contains("<td class=\"msg\"><strong class=\"category\">Zaman aşımı</strong></td>");
+		assertThat(render(Lang.EN, Map.of(), future)).contains("<strong class=\"category\">newKind&lt;x&gt;</strong>");
+	}
+
+	@Test
+	void everyCategoryHasAWordInBothLanguages() {
+		for (String category : RunService.FAILURE_CATEGORIES) {
+			assertThat(Words.EN.category(category)).as(category).isNotEqualTo(category);
+			assertThat(Words.TR.category(category)).as(category).isNotEqualTo(category);
+		}
+	}
+
+	@Test
 	void acceptsEnOrTrOnly() {
 		assertThat(Lang.parse(null)).isEqualTo(Lang.EN);
 		assertThat(Lang.parse("TR")).isEqualTo(Lang.TR);
@@ -215,7 +239,12 @@ class RunReportTest {
 
 	static StepResultResponse result(int index, String status, Long durationMs, String message) {
 		return new StepResultResponse("result-" + index, index, null, status, durationMs, message, STARTED,
-				null);
+				null, null);
+	}
+
+	static StepResultResponse withCategory(StepResultResponse r, String category) {
+		return new StepResultResponse(r.id(), r.stepIndex(), r.stepId(), r.status(), r.durationMs(), r.message(),
+				r.receivedAt(), r.screenshotUrl(), category);
 	}
 
 }
