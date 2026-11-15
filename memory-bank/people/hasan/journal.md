@@ -872,3 +872,18 @@ PR #171 on 31 October, so that debt was already paid. Took Week 6's pair instead
 
 Next step: nothing of mine is blocked on me. Retarget PR #239 to `main` once #238 merges, take
 galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 or #62).
+- Fifth stretch, 2026-11-15: #63, the failure triage and decision log, PR #251 with all six
+  checks green. The substance was one decision the ADR explicitly left to me: a failure the
+  *agent* caused does not get one of FR-35's five, because RQ2 and RQ5 are computed from that
+  field and a `timeout` that was really "no SelectRow yet" could never be separated out again.
+  The decision log carries the finer reason instead, so every failed step is classified where
+  labelling actually happens. Proposed a sixth contract value rather than bumping a shared
+  schema alone. Found on the way that `RowFailed` and `SelectFailed` each merged "not there"
+  with "the app refused it" — two different findings that a stored result could never split —
+  so both now carry a `kind`.
+- CI caught an import that my local run could not: `python -m pytest` puts the CWD on
+  `sys.path`, bare `pytest` does not. Reproduce the agent job with `.venv/Scripts/pytest.exe`.
+- Next step: nothing is blocked on me. #248, #250 and #251 all wait on reviews; the Windows
+  queue (#247's check B, #24, #54's second-display case) waits for the weekly session. The next
+  unblocked issue of mine is **#66** (the CLI's JUnit XML), which would stack on #250's branch
+  until that merges — worth waiting for rather than stacking again.
