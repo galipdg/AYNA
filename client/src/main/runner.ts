@@ -95,6 +95,7 @@ export class Runner {
     const objects = new Map((await this.deps.repoObjects())?.map((object) => [object.name, object]))
     const chosen = new Map<string, number>()
     const steps = document.steps
+    const titles = await this.windowTitles(steps, objects)
     let status: RunStatus = 'passed'
     let next = 0
     for (; next < steps.length && !this.stopping; next++) {
@@ -115,7 +116,7 @@ export class Runner {
       if (!object) {
         outcome = outcomeOf(`the element "${step.target}" is not in the repository`)
       } else {
-        const window = await this.windowFor(object, timeoutMs, chosen, outcomeOf)
+        const window = await this.windowFor(titles.get(object.name) ?? null, timeoutMs, chosen, outcomeOf)
         if ('stop' in window) break
         if ('outcome' in window) {
           ;({ outcome, agentGone } = window)
@@ -153,15 +154,34 @@ export class Runner {
     this.update({ ...this.run!, status, current: null, choosing: null })
   }
 
+  /**
+   * Each target's window title, read before the first step: a title that comes from the last
+   * capture needs the server, which may go away while the run plays.
+   */
+  private async windowTitles(
+    steps: Step[],
+    objects: Map<string, RepoObjectSummary>,
+  ): Promise<Map<string, string | null>> {
+    const titles = new Map<string, string | null>()
+    for (const { target } of steps) {
+      const object = objects.get(target)
+      if (!object || titles.has(target)) continue
+      const title = windowTitleOf(object)
+      titles.set(
+        target,
+        title ?? windowTitleOf(object, await this.deps.capturedElement(object.id)),
+      )
+    }
+    return titles
+  }
+
   /** The handle to play a step on, the end of the run, or the step's failure. */
   private async windowFor(
-    object: RepoObjectSummary,
+    title: string | null,
     timeoutMs: number,
     chosen: Map<string, number>,
     outcomeOf: (message: string, category?: string | null) => StepOutcome,
   ): Promise<Window> {
-    let title = windowTitleOf(object)
-    if (title === null) title = windowTitleOf(object, await this.deps.capturedElement(object.id))
     const key = title ?? NO_TITLE
     const known = chosen.get(key)
     if (known !== undefined) return { handle: known }

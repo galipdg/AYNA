@@ -69,6 +69,7 @@ interface Setup {
   windows?: ReturnType<typeof win>[] | (() => ReturnType<typeof win>[])
   objects?: RepoObjectSummary[]
   createRun?: RunnerDeps['createRun']
+  capturedElement?: RunnerDeps['capturedElement']
   agentConnected?: boolean
 }
 
@@ -94,7 +95,7 @@ function setup(options: Setup = {}) {
         object('login.passwordInput', LOGIN),
         object('login.okButton', LOGIN),
       ],
-    capturedElement: async () => undefined,
+    capturedElement: options.capturedElement ?? (async () => undefined),
     agentConnected: () => options.agentConnected ?? true,
     agent: {
       async call(method: string) {
@@ -319,5 +320,28 @@ describe('the runner', () => {
     const run = await finished()
     assert.equal(run.status, 'passed', 'play goes on')
     assert.equal(run.problem, 'not-stored')
+  })
+
+  it('reads window titles from the captures once, before the first step', async () => {
+    const objects = [object('login.userInput'), object('login.passwordInput'), object('login.okButton')]
+    const asked: string[] = []
+    let playedBeforeLastRead = false
+    let reads = 0
+    const { runner, played, finished } = setup({
+      objects,
+      capturedElement: async (id) => {
+        asked.push(id)
+        reads++
+        if (played.length > 0) playedBeforeLastRead = true
+        // The server goes away after the run has started (#44 outage check).
+        return reads <= 3 ? { windowTitle: LOGIN } : undefined
+      },
+    })
+    await runner.start('t1', 'v1')
+    const run = await finished()
+    assert.equal(run.status, 'passed')
+    assert.equal(run.choosing, null)
+    assert.deepEqual(asked.sort(), ['id-login.okButton', 'id-login.passwordInput', 'id-login.userInput'])
+    assert.equal(playedBeforeLastRead, false)
   })
 })
