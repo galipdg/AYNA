@@ -1,0 +1,73 @@
+{
+  "suite": "smoke",
+  "description": "Two tests of the sample app (eval/apps/sample) for the nightly Windows job (#67). SC-14's login test, which the wrong-label build (bug1, SC-21) fails, and SC-34's required-name test, which the missing-validation build (bug4) fails.",
+  "tests": [
+    {
+      "name": "Login succeeds",
+      "scenario": "SC-14",
+      "launch": ["--screen", "login"],
+      "window": { "className": "LoginWindow" },
+      "targets": {
+        "login.userNameInput": {
+          "properties": { "automationId": "QApplication.login.userNameInput" },
+          "fallback": { "nearestLabel": "Kullanıcı adı", "controlType": "Edit" }
+        },
+        "login.passwordInput": {
+          "properties": { "automationId": "QApplication.login.passwordInput" },
+          "fallback": { "nearestLabel": "Şifre", "controlType": "Edit" }
+        },
+        "login.loginButton": {
+          "properties": { "automationId": "QApplication.login.loginButton" },
+          "fallback": { "name": "Giriş", "controlType": "Button" }
+        },
+        "login.statusLabel": {
+          "properties": { "automationId": "QApplication.login.statusLabel" }
+        }
+      },
+      "steps": {
+        "version": "0.2",
+        "steps": [
+          { "keyword": "Type", "target": "login.userNameInput", "value": "admin" },
+          { "keyword": "Type", "target": "login.passwordInput", "value": "admin" },
+          { "keyword": "Click", "target": "login.loginButton" },
+          {
+            "keyword": "Verify",
+            "target": "login.statusLabel",
+            "checkpoint": { "property": "name", "operator": "contains", "expected": "Hoş geldiniz" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Detail form refuses an empty name",
+      "scenario": "SC-34",
+      "launch": ["--screen", "detail"],
+      "window": { "className": "DetailWindow" },
+      "targets": {
+        "detail.nameInput": {
+          "properties": { "automationId": "QApplication.detail.nameInput" },
+          "fallback": { "nearestLabel": "Ad Soyad", "controlType": "Edit" }
+        },
+        "detail.saveButton": {
+          "properties": { "automationId": "QApplication.detail.saveButton" },
+          "fallback": { "name": "Kaydet", "controlType": "Button" }
+        },
+        "detail.statusLabel": {
+          "properties": { "automationId": "QApplication.detail.statusLabel" }
+        }
+      },
+      "steps": {
+        "version": "0.2",
+        "steps": [
+          { "keyword": "Type", "target": "detail.nameInput", "value": "" },
+          { "keyword": "Click", "target": "detail.saveButton", "timeoutMs": 5000 },
+          {
+            "keyword": "Verify",
+            "target": "detail.statusLabel",
+            "checkpoint": { "property": "name", "operator": "equals", "expected": "Ad alanı zorunlu" }
+          }
+        ]
+      }
+    }
+  ]
+}
