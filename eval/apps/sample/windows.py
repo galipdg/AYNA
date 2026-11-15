@@ -48,6 +48,12 @@ from PySide6.QtWidgets import (
 
 import model
 import texts as t
+import variant_patch
+
+# Every window's `__init__` ends with `variant_patch.apply_active(self)`, which is a no-op
+# unless `sample_app.py --variant` asked for one of #46's change versions. The hook is in
+# each constructor and not in `sample_app.py` because a screen opens the next one itself: a
+# run that logs in has to reach the *changed* customer list, not the v1 one.
 
 #: How long after a search the grid fills, in milliseconds. SC-18 is built on this delay:
 #: playback has to wait for `openButton` to become enabled instead of sleeping. Configurable
@@ -145,6 +151,8 @@ class LoginWindow(QWidget):
         self.forgot_password_link.clicked.connect(self.on_forgot_password)
         self.exit_button.clicked.connect(self.close)
         self.show_password_check.toggled.connect(self.on_show_password)
+
+        variant_patch.apply_active(self)
 
     def on_forgot_password(self) -> None:
         self.status_label.setText(t.LOGIN_FORGOT_HINT)
@@ -255,6 +263,8 @@ class MainWindow(QWidget):
         self.wizard_button.clicked.connect(self.on_wizard)
 
         self.open_button.setEnabled(False)
+
+        variant_patch.apply_active(self)
 
     def on_search(self) -> None:
         """Clear the grid, then fill it `delay_ms` later: the late control of SC-18."""
@@ -399,6 +409,8 @@ class DetailWindow(QWidget):
         # item, so a hard-coded empty tuple would make an untouched form look edited and
         # the discard dialog would open on the way out of a form nobody changed.
         self._saved = self._values()
+
+        variant_patch.apply_active(self)
 
     def show_customer(self, customer: model.Customer) -> None:
         """Load a row into the form and treat that state as saved."""
@@ -570,6 +582,8 @@ class SettingsWindow(QWidget):
         self.close_button.clicked.connect(self.close)
         self.defaults_button.clicked.connect(self.on_defaults)
 
+        variant_patch.apply_active(self)
+
     def on_save(self) -> None:
         self.status_label.setText(t.SETTINGS_SAVED)
 
@@ -712,6 +726,8 @@ class WizardWindow(QWidget):
         self.copy_button.clicked.connect(self.on_copy)
         self.restart()
 
+        variant_patch.apply_active(self)
+
     def restart(self) -> None:
         """Back to page one, for a second run of the wizard in the same session."""
         self._page = 1
@@ -817,3 +833,5 @@ class QuestionDialog(QDialog):
         self.yes_button.clicked.connect(self.accept)
         self.no_button.clicked.connect(self.reject)
         self.setWindowFlag(Qt.WindowType.WindowContextHelpButtonHint, False)
+
+        variant_patch.apply_active(self)

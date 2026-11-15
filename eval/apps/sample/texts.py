@@ -32,6 +32,18 @@ def title(screen: str) -> str:
     return f"{APP_NAME} {VERSION} - {screen}"
 
 
+def with_variant(window_title: str, variant: str) -> str:
+    """A title with #46's change version in it: `AYNA Örnek 1.0-v2a - Giriş`.
+
+    `variant_patch.py` rewrites the title rather than the windows passing the version down,
+    so the version reaches every window the app opens later without six constructors having
+    to carry it. A title with no version in it (the two dialogs) is returned unchanged.
+    """
+    return window_title.replace(
+        f"{APP_NAME} {VERSION}", f"{APP_NAME} {VERSION}-{variant}", 1
+    )
+
+
 # --- login ---------------------------------------------------------------------------------
 
 LOGIN_SCREEN = "Giriş"

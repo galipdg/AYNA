@@ -2,14 +2,22 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-14, second session (#29's eight-step check run, **first labelled rates**,
-  the `e20` claim retracted). **This copy is the current one** and `main`'s is one merge behind:
-  this branch (#233) is the only place #29's facts live. `origin/main` is merged in as of
-  `d788d64`.
-- Current issue: **#29 (RQ1 recognition measurement harness, Week 4, due 16 Nov)**. Its **three
-  acceptance criteria are all ticked** on the issue and PR #233 is pushed through `afe8343`,
-  but the issue is **deliberately left open** and the PR still has **no `Closes #29`** (the
-  user's call, 2026-11-14): a second independent labeller is owed and two open issues feed #64.
+- Last update: 2026-11-14, third session. `origin/main` is merged in as of `6fd87a9` (#233),
+  and this copy came from `main` whole: this branch's own copy was byte-identical to `main`'s,
+  so it had nothing of its own to lose. **Not complete** — `hasan/40-playback-v1` holds #40's
+  section and `hasan/162-windows-llm-latency` holds #162's, and neither is here. **Whichever
+  merges last keeps every branch's own section**; never resolve this file by taking one side.
+- Current issue on this branch: **#23 (the win32 fallback), PR #236 open and MERGEABLE**,
+  `Closes #23`. The findings are in the "#23" section of the other copies and in
+  `memory-bank/tasks/`; the branch itself is `eval/spikes/` only.
+- **#29 is MERGED and CLOSED, and the second labeller is still owed.** PR **#233** was
+  squash-merged by the user on 2026-11-14 (`6fd87a9`), which **closed #29 even though the PR
+  deliberately carried no `Closes`** — the PR was linked to the issue in GitHub's Development
+  panel, and a linked issue closes on merge regardless of keywords. So **the closing is a side
+  effect of the link, not a judgement that the work is done**: a second independent labeller is
+  still owed and two open issues still feed #64. If that matters, reopen #29 or carry the
+  remainder as a new issue. **Watch for this on every PR that omits `Closes` on purpose** —
+  unlink it in the Development panel, or the omission buys nothing.
 - **The eight-step check is done** — every screen captured with 0 read errors, 6 steps passing
   as written and the other two being the check's own mistakes. HandBrake is now 3 screens
   (`main-summary`, `preferences`, `queue`); `main-video` is **dropped from `apps.json`** because

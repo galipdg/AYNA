@@ -1,0 +1,1403 @@
+{
+  "generatedBy": "eval/apps/sample/ground_truth.py",
+  "app": "AYNA Örnek",
+  "appVersion": "1.0",
+  "uiaRoot": "QApplication",
+  "issue": 46,
+  "variants": {
+    "v2a": {
+      "kind": "rename",
+      "summary": "Captions and accessible names change; every AutomationId stays as it was.",
+      "screens": [
+        "login",
+        "main",
+        "detail"
+      ],
+      "mappings": [
+        {
+          "screen": "login",
+          "control": "loginButton",
+          "kind": "rename",
+          "declared": true,
+          "note": "SC-14 clicks this button; a locator matching its Name loses it.",
+          "old": {
+            "automationId": "QApplication.login.loginButton",
+            "name": "Giriş",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.loginButton",
+            "name": "Oturum aç",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "userNameLabel",
+          "kind": "rename",
+          "declared": true,
+          "note": "The label an input is recognised by when it has no id of its own.",
+          "old": {
+            "automationId": "QApplication.login.userNameLabel",
+            "name": "Kullanıcı adı",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.userNameLabel",
+            "name": "Kullanıcı kodu",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "userNameInput",
+          "kind": "rename",
+          "declared": true,
+          "note": "Renamed with its label, which is how a real release renames a field.",
+          "old": {
+            "automationId": "QApplication.login.userNameInput",
+            "name": "Kullanıcı adı",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.userNameInput",
+            "name": "Kullanıcı kodu",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "main",
+          "control": "searchButton",
+          "kind": "rename",
+          "declared": true,
+          "note": "SC-18 starts here.",
+          "old": {
+            "automationId": "QApplication.main.searchButton",
+            "name": "Ara",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              2
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.searchButton",
+            "name": "Sorgula",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "screen": "main",
+          "control": "openButton",
+          "kind": "rename",
+          "declared": true,
+          "note": "The control SC-18 waits to become enabled.",
+          "old": {
+            "automationId": "QApplication.main.openButton",
+            "name": "Aç",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.main.openButton",
+            "name": "Detay",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "saveButton",
+          "kind": "rename",
+          "declared": true,
+          "note": "SC-34 saves with this button.",
+          "old": {
+            "automationId": "QApplication.detail.saveButton",
+            "name": "Kaydet",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.saveButton",
+            "name": "Güncelle",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "emailLabel",
+          "kind": "rename",
+          "declared": true,
+          "note": "A caption that only grows a word -- the easy case a healer should get.",
+          "old": {
+            "automationId": "QApplication.detail.emailLabel",
+            "name": "E-posta",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.emailLabel",
+            "name": "E-posta adresi",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "emailInput",
+          "kind": "rename",
+          "declared": true,
+          "note": "Renamed with its label.",
+          "old": {
+            "automationId": "QApplication.detail.emailInput",
+            "name": "E-posta",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.emailInput",
+            "name": "E-posta adresi",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        }
+      ]
+    },
+    "v2b": {
+      "kind": "move",
+      "summary": "Controls change place among their siblings; ids, names and types are untouched.",
+      "screens": [
+        "login",
+        "main",
+        "detail"
+      ],
+      "mappings": [
+        {
+          "screen": "login",
+          "control": "loginButton",
+          "kind": "move",
+          "declared": true,
+          "note": "The button row is reversed: first becomes last.",
+          "old": {
+            "automationId": "QApplication.login.loginButton",
+            "name": "Giriş",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.loginButton",
+            "name": "Giriş",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "exitButton",
+          "kind": "move",
+          "declared": true,
+          "note": "And last becomes first, so sibling index and geometry both move.",
+          "old": {
+            "automationId": "QApplication.login.exitButton",
+            "name": "Çıkış",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.exitButton",
+            "name": "Çıkış",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "main",
+          "control": "clearButton",
+          "kind": "move",
+          "declared": true,
+          "note": "Swapped with Yenile: the same two cells, the other way round.",
+          "old": {
+            "automationId": "QApplication.main.clearButton",
+            "name": "Temizle",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              3
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.clearButton",
+            "name": "Temizle",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              1,
+              3
+            ]
+          }
+        },
+        {
+          "screen": "main",
+          "control": "refreshButton",
+          "kind": "move",
+          "declared": true,
+          "note": "A grid-layout move, which changes the cell and not the parent.",
+          "old": {
+            "automationId": "QApplication.main.refreshButton",
+            "name": "Yenile",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              1,
+              3
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.refreshButton",
+            "name": "Yenile",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              3
+            ]
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "departmentCombo",
+          "kind": "move",
+          "declared": true,
+          "note": "The Departman row becomes the form's first row, label and all.",
+          "old": {
+            "automationId": "QApplication.detail.departmentCombo",
+            "name": "Departman",
+            "value": "Kalite Güvence",
+            "className": "QComboBox",
+            "controlType": "ComboBox",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.departmentCombo",
+            "name": "Departman",
+            "value": "Kalite Güvence",
+            "className": "QComboBox",
+            "controlType": "ComboBox",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "departmentLabel",
+          "kind": "move",
+          "declared": false,
+          "note": "",
+          "old": {
+            "automationId": "QApplication.detail.departmentLabel",
+            "name": "Departman",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.departmentLabel",
+            "name": "Departman",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "emailInput",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.detail.emailInput",
+            "name": "E-posta",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.emailInput",
+            "name": "E-posta",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 2,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "emailLabel",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.detail.emailLabel",
+            "name": "E-posta",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.emailLabel",
+            "name": "E-posta",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 2,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "nameInput",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.detail.nameInput",
+            "name": "Ad Soyad",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.nameInput",
+            "name": "Ad Soyad",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "nameLabel",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.detail.nameLabel",
+            "name": "Ad Soyad",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.nameLabel",
+            "name": "Ad Soyad",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        }
+      ]
+    },
+    "v2c": {
+      "kind": "retype",
+      "summary": "Five controls become another class, so their UIA ControlType changes.",
+      "screens": [
+        "login",
+        "main",
+        "detail"
+      ],
+      "mappings": [
+        {
+          "screen": "login",
+          "control": "headingLabel",
+          "kind": "retype",
+          "declared": true,
+          "note": "Text -> Edit: the heading's string moves from the Name to the Value.",
+          "old": {
+            "automationId": "QApplication.login.headingLabel",
+            "name": "Kullanıcı girişi",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.headingLabel",
+            "name": "",
+            "value": "Kullanıcı girişi",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "serverCombo",
+          "kind": "retype",
+          "declared": true,
+          "note": "ComboBox -> Edit, the shape a Select step cannot play at all.",
+          "old": {
+            "automationId": "QApplication.login.serverCombo",
+            "name": "Sunucu",
+            "value": "Yerel sunucu",
+            "className": "QComboBox",
+            "controlType": "ComboBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.serverCombo",
+            "name": "Sunucu",
+            "value": "Yerel sunucu",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "rememberMeCheck",
+          "kind": "retype",
+          "declared": true,
+          "note": "CheckBox -> ComboBox: a Click step has to become a Select step.",
+          "old": {
+            "automationId": "QApplication.login.rememberMeCheck",
+            "name": "Beni hatırla",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 3,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.rememberMeCheck",
+            "name": "Beni hatırla",
+            "value": "Hayır",
+            "className": "QComboBox",
+            "controlType": "ComboBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 3,
+            "cell": null
+          }
+        },
+        {
+          "screen": "main",
+          "control": "resultCountLabel",
+          "kind": "retype",
+          "declared": true,
+          "note": "The label a result count is read from becomes a read-only field.",
+          "old": {
+            "automationId": "QApplication.main.resultCountLabel",
+            "name": "",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 3,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.main.resultCountLabel",
+            "name": "",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 3,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "statusLabel",
+          "kind": "retype",
+          "declared": true,
+          "note": "Same for the form's status line, which SC-34 verifies.",
+          "old": {
+            "automationId": "QApplication.detail.statusLabel",
+            "name": "",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 4,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.statusLabel",
+            "name": "",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 4,
+            "cell": null
+          }
+        }
+      ]
+    },
+    "v2d": {
+      "kind": "reparent",
+      "summary": "Controls move into new containers, which in Qt also lengthens their ids.",
+      "screens": [
+        "login",
+        "main",
+        "detail"
+      ],
+      "mappings": [
+        {
+          "screen": "login",
+          "control": "userNameInput",
+          "kind": "reparent",
+          "declared": true,
+          "note": "Two fields are grouped, so both ids gain a level.",
+          "old": {
+            "automationId": "QApplication.login.userNameInput",
+            "name": "Kullanıcı adı",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.credentialsGroup.userNameInput",
+            "name": "Kullanıcı adı",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login.credentialsGroup",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "userNameLabel",
+          "kind": "reparent",
+          "declared": false,
+          "note": "",
+          "old": {
+            "automationId": "QApplication.login.userNameLabel",
+            "name": "Kullanıcı adı",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.credentialsGroup.userNameLabel",
+            "name": "Kullanıcı adı",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login.credentialsGroup",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "passwordInput",
+          "kind": "reparent",
+          "declared": true,
+          "note": "Into the same container, as a release that groups a form would do.",
+          "old": {
+            "automationId": "QApplication.login.passwordInput",
+            "name": "Şifre",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.credentialsGroup.passwordInput",
+            "name": "Şifre",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login.credentialsGroup",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "passwordLabel",
+          "kind": "reparent",
+          "declared": false,
+          "note": "",
+          "old": {
+            "automationId": "QApplication.login.passwordLabel",
+            "name": "Şifre",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.credentialsGroup.passwordLabel",
+            "name": "Şifre",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login.credentialsGroup",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "forgotPasswordLink",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.login.forgotPasswordLink",
+            "name": "Şifremi unuttum",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 5,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.forgotPasswordLink",
+            "name": "Şifremi unuttum",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 6,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "rememberMeCheck",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.login.rememberMeCheck",
+            "name": "Beni hatırla",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 3,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.rememberMeCheck",
+            "name": "Beni hatırla",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 4,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "serverCombo",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.login.serverCombo",
+            "name": "Sunucu",
+            "value": "Yerel sunucu",
+            "className": "QComboBox",
+            "controlType": "ComboBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.serverCombo",
+            "name": "Sunucu",
+            "value": "Yerel sunucu",
+            "className": "QComboBox",
+            "controlType": "ComboBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "serverLabel",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.login.serverLabel",
+            "name": "Sunucu",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.serverLabel",
+            "name": "Sunucu",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "showPasswordCheck",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.login.showPasswordCheck",
+            "name": "Şifreyi göster",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.showPasswordCheck",
+            "name": "Şifreyi göster",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 3,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "statusLabel",
+          "kind": "shifted",
+          "declared": false,
+          "note": "not changed itself; moved because another control's change did",
+          "old": {
+            "automationId": "QApplication.login.statusLabel",
+            "name": "",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 6,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.statusLabel",
+            "name": "",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 7,
+            "cell": null
+          }
+        },
+        {
+          "screen": "main",
+          "control": "customerGrid",
+          "kind": "reparent",
+          "declared": true,
+          "note": "Every grid and row step points at this control (#147).",
+          "old": {
+            "automationId": "QApplication.main.customerGrid",
+            "name": "Müşteri listesi",
+            "value": "",
+            "className": "QTableWidget",
+            "controlType": "Table",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.main.resultsGroup.customerGrid",
+            "name": "Müşteri listesi",
+            "value": "",
+            "className": "QTableWidget",
+            "controlType": "Table",
+            "parentPath": "QApplication.main.resultsGroup",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "activeCheck",
+          "kind": "reparent",
+          "declared": true,
+          "note": "A check box wrapped on its own: parentPath changes, nothing else does.",
+          "old": {
+            "automationId": "QApplication.detail.activeCheck",
+            "name": "Etkin",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.flagsGroup.activeCheck",
+            "name": "Etkin",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.detail.flagsGroup",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        }
+      ]
+    },
+    "v2e": {
+      "kind": "id-removed",
+      "summary": "Six controls lose their AutomationId; name, type and place stay as they were.",
+      "screens": [
+        "login",
+        "main",
+        "detail"
+      ],
+      "mappings": [
+        {
+          "screen": "login",
+          "control": "loginButton",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "A button that can now only be found by its caption.",
+          "old": {
+            "automationId": "QApplication.login.loginButton",
+            "name": "Giriş",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.QPushButton",
+            "name": "Giriş",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "login",
+          "control": "passwordInput",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "An input with no visible text of its own: name, label or place.",
+          "old": {
+            "automationId": "QApplication.login.passwordInput",
+            "name": "Şifre",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 1,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.login.QLineEdit",
+            "name": "Şifre",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.login",
+            "layoutIndex": 1,
+            "cell": null
+          }
+        },
+        {
+          "screen": "main",
+          "control": "searchButton",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "SC-18's first step.",
+          "old": {
+            "automationId": "QApplication.main.searchButton",
+            "name": "Ara",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              2
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.QPushButton",
+            "name": "Ara",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "screen": "main",
+          "control": "customerGrid",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "The grid: its Name is the heading, which another control also carries.",
+          "old": {
+            "automationId": "QApplication.main.customerGrid",
+            "name": "Müşteri listesi",
+            "value": "",
+            "className": "QTableWidget",
+            "controlType": "Table",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.main.QTableWidget",
+            "name": "Müşteri listesi",
+            "value": "",
+            "className": "QTableWidget",
+            "controlType": "Table",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 2,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "saveButton",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "A caption two screens share (Ayarlar also has Kaydet).",
+          "old": {
+            "automationId": "QApplication.detail.saveButton",
+            "name": "Kaydet",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.QPushButton",
+            "name": "Kaydet",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "nameInput",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "The required field of SC-34.",
+          "old": {
+            "automationId": "QApplication.detail.nameInput",
+            "name": "Ad Soyad",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.QLineEdit",
+            "name": "Ad Soyad",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        }
+      ]
+    },
+    "v2f": {
+      "kind": "combined",
+      "summary": "One release doing all five at once, plus a control that is simply gone.",
+      "screens": [
+        "main",
+        "detail"
+      ],
+      "mappings": [
+        {
+          "screen": "main",
+          "control": "searchButton",
+          "kind": "rename",
+          "declared": true,
+          "note": "A shorter caption than v2a's, so the two versions cannot be confused.",
+          "old": {
+            "automationId": "QApplication.main.searchButton",
+            "name": "Ara",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              2
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.searchButton",
+            "name": "Bul",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "screen": "main",
+          "control": "openButton",
+          "kind": "id-removed",
+          "declared": true,
+          "note": "The id goes while the caption stays: name is all that is left.",
+          "old": {
+            "automationId": "QApplication.main.openButton",
+            "name": "Aç",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 0,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.main.QPushButton",
+            "name": "Aç",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        },
+        {
+          "screen": "main",
+          "control": "clearButton",
+          "kind": "move",
+          "declared": true,
+          "note": "The same swap as v2b, on a screen that is changed in four other ways.",
+          "old": {
+            "automationId": "QApplication.main.clearButton",
+            "name": "Temizle",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              3
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.clearButton",
+            "name": "Temizle",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              1,
+              3
+            ]
+          }
+        },
+        {
+          "screen": "main",
+          "control": "refreshButton",
+          "kind": "move",
+          "declared": true,
+          "note": "Its other half.",
+          "old": {
+            "automationId": "QApplication.main.refreshButton",
+            "name": "Yenile",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              1,
+              3
+            ]
+          },
+          "new": {
+            "automationId": "QApplication.main.refreshButton",
+            "name": "Yenile",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": null,
+            "cell": [
+              0,
+              3
+            ]
+          }
+        },
+        {
+          "screen": "main",
+          "control": "wizardButton",
+          "kind": "removed",
+          "declared": true,
+          "note": "Gone with the feature. The right answer here is to fail, not to heal.",
+          "old": {
+            "automationId": "QApplication.main.wizardButton",
+            "name": "Yeni kayıt sihirbazı",
+            "value": "",
+            "className": "QPushButton",
+            "controlType": "Button",
+            "parentPath": "QApplication.main",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": null
+        },
+        {
+          "screen": "detail",
+          "control": "statusLabel",
+          "kind": "retype",
+          "declared": true,
+          "note": "Text -> Edit on the line SC-34 verifies.",
+          "old": {
+            "automationId": "QApplication.detail.statusLabel",
+            "name": "",
+            "value": "",
+            "className": "QLabel",
+            "controlType": "Text",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 4,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.statusLabel",
+            "name": "",
+            "value": "",
+            "className": "QLineEdit",
+            "controlType": "Edit",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 4,
+            "cell": null
+          }
+        },
+        {
+          "screen": "detail",
+          "control": "activeCheck",
+          "kind": "reparent",
+          "declared": true,
+          "note": "Re-parented, so its id gains a level while its name stays.",
+          "old": {
+            "automationId": "QApplication.detail.activeCheck",
+            "name": "Etkin",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.detail",
+            "layoutIndex": 2,
+            "cell": null
+          },
+          "new": {
+            "automationId": "QApplication.detail.flagsGroup.activeCheck",
+            "name": "Etkin",
+            "value": "",
+            "className": "QCheckBox",
+            "controlType": "CheckBox",
+            "parentPath": "QApplication.detail.flagsGroup",
+            "layoutIndex": 0,
+            "cell": null
+          }
+        }
+      ]
+    }
+  }
+}
