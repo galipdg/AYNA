@@ -2,29 +2,39 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, fifth stretch. This copy is on **`hasan/63-failure-triage`**,
-  branched from `main` at `02d44d5`, and carries #63's section. Week 6's pair and #40, #162 and
-  #23 are all **merged**; the copies still behind `main` are `hasan/54-screenshot-per-step`
-  (#54's section), `hasan/61-cli-runner` (#61's) and this one. **Whichever merges last keeps
-  every branch's own section** -- never resolve this file by taking one side, and when the
-  resolution is "ours", check first that the other side holds no fact that lives nowhere else:
-  that is how #236's four #29 bullets nearly went missing today.
-- Current issue: **#63 (failure triage + decision log), PR #251**, all six checks green.
-  **Three PRs of mine are open and every one waits on others, not on me**: #251 (#63),
-  **#250** (#61, the CLI runner, run for real against the sample app *and* the real server) and
-  **#248** (#54, omer's two change-request items both done).
-- **My review queue is empty.** All six of omer's PRs reviewed today: approved #241, #243,
-  #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as Planned
-  although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have, and
-  §6.2's Windows row contradicts §6.3 about the `eval` job).
-- **Next, when something is needed:** **#66** (the CLI's JUnit XML) is the only unblocked one
-  left, and it would have to stack on `hasan/61-cli-runner` until #250 merges -- worth waiting
-  for rather than stacking again, after what #239 cost. **#62** needs omer's #44 (PR #247) on
-  `main`. The Windows queue -- #247's check B, #24's pick hotkey, #54's second-display case --
-  waits for the weekly session.
-- **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/40-playback-v1` for PR #237):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/40-playback-v1`" are that branch's copy, unedited; reconcile them at your next session end.
+- Last update: 2026-11-15, sixth stretch. On **`hasan/64-rq1-report`**, with `origin/main`
+  merged as of `0c9896c`. **Nearly everything merged today**: #46, #47, #40, #162, #23, #52,
+  and then #63 (#251), **#61 (#250)**, #44 (#247), #24 (#234), #68 (#241), #17 (#243),
+  #67 (#249). The only copies of this file still behind `main` are
+  `hasan/54-screenshot-per-step` (#54's section) and this one.
+- Current issue: **#64 (RQ1 report), PR #253**, opened as *Part of #64* — it does **not** close
+  it. All six checks green. My other open PR is **#248 (#54)**, whose two change-request items
+  are both done and which waits on omer's re-review and galip.
+- **#64's remaining work is labelling, not code**: five captured screens are unlabelled
+  (HandBrake `main-summary`, `preferences`; KeePass 2 `main`, `entry-editor`, `open-database`),
+  #29 still owes a second labeller, and KeePassXC has no captures at all.
+- **My review queue was empty today** after approving #241, #243, #234, #249 and #247 and
+  requesting changes on #242 (SDD v0.5 — three stale status rows). Check it again at session
+  start.
+- **Environment: after #250 merged, `agent/.venv` needed `pip install -e ".[dev]"` again** or
+  three `ayna_cli` test files would not collect. Already done here; a fresh clone is fine.
 
-## #63 -- the triage rule, and the one decision it had to make (2026-11-15)
+## #64 -- RQ1's report, and the two rules it is built on (2026-11-15)
+
+PR #253. `memory-bank/tasks/64-rq1-report.md` has it all; four things not to re-derive:
+
+- **The target is judged on the interval's lower bound, never the point estimate.** 39 of 41 is
+  95.1 % and the Wilson interval reaches 83.9 %, so **NFR-27 is reported as not demonstrated**.
+- **Only labelled screens enter a rate, and a verdict never appears without its coverage** --
+  the table says "met on 1 of 4 screens", because a bare "met" is what gets quoted. Both rules
+  exist because a rate of mine was quoted out of scope once and retracted.
+- **`wilson()` lives in `eval/rq1/report.py`** and is the only implementation in the repo; RQ2
+  (#69) and RQ3 (#77) will want it. It is checked against numeric root-finding on the score
+  equation, not against its own output. Asked galip whether to move it somewhere shared.
+- **A test pins the committed `report.md` to the generator's output**, so it cannot drift from
+  the labels. Regenerate with `.venv/Scripts/python.exe eval/rq1/report.py`.
+
+#63 -- the triage rule, and the one decision it had to make (2026-11-15)
 
 PR #251. `memory-bank/tasks/63-failure-triage.md` has the mapping; what not to re-derive:
 

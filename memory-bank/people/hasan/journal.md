@@ -899,3 +899,18 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   (#247's check B, #24, #54's second-display case) waits for the weekly session. After that the
   open Week 8 issue is **#62**, which needs omer's #44 (PR #247) merged first, or **#66** (the
   CLI's JUnit XML), which is mine and unblocked by #250.
+- Sixth stretch, 2026-11-15: #64's RQ1 report, PR #253, opened as *Part of #64* rather than
+  closing it — the generator is done but only 2 of 7 captured screens are labelled, so NFR-27
+  is answered honestly as "not demonstrated" (39/41 = 95.1 %, Wilson [83.9, 98.7]) rather than
+  claimed. Two rules carry the design: judge on the lower bound, and never print a verdict
+  without its coverage. Checked the statistic against numeric root-finding on the equation the
+  closed form solves — and my own six hand-written expectations were what turned out wrong.
+- Looking at the measured rows also corrected a `learnings.md` entry of mine: the nameless WPF
+  MenuItems are proposed as `{className}` alone, not `{className, parentPath}`, because
+  `propose` keeps a property only while it narrows the match. #73 would have looked for a
+  signal that was never proposed.
+- Almost everything merged today, including my #61 (#250) and #63 (#251). After #250, the
+  existing `agent/.venv` needed `pip install -e` again before `ayna_cli`'s tests would collect.
+- Next step: nothing is blocked on me. #248 and #253 wait on reviews. The remaining #64 work is
+  labelling (five screens, plus the second labeller #29 owes). **#66** (the CLI's JUnit XML) is
+  now unblocked for real, since #250 is on `main`.

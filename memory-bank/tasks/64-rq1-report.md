@@ -40,8 +40,10 @@ report must not let those two be read as the same thing.
       generator produces, so it can never drift from the labels it summarises
 - [x] 33 new tests; `eval` is **242 passed** under CI's own invocation
       (`eval/../.venv/Scripts/pytest.exe` from `eval/`, not `python -m pytest`), ruff clean
-- [ ] Commit, PR
-- Next step: commit and open the PR.
+- [x] **PR #253 open** as *Part of #64* (it does not close it), both reviews requested, all
+      six checks green
+- Next step: nothing of mine on the code. What the criterion still needs is labelling, not
+  code: five captured screens, the second labeller #29 owes, and a decision on KeePassXC.
 
 ## What the report says today
 
