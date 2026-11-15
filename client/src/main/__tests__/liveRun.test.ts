@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import type { RunSummary } from '../../shared/api.ts'
-import { fromSummary, stepOutcomeFrom, withOutcome, withSummary } from '../../shared/liveRun.ts'
+import {
+  fromSummary,
+  rowState,
+  runBarState,
+  stepOutcomeFrom,
+  withOutcome,
+  withSummary,
+} from '../../shared/liveRun.ts'
 
 const summary: RunSummary = {
   id: 'r1',
@@ -86,5 +93,43 @@ describe('live run', () => {
     assert.equal(stepOutcomeFrom({ stepIndex: 0, status: 'skipped' }), null)
     assert.equal(stepOutcomeFrom({ status: 'passed' }), null)
     assert.equal(stepOutcomeFrom(null), null)
+  })
+
+  it('runBarState names the failed step', () => {
+    let run = fromSummary({ ...summary, status: 'failed' }, true)
+    run = withOutcome(run, outcome(0, 'passed'))
+    run = withOutcome(run, { ...outcome(1, 'failed'), message: 'not there', category: 'timeout' })
+    run = withOutcome(run, outcome(2, 'notRun'))
+    const bar = runBarState(run, Date.parse(summary.startedAt) + 4000)
+    assert.equal(bar.kind, 'failed')
+    assert.equal(bar.stepNumber, 2)
+    assert.equal(bar.failed?.message, 'not there')
+    const running = runBarState(
+      { ...fromSummary(summary, true), current: { stepIndex: 1, startedAt: 0, timeoutMs: 10_000 } },
+      Date.parse(summary.startedAt) + 7000,
+    )
+    assert.deepEqual([running.kind, running.stepNumber, running.elapsedMs], ['running', 2, 7000])
+    const stopped = runBarState(
+      withOutcome(withOutcome(fromSummary({ ...summary, status: 'aborted' }, true), outcome(0, 'passed')), outcome(1, 'notRun')),
+      0,
+    )
+    assert.deepEqual([stopped.kind, stopped.stepNumber], ['aborted', 2])
+    const choosing = runBarState(
+      { ...fromSummary(summary, true), choosing: { title: 'X', windows: [] } },
+      0,
+    )
+    assert.equal(choosing.kind, 'choosing')
+  })
+
+  it('rowState shows skipped after a failure and playing for the current step', () => {
+    assert.equal(rowState(null, 0, 0).kind, 'none')
+    let run = fromSummary(summary, true)
+    run = withOutcome(run, outcome(0, 'failed'))
+    run = withOutcome(run, outcome(1, 'notRun'))
+    assert.equal(rowState(run, 0, 0).kind, 'failed')
+    assert.equal(rowState(run, 1, 0).kind, 'skipped')
+    assert.equal(rowState(run, 2, 0).kind, 'pending')
+    const playing = rowState({ ...fromSummary(summary, true), current: { stepIndex: 0, startedAt: 1000, timeoutMs: 20_000 } }, 0, 3100)
+    assert.deepEqual([playing.kind, playing.waitedMs, playing.timeoutMs], ['playing', 2100, 20_000])
   })
 })

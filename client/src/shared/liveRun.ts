@@ -97,5 +97,59 @@ export function stepOutcomeFrom(value: unknown): StepOutcome | null {
 /** The answer to Run: the run exists and plays, or why it did not start. */
 export type StartRunResult =
   | { ok: true; runId: string }
-  | { ok: false; reason: 'busy' | 'agent-not-connected' }
+  | { ok: false; reason: 'busy' }
+  | { ok: false; reason: 'agent-not-connected' }
   | RunsError
+
+export interface RunBarState {
+  kind: 'running' | 'choosing' | 'passed' | 'failed' | 'aborted'
+  /** The step the bar talks about, counted from 1: being played, failed, or first not run. */
+  stepNumber: number
+  /** Since the run started; `now` and `startedAt` are wall-clock times. */
+  elapsedMs: number
+  failed?: StepOutcome
+}
+
+/** What the run bar above the steps says (wireframe 8). */
+export function runBarState(run: LiveRun, now: number): RunBarState {
+  const elapsedMs = Math.max(0, now - Date.parse(run.startedAt))
+  if (run.status === 'running') {
+    const stepIndex = run.current?.stepIndex ?? run.outcomes.length
+    return { kind: run.choosing ? 'choosing' : 'running', stepNumber: stepIndex + 1, elapsedMs }
+  }
+  const failed = run.outcomes.find((outcome) => outcome.status === 'failed')
+  if (run.status === 'failed' || (run.status === 'aborted' && failed)) {
+    const kind = run.status
+    return { kind, stepNumber: (failed?.stepIndex ?? 0) + 1, elapsedMs, ...(failed && { failed }) }
+  }
+  if (run.status === 'aborted') {
+    const notRun = run.outcomes.find((outcome) => outcome.status === 'notRun')
+    return { kind: 'aborted', stepNumber: (notRun?.stepIndex ?? run.outcomes.length) + 1, elapsedMs }
+  }
+  return { kind: 'passed', stepNumber: run.stepCount, elapsedMs }
+}
+
+export interface RowState {
+  kind: 'none' | 'pending' | 'playing' | 'passed' | 'failed' | 'skipped'
+  outcome?: StepOutcome
+  waitedMs?: number
+  timeoutMs?: number
+}
+
+/** What a step's Result cell shows; `now` is a reading of the same clock as `current.startedAt`. */
+export function rowState(run: LiveRun | null, stepIndex: number, now: number): RowState {
+  if (!run) return { kind: 'none' }
+  const outcome = run.outcomes.find((known) => known.stepIndex === stepIndex)
+  if (outcome) {
+    const kind = outcome.status === 'notRun' ? 'skipped' : outcome.status
+    return { kind, outcome }
+  }
+  if (run.current?.stepIndex === stepIndex) {
+    return {
+      kind: 'playing',
+      waitedMs: Math.max(0, now - run.current.startedAt),
+      timeoutMs: run.current.timeoutMs,
+    }
+  }
+  return { kind: 'pending' }
+}

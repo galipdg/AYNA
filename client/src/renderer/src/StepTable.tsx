@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from 'react'
 import type { RepoObjectSummary } from '../../shared/api.ts'
+import type { RowState } from '../../shared/liveRun.ts'
 import {
   CHECK_PROPERTIES,
   GRID_CONTROL_TYPES,
@@ -31,7 +32,7 @@ import {
   type StepProblem,
 } from '../../shared/steps.ts'
 import Resizer from './Resizer.tsx'
-import { serverText, strings } from './strings.ts'
+import { formatDuration, serverText, strings } from './strings.ts'
 
 /** The saved elements by screen (the part of the name before the dot), in name order. */
 function byScreen(objects: RepoObjectSummary[]): [string, RepoObjectSummary[]][] {
@@ -89,6 +90,8 @@ export default function StepTable({
   problems,
   objects,
   onChange,
+  readOnly = false,
+  results = null,
 }: {
   drafts: DraftStep[]
   problems: StepProblem[]
@@ -96,6 +99,10 @@ export default function StepTable({
   objects: RepoObjectSummary[] | null
   /** `typedField` names a text field, so keystrokes in it undo as one change. */
   onChange: (drafts: DraftStep[], typedField?: string) => void
+  /** While a run plays: nothing can be changed or moved (wireframe 8). */
+  readOnly?: boolean
+  /** Each step's run result, in step order; null hides the Result column. */
+  results?: RowState[] | null
 }) {
   const [dragFrom, setDragFrom] = useState<number>()
   const [dropAt, setDropAt] = useState<number>()
@@ -175,11 +182,14 @@ export default function StepTable({
   }
 
   return (
-    <>
+    <fieldset className="steps-fieldset" disabled={readOnly}>
       <table
         className="steps"
         aria-label={strings.stepsLabel}
-        style={{ minWidth: OTHER_COLUMNS_WIDTH + widths.action + widths.element }}
+        style={{
+          minWidth:
+            OTHER_COLUMNS_WIDTH + widths.action + widths.element + (results ? RESULT_WIDTH : 0),
+        }}
       >
         <colgroup>
           <col className="col-handle" />
@@ -188,6 +198,7 @@ export default function StepTable({
           <col style={{ width: widths.element }} />
           <col className="col-value" />
           <col className="col-timeout" />
+          {results && <col className="col-result" />}
           <col className="col-actions" />
         </colgroup>
         <thead>
@@ -218,6 +229,7 @@ export default function StepTable({
             </th>
             <th scope="col">{strings.stepsHeaderValue}</th>
             <th scope="col">{strings.stepsHeaderTimeout}</th>
+            {results && <th scope="col">{strings.runHeaderResult}</th>}
             <th scope="col">
               <span className="visually-hidden">{strings.stepsRemove}</span>
             </th>
@@ -260,7 +272,7 @@ export default function StepTable({
               <tr>
                 <td className="step-handle">
                   <span
-                    draggable
+                    draggable={!readOnly}
                     title={strings.stepsDrag}
                     aria-hidden="true"
                     onDragStart={(event) => {
@@ -357,6 +369,7 @@ export default function StepTable({
                     <span className="hint">{strings.stepsSeconds}</span>
                   </div>
                 </td>
+                {results && <ResultCell state={results[index] ?? { kind: 'pending' }} />}
                 <td className="step-actions">
                   <button
                     type="button"
@@ -389,10 +402,16 @@ export default function StepTable({
                   </button>
                 </td>
               </tr>
+              {results?.[index]?.kind === 'failed' && results[index].outcome?.message && (
+                <tr className="step-failure">
+                  <td />
+                  <td colSpan={results ? 7 : 6}>{serverText(results[index].outcome!.message!)}</td>
+                </tr>
+              )}
               {mine.length > 0 && (
                 <tr className="step-problems">
                   <td />
-                  <td colSpan={6}>
+                  <td colSpan={results ? 7 : 6}>
                     <ul id={problemId}>
                       {mine.map((problem) => (
                         <li key={`${problem.code} ${problem.message ?? ''}`}>
@@ -410,8 +429,40 @@ export default function StepTable({
       <button type="button" className="steps-add" onClick={add}>
         + {strings.stepsAdd}
       </button>
-    </>
+    </fieldset>
   )
+}
+
+const RESULT_WIDTH = 150
+
+/** A step's run result (wireframe 8): ✓ time, ● waiting, ✕ category, – skipped, · not yet. */
+function ResultCell({ state }: { state: RowState }) {
+  const { kind, outcome } = state
+  if (kind === 'passed') {
+    return (
+      <td className="step-result result-passed">
+        ✓ {outcome?.durationMs !== null && outcome ? formatDuration(outcome.durationMs) : ''}
+      </td>
+    )
+  }
+  if (kind === 'failed') {
+    const category = outcome?.category
+    return (
+      <td className="step-result result-failed">
+        ✕ {category ? (strings.runCategories[category] ?? category) : strings.runsStatus.failed}
+      </td>
+    )
+  }
+  if (kind === 'playing') {
+    return (
+      <td className="step-result result-playing">
+        ●{' '}
+        {strings.runWaiting(formatDuration(state.waitedMs ?? 0), formatDuration(state.timeoutMs ?? 0))}
+      </td>
+    )
+  }
+  if (kind === 'skipped') return <td className="step-result result-skipped">– {strings.runSkipped}</td>
+  return <td className="step-result result-pending">·</td>
 }
 
 /** What the action needs: text to type, an item to choose, a row, a check, or nothing. */

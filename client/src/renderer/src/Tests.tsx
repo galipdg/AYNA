@@ -10,6 +10,7 @@ import {
 } from 'react'
 import type {
   Application,
+  AppVersion,
   RepoObjectSummary,
   TestCase,
   TestError,
@@ -41,8 +42,10 @@ import { foldText } from '../../shared/tree.ts'
 import { LanguageContext } from './Language.tsx'
 import Page from './Page.tsx'
 import Resizer from './Resizer.tsx'
+import RunBar, { useLiveRun } from './RunBar.tsx'
 import StepTable, { problemText } from './StepTable.tsx'
-import { formatDate, formatTime, strings, testErrorText } from './strings.ts'
+import { formatDate, formatTime, runsErrorText, strings, testErrorText } from './strings.ts'
+import { rowState } from '../../shared/liveRun.ts'
 
 type List =
   | { state: 'loading' }
@@ -66,9 +69,12 @@ let chosenListWidth: number = LIST_WIDTH.initial
 export default function Tests({
   app,
   active,
+  version,
   onSessionEnded,
 }: {
   app: Application
+  /** The version chosen in the top bar; a run plays against it (#44). */
+  version?: AppVersion
   /** Whether the place is shown; it stays mounted so unsaved steps survive a visit elsewhere. */
   active: boolean
   onSessionEnded: () => void
@@ -305,6 +311,7 @@ export default function Tests({
             <TestEditor
               key={selectedId}
               id={selectedId}
+              version={version}
               objects={objects}
               onDirty={setDirty}
               onChanged={() => setList({ state: 'loading' })}
@@ -355,6 +362,7 @@ function renamedFingerprint(text: string, renames: Map<string, string>): string 
 /** One test: its name and its steps, edited in place and saved together. */
 function TestEditor({
   id,
+  version,
   objects,
   onDirty,
   onChanged,
@@ -362,6 +370,7 @@ function TestEditor({
   onSessionEnded,
 }: {
   id: string
+  version?: AppVersion
   objects: Objects
   onDirty: (dirty: boolean) => void
   onChanged: () => void
@@ -381,6 +390,8 @@ function TestEditor({
   const [mode, setMode] = useState<Mode>('view')
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
+  const live = useLiveRun(id)
+  const [starting, setStarting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -513,7 +524,45 @@ function TestEditor({
   }
 
   const first = problems[0]
-  const canSave = dirty && !busy && !first
+  const running = live.run?.status === 'running'
+  const canSave = dirty && !busy && !first && !running
+  const runBlocker = running
+    ? null
+    : dirty
+      ? strings.runNeedsSave
+      : drafts.length === 0
+        ? strings.runNeedsSteps
+        : first
+          ? strings.runNeedsFix
+          : !version
+            ? strings.runNeedsVersion
+            : live.agent !== 'connected'
+              ? strings.runNeedsAgent
+              : null
+  // Results belong to the steps that were played: hidden once they are edited.
+  const results =
+    live.run && !dirty && live.run.stepCount === drafts.length
+      ? drafts.map((_, index) => rowState(live.run, index, live.now))
+      : null
+
+  function startRun() {
+    if (!version) return
+    setErrors([])
+    setNotice(undefined)
+    setStarting(true)
+    window.ayna
+      .startRun(id, version.id)
+      .then((result) => {
+        if (result.ok) return
+        if (result.reason === 'unauthorized') return onSessionEnded()
+        if (result.reason === 'busy' || result.reason === 'agent-not-connected') {
+          return setErrors([strings.runStartErrors[result.reason]])
+        }
+        setErrors([runsErrorText(result)])
+      })
+      .catch(() => setErrors([strings.bridgeError]))
+      .finally(() => setStarting(false))
+  }
 
   function save() {
     if (!canSave) return
@@ -630,7 +679,7 @@ function TestEditor({
               <button
                 type="button"
                 title={strings.testsUndoHint}
-                disabled={history.past.length === 0}
+                disabled={history.past.length === 0 || running}
                 onClick={() => travel(undo)}
               >
                 {strings.testsUndo}
@@ -638,13 +687,14 @@ function TestEditor({
               <button
                 type="button"
                 title={strings.testsRedoHint}
-                disabled={history.future.length === 0}
+                disabled={history.future.length === 0 || running}
                 onClick={() => travel(redo)}
               >
                 {strings.testsRedo}
               </button>
               <button
                 type="button"
+                disabled={running}
                 onClick={() => {
                   setName(test.name)
                   setErrors([])
@@ -664,11 +714,38 @@ function TestEditor({
               >
                 {busy ? strings.testsSaving : strings.testsSave}
               </button>
+              <button
+                type="button"
+                className="btn-main"
+                onClick={startRun}
+                disabled={running || starting || busy || runBlocker !== null}
+                title={runBlocker ?? ''}
+              >
+                {starting ? strings.runStarting : strings.runRun}
+              </button>
             </div>
           </>
         )}
       </header>
 
+      {live.run && (
+        <RunBar
+          run={live.run}
+          now={live.now}
+          onStop={() => void window.ayna.stopRun()}
+          onChoose={(handle) => void window.ayna.chooseRunWindow(handle)}
+          onDetails={() => {
+            const runId = live.run!.runId
+            window.ayna
+              .openReport(runId)
+              .then((result) => {
+                if (!result.ok && result.reason === 'unauthorized') return onSessionEnded()
+                if (!result.ok && result.reason !== 'cancelled') setErrors([runsErrorText(result)])
+              })
+              .catch(() => setErrors([strings.bridgeError]))
+          }}
+        />
+      )}
       {notice && (
         <p className="message message-success" role="status">
           {notice}
@@ -695,6 +772,8 @@ function TestEditor({
           problems={problems}
           objects={objects.state === 'loaded' ? objects.objects : null}
           onChange={edit}
+          readOnly={running}
+          results={results}
         />
       </div>
 
