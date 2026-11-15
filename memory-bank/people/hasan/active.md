@@ -2,31 +2,55 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, second session, on `hasan/54-screenshot-per-step` with
-  `origin/main` merged as of `02d44d5`. **Four of my five open PRs went in today while this
-  branch was being written**: #46 (`ab7edf9`), **#47** (`bde5a10`), **#40 playback v1**
-  (`046c92b`) and **#162** (`56348e5`). So the only copy of this file that is behind `main` is
-  `hasan/23-win32-fallback` (PR #236), and this one is the newest. **Whichever merges last keeps
-  every branch's own section** — never resolve this file by taking one side, and when the
+- Last update: 2026-11-15, fifth stretch. This copy is on **`hasan/63-failure-triage`**,
+  branched from `main` at `02d44d5`, and carries #63's section. Week 6's pair and #40, #162 and
+  #23 are all **merged**; the copies still behind `main` are `hasan/54-screenshot-per-step`
+  (#54's section), `hasan/61-cli-runner` (#61's) and this one. **Whichever merges last keeps
+  every branch's own section** -- never resolve this file by taking one side, and when the
   resolution is "ours", check first that the other side holds no fact that lives nowhere else:
   that is how #236's four #29 bullets nearly went missing today.
-- Current issue: **#54 (screenshot per step) — PR #248**, both criteria met and measured, all
-  six checks green. omer requested changes and **both items are done** (the CI test and the
-  schema bump to 1.2); it now waits on his re-review and on galip, not on me. **#236 (#23) is
-  merged**, so #248 is my only open PR.
-- **My review queue is empty.** All six of omer's PRs reviewed on 2026-11-15: approved #241,
-  #243, #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as
-  Planned although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have,
-  and §6.2's Windows row contradicts §6.3 about the `eval` job).
-- **Of Week 7/8, #55 and #62 are blocked on someone else** (#55 waits on omer's #44, #62 on
-  #55). The ready one after #54 is **#61** (CLI runner): its only dependency, #40, is now on
-  `main`, and it needs `ayna_cli*` added to `agent/pyproject.toml`'s packages (inbox item 1).
-- **Housekeeping owed, from omer's agent merging #237:** the two sections below that were "kept
-  at merge" overlap with the later `## #40, so the next session does not re-derive it` and
-  `## #162 — the numbers` sections. Nothing is lost; they want folding together at a calm
-  moment, and both issues are now closed.
+- Current issue: **#63 (failure triage + decision log), PR #251**, all six checks green.
+  **Three PRs of mine are open and every one waits on others, not on me**: #251 (#63),
+  **#250** (#61, the CLI runner, run for real against the sample app *and* the real server) and
+  **#248** (#54, omer's two change-request items both done).
+- **My review queue is empty.** All six of omer's PRs reviewed today: approved #241, #243,
+  #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as Planned
+  although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have, and
+  §6.2's Windows row contradicts §6.3 about the `eval` job).
+- **Next, when something is needed:** **#66** (the CLI's JUnit XML) is the only unblocked one
+  left, and it would have to stack on `hasan/61-cli-runner` until #250 merges -- worth waiting
+  for rather than stacking again, after what #239 cost. **#62** needs omer's #44 (PR #247) on
+  `main`. The Windows queue -- #247's check B, #24's pick hotkey, #54's second-display case --
+  waits for the weekly session.
+- **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/40-playback-v1` for PR #237):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/40-playback-v1`" are that branch's copy, unedited; reconcile them at your next session end.
 
-## #40 — playback v1 (merged 2026-11-15, PR #237)
+## #63 -- the triage rule, and the one decision it had to make (2026-11-15)
+
+PR #251. `memory-bank/tasks/63-failure-triage.md` has the mapping; what not to re-derive:
+
+- **A failure the *agent* caused never wears one of FR-35's five.** The ADR left this call to
+  #63, and the cases are wider than the two it named: a keyword not implemented, a refused step
+  document, an unmatchable property set, a provider that refuses the action, an unreadable
+  property. `category` is absent for all of them, and the **decision log** carries a finer
+  `reason` that is never absent. The reason it matters: RQ2 and RQ5 are computed from this
+  field, and a `timeout` that was really "this agent has no `SelectRow` yet" could never be
+  separated out again once stored.
+- **`playback/triage.py` is the only place that decides.** `done()` takes the *exception* and
+  triages itself; do not add a `category=` at a call site.
+- **`CheckpointError` is not `assertionFailed`** -- it means the checkpoint itself is wrong,
+  whatever the application is doing. There is a test named after that trap.
+- **A sixth value (`notAttempted`) is proposed, not taken**: asked of omer on #63 and #251,
+  because it is a minor version on two shared schemas and #248 already holds 1.2.
+- `NotReady` moved from `runner.py` to `resolve.py` so triage can name it without a cycle, and
+  `RowFailed`/`SelectFailed` now carry a `kind`, because each merged "it is not there" with
+  "the application refused it" -- two findings a stored result could never split again.
+- **Nothing passes `decisions=` yet.** Criterion 3's ≥50 examples (week 12) will come from the
+  CLI runner in CI once #250 and #251 are both on `main`.
+- **CI caught an import that could not fail here**: `python -m pytest` puts the CWD on
+  `sys.path` and bare `pytest` does not. Reproduce the agent job with
+  `agent/.venv/Scripts/pytest.exe`, never `python -m pytest`. In `learnings.md`.
+
+## From `hasan/40-playback-v1`, kept at merge
 
 - Current issue: **#40 (Playback v1, Week 5, due 23 Nov)** on `hasan/40-playback-v1`.
   All six keywords are implemented, all three criteria are tested, **and the Windows check ran
@@ -92,7 +116,7 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   the last is galip's #7" was wrong. It stays open because its dependency **#24** is still open.
 - **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/162-windows-llm-latency` for PR #235):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/162-windows-llm-latency`" are that branch's copy, unedited; reconcile them at your next session end.
 
-## #162 — Windows LLM latency (merged 2026-11-15, PR #235)
+## From `hasan/162-windows-llm-latency`, kept at merge
 
 - Current issue: **#162 (NFR-12 Windows latency, Week 3, overdue) — measurement DONE**,
   `hasan/162-windows-llm-latency`, commits `6b18e05` and `4c516a4`. Four of its five
@@ -174,53 +198,6 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - **`capture` runs on `agent/.venv`, not the repo-root one** — `recognition/uia.py` takes its
   exception types from `ayna_agent.rpc`, which imports `websockets` at module level. galip has
   the request to decouple it; `rpc.py` is his file and is untouched.
-
-## #54 — the screenshot per step (2026-11-15)
-
-Committed as `2f543b6`, not pushed. `memory-bank/tasks/54-screenshot-per-step.md` has the
-decisions and the numbers; four things a session must not re-derive:
-
-- **The PNG travels as a path, and the encoder is ours** (both settled with the user on
-  2026-11-15). No Pillow: `pywin32` captures and `zlib` + `struct` write the file, so the encoder
-  is a pure function tested on any OS. The step result carries `screenshotPath` and
-  `screenshotAt`; `docs/agent-rpc.md`'s `runSteps` section documents both.
-- **The `websockets` coupling is gone and `capture` (#29) no longer needs `agent/.venv`.**
-  Two parts: `frame_bounds` and `window_rect` moved into `recognition/frames.py`, so a
-  screenshot imports no UIA backend at all; and galip's `ayna_agent/errors.py` turned out to be
-  on `main` already (#40/#244) **while `uia.py` was still importing those four exceptions from
-  `ayna_agent.rpc`**, so the decoupling had never taken effect. One line in `uia.py` fixed it,
-  and `import ayna_agent.recognition.uia` now works on the repo-root `.venv`. **The notes
-  elsewhere in this file and in `learnings.md` saying `capture` must run on `agent/.venv` are
-  out of date from 2026-11-15.**
-- **Measured: 41 ms at 902x564 and 91–96 ms at 1920x1020**, against NFR-03's 300 ms. The encoder
-  alone is 29 ms for an app-shaped frame and 226–295 ms for random noise, so the only case with
-  no margin is genuinely incompressible content (a photo, a video surface). The captured image
-  was opened and looked at, not only timed — upright, true colours, cropped to the visible frame.
-- **A `notRun` step gets no image, and a failed capture does not fail the step**, so "no
-  screenshot" is normal for #59's report and for the client. **Nothing deletes the files**: that
-  is in omer's inbox for #51/#59, together with the note that the two fields are not yet in
-  `schemas/agent-rpc.schema.json`.
-
-## What #248's review taught, and what is owed either way (2026-11-15)
-
-- **A frozen schema with `additionalProperties: false` *rejects* a field you add; it does not
-  merely fail to mention it.** Every real `runSteps` answer was outside the contract the moment
-  #54 filled `screenshotPath`, and nothing went red because the only step results any test
-  validated were hand-written dicts. Fixed at 1.2, with a guard that validates the **real**
-  `StepResult.to_json()`. The general form is in `learnings.md`.
-- **Found while reviewing #247, fixed on my side:** #44's client sends **one `runSteps` per
-  step**, so the agent opened one screenshot directory per step — seven folders each holding a
-  single `step-0000.png`, and no one folder for omer's cleanup to delete.
-  `new_run_directory(run_id=...)` fixes it, but **`rpc.py` must pass `params["runId"]` through,
-  which is one line and galip's**: in his inbox and written into `docs/agent-rpc.md`.
-- **Owed by galip:** that line, `RPC_VERSION` 1.0 → 1.2, and approval of the ADR
-  `2026-11-15-step-screenshot-transport`.
-- **Owed by me at the weekly Windows session:** #247's check B (run from the editor with the
-  real agent at 100 % and 150 %), #24's pick hotkey including a pick pressed during "capture for
-  longer", and #54's one unverified case — a second display at a different scaling.
-- **#249 already runs green here.** I ran omer's nightly suite on this machine, the one check
-  his PR could not do for itself: v1 green, bug1 fails only the login test, bug4 only the
-  required-name test, and `--expect-failed` turns both into exit 0.
 
 ## #46 and #47 -- the sample app's change and bug versions (2026-11-15)
 

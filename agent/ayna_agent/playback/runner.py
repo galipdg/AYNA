@@ -35,12 +35,13 @@ Windows.
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
-from ayna_agent.playback import items, rows
+from ayna_agent.playback import items, rows, triage
 from ayna_agent.playback.actions import (
     ActionFailed,
     Patterns,
@@ -56,10 +57,12 @@ from ayna_agent.playback.checkpoint import (
 )
 from ayna_agent.playback.checkpoint import read as read_property
 from ayna_agent.playback.checkpoint import validate as checkpoint_rules
+from ayna_agent.playback.decisions import DecisionLog, decision_from
 from ayna_agent.playback.items import SelectFailed
 from ayna_agent.playback.resolve import (
     Ambiguous,
     NotFound,
+    NotReady,
     Resolution,
     Unsupported,
     resolve,
@@ -106,6 +109,8 @@ POLL_INTERVAL_S = 0.25
 #: `recognition.uia.UiaDesktop.read_tree` returns them.
 ReadTree = Callable[[], tuple[Sequence[Mapping[str, Any]], Sequence[Any]]]
 
+log = logging.getLogger(__name__)
+
 PASSED = "passed"
 FAILED = "failed"
 NOT_RUN = "notRun"
@@ -113,23 +118,6 @@ NOT_RUN = "notRun"
 
 class StepDocumentError(Exception):
     """The document is not a step document this runner can read."""
-
-
-class NotReady(Exception):
-    """The target resolved, but it is not usable yet: disabled, or off screen.
-
-    Its own failure, not an action error. The issue asks the runner to wait until the element
-    "exists, is visible and enabled" and the schema calls the same thing *ready*
-    (``timeoutMs`` is the "longest wait for the target … to become ready"), so an element that
-    resolves while disabled is something to keep waiting for -- and then to report as never
-    having become usable, rather than as a click that failed for an unstated reason.
-    """
-
-    def __init__(self, name: str, missing: Sequence[str]) -> None:
-        self.name = name
-        self.missing = list(missing)
-        wanted = " or ".join(self.missing)
-        super().__init__(f"{name}: did not become {wanted}")
 
 
 def not_ready(descriptor: Any) -> list[str]:
@@ -170,6 +158,12 @@ class StepResult:
     #: report, the client's step list -- treats "no screenshot" as normal.
     screenshot_path: str | None = None
     screenshot_at: str | None = None
+    #: Which of FR-35's five a failed step belongs to (#63, ADR `2026-11-15-failure-category`).
+    #: **Only with `status: failed`, and absent when the failure is not about the application**
+    #: -- a keyword this agent has not implemented, a step document it refuses, a provider that
+    #: refused an action. `playback.triage` is the one place that decides, and its docstring
+    #: says why those stay out of the five rather than being squeezed into one.
+    category: str | None = None
 
     def to_json(self) -> dict[str, Any]:
         """camelCase, absent values left out, so it can be sent as it is."""
@@ -186,6 +180,7 @@ class StepResult:
             ("performedWith", self.performed_with),
             ("screenshotPath", self.screenshot_path),
             ("screenshotAt", self.screenshot_at),
+            ("category", self.category),
         ):
             if value is not None:
                 out[key] = value
@@ -202,6 +197,8 @@ def run_steps(
     now: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
     capture: StepCapture | None = None,
+    decisions: DecisionLog | None = None,
+    context: Mapping[str, Any] | None = None,
 ) -> list[StepResult]:
     """Play `document`'s steps and return one result per step, in order.
 
@@ -213,6 +210,13 @@ def run_steps(
     window under test; it is called after each step that ran, never for a `notRun` one. Injected
     rather than taken as a window handle so this module stays testable with no desktop, and
     because the handle belongs to the caller that opened the window, not to the runner.
+
+    `decisions` is #63's log: one JSONL line per **failed** step, with the finer `reason` the
+    contract's `category` cannot carry and the property sets that were tried, so the failure
+    can be labelled later (RQ5, #64, #86). `context` adds what this module cannot know --
+    `run_id`, `test_name`, `window_title`, `app_version`. Writing the log never affects the
+    run: a log that cannot be written is logged and the steps carry on, because losing a run
+    to a full disk in the measurement harness would be the wrong trade.
 
     Raises `StepDocumentError` only for a document that cannot be read at all; everything a
     single step can get wrong becomes that step's `failed` result, because a run that returns
@@ -232,6 +236,7 @@ def run_steps(
                 )
             )
             continue
+        triaged: dict[str, str] = {}
         result = _run_one(
             index,
             step,
@@ -241,6 +246,7 @@ def run_steps(
             patterns=patterns,
             now=now,
             sleep=sleep,
+            triaged=triaged,
         )
         # After the step, not before: FR-19's image is the evidence of what the step did, and
         # for a failed step it is the evidence of what the screen looked like when it failed.
@@ -253,7 +259,41 @@ def run_steps(
                     screenshot_at=image.taken_at,
                 )
         results.append(result)
+        if decisions is not None and result.status == FAILED:
+            _record(decisions, result, step, targets, triaged, context)
     return results
+
+
+def _record(
+    decisions: DecisionLog,
+    result: StepResult,
+    step: Mapping[str, Any],
+    targets: Mapping[str, Mapping[str, Any]],
+    triaged: Mapping[str, str],
+    context: Mapping[str, Any] | None,
+) -> None:
+    """Append one failed step to the decision log, and never let that fail the run."""
+    target = targets.get(step.get("target", "")) if isinstance(step, Mapping) else None
+    tried = [
+        dict(properties)
+        for properties in (
+            (target or {}).get("properties"),
+            (target or {}).get("fallback"),
+        )
+        if isinstance(properties, Mapping)
+    ]
+    try:
+        decisions.append(
+            decision_from(
+                result,
+                step,
+                reason=triaged.get("reason", triage.REFUSED_STEP),
+                tried=tried,
+                **dict(context or {}),
+            )
+        )
+    except Exception:
+        log.warning("could not log step %d's failure", result.step_index, exc_info=True)
 
 
 def _steps_of(document: Mapping[str, Any]) -> list[Mapping[str, Any]]:
@@ -291,11 +331,37 @@ def _run_one(
     patterns: Patterns,
     now: Callable[[], float],
     sleep: Callable[[float], None],
+    triaged: dict[str, str] | None = None,
 ) -> StepResult:
     started = now()
     step_id = _step_id(step)
+    # Where `done` leaves what `triage.reason_for` made of a failure, for the decision log
+    # (#63). A dict the caller owns rather than a second return value: `done` is called from
+    # two dozen places and every one of them would otherwise have to pass it back by hand.
+    # The reason is finer than the contract's `category` and belongs to the measurement, not
+    # to the message the client reads, which is why it does not live on `StepResult`.
+    triaged = {} if triaged is None else triaged
 
-    def done(status: str, message: str | None = None, **extra: Any) -> StepResult:
+    def done(
+        status: str,
+        message: str | None = None,
+        *,
+        error: BaseException | None = None,
+        reason: str | None = None,
+        **extra: Any,
+    ) -> StepResult:
+        """One result. Give it the `error` and it triages itself (#63).
+
+        Passing the exception rather than a category at each site keeps the rule in
+        `playback.triage` and out of twenty `except` branches; the two failures with no
+        exception to pass (a step the agent refuses, a checkpoint that simply did not hold)
+        name their `reason` instead.
+        """
+        if error is not None:
+            extra.setdefault("category", triage.category_for(error))
+            triaged["reason"] = triage.reason_for(error)
+        elif status == FAILED:
+            triaged["reason"] = reason or triage.REFUSED_STEP
         return StepResult(
             step_index=index,
             status=status,
@@ -365,7 +431,7 @@ def _run_one(
         elif keyword == "SelectRow":
             want_row = rows.address(step.get("row"))
     except (CheckpointError, RowError) as exc:
-        return done(FAILED, f"{name}: {exc}")
+        return done(FAILED, f"{name}: {exc}", error=exc)
 
     try:
         found, tree = _resolve_waiting(
@@ -380,17 +446,17 @@ def _run_one(
             require_ready=keyword != "Verify",
         )
     except Unsupported as exc:
-        return done(FAILED, f"{name}: {exc}")
+        return done(FAILED, f"{name}: {exc}", error=exc)
     except Ambiguous as exc:
         # FR-35 "element not found": no *unique* element matched. Deliberately not a sixth
         # category and deliberately not a guess -- see `playback.resolve`.
-        return done(FAILED, str(exc))
+        return done(FAILED, str(exc), error=exc)
     except NotFound as exc:
-        return done(FAILED, f"{exc} within {timeout_ms} ms")
+        return done(FAILED, f"{exc} within {timeout_ms} ms", error=exc)
     except NotReady as exc:
         # `after N ms`, not `within`: this one waited for a *state* to change rather than for
         # an element to appear. The wording is the one promised in the PR #231 review.
-        return done(FAILED, f"{exc} after {timeout_ms} ms")
+        return done(FAILED, f"{exc} after {timeout_ms} ms", error=exc)
 
     if keyword == "Wait":
         # "only wait until the target is ready; never a fixed sleep" (the schema). The wait
@@ -414,12 +480,30 @@ def _run_one(
                 sleep=sleep,
             )
         except (CheckpointError, RowError, RowsUnavailable) as exc:
-            return done(FAILED, f"{name}: {exc}", matched=found.which)
+            return done(
+                FAILED,
+                f"{name}: {exc}",
+                matched=found.which,
+                error=exc,
+            )
         except Unreadable as exc:
-            return done(FAILED, f"{name}: {exc}", matched=found.which)
+            return done(
+                FAILED,
+                f"{name}: {exc}",
+                matched=found.which,
+                error=exc,
+            )
         if message is None:
             return done(PASSED, matched=found.which)
-        return done(FAILED, message, matched=found.which)
+        # The one failure with no exception to read: the checkpoint was well formed, the
+        # property was read, and it did not hold. That is `assertionFailed` by definition.
+        return done(
+            FAILED,
+            message,
+            matched=found.which,
+            category=triage.ASSERTION_FAILED,
+            reason=triage.ASSERTION_FAILED,
+        )
 
     if keyword == "SelectRow":
         try:
@@ -436,9 +520,14 @@ def _run_one(
                 sleep=sleep,
             )
         except (RowError, RowsUnavailable) as exc:
-            return done(FAILED, f"{name}: {exc}", matched=found.which)
+            return done(
+                FAILED,
+                f"{name}: {exc}",
+                matched=found.which,
+                error=exc,
+            )
         except RowFailed as exc:
-            return done(FAILED, str(exc), matched=found.which)
+            return done(FAILED, str(exc), matched=found.which, error=exc)
         # `note` is a message on a *passing* step: the ADR asks playback to report what it
         # selected when the view selects cells rather than rows, and that is not a failure.
         return done(PASSED, note, matched=found.which, performed_with=performed_with)
@@ -458,7 +547,7 @@ def _run_one(
                 sleep=sleep,
             )
         except SelectFailed as exc:
-            return done(FAILED, str(exc), matched=found.which)
+            return done(FAILED, str(exc), matched=found.which, error=exc)
         return done(PASSED, matched=found.which, performed_with=performed_with)
 
     try:
@@ -467,7 +556,7 @@ def _run_one(
         else:
             performed_with = type_text(found.element, str(value), patterns)
     except ActionFailed as exc:
-        return done(FAILED, str(exc), matched=found.which)
+        return done(FAILED, str(exc), matched=found.which, error=exc)
 
     return done(PASSED, matched=found.which, performed_with=performed_with)
 
@@ -652,7 +741,7 @@ def _select_row_waiting(
         if row is not None:
             performed = rows.select(row, tree, patterns)
             if performed is None:
-                raise RowFailed(rows.refused(name, want))
+                raise RowFailed(rows.refused(name, want), rows.ROW_REFUSED)
             note = (
                 rows.selected_a_cell(name, want)
                 if rows.whole_row_selected(row, tree, patterns) is False
@@ -661,12 +750,16 @@ def _select_row_waiting(
             return performed, note
         remaining = deadline - now()
         if timeout_ms == 0 or remaining <= 0:
-            raise RowFailed(rows.not_found(name, want, grid, timeout_ms))
+            raise RowFailed(
+                rows.not_found(name, want, grid, timeout_ms), rows.ROW_NOT_FOUND
+            )
         sleep(min(POLL_INTERVAL_S, remaining))
         try:
             found, tree = _read_and_resolve(read_tree, name, target)
         except (NotFound, Ambiguous, Unsupported) as exc:
-            raise RowFailed(f"{exc} while selecting {want.describe()}") from exc
+            raise RowFailed(
+                f"{exc} while selecting {want.describe()}", rows.ROW_NOT_FOUND
+            ) from exc
 
 
 def _select_waiting(
@@ -742,7 +835,9 @@ def _select_waiting(
             # recorded as `SetValue` rather than as a choice.
             if items.write(found.element, value, patterns):
                 return finish("SetValue")
-            raise SelectFailed(items.refused(name, value, items.CHOOSE_PATTERNS))
+            raise SelectFailed(
+                items.refused(name, value, items.CHOOSE_PATTERNS), items.ITEM_REFUSED
+            )
 
         if not count and items.can_expand(found.element, patterns):
             # The items of a closed combo box do not exist yet, so this is not "look harder":
@@ -758,7 +853,7 @@ def _select_waiting(
             # Not a list or a combo box at all. Fail now rather than at the deadline: waiting
             # cannot turn a button into a list, and ten seconds of silence would suggest it
             # might.
-            raise SelectFailed(items.not_a_list(name))
+            raise SelectFailed(items.not_a_list(name), items.ITEM_REFUSED)
 
         remaining = deadline - now()
         if timeout_ms == 0 or remaining <= 0:
@@ -767,12 +862,16 @@ def _select_waiting(
                 # of its own) still has a usable text value. Last, and only after the full
                 # wait, so it cannot hide a genuine "there is no such item".
                 return finish("SetValue")
-            raise SelectFailed(items.no_such_item(name, value, most, timeout_ms))
+            raise SelectFailed(
+                items.no_such_item(name, value, most, timeout_ms), items.ITEM_NOT_FOUND
+            )
         sleep(min(POLL_INTERVAL_S, remaining))
         try:
             found, tree = _read_and_resolve(read_tree, name, target)
         except (NotFound, Ambiguous, Unsupported) as exc:
-            raise SelectFailed(items.vanished(exc, value)) from exc
+            raise SelectFailed(
+                items.vanished(exc, value), items.ITEM_NOT_FOUND
+            ) from exc
 
 
 def _confirmed(

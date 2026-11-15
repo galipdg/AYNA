@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/152
 - Owner: omer · Branch: `omer/152-load-test`
-- Started: 2026-11-10 · Last update: 2026-11-10
+- Started: 2026-11-10 · Last update: 2026-11-15
 
 ## Approach
 `server/loadtest/`: `seed.py` fills one application through the REST API, `load.py` runs 10
@@ -22,9 +22,9 @@ read the numbers is in `server/loadtest/README.md`.
 ## Status
 - [x] seed, load test, one command (`server/loadtest/run.sh`)
 - [x] first run recorded: `results/2026-11-10-apple-m3.md` — 105 443 requests, 100 % within 500 ms, p95 31.9 ms, 0 errors → NFR-07 met
-- [ ] RS: NFR-07 / NFR-08 confirmed — galip's file; request in `people/galip/inbox.md`
+- [x] RS: NFR-07 / NFR-08 confirmed — galip, RS 0.9 (#244, merged 2026-11-15)
 - [x] PR #225 (Part of #152), approved by hasan, merged 2026-11-10 with his fixes (Python probe, 5 s ceiling note).
-- Next step: close #152 once galip's RS change (NFR-07/08 confirmed, citing the results file) is on `main`.
+- 2026-11-15: all criteria ticked, #152 closed.
 
 ## Manual checks
 - none needed: every criterion is checked by running `run.sh` (done 2026-11-10 on omer's Mac).
@@ -39,3 +39,4 @@ The load generator shares the CPU with the backend; Docker Desktop had 4 CPUs / 
 run with only 3 s warm-up was about twice as slow (p95 57 ms), so keep the warm-up.
 
 ## Outcome (fill when the issue closes)
+- 2026-11-15 closed: NFR-07 met (p95 31.9 ms, 100 % within 500 ms) on an Apple M3; RS 0.9 cites it. Left for later (not this issue): `--screenshots` run, a run on the Windows demo machine.

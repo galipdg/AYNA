@@ -328,6 +328,25 @@ wrong for one that sends a step at a time as #44's client does: a seven-step run
 folders, each with a single `step-0000.png`, and there is no one folder for the client to delete.
 Passing `params["runId"]` through is one line in `rpc.py` (#54, asked of galip).
 
+**Why a step failed (#63, FR-35).** A `failed` step may carry a `category`, one of
+`elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete` (ADR
+*A failed step's category*). It appears **only** with `status: failed`, never more than one, and
+a reader shows an unknown value as it is, because new ones come in a minor version.
+
+**It is absent whenever the failure was not about the application under test**, and that is a
+decision rather than a gap. A keyword this agent has not implemented, a step document it
+refuses, a property set it cannot match on, a provider that refuses the action — none of those
+is evidence about the application, and the field is read by RQ2 and RQ5. A `timeout` that was
+really "this agent has no `SelectRow` yet" would be AYNA measuring its own unfinished state and
+filing it under the application's flakiness, and nothing downstream could separate the two
+again. `agent/ayna_agent/playback/triage.py` is the single place that decides, and the agent's
+decision log keeps a finer `reason` for every failure, including the uncategorised ones.
+
+Two of the five have a boundary worth stating. **More than one element matched is
+`elementNotFound`** — no *unique* element matched and playback never picks one. **An element
+that matched but never became visible and enabled is `timeout`, not `elementNotFound`** — the
+difference tells a tester whether to fix the locator or to wait longer.
+
 ```json
 → {"jsonrpc": "2.0", "id": 7, "method": "runSteps", "params": {
     "handle": 657704,
@@ -342,9 +361,11 @@ Passing `params["runId"]` through is one line in `rpc.py` (#54, asked of galip).
     {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue",
      "screenshotPath": "C:\\Users\\you\\AppData\\Local\\Temp\\ayna-screenshots\\run-20261115-140311-004812\\step-0000.png",
      "screenshotAt": "2026-11-15T14:03:11.250+03:00"},
-    {"stepIndex": 1, "status": "passed", "durationMs": 44, "matched": "primary", "performedWith": "Invoke",
+    {"stepIndex": 1, "status": "failed", "durationMs": 10000, "matched": "primary",
+     "category": "elementNotFound",
+     "message": "no element matches login.loginButton (automationId=…) within 10000 ms",
      "screenshotPath": "C:\\Users\\you\\AppData\\Local\\Temp\\ayna-screenshots\\run-20261115-140311-004812\\step-0001.png",
-     "screenshotAt": "2026-11-15T14:03:11.402+03:00"}]}}
+     "screenshotAt": "2026-11-15T14:03:21.402+03:00"}]}}
 ```
 
 A document the agent cannot read at all is `-32602`; a handle that is not a top-level window is

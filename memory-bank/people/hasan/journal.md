@@ -924,3 +924,30 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   Windows queue (#247's check B, #24, #54's second-display case) waits for the weekly session.
   The next issue to start is **#61** (CLI runner): #40 is on `main` and `ayna_cli*` has to go
   into `agent/pyproject.toml`'s packages.
+- Fifth stretch, 2026-11-15: #63, the failure triage and decision log, PR #251 with all six
+  checks green. The substance was one decision the ADR explicitly left to me: a failure the
+  *agent* caused does not get one of FR-35's five, because RQ2 and RQ5 are computed from that
+  field and a `timeout` that was really "no SelectRow yet" could never be separated out again.
+  The decision log carries the finer reason instead, so every failed step is classified where
+  labelling actually happens. Proposed a sixth contract value rather than bumping a shared
+  schema alone. Found on the way that `RowFailed` and `SelectFailed` each merged "not there"
+  with "the app refused it" — two different findings that a stored result could never split —
+  so both now carry a `kind`.
+- CI caught an import that my local run could not: `python -m pytest` puts the CWD on
+  `sys.path`, bare `pytest` does not. Reproduce the agent job with `.venv/Scripts/pytest.exe`.
+- Next step: nothing is blocked on me. #248, #250 and #251 all wait on reviews; the Windows
+  queue (#247's check B, #24, #54's second-display case) waits for the weekly session. The next
+  unblocked issue of mine is **#66** (the CLI's JUnit XML), which would stack on #250's branch
+  until that merges — worth waiting for rather than stacking again.
+- Fourth stretch, 2026-11-15: #61, the CLI runner (`ayna run`), PR #250 with all six checks
+  green. Built to FR-23 rather than the issue's summary, which omits the token, the delivery
+  condition and exit 2. Ran it for real twice, and the second run is the reason to keep doing
+  that: against the Docker stack it found that the test list carries no steps (so a server run
+  would have played nothing), that the step-result body needs `runId`, and that my client was
+  printing a problem's `detail` while throwing away the `errors[]` that would have explained
+  the other two immediately. Also forced the output to UTF-8 after a pipe mangled the Turkish —
+  on a CI runner that is a `UnicodeEncodeError` in the middle of reporting a test result.
+- Next step: nothing is blocked on me. #250 and #248 wait on reviews; the Windows queue
+  (#247's check B, #24, #54's second-display case) waits for the weekly session. After that the
+  open Week 8 issue is **#62**, which needs omer's #44 (PR #247) merged first, or **#66** (the
+  CLI's JUnit XML), which is mine and unblocked by #250.
