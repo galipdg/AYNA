@@ -2,14 +2,24 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-14, third session. `origin/main` is merged in as of `6fd87a9` (#233),
-  and this copy came from `main` whole: this branch's own copy was byte-identical to `main`'s,
-  so it had nothing of its own to lose. **Not complete** — `hasan/40-playback-v1` holds #40's
-  section and `hasan/162-windows-llm-latency` holds #162's, and neither is here. **Whichever
-  merges last keeps every branch's own section**; never resolve this file by taking one side.
-- Current issue on this branch: **#23 (the win32 fallback), PR #236 open and MERGEABLE**,
-  `Closes #23`. The findings are in the "#23" section of the other copies and in
-  `memory-bank/tasks/`; the branch itself is `eval/spikes/` only.
+- Last update: 2026-11-15, second session. **This copy is on `hasan/54-screenshot-per-step`,
+  branched from `main` at `e147a94`**, so it carries #54's section and `main`'s older preamble;
+  the #46/#47 preamble and the four #29 findings live on `hasan/47-bug-injected-versions`.
+  Three copies are behind `main` and each holds its own issue's section:
+  `hasan/47-bug-injected-versions` (#46, #47), `hasan/40-playback-v1` (#40) and
+  `hasan/162-windows-llm-latency` (#162). **Whichever merges last keeps every branch's own
+  section** — never resolve this file by taking one side, and when the resolution is "ours",
+  check first that the other side holds no fact that lives nowhere else: that is how #236's four
+  #29 bullets nearly went missing on 2026-11-15.
+- Current issue: **#54 (screenshot per step), committed as `2f543b6`, not pushed and no PR yet.**
+  Both acceptance criteria are met and measured; the section below has the numbers.
+- **#46 is merged** (`ab7edf9`) and **PR #239 (#47) is MERGEABLE / CLEAN on `main`, all six
+  checks green.** It needed an `origin/main` merge, not a retarget: GitHub retargeted it itself
+  when #238 merged, and the squash made every file #46 touched conflict. Three more PRs of mine
+  wait on reviews, not on me: **#237 (#40)**, **#236 (#23)**, **#235 (#162)**.
+- **Of Week 7/8, #55 and #62 are blocked on someone else** (#55 waits on omer's #44, #62 on
+  #55). After #54 the ready one is **#61** (CLI runner), whose only open dependency is my own
+  #40 — and it needs `ayna_cli*` added to `agent/pyproject.toml`'s packages (inbox item 1).
 - **#29 is MERGED and CLOSED, and the second labeller is still owed.** PR **#233** was
   squash-merged by the user on 2026-11-14 (`6fd87a9`), which **closed #29 even though the PR
   deliberately carried no `Closes`** — the PR was linked to the issue in GitHub's Development
@@ -52,6 +62,28 @@ Only hasan's agent edits this file. Overwrite it at every session end.
 - **`capture` runs on `agent/.venv`, not the repo-root one** — `recognition/uia.py` takes its
   exception types from `ayna_agent.rpc`, which imports `websockets` at module level. galip has
   the request to decouple it; `rpc.py` is his file and is untouched.
+
+## #54 — the screenshot per step (2026-11-15)
+
+Committed as `2f543b6`, not pushed. `memory-bank/tasks/54-screenshot-per-step.md` has the
+decisions and the numbers; four things a session must not re-derive:
+
+- **The PNG travels as a path, and the encoder is ours** (both settled with the user on
+  2026-11-15). No Pillow: `pywin32` captures and `zlib` + `struct` write the file, so the encoder
+  is a pure function tested on any OS. The step result carries `screenshotPath` and
+  `screenshotAt`; `docs/agent-rpc.md`'s `runSteps` section documents both.
+- **`frame_bounds` now lives in `recognition/frames.py`, not `recognition/uia.py`.** Importing it
+  from `uia.py` pulled in `ayna_agent.rpc` and therefore `websockets`, so the capture would not
+  run on the repo-root `.venv` at all. Only the two rectangles moved; the rest of galip's
+  decoupling request still stands and is still in his inbox.
+- **Measured: 41 ms at 902x564 and 91–96 ms at 1920x1020**, against NFR-03's 300 ms. The encoder
+  alone is 29 ms for an app-shaped frame and 226–295 ms for random noise, so the only case with
+  no margin is genuinely incompressible content (a photo, a video surface). The captured image
+  was opened and looked at, not only timed — upright, true colours, cropped to the visible frame.
+- **A `notRun` step gets no image, and a failed capture does not fail the step**, so "no
+  screenshot" is normal for #59's report and for the client. **Nothing deletes the files**: that
+  is in omer's inbox for #51/#59, together with the note that the two fields are not yet in
+  `schemas/agent-rpc.schema.json`.
 
 ## #162 is no longer blocked by a download
 
