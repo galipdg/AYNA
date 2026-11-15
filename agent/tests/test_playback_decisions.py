@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from playback_fakes import TARGETS, Clock, Window
 
 from ayna_agent.playback import triage
 from ayna_agent.playback.decisions import (
@@ -23,7 +24,6 @@ from ayna_agent.playback.decisions import (
     now_stamp,
 )
 from ayna_agent.playback.runner import run_steps
-from tests.test_playback_triage import TARGETS, Clock, Window
 
 
 def a_decision(**over) -> Decision:

@@ -18,6 +18,7 @@ import json
 from pathlib import Path
 
 import pytest
+from playback_fakes import TARGETS, Clock, Window
 
 from ayna_agent.errors import SnapshotTimeout
 from ayna_agent.playback import triage
@@ -33,20 +34,6 @@ from ayna_agent.playback.rows import (
     RowsUnavailable,
 )
 from ayna_agent.playback.runner import run_steps
-
-TRIAL_TREE = Path(__file__).resolve().parent / "data" / "trial-app-tree.json"
-
-USERNAME = "QApplication.loginWindow.usernameInput"
-LOGIN = "QApplication.loginWindow.loginButton"
-
-TARGETS = {
-    "login.userNameInput": {"properties": {"automationId": USERNAME}},
-    "login.loginButton": {"properties": {"automationId": LOGIN}},
-    "login.gone": {"properties": {"automationId": "no-such-element"}},
-    "login.ambiguous": {"properties": {"controlType": "Edit"}},
-    "login.unmatchable": {"properties": {"patternSalad": "nope"}},
-}
-
 
 # --- the mapping on its own -----------------------------------------------------------------
 
@@ -154,29 +141,6 @@ def test_the_five_are_exactly_the_contracts_five():
 
 
 # --- the runner, driven to each failure for real ----------------------------------------------
-
-
-class Window:
-    """The same fake #26's tests use: the real trial-app tree from #11."""
-
-    def __init__(self) -> None:
-        self.content = json.loads(TRIAL_TREE.read_text(encoding="utf-8"))
-        self.reads = 0
-
-    def read_tree(self):
-        self.reads += 1
-        return self.content, [f"element-{i}" for i in range(len(self.content))]
-
-
-class Clock:
-    def __init__(self) -> None:
-        self.t = 0.0
-
-    def now(self) -> float:
-        return self.t
-
-    def sleep(self, seconds: float) -> None:
-        self.t += seconds
 
 
 def run(steps, targets=None):

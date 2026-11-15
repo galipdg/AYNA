@@ -78,7 +78,12 @@ want to bump a shared schema by myself while #248 already holds 1.2 and is in re
 - [x] `docs/agent-rpc.md`: `category` in the `runSteps` result, what absent means and why, the
       two boundaries worth stating, and a failed step in the example (the ADR asked me for this)
 - [x] **689 agent tests pass**, ruff clean
-- [ ] Commit, PR
+- [x] Commit, **PR #251**
+- [x] CI caught one thing my local run could not: the decisions test imported the triage test
+      as `tests.test_playback_triage`, which works under `python -m pytest` (the CWD is on
+      `sys.path`) and fails under the bare `pytest` CI runs. The fakes now live in
+      `tests/playback_fakes.py` and are imported by bare name, which is the repo's existing
+      convention (`import grids`). In `learnings.md`.
 - Next step: commit and open the PR, saying on it that implementing the ADR is my approval of it.
 
 ## What `RowFailed` and `SelectFailed` had to learn
