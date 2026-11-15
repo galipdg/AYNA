@@ -56,12 +56,16 @@ server is a **2**, not a 0. A CI job that reported success there would be lying 
 - [x] `--from-file`, and the exit codes with FR-23's precedence in one function
 - [x] `--server`: applications, versions, tests and repository objects in, run created, results
       written, run finished; `AYNA_SERVER_TOKEN` as a Bearer token
-- [x] 56 tests (`test_cli_run.py` 19, `test_cli_suite.py` 16, `test_cli_server.py` 25), none of
-      which needs Windows or a server. **697 agent tests pass**, ruff clean.
+- [x] 61 tests (`test_cli_run.py` 24, `test_cli_suite.py` 16, `test_cli_server.py` 25), none
+      of which needs Windows or a server. **702 agent tests pass**, ruff clean.
 - [x] **Run for real on Windows against the sample app** (below)
-- [ ] Screenshot upload (#51's `PUT …/screenshot`), if it fits before the PR
+- [x] Screenshot upload (#51's `PUT …/screenshot`), omer's inbox request for this issue:
+      the PNG goes **after** its result, because the server answers 404 before it. A file
+      that is named but gone is logged, not fatal; a server that refuses it is a delivery
+      failure and so exit 2. Dead until #248 merges, because `screenshotPath` is #54's.
 - [ ] A `--server` run against a real server, which needs the Docker stack up
-- Next step: upload screenshots after their results, then open the PR.
+- Next step: open the PR (`Closes #61`), asking omer about the two readings under Open
+  issues (what `--suite NAME` means, and whether the last version is the newest).
 
 ## Measurements and manual checks
 

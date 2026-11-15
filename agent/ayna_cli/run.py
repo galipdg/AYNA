@@ -14,8 +14,10 @@ pass while the server refuses its results, and that is a 2.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 from ayna_cli.exits import exit_code
@@ -27,6 +29,8 @@ from ayna_cli.suite import Suite, SuiteTest
 NOT_PASSED = frozenset({"failed", "repairProposed"})
 
 PASSED, FAILED, ABORTED = "passed", "failed", "aborted"
+
+log = logging.getLogger(__name__)
 
 
 class Player(Protocol):
@@ -112,11 +116,18 @@ class ServerSink:
 
     A run is created per test, because the server's `Run` *is* one test's run
     (`POST /api/runs` takes a `testId`).
+
+    A result that names a screenshot takes its bytes with it (#51, #54). The order is fixed by
+    omer's ADR and not ours to choose: the image goes **after** its result, because the server
+    answers 404 to a screenshot for a step it has no result for yet.
     """
 
-    def __init__(self, server: AynaServer, app_version_id: str) -> None:
+    def __init__(
+        self, server: AynaServer, app_version_id: str, *, screenshots: bool = True
+    ) -> None:
         self.server = server
         self.app_version_id = app_version_id
+        self.screenshots = screenshots
 
     def start(self, test: SuiteTest) -> str | None:
         if test.test_id is None:
@@ -132,6 +143,32 @@ class ServerSink:
         if run_id is None:
             raise ServerError("no run id")
         self.server.write_result(run_id, index, dict(result))
+        if self.screenshots:
+            self._upload_screenshot(run_id, index, result)
+
+    def _upload_screenshot(
+        self, run_id: str, index: int, result: Mapping[str, Any]
+    ) -> None:
+        """Send the step's PNG, if it has one and it is still on disk.
+
+        **A missing image is not a delivery failure.** #54 leaves `screenshotPath` out whenever
+        there is none -- a `notRun` step, or a capture that failed -- and says plainly that a
+        reader must treat that as normal. A file named but gone is the same situation one step
+        later (a tidy-up ran, a temp folder was swept), and failing the run over a lost picture
+        would turn an operational nuisance into a red build. The *result* is the record; the
+        image is evidence attached to it.
+        """
+        path = result.get("screenshotPath")
+        if not isinstance(path, str) or not path:
+            return
+        try:
+            png = Path(path).read_bytes()
+        except OSError as exc:
+            log.warning(
+                "step %d: no screenshot to upload from %s: %s", index, path, exc
+            )
+            return
+        self.server.upload_screenshot(run_id, index, png)
 
     def finish(self, run_id: str | None, status: str) -> None:
         if run_id is None:
