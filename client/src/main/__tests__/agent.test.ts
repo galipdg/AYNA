@@ -249,10 +249,12 @@ describe('AgentManager', () => {
   })
 
   it('gives up on a WebSocket handshake that never completes', async () => {
-    const agent = manager('no-handshake', { listenTimeoutMs: 200, maxRestarts: 0 })
+    // The same timeout also covers the port line, so it must outlast a cold start of the
+    // fake agent on a slow CI runner; 200 ms did not (PR #242).
+    const agent = manager('no-handshake', { listenTimeoutMs: 2_000, maxRestarts: 0 })
     const failed = waitFor(agent, 'failed')
     agent.start()
-    assert.match((await failed).detail!, /could not open a connection to the agent within 200 ms/)
+    assert.match((await failed).detail!, /could not open a connection to the agent within 2000 ms/)
   })
 
   it('reports a command that cannot be started', async () => {
