@@ -109,10 +109,15 @@ stacked branch.
 - **NFR-03 has no margin for an incompressible window.** Not a problem for any AYNA pilot app,
   but if it ever is, the lever is the image, not the encoder: capture at a reduced size or drop
   to a palette. Worth an issue only if a real app hits it.
-- **`recognition/uia.py` still cannot be imported without `websockets`** for everything else it
-  does (it takes its exception types from `ayna_agent.rpc`). #54 only needed the two rectangles,
-  and moving those into `recognition/frames.py` fixed the capture; the rest is still galip's
-  decoupling request, already in his inbox from #29.
+- **The `websockets` coupling is now gone, and this PR finished it off.** Two separate things
+  happened: `recognition/frames.py` took the two rectangles out of `recognition/uia.py` so a
+  capture needs no UIA backend at all; and, after merging `origin/main`, galip's
+  `agent/ayna_agent/errors.py` turned out to be on `main` (#40/#244) **while `uia.py` was still
+  importing those four exceptions from `ayna_agent.rpc`** -- so the decoupling it was written for
+  had not actually taken effect. One line in `uia.py` (my file) now points at
+  `ayna_agent.errors`, and `import ayna_agent.recognition.uia` works on the repo-root `.venv`
+  for the first time. **#29's `capture` no longer needs `agent/.venv`**; that note in
+  `active.md` and `learnings.md` is now out of date.
 
 ## Handoff
 - **The capture is on by default for every `runSteps` call** (`UiaDesktop.run_steps`), which is

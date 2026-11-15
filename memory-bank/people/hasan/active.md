@@ -179,10 +179,14 @@ decisions and the numbers; four things a session must not re-derive:
   2026-11-15). No Pillow: `pywin32` captures and `zlib` + `struct` write the file, so the encoder
   is a pure function tested on any OS. The step result carries `screenshotPath` and
   `screenshotAt`; `docs/agent-rpc.md`'s `runSteps` section documents both.
-- **`frame_bounds` now lives in `recognition/frames.py`, not `recognition/uia.py`.** Importing it
-  from `uia.py` pulled in `ayna_agent.rpc` and therefore `websockets`, so the capture would not
-  run on the repo-root `.venv` at all. Only the two rectangles moved; the rest of galip's
-  decoupling request still stands and is still in his inbox.
+- **The `websockets` coupling is gone and `capture` (#29) no longer needs `agent/.venv`.**
+  Two parts: `frame_bounds` and `window_rect` moved into `recognition/frames.py`, so a
+  screenshot imports no UIA backend at all; and galip's `ayna_agent/errors.py` turned out to be
+  on `main` already (#40/#244) **while `uia.py` was still importing those four exceptions from
+  `ayna_agent.rpc`**, so the decoupling had never taken effect. One line in `uia.py` fixed it,
+  and `import ayna_agent.recognition.uia` now works on the repo-root `.venv`. **The notes
+  elsewhere in this file and in `learnings.md` saying `capture` must run on `agent/.venv` are
+  out of date from 2026-11-15.**
 - **Measured: 41 ms at 902x564 and 91–96 ms at 1920x1020**, against NFR-03's 300 ms. The encoder
   alone is 29 ms for an app-shaped frame and 226–295 ms for random noise, so the only case with
   no margin is genuinely incompressible content (a photo, a video surface). The captured image

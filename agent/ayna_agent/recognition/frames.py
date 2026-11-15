@@ -1,10 +1,11 @@
 """A window's two rectangles, straight from Win32. No UI Automation, no RPC, no dependencies.
 
-`frame_bounds` used to live in `recognition/uia.py`, which imports `ayna_agent.rpc` for its
-exception types and so cannot be imported without `websockets` (`memory-bank/learnings.md`,
-2026-11-14). #54's screenshot needs nothing from that module but these rectangles, and a
-headless capture -- the CLI runner of #61, a measurement script -- should not need a WebSocket
-server installed to crop an image. So they live here, where `ctypes` and `pywin32` are the only
+`frame_bounds` used to live in `recognition/uia.py`. It moved for #54: a screenshot needs
+nothing from that module but these two rectangles, while importing it drags in the whole UI
+Automation backend -- pywinauto, comtypes, a COM apartment -- and, until the same change
+pointed `uia.py` at `ayna_agent.errors`, `websockets` as well (`memory-bank/learnings.md`,
+2026-11-14). A headless capture (the CLI runner of #61, a measurement script) should pay for
+none of that to crop an image, so these live here, where `ctypes` and `pywin32` are the only
 things involved.
 
 The pair is one subject because the crop reconciles them: `window_rect` is what `PrintWindow`
