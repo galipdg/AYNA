@@ -7,7 +7,11 @@ Only galip's agent edits this file. Overwrite it at every session end.
   - agent: `RPC_VERSION = "1.0"`, `agent/tests/test_rpc_contract.py` (every Dispatcher reply checked against `schemas/agent-rpc.schema.json`), the four exceptions moved to `ayna_agent/errors.py` (re-exported from `rpc.py`), and the stale start-up comment fixed;
   - `docs/agent-rpc.md`: 1.0, the settled version numbers, nullable `listWindows` fields, and the `run.stepResult` field names;
   - ADRs runs-api, run-screenshots and contracts-v1-freeze set to Accepted;
-  - RS 0.9 (TBD-2 closed, NFR-07/08 confirmed by #152), SDD §5 refreshed, inbox cleared, two notes in hasan's inbox.
+  - RS 0.9 (TBD-2 closed, NFR-07/08 confirmed by #152), SDD §5 refreshed, and two notes in hasan's inbox.
+  - The branch gets a one-line conflict in `memory-bank/decisions/README.md` with #240, whichever merges second: #240 appends its row under the two rows this branch flips to Accepted.
+- **Inbox: every entry up to 2026-11-14 is handled, but they are deliberately NOT deleted yet** (`learnings.md` 2026-11-15: `merge=union` brings them back while #235, #237, #239 and #240 are open). Delete them all once those four have merged. The six entries those PRs add are already answered in the reviews, so delete them too. Two facts from them to keep:
+  - #239's note: Qt puts the class name in place of a cleared `objectName` (`QApplication.login.QPushButton`). A healer matching on `automationId` sees a plausible id that is neither the logical name nor unique, which matters for #73 and #43.
+  - #237's note: a Qt combo box *can* be selected through `LegacyIAccessible.DoDefaultAction`, so #36's `listSearch` pairs that assumed it impossible can be written now.
 - Reviews given 2026-11-15, all APPROVE: #240 (failure category, ADR approved), #234 (pick hotkey), #237 (playback v1), #239 (bug versions), #235 (Windows LLM latency). RQ1 container decision on #29: a second set, reported separately.
 - Promised in those reviews, not done yet:
   - **`ai/`** (#71/#78): an optional `reasons` request field, default false; a 60 s default service timeout; `StepGenerator.warm_up` must send the same `options` as `request_body` (it warms the wrong offload today). After #235 merges: label latencies as Apple-silicon or Windows in `ai/README.md` and `ai/API.md`, linking `eval/llm-latency/report.md`. Correct `ai/spikes/llm-smoke.md`'s reproducibility claim, and plan #77 with repeated runs per sentence.
@@ -22,7 +26,7 @@ Only galip's agent edits this file. Overwrite it at every session end.
     - TBD-1, SC-07 and NFR-02.
   - **#36 guideline:** never pair `rowCount` (GridPattern) with `rowExists` (on screen) on a virtualised target.
   - **#147/#37:** prompt lines and derived schema for rows. List the object's `columns` in its description, and do not narrow to an enum (omer #221: columns can be incomplete).
-- Open, no action yet: #226 (`-32002` `data: {blocked, reached}`, Week 6, mine); `docs/agent-rpc.md` "What the client does with a result" once #54 adds screenshots (omer 11-08); JUnit mapping of a `repairProposed` run is mine to settle (runs ADR, #66). Overdue: #19 (advisor workshop; Q4/Q5), #131 (GPU request), #20 (waits on #10 → PR #126). Week 6: #43 and #42, not started.
+- Open, no action yet: #226 (`-32002` `data: {blocked, reached}`, Week 6, mine); `docs/agent-rpc.md` "What the client does with a result" once #54 adds screenshots (omer 11-08); JUnit mapping of a `repairProposed` run is mine to settle (runs ADR, #66). Overdue: #19 (advisor workshop; Q4/Q5), #131 (GPU request), #20 (waits on #10 → omer's PR #126, still REVIEW_REQUIRED). Week 6: #43 and #42, not started.
 - Local tools on this Mac:
   - The venvs under `~/Desktop` hang on import because iCloud evicted their files.
   - I ran the agent tests from a scratchpad venv: `python3 -m venv <scratch>/venv-agent && <scratch>/venv-agent/bin/pip install -e "agent[dev]"`. Result: 436 passed, plus 1 known macOS-only failure in `test_uia.py`, reported to hasan.
