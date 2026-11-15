@@ -422,6 +422,38 @@ Windows tests do exactly that via `_python_with_pyside()`.
   expands a Qt control once and then relies on it staying open will not see a late-filling
   list — **re-expand while it shows nothing**, and give a read-back one poll interval.
 
+- 2026-11-14 · hasan · #162 · **A warm-up only warms what it actually asks for.**
+  `StepGenerator.warm_up` sends its own minimal body and never goes through `request_body`, so
+  a subclass that changes the request (here `options.num_gpu = 0`) warms the *other*
+  configuration and the first timed request silently pays for the model reload. The symptom is
+  a `warm-up 0.0s` line beside a first request far above the median — in this case 34.5 s
+  against a 15.3 s p50, which produced a false "1 of 10 requests exceeded the 30 s deadline".
+  Anything measuring latency through a subclassed client should check that its warm-up and its
+  measured requests load the same thing.
+- 2026-11-14 · hasan · #162 · **Ollama reuses a runner already loaded CPU-only.** A request
+  that does not mention `num_gpu` does *not* force a reload onto the GPU; it is served by
+  whatever runner is loaded. Measured on Ollama 0.40.16 by pre-loading `qwen3:8b` with
+  `num_gpu: 0` and then calling `POST /ai/generate-steps`, which has no such option:
+  `/api/ps` still reported `size_vram: 0`. This is the only reason a service that builds its
+  own request can be measured CPU-only — and the same fact is a trap in the other direction, so
+  **unload with `ollama stop` before a run that is supposed to use the GPU**, and read
+  `size_vram` rather than trusting the configuration you asked for.
+- 2026-11-14 · hasan · #162 · **A model that fits in VRAM beats a better model that does not,
+  and it reverses the ranking between machines.** `gemma4:e4b-it-qat` loads as 3.1 GB and runs
+  100 % on a 6 GB RTX 3060; `qwen3:8b` loads as 6.0 GB, does not fit, and runs 30 % CPU /
+  70 % GPU. Result: gemma4 is 3.2× faster on Windows while being the *slower* of the two on the
+  M2 Mac. A fully VRAM-resident model is also almost immune to the machine's own CPU load
+  (1.65 → 1.70 s under 59 % busy, against 5.34 → 6.29 s), which matters because AYNA's agent,
+  client and server share the box during a run. So "which model is faster" is a question about
+  the box, not the model.
+- 2026-11-14 · hasan · #162 · **Measure with the deadline raised, then compute the share that
+  would have exceeded it.** The AI service answers 504 at 30 s, so measuring it as shipped
+  censors exactly the tail the question is about. Run with `--timeout 600` and count afterwards.
+- 2026-11-14 · hasan · #162 · **`powershell.exe` is not always on `PATH`** for a process started
+  from the POSIX shell here, so a helper shelling out to it returns nothing and a measurement
+  silently loses its load figure. `ctypes.windll.kernel32.GetSystemTimes` is stdlib, exact and
+  has no `PATH` dependency. `nvidia-smi` is in `C:\Windows\System32`, so it needs the absolute
+  path for the same reason.
 - 2026-11-14 · hasan · #29 · **The recognition backend cannot be imported without `websockets`.** `agent/ayna_agent/recognition/uia.py` takes its four exception types from `ayna_agent.rpc`, which imports `websockets.asyncio.server` at module level, so any consumer of the UIA backend needs the WebSocket server dependency. RQ1's `capture` is the first consumer that is not the RPC server, and it fails on the repo-root `.venv` with `cannot load the UIA backend: No module named 'websockets'`. Run `capture` on `agent/.venv`. Fix requested in galip's inbox (move the exceptions to a dependency-free module and re-export).
 - 2026-11-14 · hasan · #29 · **A screen is the topmost window, not every window of the process.** `measure.py capture` used to snapshot all of a process's windows and number the files, so KeePass 2's `Add Entry` state wrote `entry-editor-1.json` (the dialog) *and* `entry-editor-2.json` (the main form behind it). `measure` counts every snapshot file of an app, so the main window's controls were counted twice and the rate was wrong. `list_windows` comes from `EnumWindows`, which answers in Z-order with the top window first, so `windows[0]` is the staged screen; the foreground window is **not** usable for this, because the terminal running the command is in front. Any harness that captures "a screen" by process has this bug waiting.
 - 2026-11-14 · hasan · #29 · **Leave no UIA-driven app open when running the `eval` suite.** With KeePass 2 and HandBrake open, `eval/apps/trial/tests/test_uia.py` printed a `Windows fatal exception: code 0x8001010d` traceback (`RPC_E_CANTCALLOUT_ININPUTSYNCCALL`) and the run took 57 s; with them closed, the same five tests pass in 2.1 s and print nothing. pywinauto's `wait_until_passes` retries through it so nothing fails — but the dump reads exactly like a crash in a CI log.

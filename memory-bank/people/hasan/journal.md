@@ -644,6 +644,48 @@ Lesson: on a PR of my own, read the branch's task note before believing the revi
 the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
 Week 3 and sits outside that order — it needs a decision, not work.
 
+## 2026-11-14 — third session · #29 (round-2 tooling) and #162 (measured)
+
+- **#29**: built what a second independent labelling round actually needs and the procedure did
+  not have — `measure.py sheet` writes a blank per-screen label file with **no** `matchCount`,
+  `recognised` or `primary` column (a labeller who sees those labels the measurement, not the
+  screen), `measure.py agree` compares two rounds (raw agreement, Cohen's kappa, the
+  disagreement table), `measure --labels --round r2` reports the second round without
+  overwriting the first, and `labelling.md` gained §8. Kappa is reported **undefined, not 1.0**,
+  when both rounds use a single category — HandBrake's queue is six rows and all six are
+  controls, so chance agreement is 1. 8 new tests (45 in rq1). `fdf05e9`, `c3a924e`.
+- Showed the user what the round is worth in numbers rather than asserting it: the three
+  disabled `TabItem`s on `queue` are one call and move that screen 66.7 % → 33.3 %. Also said
+  plainly that **I cannot be the second labeller** (round 1's calls are all in the task note)
+  and that a fully blind round is gone anyway, since the findings are published on #29. Offered
+  four ways to get a labeller; **the user postponed the round** and asked to move on. Sheets and
+  tooling are committed and ready.
+- **#162**: new branch, task note, and `eval/llm-latency/` — a matrix driver that imports
+  `ayna_ai.generate` rather than copying it, no new dependency. Then all 13 runs on this
+  machine: GPU, forced CPU-only, and under 8 busy processes. 24 tests, ruff clean. `6b18e05`,
+  `4c516a4`.
+- **The issue's premise was wrong about this machine and that is the main finding.** It assumed
+  no GPU; there is an RTX 3060 Laptop with 6 GB, so the default numbers beat the Mac's and the
+  closed-network number had to be forced with `options.num_gpu = 0`. CPU-only it is 2.7× the
+  Mac. `gemma4` fits in 6 GB and `qwen3:8b` does not, which **reverses the model ranking**
+  between the two machines — gemma4 3.2× faster here and 10/10 keywords against 9/10.
+- Recommended a **60 s** Windows deadline instead of 30 s, and **`reasons` opt-in, default
+  off**, with the CPU-only evidence for both. Four of five criteria met; the fifth is galip's
+  files.
+- The harness caught two of my own measurement errors before they were published — a warm-up
+  that warmed the wrong offload (false `1/10 over 30 s`) and a cold load inside an HTTP sample.
+  `check_offload` now refuses to record a run whose `size_vram` contradicts its configuration.
+  Both gotchas are in `learnings.md`.
+- Next step: post #162's numbers as an issue comment and open the PR. Then PR #234's review
+  (omer asks for me by name on #22's three states), then #29's labelling round when a person is
+  free.
+- Pushed #162 as **PR #235** and posted the numbers on the issue (`6876199863`). Then reviewed
+  **PR #234** (omer, #24 pick hotkey): CHANGES_REQUESTED for one constant —
+  `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the Spy's own retry ladder captures for 30 s and
+  120 s, and the agent serialises UIA calls on one thread, so a pick during a long capture shows
+  a false `agent-error`. Confirmed what he asked: `pickState` reads #22's three states correctly.
+  I owe #24 its Windows check, which is the first real test of the client's DIP -> physical
+  conversion at 100 % and 150 %.
 ## 2026-11-14 — fourth session (continued): #162 and #23 out, #40 started
 
 - Pushed **#162** as PR #235 with the numbers on the issue, then **reviewed PR #234** (omer, #24

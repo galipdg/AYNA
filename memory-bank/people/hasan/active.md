@@ -79,6 +79,45 @@ Only hasan's agent edits this file. Overwrite it at every session end.
   session from touching the board.
 - **#28's four acceptance criteria are all ticked** -- the earlier note saying "three of four,
   the last is galip's #7" was wrong. It stays open because its dependency **#24** is still open.
+- **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/162-windows-llm-latency` for PR #235):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/162-windows-llm-latency`" are that branch's copy, unedited; reconcile them at your next session end.
+
+## From `hasan/162-windows-llm-latency`, kept at merge
+
+- Current issue: **#162 (NFR-12 Windows latency, Week 3, overdue) — measurement DONE**,
+  `hasan/162-windows-llm-latency`, commits `6b18e05` and `4c516a4`. Four of its five
+  acceptance criteria are met; the fifth is galip's files. **PR #235 is open** (deliberately no
+  `Closes`, since criterion 5 is galip's) and the numbers are posted as issue comment
+  `6876199863`. It was `CONFLICTING` after #233 merged; this merge is the fix.
+- **#29 is still open and in progress** on `hasan/29-rq1-measure` (PR #233, deliberately no
+  `Closes`). Its three criteria are ticked; what is left is the **second independent labelling
+  round**, which the user **postponed on 2026-11-14**. Everything for it is committed and
+  ready — blank blind sheets at `eval/rq1/labels/{handbrake-queue,keepass2-options}-r2.csv`
+  plus `measure.py sheet` / `agree` / `measure --labels --round r2` (`fdf05e9`), and
+  `labelling.md` §8. It needs a person's hour and nothing else.
+- **The second labelling round is worth doing before #64 quotes anything, and here is why in
+  numbers:** HandBrake `queue`'s three disabled `TabItem`s are **one** judgement call and they
+  move that screen from **66.7 % (4/6)** to **33.3 % (1/3)**; KeePass 2 `options` is symmetric
+  (100 % against 70.4 % if the 16 composite inner parts are called `control`). Both headline
+  rates rest on a single labeller's call. **The agent cannot be that second labeller** —
+  round 1's labels and every one of its calls are written out in the #29 task note — and a
+  *fully* blind round is no longer available inside the team either, since the composite rule,
+  the nameless-`MenuItem` finding and the `e20` retraction are published on #29.
+- **PR #234 (omer, #24 pick hotkey): reviewed 2026-11-14, CHANGES_REQUESTED.** `pickState`
+  reads #22's three states exactly right, including the two subtle ones (a `snapshotId` other
+  than the one on screen means none; an `elementId` missing from the tree means "changed"), and
+  the tests cover them. **One real bug**: `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s, but the agent
+  runs every UIA call on one worker thread in arrival order (`rpc.py:72-80`), so a pick waits out
+  a running capture — and the Spy's own retry ladder is `LONGER_SNAPSHOT_BUDGETS_MS =
+  [30_000, 120_000]`. Pressing the hotkey during a "capture for longer" therefore shows an
+  `agent-error` while the capture is fine. Asked him to derive it the way `snapshot()` does.
+  Smaller: `highlighter.hide()` is never restored on a pick that selects nothing, so the frame
+  around the selected node disappears until the user clicks another one.
+- **I owe #24 its Windows check** (steps on the issue, `needs-windows-test`): the own-window check
+  only matches on Windows, and this is the **first exercise of the client's DIP → physical
+  conversion** at 100 % and 150 % — the half #22's scaling evidence does not cover. Told omer I
+  will test the version *after* the timeout fix.
+- **`gh` cannot set the Project status**: the token is missing `read:project`, so #162 is still
+  `Todo` on the board. `gh auth refresh -s project` is interactive, so the user has to run it.
 - **#22 is DONE and closed.** All three criteria are ticked, the scaling check ran here on
   2026-11-12 at 100 % and 150 % and passed at both, and **PR #227 was squash-merged on
   2026-11-14 (`bfcdb35`)**, which closed the issue. Nothing is left on it.
@@ -267,6 +306,48 @@ Report `eval/llm-latency/report.md`, 13 result files under `eval/llm-latency/res
 - Two gotchas now in `learnings.md`: a subclassed warm-up that skips `request_body` warms the
   wrong offload, and **Ollama reuses a runner already loaded CPU-only** (so `ollama stop` before
   a GPU run, and read `size_vram` instead of trusting the configuration you asked for).
+
+## #162 — the numbers, so they are not re-measured
+
+Full report `eval/llm-latency/report.md`; 13 result files under `eval/llm-latency/results/`,
+each carrying the machine, the offload in VRAM and every row. `run.py` drives **galip's**
+`ayna_ai.generate` rather than a copy, the same way `eval/rq1/measure.py` drives `ayna_agent`.
+
+- **This machine is not the machine NFR-12 is about.** It has an **RTX 3060 Laptop, 6 GB**, so
+  its default numbers beat the Mac's. Forced CPU-only it is **2.7× slower than the Mac**. Every
+  configuration was therefore run twice, GPU and CPU-only, and the pair is the result.
+- **`qwen3:8b` does not fit in 6 GB**: loads as 6.0 GB, runs **30 % CPU / 70 % GPU**.
+  **`gemma4:e4b-it-qat` does**: loads as 3.1 GB, **100 % GPU**. So gemma4 is **3.2× faster
+  here** and matched the expected keywords **10/10 against qwen3's 9/10** — while being the
+  *slower* of the two on the M2. **"Which model is faster" is a question about the box.**
+- Headline p50/p95 seconds: CLI qwen GPU **5.34 / 8.38**, CLI gemma GPU **1.65 / 2.47**, CLI
+  qwen CPU **15.30 / 22.68**, CLI gemma CPU **14.29 / 19.64**, HTTP qwen GPU **8.59 / 16.04**,
+  HTTP gemma GPU **2.36 / 3.56**, HTTP qwen CPU **23.24 / 41.30**.
+- **Recommendation: a 60 s Windows deadline, not 30 s** (~1.4× the worst measured p95 of
+  43.33 s). 30 s only where the model sits wholly in VRAM. A deadline is not a latency target,
+  so raising it does not weaken NFR-12.
+- **Recommendation: `reasons` opt-in per request (#78), default off** — CPU-only, p95 22.68 s
+  and 0/10 over the deadline without, 43.10 s and 2/10 with, for ~55 % more output tokens.
+- **A fully VRAM-resident model is almost immune to the machine's own load**: gemma4 1.65 →
+  1.70 s at 59 % busy; qwen3 5.34 → 6.29 s. Under load the damage is in the **tail** — the
+  CPU-only service's p50 barely moved (23.24 → 22.75 s) while its deadline share went 2/10 →
+  3/10. Relevant because the agent, client and server share the box during a run.
+- **Warm every offered model, not just the default**: a first request against a non-default
+  model pays 14.71 s on the GPU and **25–51 s CPU-only**.
+- **Two gotchas now in `learnings.md`**: a subclassed warm-up that skips `request_body` warms
+  the wrong offload (it produced a false `1/10 over 30 s`), and **Ollama reuses a runner
+  already loaded CPU-only** rather than reloading it for a request with no `num_gpu` — which is
+  the only reason the service can be measured CPU-only, and a trap in the other direction, so
+  `ollama stop` before a GPU run and read `size_vram` instead of trusting the config.
+- **Not established, and the report says so:** ten sentences and one run each, so every p95 is
+  an interpolation between the 9th and 10th value; the `json` baseline scored **0/10** valid
+  (the model writes `action` where the schema wants `keyword`, targets and values correct); and
+  **output is not reproducible run to run at temperature 0 with seed 42** — 1 of 10 sentences
+  differed between two runs that differed only in machine load, which contradicts
+  `ai/spikes/llm-smoke.md` and matters for **RQ3 (#77)**. All in galip's inbox.
+- **What is left on #162 is not mine**: criterion 5 is `ai/README.md` and `ai/API.md` labelling
+  which latencies are Apple-silicon, and the `reasons` toggle needs `service.py:181`. Both
+  requested in galip's inbox 2026-11-14, with the numbers.
 
 ## What is waiting on someone else
 
