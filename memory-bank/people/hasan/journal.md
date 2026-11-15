@@ -644,6 +644,137 @@ Lesson: on a PR of my own, read the branch's task note before believing the revi
 the RQ1 harness, which the sample app that landed today is the input for. #162 is overdue from
 Week 3 and sits outside that order — it needs a decision, not work.
 
+## 2026-11-14 — third session · #29 (round-2 tooling) and #162 (measured)
+
+- **#29**: built what a second independent labelling round actually needs and the procedure did
+  not have — `measure.py sheet` writes a blank per-screen label file with **no** `matchCount`,
+  `recognised` or `primary` column (a labeller who sees those labels the measurement, not the
+  screen), `measure.py agree` compares two rounds (raw agreement, Cohen's kappa, the
+  disagreement table), `measure --labels --round r2` reports the second round without
+  overwriting the first, and `labelling.md` gained §8. Kappa is reported **undefined, not 1.0**,
+  when both rounds use a single category — HandBrake's queue is six rows and all six are
+  controls, so chance agreement is 1. 8 new tests (45 in rq1). `fdf05e9`, `c3a924e`.
+- Showed the user what the round is worth in numbers rather than asserting it: the three
+  disabled `TabItem`s on `queue` are one call and move that screen 66.7 % → 33.3 %. Also said
+  plainly that **I cannot be the second labeller** (round 1's calls are all in the task note)
+  and that a fully blind round is gone anyway, since the findings are published on #29. Offered
+  four ways to get a labeller; **the user postponed the round** and asked to move on. Sheets and
+  tooling are committed and ready.
+- **#162**: new branch, task note, and `eval/llm-latency/` — a matrix driver that imports
+  `ayna_ai.generate` rather than copying it, no new dependency. Then all 13 runs on this
+  machine: GPU, forced CPU-only, and under 8 busy processes. 24 tests, ruff clean. `6b18e05`,
+  `4c516a4`.
+- **The issue's premise was wrong about this machine and that is the main finding.** It assumed
+  no GPU; there is an RTX 3060 Laptop with 6 GB, so the default numbers beat the Mac's and the
+  closed-network number had to be forced with `options.num_gpu = 0`. CPU-only it is 2.7× the
+  Mac. `gemma4` fits in 6 GB and `qwen3:8b` does not, which **reverses the model ranking**
+  between the two machines — gemma4 3.2× faster here and 10/10 keywords against 9/10.
+- Recommended a **60 s** Windows deadline instead of 30 s, and **`reasons` opt-in, default
+  off**, with the CPU-only evidence for both. Four of five criteria met; the fifth is galip's
+  files.
+- The harness caught two of my own measurement errors before they were published — a warm-up
+  that warmed the wrong offload (false `1/10 over 30 s`) and a cold load inside an HTTP sample.
+  `check_offload` now refuses to record a run whose `size_vram` contradicts its configuration.
+  Both gotchas are in `learnings.md`.
+- Next step: post #162's numbers as an issue comment and open the PR. Then PR #234's review
+  (omer asks for me by name on #22's three states), then #29's labelling round when a person is
+  free.
+- Pushed #162 as **PR #235** and posted the numbers on the issue (`6876199863`). Then reviewed
+  **PR #234** (omer, #24 pick hotkey): CHANGES_REQUESTED for one constant —
+  `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the Spy's own retry ladder captures for 30 s and
+  120 s, and the agent serialises UIA calls on one thread, so a pick during a long capture shows
+  a false `agent-error`. Confirmed what he asked: `pickState` reads #22's three states correctly.
+  I owe #24 its Windows check, which is the first real test of the client's DIP -> physical
+  conversion at 100 % and 150 %.
+## 2026-11-14 — fourth session (continued): #162 and #23 out, #40 started
+
+- Pushed **#162** as PR #235 with the numbers on the issue, then **reviewed PR #234** (omer, #24
+  pick hotkey): CHANGES_REQUESTED for one constant. `pickState` reads #22's three states exactly
+  right, including the two subtle ones, but `ELEMENT_FROM_POINT_TIMEOUT_MS` is 10 s while the
+  Spy's own retry ladder captures for 30 s and 120 s, and the agent serialises UIA calls on one
+  worker thread (`rpc.py:72-80`) -- so a pick during a long capture shows a false `agent-error`.
+  Also noted that `highlighter.hide()` is never restored on a pick that selects nothing.
+- **#23 (win32 fallback trial) done in one sitting and the answer is "do not build it".** Built
+  `eval/spikes/win32_probe.py`, ran KeePass 2 twice from two launches and HandBrake once. The
+  elements win32 can see are exactly the ones UIA already names, the control id is literally the
+  same `automationId`, and 7 of 8 changed between launches. HandBrake: 149 elements, **one**
+  HWND. One real finding: a native Win32 `Edit` kept `1001` across the restart, which
+  `_GENERATED_ID` discards -- recorded as an open issue, not a change, because `model.py` is
+  normative under #11 and the sample is one element. PR #236, `Closes #23`.
+- Three of that probe's 19 tests exist because I got it wrong first, each time in the direction
+  that *flattered* the fallback: a zero control id counted as stable, `None` in a match key
+  crashed `compare` on every real run, and absent handles counted as "the handle did not move"
+  (49 of them, which read as evidence against `NEVER_MATCH`). Worth remembering as a shape:
+  measurement bugs are not random, they lean towards the conclusion you set out to test.
+- **Started #40 (Playback v1)** and got two of the four keywords: `Wait` and `Verify`. The useful
+  discovery was in the issue text all along -- "wait until the element exists, is **visible and
+  enabled**" -- which #26's `_resolve_waiting` did not do, so a disabled element resolved at once
+  and failed inside `actions`. #29's HandBrake finding is the real case. `Verify` needed a new
+  module because three of its six properties are state the walk deliberately does not carry.
+- Corrected a stale note: **#28's four criteria are all ticked**; it is open because #24 is.
+- **Next step: `Select`**, whose design is written out in the task note -- it is not a pure action
+  (the items of a combo box may not exist until it is expanded, #33), and Qt is expected to
+  refuse, which matters because SC-20 needs it.
+
+## 2026-11-14 — fifth session: #40 finished, PR #237
+- **All four remaining keywords landed**: `Select` (`f36f1b3`) and `SelectRow` + the three row
+  checkpoints (`dc395c4`), on top of this morning's `Wait` and `Verify`. 612 agent tests pass,
+  ruff clean, `docs/agent-rpc.md`'s `runSteps` section rewritten, **PR #237** with both reviews
+  requested, the three acceptance criteria ticked and the Windows check posted as issue comment
+  `6879885017` with `needs-windows-test`.
+- **`Select` cost two new modules, and the reason is worth keeping**: the item is a *descendant*
+  of the target, so #26's habit of throwing the raw nodes away after `describe_tree` had to
+  stop (`playback/tree.py`), and a closed combo box has no items at all, so the keyword has to
+  expand the box and **read the window again** rather than look harder (`playback/items.py`).
+  Everything about the Qt obstacle from #33 is still unanswered until the Windows session; the
+  code reports it as a finding about the application instead of as a wrong value.
+- **The row work was mostly *reading the measurements right*, not writing code.** Three shapes
+  from the v0.2 ADR, and the rule had to be structural (does the item have cell children? is
+  the target a Table?) rather than per framework, or the next application breaks it. The part
+  that would have been easy to get silently wrong: the column list, which **must** reproduce
+  omer's `GridColumns.java` to the pixel, because that rule fills the dropdown the tester picked
+  the column from — otherwise a `cell` check reads the cell *next to* the one they meant and
+  reports `passed`. Both of them have inbox entries about it.
+- **A defensive test hung pytest with no output**: `model.describe_tree`'s ancestor walk has no
+  seen-set, so a hand-built node that is its own parent loops for ever. Unreachable from a real
+  UIA walk; in `learnings.md` as a fixture hazard and in the task note as a small open issue.
+- **Next step**: nothing of mine blocks #40 — the Windows session answers steps 1 and 3 (SC-20
+  and the cell-selecting case). Still owed: the second labelling round on #29 (a person's hour),
+  #24's Windows check after omer's fix, and my five #10 entries.
+
+## 2026-11-14 (second session) — #40's own Windows check, and the four defects it found
+
+Ran #40's manual check (issue comment `6879885017`) at the Windows machine rather than taking a
+review, because the review queue was empty and the check was the only thing of mine in the
+Windows queue. **7 of 7 pass — but steps 1 and 2 failed on the code PR #237 shipped**, and
+fixing them is `b28f2b9`.
+
+- **No driver existed.** Nothing in the repo plays a step document by hand, so the first half
+  hour went on writing one in the scratchpad: `UiaDesktop()` + `setup()`, `list_windows()`,
+  `desktop.run_steps(handle, document, targets)`. Use `agent/.venv`, not the root one —
+  `ayna_agent` is only installed in the former. Worth a committed `ayna_cli` subcommand (#61).
+- **The pattern lookup never unwrapped the element.** `get_elem_interface` wants the raw
+  `IUIAutomationElement`; the walk hands out a `UIAElementInfo`; only #26's `actions.py`
+  unwrapped it. So on real Windows every pattern read the four new modules make returned `None`
+  — Select, SelectRow, Verify's live properties, `cell`, `rowCount`, all of it — and 612 unit
+  tests were green because a fake patterns function takes the fake element either way. One line
+  at the seam. This is the finding I would most want a future session to remember: **a fake that
+  accepts both shapes cannot tell you which shape the real one needs.**
+- **`Select` reported a choice it had not made.** Qt's `SelectionItem.Select()` returns cleanly,
+  changes nothing, and the item then reports `IsSelected` true. I only caught it because I read
+  the combo's value back instead of trusting the `passed` — the same habit that caught #22's
+  stale-node case. Every rung is now confirmed against the **target**, not the item.
+- Two more from the same probe: `LegacyIAccessible.DoDefaultAction()` is the **only** route Qt
+  honours, and the box was expanded only once while Qt's popup shuts itself after ~1 s, so a
+  late-filling list could never be found. Both pinned by tests that fail on the old behaviour.
+- **Measure from a clean start.** My first pass said three routes worked; re-measuring with a
+  reset between them showed two of those three were inheriting the previous route's result.
+- **SC-20 is unblocked and #33's conclusion was too broad** — UIA can choose in a Qt combo box,
+  and the popup's items are in the window's tree. In galip's inbox.
+- **Next step**: push `b28f2b9` + this memory, post the check result on #40, remove
+  `needs-windows-test`, re-request both reviews (the PR changed under them). Then the Windows
+  queue's other seven are omer's and need him present. Still owed: the second labelling round on
+  #29 (a person's hour), #24's Windows check after omer's fix, my five #10 entries.
 ## 2026-11-14 — #29's first real numbers, and two approved PRs unblocked
 
 - **Unblocked #227 and #232.** Both were APPROVED but `CONFLICTING`, and in both the only
@@ -730,3 +861,39 @@ Week 3 and sits outside that order — it needs a decision, not work.
   by eye, not only timed.
 - Next step: push `hasan/54-screenshot-per-step` and open the PR (`Closes #54`), saying in the
   body that the client side (reading the file and uploading it) is #51's and omer's.
+## 2026-11-15 — #46 and #47, the sample app's change and bug versions
+
+Session start found nothing of mine left on #40 (PR #237 green, both reviews requested), an
+empty review queue and one stale inbox item: the five #10 literature entries had merged as
+PR #171 on 31 October, so that debt was already paid. Took Week 6's pair instead.
+
+- **#46 (controlled UI-change versions), PR #238, five CI jobs green.** Six versions, one change
+  kind each plus a combined one, as **one declarative layer** rather than the six directories the
+  issue asked for — the user agreed, and the reason that decided it is that `ground_truth.json`
+  is generated from the same declaration the app applies, so the mapping cannot drift. 35 declared
+  changes, 48 mapping rows once the form labels and the neighbours a change pushed are counted.
+  26 offscreen tests, 23 through real UI Automation (17 app launches).
+- **The Windows run corrected three derived values, and one is a finding for #73**: clearing a Qt
+  widget's `objectName` does not remove its AutomationId — Qt substitutes the class name
+  (`QApplication.login.QPushButton`), so v2e still passes #33's criterion while every scenario's
+  locator fails. Also: a grid's inner UIA elements inherit the grid's id (six matches for one
+  lookup), and a `QGroupBox` is a `Group`. One bug of my own: `setVisible(old.isVisible())` during
+  `__init__` hid every retyped control for good.
+- **#47 (bug-injected versions), PR #239, five CI jobs green**, stacked on #238. Five bugs, and
+  four of them were already specified by `docs/rs/scenarios.md` down to the control, so the work
+  was reading the RS rather than inventing: SC-21 wants the **login** status label, SC-19 the
+  detail form's Save button disabled, SC-31 a login that opens the wrong screen, SC-34 the missing
+  validation. The fifth (wrong saved value) has no scenario, so it sits where SC-20's Verify
+  catches it; galip has the question. 25 offscreen tests, 5 through UIA, all green first run.
+- **The constraint that shaped #47**: a Qt signal keeps calling the method that existed when
+  `connect` ran, so #46's per-window hook shape cannot inject a behaviour bug. The bugs patch
+  module globals and class methods before the first window exists, and `reset()` undoes them
+  because one pytest process compares the correct build with the broken one.
+- Both issues' criteria are ticked and each criterion has a test that checks it, including the
+  change log and the "every bug names a scenario that exists" check, which reads the RS itself.
+- Side effects: `uia_check.kill_process_tree` now waits for the killed process (a reaped-too-late
+  app gave two `DetailWindow`s and an `ElementAmbiguousError`), and two flaky UIA tests are
+  recorded in the app README as #69 data rather than re-run away.
+
+Next step: nothing of mine is blocked on me. Retarget PR #239 to `main` once #238 merges, take
+galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 or #62).

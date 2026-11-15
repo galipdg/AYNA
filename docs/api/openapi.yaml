@@ -1389,6 +1389,8 @@ components:
     StepResultResponse:
       type: object
       properties:
+        category:
+          type: string
         durationMs:
           type: integer
           format: int64

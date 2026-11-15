@@ -1,14 +1,14 @@
-# Agent JSON-RPC (v0.1 built; v0.2 proposed)
+# Agent JSON-RPC (1.0; healing draft proposed)
 
 How the Electron client talks to the automation agent on the same machine. Part of the agent JSON-RPC contract (see `memory-bank/project/architecture.md`), frozen at G1 (week 7). Code: `agent/ayna_agent/rpc.py` (#16).
 
-Everything up to [Trying it by hand](#trying-it-by-hand) is v0.1, as built. The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-v02-draft), is a draft for v0.2 that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
+Everything up to [Trying it by hand](#trying-it-by-hand) is **1.0**, as built: v0.1 plus `runSteps` (#26) and `elementFromPoint` (#22), frozen at G1 (#52, ADR `2026-11-08-contracts-v1-freeze`). `schemas/agent-rpc.schema.json` fixes the message shapes and is checked by both sides (`client/src/main/__tests__/agentContract.test.ts`, `agent/tests/test_rpc_contract.py`). The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-draft), is a draft for a later 1.x that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
 
-> **One version number is still open (galip's to settle).** `runSteps` (#26) and `elementFromPoint` (#22) are both additions to v0.1 that *are* built, so by the rule below they are a minor bump — but "v0.2" is already the name of the healing draft above. Under the contracts-v1 freeze (#52, ADR `2026-11-08-contracts-v1-freeze`) the whole contract becomes **1.0** and these two ship as **1.1**, which settles it without renaming the draft. Until that merges, `ping` still answers `"0.1"` and the number understates what the agent can do.
+> **Version numbers, settled 2026-11-15 (galip).** The freeze made everything built before it **1.0**, `runSteps` and `elementFromPoint` included, so they do not need a 1.1 of their own; `ping` answers `"1.0"`. **1.1** is a failed step's `category` (FR-35, #63; proposed in PR #240 with ADR `2026-11-15-failure-category`): the agent answers `"1.1"` in the change that fills it. The healing draft below takes the next minor number when it is built. A line further down that still says `"0.1"` predates this note.
 
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over one WebSocket on `127.0.0.1`.
 - Only the client's main process connects. The renderer goes through the preload API, as for everything else.
-- `rpcVersion` (returned by `ping`) changes when this contract changes: minor for additions, major for anything that breaks an existing client.
+- `rpcVersion` (returned by `ping`) changes when this contract changes: minor for additions, major for anything that breaks an existing client. It is `RPC_VERSION` in `rpc.py` and follows `$defs/version` in `schemas/agent-rpc.schema.json`: the same major version, and never a minor version the schema does not have yet. The schema may be ahead while a field it adds is not built (a test checks both). A 1.x client accepts any 1.y agent.
 
 ## Starting the agent
 
@@ -51,7 +51,7 @@ A handshake that is missing it, has a wrong token, uses another scheme or repeat
 - `id` is a string, an integer or `null`. A request without `id` is a notification: it runs, and no reply is sent.
 - Each request starts as soon as it arrives, and replies come **in any order**: match them by `id`. UI Automation calls (`listWindows`, `snapshot`) still run one at a time, in the order they arrived, on a single agent thread. So `ping` answers at once even while a long snapshot runs.
 - Liveness: the library answers WebSocket ping frames at any time, and the `ping` method works too.
-- In v0.1 only the client sends requests. v0.2 (proposed, #149) adds notifications that the agent sends during a run; see the last section.
+- In 1.0 only the client sends requests. The healing draft (proposed, #149) adds notifications that the agent sends during a run; see the last section.
 
 ## Methods
 
@@ -61,7 +61,7 @@ Checks that the agent answers and which contract it speaks. It does not wait for
 
 ```json
 → {"jsonrpc": "2.0", "id": 1, "method": "ping"}
-← {"jsonrpc": "2.0", "id": 1, "result": {"agentVersion": "0.0.0", "rpcVersion": "0.1"}}
+← {"jsonrpc": "2.0", "id": 1, "result": {"agentVersion": "0.0.0", "rpcVersion": "1.0"}}
 ```
 
 ### `listWindows`
@@ -79,9 +79,9 @@ The visible top-level windows on the desktop, for the Spy's window picker. No pa
 | Field | Type | Meaning |
 |---|---|---|
 | `handle` | integer | Native window handle (HWND). Valid only while the window exists; pass it to `snapshot`. |
-| `title` | string | The window's UIA Name. Qt apps that set an `accessibleName` show that instead of the title (`memory-bank/learnings.md`). |
-| `className` | string | UIA ClassName. For Qt it is the Python/C++ class name, the most stable handle for a window. |
-| `processId` | integer | Owning process. |
+| `title` | string or null | The window's UIA Name; `null` when it cannot be read. Qt apps that set an `accessibleName` show that instead of the title (`memory-bank/learnings.md`). |
+| `className` | string or null | UIA ClassName; `null` when it cannot be read. For Qt it is the Python/C++ class name, the most stable handle for a window. |
+| `processId` | integer or null | Owning process; `null` when Windows will not say. Intended: the schema allows it and the client reads it (#52). |
 | `processName` | string or null | Exe file name without path; `null` when it cannot be read (e.g. an elevated process). |
 | `bounds` | [left, top, right, bottom] | Physical pixels in virtual-screen coordinates. Values are negative on a monitor left of or above the primary one. The rectangle the window **appears** to occupy (DWM extended frame bounds), not `GetWindowRect`: since Windows 10 a resizable window carries an *invisible* resize border outside its visible frame, and including it makes a highlight land outside the window (measured 8 px at 150 % scaling, #184). This is deliberately **not** the same rectangle as `snapshot`'s `window.bounds`, which is the window element's UI Automation rectangle and excludes the title bar. |
 
@@ -94,7 +94,7 @@ Captures one window's UIA subtree.
 | Param | Type | Meaning |
 |---|---|---|
 | `handle` | positive integer, required | A `handle` from `listWindows`. |
-| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default of **5 000 ms** applies (#12, measured in #161). When the budget runs out, the agent stops the walk and answers `-32002`. v0.1 returns no partial document. |
+| `timeoutMs` | integer 1–600000, optional | Time budget for the walk. If left out, the agent's default of **5 000 ms** applies (#12, measured in #161). When the budget runs out, the agent stops the walk and answers `-32002`. The agent never returns a partial document. |
 
 Unknown params are refused with `-32602`. New optional ones are a minor `rpcVersion` bump. There is deliberately no depth or element limit: an incomplete walk has exactly one outcome, `-32002`, because a partial tree is the one input healing must never rank candidates from (RS 0.6 FR-29/FR-35, "search incomplete"; ADR snapshot schema v0).
 
@@ -229,14 +229,15 @@ comparison the answer now makes is inside the noise of the two runs.
 
 ### `runSteps`
 
-Plays a step document against one window and answers with one result per step, in order (#26).
-**#26 performs Click and Type.** Every other keyword comes back as that step's `failed`
-result naming #40, so a test is never reported as passed because a keyword was skipped.
+Plays a step document against one window and answers with one result per step, in order (#26,
+#40). **All six keywords of the step schema are performed**: Click, Type, Wait, Select,
+SelectRow and Verify. A keyword outside the schema comes back as that step's `failed` result
+naming itself, so a test is never reported as passed because a keyword was skipped.
 
 | Param | Type | Meaning |
 |---|---|---|
 | `handle` | integer | The window to play against, from `listWindows`. #40 makes this optional and finds the window from a target's `windowTitle`; until then an explicit handle keeps window discovery (FR-35's "unexpected window") a separate problem. |
-| `steps` | object | A step document, `{version, steps}` (`schemas/step.schema.json`). Versions **0.1 and 0.2** are both read: Click and Type are identical in them. |
+| `steps` | object | A step document, `{version, steps}` (`schemas/step.schema.json`). Versions **0.1 and 0.2** are both read: v0.2 only adds SelectRow, `row` and the three row checkpoints, so every 0.1 document means the same thing in both. |
 | `targets` | object | Per logical name, the repository object's property sets: `properties` (its primary, "Find by") and optional `fallback` (its "Backup", #25). `serverElementId` and `featureVersion` from the healing request below are accepted and ignored. |
 | `runId`, `appVersionId` | UUID string, optional | Accepted and ignored, so the client can send one request shape before and after #40. |
 | `defaultTimeoutMs` | integer 1–600000, optional | What a step without `timeoutMs` waits. Default **10 000 ms** (RS NFR-05). A step's own `timeoutMs: 0` means check once and never means "use this". |
@@ -253,13 +254,43 @@ result naming #40, so a test is never reported as passed because a keyword was s
   is tried only when `properties` matches *nothing*: a fallback replaces a primary set, it
   cannot narrow one.
 
-Waiting is a re-read every 250 ms until the target resolves or the step's time runs out — never
-a fixed sleep.
+Waiting is a re-read every 250 ms until the step can proceed or its time runs out — never a
+fixed sleep.
 
-**Actions use UI Automation patterns only, never coordinates.** Click tries `Invoke`, `Toggle`,
-`SelectionItem.Select`, then `LegacyIAccessible.DoDefaultAction`; Type tries `Value.SetValue`
-and then focus-and-keys. A pattern that is present can still refuse (a disabled button has
-`Invoke`), so a refusal falls through to the next one.
+**What a step waits for is "ready", which is more than "resolves"** (#40): the target resolves
+to exactly one element *and* that element is neither disabled nor off screen, which is what the
+schema means by ready. `enabled`/`offscreen` that the provider does not report count as ready,
+since refusing would make every step of such an application time out. A **Verify is the
+exception** and waits only for resolution: a checkpoint may be *about* a disabled or offscreen
+element, and the check does its own re-reading afterwards. Two waits, two words in the message:
+` within N ms` for an element that never appeared, ` after N ms` for a state that never changed.
+
+**Actions use UI Automation patterns only, never coordinates.** A pattern that is present can
+still refuse (a disabled button has `Invoke`), so a refusal falls through to the next one.
+
+| Keyword | How |
+|---|---|
+| `Click` | `Invoke`, `Toggle`, `SelectionItem.Select`, then `LegacyIAccessible.DoDefaultAction`. |
+| `Type` | `Value.SetValue`, then focus-and-keys. A read-only ValuePattern fails the step rather than being worked around. |
+| `Wait` | Nothing: the pre-step wait above *is* the keyword, so nothing performed it. |
+| `Select` | The item of the target whose text is `value` (ValuePattern value when non-empty, else Name — the schema's rule for a cell), then `SelectionItem.Select`, then `Invoke`. **A closed combo box has no items at all**, so when the target offers `ExpandCollapse` it is expanded and the window **read again** before looking; a box it opened is closed again on success. Last, only after the whole wait, an **editable** box takes `value` as text through `Value.SetValue`, read back to confirm, and reports `performedWith: "SetValue"`. |
+| `SelectRow` | The row `row` addresses — `{index}` from the top, counted from 1, or the first row whose cell equals `{value}` (in `{column}` when given) — through `SelectionItem.Select`, then MSAA's `LegacyIAccessible.Select` (KeePass 2's list has nothing else). Never `Invoke`: invoking a row *activates* it. |
+| `Verify` | The checkpoint, re-read until it holds or the time runs out. |
+
+**Rows come from the captured tree, in the three shapes the v0.2 ADR measured**: the item is the
+row and its children are the cells (KeePass 2's `ListItem`s, a WinForms `DataGridView` row); the
+items *are* the cells and only `GridItemPattern` says which row they belong to (a Qt table has no
+row element); or the item is a one-cell row (a `QListWidget`). `rowCount` prefers
+`GridPattern.RowCount`, which also counts rows a virtualised grid has not materialised. The
+column names come from the same rule the server uses to fill `RepoObject.columns` (#221), so the
+column a tester picked in the editor is the column playback reads. A target that reports no
+columns at all makes a keyed row match nothing rather than failing on the column; a column that
+is not among the ones it does report is a mistake, and the message lists the ones it has.
+
+**A SelectRow on a view that selects cells rather than rows** selects the row's first cell, which
+is the ADR's rule, and the step **passes with a message saying so** instead of claiming the row:
+a pilot app's selection behaviour is not ours to change, and silence would be the one outcome a
+tester cannot debug.
 
 A result carries `stepIndex`, `status` (`passed`, `failed` or `notRun`), `durationMs`, and when
 known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback match is what #73
@@ -312,10 +343,10 @@ A document the agent cannot read at all is `-32602`; a handle that is not a top-
 `-32000`, and a window that cannot be read inside its budget is `-32002`, because reading the
 window is how a target is resolved.
 
-**Not yet, and all #40's:** the other keywords, checkpoints, healing, the `run.stepResult`
-notifications below, and finding the window without a handle. (Screenshots are no longer on that
-list: #54 added them above.) `ping` still
-answers `rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
+**Not yet:** healing (#73), the `run.stepResult` notifications below, and finding the window
+without a handle. `repairProposed` is not emitted until #74 is on `main`, as agreed on #223.
+Screenshots came off this list with #54 and are documented above. `ping` still answers
+`rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
 `elementFromPoint` belong to.
 
 ## Errors
@@ -362,9 +393,9 @@ asyncio.run(main())
 
 On Windows `cmd.exe`, set the variable first with `set AYNA_AGENT_TOKEN=...`.
 
-## Proposed (#149): step results and healing proposals (v0.2 draft)
+## Proposed (#149): step results and healing proposals (draft)
 
-> **Agreed, not implemented.** Decision: `memory-bank/decisions/2026-10-28-healing-proposal-transport.md` (Accepted), extended by `memory-bank/decisions/2026-10-31-healing-proposal-schema-0-2.md` (**Proposed** until Galip, Ömerfaruk and Hasan approve it: proposal schema 0.2 and the review follow-ups below). Playback (#40, #73) implements it. Until then `ping` answers `rpcVersion` `"0.1"`; with these messages it answers `"0.2"` (an addition).
+> **Agreed, not implemented.** Decision: `memory-bank/decisions/2026-10-28-healing-proposal-transport.md` (Accepted), extended by `memory-bank/decisions/2026-10-31-healing-proposal-schema-0-2.md` (**Proposed** until Galip, Ömerfaruk and Hasan approve it: proposal schema 0.2 and the review follow-ups below). Playback (#40, #73) implements it. Until then `ping` answers the version above (1.0, or 1.1 once `category` is filled); with these messages it answers the next minor version (an addition).
 
 When no element matches a step's target after the wait, the step ends as "repair proposed" with the top 3 candidate elements and the reasons for their scores (#73). This section says how that result reaches the client, which forwards it to the server unchanged. The CLI runner (#61) builds the same document without JSON-RPC and writes it to the same server endpoint.
 
@@ -375,7 +406,7 @@ When no element matches a step's target after the wait, the step ends as "repair
 - The client never answers a notification, not even with an error, and ignores a notification method it does not know, so that later minor versions can add some.
 - All notifications of a run go to the connection that sent the run request, in the order the agent sends them.
 - Nothing acknowledges a notification, and the agent never sends one again. A result lost between the client receiving it and writing it to the outbox (a client crash) is gone for good; that is why such a run is finished as `aborted`, which makes the gap visible instead of silent.
-- While a failing step's candidates are collected the agent sends nothing, possibly for minutes (the snapshot walk; 278.5 s for one KeePass 2 window in #6). v0.2 has no progress message: the client shows the step after the last result as running, with its elapsed time (#44).
+- While a failing step's candidates are collected the agent sends nothing, possibly for minutes (the snapshot walk; 278.5 s for one KeePass 2 window in #6). The draft has no progress message: the client shows the step after the last result as running, with its elapsed time (#44).
 
 ### The run request (defined by #40)
 
@@ -423,9 +454,9 @@ One notification per step of the run, in step order, when the step has finished 
 | `snapshot` | object | Only with `repairProposed`: the snapshot document (`schemas/snapshot.schema.json`, #12) of the window the candidates came from, captured when the wait ended. |
 | `healingProposal` | object | Only with `repairProposed`: a document per `schemas/healing-proposal.schema.json` (below). |
 
-#40 (duration, message), #54 (screenshot) and #63 (failure category) add their own fields to this message.
+The other fields are the ones `runSteps` returns per step: `durationMs` and `message` (#40; the name `durationMs` matches `timeoutMs` and `budgetMs`, hasan on #193), `matched` and `performedWith`. #63 adds a failed step's `category` (proposed in PR #240), and #54 adds the screenshot's.
 
-**Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`; the names are #54's and #40's to settle), so the approval screen can say how much older the image is than the geometry. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image itself travels as #54 and #51 decide; the proposal carries none.
+**Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`), so the approval screen can say how much older the image is than the geometry. **`screenshotAt` is settled by #54**: ISO 8601 with a UTC offset, to the millisecond, because steps are faster than a second. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image travels as a **path** (`screenshotPath`), settled by #54 above; the proposal itself carries no image.
 
 - `status` is `repairProposed` exactly when no element matched the target after the wait (TBD-5) and at least one candidate is left after playback's minimum score (#73). Then `snapshot` and `healingProposal` are both present, `healingProposal.snapshotId` is the snapshot's id, and the proposal's `runId`, `stepIndex` and `stepId` equal the result's.
 - No element matched and no candidate is left: `failed`, without a proposal.

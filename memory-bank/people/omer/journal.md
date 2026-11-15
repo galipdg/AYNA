@@ -294,3 +294,8 @@ Append-only. One entry per session, newest at the bottom:
 - Found that every Element keeps `siblingIndex`, so the header order survives in the graph: `columns` is read from the captured tree at request time (`GridColumns`), with no snapshot, graph or migration change and no ADR (omer had first agreed to an `Element.columns` property + ADR, which I proposed on the wrong belief that the order was lost).
 - Client: the row picker's and the `cell` check's column field is a dropdown with "Other…" when columns are known. #221's criteria rewritten on GitHub. Notes to galip (#37: `columns` can be incomplete, do not reject on it) and hasan (Windows check).
 - Next: PR on omer's OK, manual check on #221 with `needs-windows-test`; then #59.
+## 2026-11-15 (twenty-second session) · board check, FR-35 failure category
+- Session start: `main` has #224 (#52 contracts v1, merged by omer) and hasan's #29, #23, #46. PR #234 (#24) waits for hasan's re-review of `c414e02` and the Windows check. No review requests.
+- Board check on omer's word: 23 issues In progress, none closable. Mine wait for a Windows check (#17, #24, #38, #68, #184, #204, #206), galip's RS update (#185 NFR-17/TBD-2, #152 NFR-07/08), team review (#183) or are still in progress (#44, #53, #10). No closed issue left outside Done.
+- FR-35: `category` on a failed step, agent-rpc and ws-runs 1.1, REST `StepResultResponse.category`, server validation, storage, live event and report. ADR `2026-11-15-failure-category` (Proposed). Server 164/164, client 237/237, schema checker OK. Client display deferred to #44 (no step-result screen yet).
+- Next: push and PR on omer's OK; hasan fills the field in #63.
