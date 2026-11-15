@@ -2,7 +2,7 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15 (twenty-third session: closed #185 and #152 after RS 0.9, graph-model ADR status)
+- Last update: 2026-11-15 (twenty-third session: #185/#152 closed, #67 PR #249 merged, PR sweep)
 - **Current issue: #24** (Object Spy, Week 3, overdue). Pick hotkey in **PR #234** (`omer/24-pick-hotkey`, "Part of #24"): omer's macOS `dev:mock` check passed 2026-11-14; hasan requested changes 2026-11-14 (pick timeout behind a longer capture, frame after a pick) → fixed in `c414e02` 2026-11-15, re-review asked from hasan; galip's review still asked. #24 has `needs-windows-test`; close it once the Windows check passes (on `c414e02` or later). `omer/24-pick-hotkey` is checked out in `.claude/worktrees/continue-as-omer-2a05eb` (behind the remote); later sessions worked on local branches `claude/spy-pick-hotkey-*` tracking it.
 - **On `main` since 2026-11-12**: #59 (PR #229), #221 (#228), #33 (hasan, #230), #68 (#231, "Part of #68": Electron screen check in hasan's Windows queue, steps on #68, `needs-windows-test`), #22 (hasan, #227), hasan's memory PR #232.
 - **#224 (#52 contracts v1) merged 2026-11-15** (`e147a94`, by omer; GitHub shows hasan's approval only). `elementFromPoint` is in agent-rpc 1.0.
@@ -13,6 +13,14 @@ Only omer's agent edits this file. Overwrite it at every session end.
 - **2026-11-15**: #185 and #152 closed (RS 0.9 in #244 ticked their last criteria). `docs/graph-model.md` now says accepted for application-links, runs-api, run-screenshots (branch `omer/graph-model-adr-status`, not pushed). SDD §7 rows for the same ADRs still say Proposed on PR #242 (`omer/53-sdd-v05`): flip them there.
 - ADRs still **Proposed** on `main`: `2026-10-31-healing-proposal-schema-0-2`, `2026-10-31-accounts-and-tokens`, `2026-11-07-window-snapshot-unique`, `2026-11-15-failure-category` (galip and hasan).
 - **#67** (sample suite on a Windows runner): omer chose a skeleton without the CLI (#61/#66 open). **PR #249** (Part of #67, reviewer hasan; also carries the graph-model fix and this memory). First run: playback right, summary print crashed on cp1252 → fixed in `be19c92`, re-run pending. Task note `memory-bank/tasks/67-windows-suite-ci.md`.
+- **PR sweep 2026-11-15 evening** (on omer's word: review, resolve conflicts, merge):
+  - Merged: hasan's #250 (#61 CLI) and #251 (#63 category); omer's #241 (#68 row line) and #234 (#24 pick hotkey). #249 (#67) was merged by omer. #24 and #68 stay open for their Windows checks.
+  - #248 (#54 screenshots): approved after hasan's fixes; I merged `main` into his branch (`ef14151`, runner.py/agent-rpc.md conflicts with #251). **Not merged: waits for galip's approval** of agent-rpc 1.2 + ADR `2026-11-15-step-screenshot-transport` (`schemas/AGENTS.md`).
+  - #242 (#53 SDD v0.5): hasan's three points fixed (`a6afd43`) + today's merges; re-review asked from hasan.
+  - #246 (#245): `main` merged in; waits for a review (galip requested).
+  - Promised on #250: issues for a named suite subset, a version creation order / "latest" (`listVersions` sorts by string, "1.10" < "1.9"), the window title on the repo-object response, and `matched`/`performedWith` in `StepResultResponse` when #63/#73 need them. On #251: yes to `notAttempted` after #248 (agent-rpc 1.3, ws-runs 1.2, server enum, report/client words); hasan opens it.
+  - #67's last step: switch `ayna-suite.yml` to `ayna run` (#61 merged) and drop `.github/suite/run_suite.py`; JUnit from #66.
+  - agent `test_playback_rows.py`: 7 tests need `comtypes` without `@pytest.mark.windows` (fail on macOS, also on `main`); told hasan on #248.
 - **Reviewed hasan's #248 (#54 screenshots) 2026-11-15: changes requested.** (1) CI red: `test_the_image_is_not_upside_down` samples GetWindowRect's corner (invisible border; window may be covered) — fix suggested on the PR. (2) `stepResult` has `additionalProperties: false`, so `screenshotPath`/`screenshotAt` break agent-rpc 1.1 → asked for 1.2 + contract case + short ADR in the PR. omer said merge it if fit: merge once CI is green and the bump is in. Owed by omer afterwards: client uploads the PNGs and deletes the run folder (#51).
 - Local stacks/worktrees: the `ayna68` Compose stack (port 28080) may still run — remove with `docker compose -p ayna68 down -v`. #224's branch is checked out in `.claude/worktrees/pr-review-responses-f36ba1`.
 - **AGENTS.md** §2 lists hasan as `@HasanBerk18`; his login is `hasanberkyanikkaya` (reviewer requests fail with the old one). Changing AGENTS.md needs omer's OK.

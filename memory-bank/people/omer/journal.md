@@ -322,3 +322,4 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR on omer's OK; hasan fills the field in #63.
 - 2026-11-15 · #185 #152 #67 · Ticked and closed #185 and #152 (RS 0.9 in #244 met the last criteria). `docs/graph-model.md`: three ADRs now accepted. #67 found blocked by #66/#61 (hasan's CLI). Next: omer decides on #67 (wait, or a pre-CLI skeleton) and the SDD §7 flip on #242.
 - 2026-11-15 · #67 · Skeleton without the CLI: ayna-suite.yml, run_suite.py stand-in (JUnit, summary, --expect-failed), smoke suite; 12 tests pass on macOS. Windows run pending (PR CI).
+- 2026-11-15 · PR sweep · Merged #250, #251, #241, #234; approved #248 (merged main into it; waits for galip on the schema); #242 fixed after hasan's review; #246 main merged in. Next: galip's approvals (#248, #246), hasan's re-review (#242), #67 on the CLI.
