@@ -53,8 +53,21 @@ ITEM_TYPES: frozenset[str] = frozenset(
 )
 
 
+#: Why a `SelectFailed` happened (#63). See `rows.RowFailed` for why these are plain strings.
+ITEM_NOT_FOUND = "notFound"
+ITEM_REFUSED = "refused"
+
+
 class SelectFailed(Exception):
-    """`Select` could not choose the item, with the reason already worded for the result."""
+    """`Select` could not choose the item, with the reason already worded for the result.
+
+    `kind` separates "no such item" from "the application refused it", because #63 must not
+    merge them: the first is evidence about recognition, the second about the application.
+    """
+
+    def __init__(self, message: str, kind: str = ITEM_NOT_FOUND) -> None:
+        self.kind = kind
+        super().__init__(message)
 
 
 def items_of(tree: Tree, index: int) -> list[int]:

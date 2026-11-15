@@ -87,6 +87,26 @@ class Ambiguous(Exception):
         )
 
 
+class NotReady(Exception):
+    """The target resolved, but it is not usable yet: disabled, or off screen.
+
+    Lives here with the other resolution outcomes rather than in `runner`, so that
+    `playback.triage` can name it without importing the runner that imports triage (#63).
+
+    Its own failure, not an action error. The issue asks the runner to wait until the element
+    "exists, is visible and enabled" and the schema calls the same thing *ready*
+    (``timeoutMs`` is the "longest wait for the target … to become ready"), so an element that
+    resolves while disabled is something to keep waiting for -- and then to report as never
+    having become usable, rather than as a click that failed for an unstated reason.
+    """
+
+    def __init__(self, name: str, missing: Sequence[str]) -> None:
+        self.name = name
+        self.missing = list(missing)
+        wanted = " or ".join(self.missing)
+        super().__init__(f"{name}: did not become {wanted}")
+
+
 @dataclass(frozen=True, slots=True)
 class Resolution:
     """The one element a target resolved to, and how."""
