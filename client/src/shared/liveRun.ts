@@ -2,7 +2,7 @@
 // runner, and anyone's run from `/ws/runs`, merged into one shape. Pure, so both the main
 // process and the renderer can use it.
 
-import type { RunStatus, RunSummary, WindowInfo } from './api.ts'
+import type { RunsError, RunStatus, RunSummary, WindowInfo } from './api.ts'
 
 export const STEP_STATUSES = ['passed', 'failed', 'notRun'] as const
 export type StepStatus = (typeof STEP_STATUSES)[number]
@@ -93,3 +93,9 @@ export function stepOutcomeFrom(value: unknown): StepOutcome | null {
     category: typeof v.category === 'string' ? v.category : null,
   }
 }
+
+/** The answer to Run: the run exists and plays, or why it did not start. */
+export type StartRunResult =
+  | { ok: true; runId: string }
+  | { ok: false; reason: 'busy' | 'agent-not-connected' }
+  | RunsError

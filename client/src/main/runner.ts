@@ -4,7 +4,13 @@
 
 import type { RepoObjectSummary, RunsError, RunStatus } from '../shared/api.ts'
 import type { ElementDescriptor } from '../shared/element.ts'
-import { fromSummary, withOutcome, type LiveRun, type StepOutcome } from '../shared/liveRun.ts'
+import {
+  fromSummary,
+  withOutcome,
+  type LiveRun,
+  type StartRunResult,
+  type StepOutcome,
+} from '../shared/liveRun.ts'
 import type { Step } from '../shared/steps.ts'
 import type { Outbox } from './outbox.ts'
 import type { CreatedRun } from './runs.ts'
@@ -26,10 +32,7 @@ export interface RunnerDeps {
   clock?: Clock
 }
 
-export type StartAnswer =
-  | { ok: true; runId: string }
-  | { ok: false; reason: 'busy' | 'agent-not-connected' }
-  | RunsError
+export type StartAnswer = StartRunResult
 
 /** The key the user's window choice is kept under for a target without a window title. */
 const NO_TITLE = '\u0000'
