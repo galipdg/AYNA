@@ -206,7 +206,9 @@ def capture_window_png(handle: int, *, now: object = None) -> Screenshot:
     )
 
 
-def _capture_bgra(handle: int, width: int, height: int) -> tuple[bytes, str]:
+def _capture_bgra(
+    handle: int, width: int, height: int, *, top_down: bool = True
+) -> tuple[bytes, str]:
     """`width * height` BGRA pixels of the whole window rectangle, top-down.
 
     Top-down is not the default: a DIB is bottom-up unless its height is given as negative,
@@ -246,7 +248,9 @@ def _capture_bgra(handle: int, width: int, height: int) -> tuple[bytes, str]:
                 )
             captured_with = "bitBlt"
 
-        return _dib_bits(gdi32, memory_dc, bitmap, width, height), captured_with
+        return _dib_bits(
+            gdi32, memory_dc, bitmap, width, height, top_down=top_down
+        ), captured_with
     finally:
         if bitmap:
             gdi32.DeleteObject(bitmap)
@@ -256,9 +260,20 @@ def _capture_bgra(handle: int, width: int, height: int) -> tuple[bytes, str]:
 
 
 def _dib_bits(
-    gdi32: object, memory_dc: int, bitmap: int, width: int, height: int
+    gdi32: object,
+    memory_dc: int,
+    bitmap: int,
+    width: int,
+    height: int,
+    *,
+    top_down: bool = True,
 ) -> bytes:
-    """`GetDIBits` into a buffer, 32 bits a pixel, top-down."""
+    """`GetDIBits` into a buffer, 32 bits a pixel, top-down.
+
+    `top_down=False` asks for Windows' own default, bottom-up, and exists so a test can
+    read the same bitmap both ways and prove the rows are reversed between them -- which is
+    a fact about this function rather than about whatever the window happened to show.
+    """
     import ctypes
 
     class BITMAPINFOHEADER(ctypes.Structure):
@@ -280,7 +295,7 @@ def _dib_bits(
     header = BITMAPINFOHEADER()
     header.biSize = ctypes.sizeof(BITMAPINFOHEADER)
     header.biWidth = width
-    header.biHeight = -height
+    header.biHeight = -height if top_down else height
     header.biPlanes = 1
     header.biBitCount = 32
     header.biCompression = 0  # BI_RGB

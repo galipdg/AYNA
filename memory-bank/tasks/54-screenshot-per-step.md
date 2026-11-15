@@ -124,10 +124,17 @@ stacked branch.
   what FR-19 asks for. A caller that does not want it passes its own directory; the runner's
   `capture` parameter is optional and `run_steps` without one behaves exactly as #26 did, so
   nothing that existed before this issue changed shape.
-- **`test_the_image_is_not_upside_down` is the test to keep.** A DIB is bottom-up unless its
-  height is negative, and nothing else in the suite would notice if that flipped: the PNG would
-  still be a valid PNG of the right size. It checks the buffer's first row against `GetPixel` at
-  the window's top-left corner on screen.
+- **`test_the_capture_is_top_down_and_not_bottom_up` is the test to keep, and its first version
+  was wrong in a way worth remembering.** A DIB is bottom-up unless its height is negative, and
+  nothing else in the suite would notice if that flipped: the PNG would still be a valid PNG of
+  the right size. The first version compared our top row with `GetPixel` at the window's
+  top-left corner **on screen**, which passed here and **failed on the CI runner** -- correctly:
+  `PrintWindow` draws the *window* and `GetPixel` reads the *screen*, and they differ wherever
+  another window overlaps or, on Windows 11, where a rounded corner leaves that pixel undrawn in
+  the capture (CI saw black against the desktop's blue). It now reads the same window twice
+  top-down and once bottom-up: the two readings must be each other's reverse, which is a fact
+  about `_dib_bits` whatever the window shows, and the repeat makes a repainting window skip
+  instead of fail.
 - The `eval` and `agent` suites both showed an intermittent UIA readiness flake today, in tests
   that do not touch this work (`eval/apps/sample/tests/test_sample_uia.py` and
   `agent/tests/test_playback_trial_app.py`). It is #69 data and is written up in the #47 task

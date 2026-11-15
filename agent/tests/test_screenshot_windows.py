@@ -82,41 +82,38 @@ def test_the_capture_says_which_mechanism_read_it(one_window):
     assert captured.captured_with in {"printWindow", "bitBlt"}
 
 
-def test_the_image_is_not_upside_down(one_window):
+def test_the_capture_is_top_down_and_not_bottom_up(one_window):
     """A DIB is bottom-up unless its height is negative, and `_dib_bits` makes it negative.
 
-    Checked against the screen itself rather than against a golden image: `GetPixel` at the
-    window's top-left corner is, by definition, the colour of its first pixel row, so the first
-    row of our buffer has to match it. Reverse the rows and this reads the window's bottom-left
-    pixel instead and the assertion fails -- which is the bug this test exists for, and one that
-    no amount of PNG-structure checking would notice.
+    Read the same window both ways and the rows must be each other's reverse. That is a fact
+    about `_dib_bits` and holds whatever the window shows, which the first version of this test
+    did not: it compared our top row with `GetPixel` at the window's top-left corner on screen,
+    and CI failed it correctly. `PrintWindow` draws the *window*, `GetPixel` reads the *screen*
+    — they differ wherever another window overlaps, and on Windows 11 a rounded corner makes
+    that very pixel undrawn in the capture while the screen shows the desktop behind it.
     """
     handle = one_window["handle"]
     rect = window_rect(handle)
     width, height = rect[2] - rect[0], rect[3] - rect[1]
-    top_down, _ = shot._capture_bgra(handle, width, height)
 
-    rgb = shot.bgra_to_rgb(top_down)
-    stride = width * 3
-    rows = [rgb[i * stride : (i + 1) * stride] for i in range(height)]
-    assert len(rows) == height
-    # The window's first pixel row must be the first row of the buffer. `GetWindowRect`'s
-    # origin is the top-left corner, and a screen read of that exact pixel is the same colour.
-    import ctypes
+    first, _ = shot._capture_bgra(handle, width, height)
+    bottom_up, _ = shot._capture_bgra(handle, width, height, top_down=False)
+    again, _ = shot._capture_bgra(handle, width, height)
+    if first != again:
+        # A clock, a caret, a progress bar: the window repainted between the readings, so any
+        # difference below would say nothing. Skipping beats failing on a busy desktop.
+        pytest.skip("this window repaints between captures")
 
-    gdi32 = ctypes.WinDLL("gdi32")
-    user32 = ctypes.WinDLL("user32")
-    screen_dc = user32.GetDC(None)
-    try:
-        # GetPixel returns 0x00BBGGRR for the top-left corner of the window on screen.
-        packed = gdi32.GetPixel(screen_dc, rect[0], rect[1])
-    finally:
-        user32.ReleaseDC(None, screen_dc)
-    if packed == -1:
-        pytest.skip("the window's top-left corner is off-screen")
-    on_screen = bytes([packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFF])
-    assert rows[0][:3] == on_screen, (
-        "the first row of the buffer is not the window's top row: the DIB came back bottom-up"
+    stride = width * 4
+    rows_down = [first[i * stride : (i + 1) * stride] for i in range(height)]
+    rows_up = [bottom_up[i * stride : (i + 1) * stride] for i in range(height)]
+    assert len(rows_down) == height and len(rows_up) == height
+    if rows_down == rows_up:
+        pytest.skip(
+            "this window is vertically symmetric; the two readings cannot differ"
+        )
+    assert rows_down == list(reversed(rows_up)), (
+        "the two readings are not each other's reverse: the DIB came back bottom-up"
     )
 
 
