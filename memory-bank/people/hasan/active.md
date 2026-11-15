@@ -2,18 +2,53 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, second session. **#46 is merged** (PR #238, squash `ab7edf9`) and
-  this copy has `origin/main` merged as of `e147a94` (#224, the v1 contract freeze). It is
-  written on `hasan/47-bug-injected-versions` and carries #46's and #47's sections. Two other
-  copies are still behind and each holds its own issue's section: `hasan/40-playback-v1` (#40)
-  and `hasan/162-windows-llm-latency` (#162). **Whichever merges last keeps every branch's own
-  section** -- never resolve this file by taking one side. When the resolution is "ours", check
-  first that the other side holds no fact that lives nowhere else; that is how #236's four #29
-  bullets nearly went missing on 2026-11-15.
-- Current issue: **none in progress.** Four PRs of mine are open and every one waits on reviews,
-  not on me: **#239 (#47, now based on `main`)**, **#237 (#40)**, **#236 (#23)**, **#235 (#162)**.
-- **The next issue to pick is in Week 7/8 (#54, #55, #61, #62)**: Week 6's pair is done.
+- Last update: 2026-11-15, fifth stretch. This copy is on **`hasan/63-failure-triage`**,
+  branched from `main` at `02d44d5`, and carries #63's section. Week 6's pair and #40, #162 and
+  #23 are all **merged**; the copies still behind `main` are `hasan/54-screenshot-per-step`
+  (#54's section), `hasan/61-cli-runner` (#61's) and this one. **Whichever merges last keeps
+  every branch's own section** -- never resolve this file by taking one side, and when the
+  resolution is "ours", check first that the other side holds no fact that lives nowhere else:
+  that is how #236's four #29 bullets nearly went missing today.
+- Current issue: **#63 (failure triage + decision log), PR #251**, all six checks green.
+  **Three PRs of mine are open and every one waits on others, not on me**: #251 (#63),
+  **#250** (#61, the CLI runner, run for real against the sample app *and* the real server) and
+  **#248** (#54, omer's two change-request items both done).
+- **My review queue is empty.** All six of omer's PRs reviewed today: approved #241, #243,
+  #234, #249 and #247; **changes requested on #242** (SDD v0.5 still lists #40 as Planned
+  although it merged at 12:52Z, #47's row lost the **Built** marker its neighbours have, and
+  §6.2's Windows row contradicts §6.3 about the `eval` job).
+- **Next, when something is needed:** **#66** (the CLI's JUnit XML) is the only unblocked one
+  left, and it would have to stack on `hasan/61-cli-runner` until #250 merges -- worth waiting
+  for rather than stacking again, after what #239 cost. **#62** needs omer's #44 (PR #247) on
+  `main`. The Windows queue -- #247's check B, #24's pick hotkey, #54's second-display case --
+  waits for the weekly session.
 - **Merge note (2026-11-15, omer's agent, merging `origin/main` into `hasan/40-playback-v1` for PR #237):** both sides of this file are kept, as the rule above asks. The bullets under "From `hasan/40-playback-v1`" are that branch's copy, unedited; reconcile them at your next session end.
+
+## #63 -- the triage rule, and the one decision it had to make (2026-11-15)
+
+PR #251. `memory-bank/tasks/63-failure-triage.md` has the mapping; what not to re-derive:
+
+- **A failure the *agent* caused never wears one of FR-35's five.** The ADR left this call to
+  #63, and the cases are wider than the two it named: a keyword not implemented, a refused step
+  document, an unmatchable property set, a provider that refuses the action, an unreadable
+  property. `category` is absent for all of them, and the **decision log** carries a finer
+  `reason` that is never absent. The reason it matters: RQ2 and RQ5 are computed from this
+  field, and a `timeout` that was really "this agent has no `SelectRow` yet" could never be
+  separated out again once stored.
+- **`playback/triage.py` is the only place that decides.** `done()` takes the *exception* and
+  triages itself; do not add a `category=` at a call site.
+- **`CheckpointError` is not `assertionFailed`** -- it means the checkpoint itself is wrong,
+  whatever the application is doing. There is a test named after that trap.
+- **A sixth value (`notAttempted`) is proposed, not taken**: asked of omer on #63 and #251,
+  because it is a minor version on two shared schemas and #248 already holds 1.2.
+- `NotReady` moved from `runner.py` to `resolve.py` so triage can name it without a cycle, and
+  `RowFailed`/`SelectFailed` now carry a `kind`, because each merged "it is not there" with
+  "the application refused it" -- two findings a stored result could never split again.
+- **Nothing passes `decisions=` yet.** Criterion 3's ≥50 examples (week 12) will come from the
+  CLI runner in CI once #250 and #251 are both on `main`.
+- **CI caught an import that could not fail here**: `python -m pytest` puts the CWD on
+  `sys.path` and bare `pytest` does not. Reproduce the agent job with
+  `agent/.venv/Scripts/pytest.exe`, never `python -m pytest`. In `learnings.md`.
 
 ## From `hasan/40-playback-v1`, kept at merge
 
