@@ -148,6 +148,21 @@ function until(runner: Runner, test: (run: LiveRun) => boolean) {
   })
 }
 
+/** A player step that waits for `release()`; `started` resolves once it is being played. */
+function held() {
+  let release = () => {}
+  let markStarted = () => {}
+  const started = new Promise<void>((resolve) => {
+    markStarted = resolve
+  })
+  const play = (request: PlayRequest) =>
+    new Promise<PlayedStep>((resolve) => {
+      release = () => resolve(passed(request))
+      markStarted()
+    })
+  return { play, started, release: () => release() }
+}
+
 describe('the runner', () => {
   it('plays every step and finishes passed', async () => {
     const { runner, played, finished, summaryOf, outbox } = setup()
@@ -182,18 +197,12 @@ describe('the runner', () => {
   })
 
   it('stops between steps', async () => {
-    let release = () => {}
-    const { runner, played, finished, summaryOf } = setup({
-      play: (request) =>
-        new Promise<PlayedStep>((resolve) => {
-          release = () => resolve(passed(request))
-        }),
-    })
+    const step = held()
+    const { runner, played, finished, summaryOf } = setup({ play: step.play })
     await runner.start('t1', 'v1')
-    await until(runner, (run) => run.current?.stepIndex === 0)
-    await new Promise((resolve) => setImmediate(resolve))
+    await step.started
     runner.stop()
-    release()
+    step.release()
     assert.equal((await finished()).status, 'aborted')
     assert.equal(played.length, 1)
     assert.deepEqual(summaryOf(), ['0:passed', '1:notRun', '2:notRun', 'finish:aborted'])
@@ -298,20 +307,15 @@ describe('the runner', () => {
   })
 
   it('reports a run the server no longer has', async () => {
-    let release = () => {}
+    const step = held()
     const { runner, finished } = setup({
-      play: (request) =>
-        request.stepIndex === 0
-          ? new Promise<PlayedStep>((resolve) => {
-              release = () => resolve(passed(request))
-            })
-          : passed(request),
+      play: (request) => (request.stepIndex === 0 ? step.play(request) : passed(request)),
     })
     await runner.start('t1', 'v1')
-    await until(runner, (run) => run.current?.stepIndex === 0)
+    await step.started
     runner.markNotStored('r1')
     assert.equal(runner.current()?.problem, 'not-stored')
-    release()
+    step.release()
     const run = await finished()
     assert.equal(run.status, 'passed', 'play goes on')
     assert.equal(run.problem, 'not-stored')
