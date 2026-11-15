@@ -33,9 +33,12 @@ final class RunDtos {
 			List<StepResultResponse> results) {
 	}
 
-	/** `screenshotUrl` is where the step's PNG is read, or null while it has none (#51). */
+	/**
+	 * `screenshotUrl` is where the step's PNG is read, or null while it has none (#51). `category`
+	 * says why a failed step failed (FR-35, #63), or is null: any other step, or the agent did not say.
+	 */
 	record StepResultResponse(String id, int stepIndex, String stepId, String status, Long durationMs, String message,
-			Instant receivedAt, String screenshotUrl) {
+			Instant receivedAt, String screenshotUrl, String category) {
 	}
 
 	record StepResultWritten(String stepResultId) {
@@ -64,7 +67,7 @@ final class RunDtos {
 		}
 
 		record StepResult(String type, String testId, String runId, int stepIndex, String stepId, String status,
-				Long durationMs, String message) {
+				Long durationMs, String message, String category) {
 		}
 
 		record Error(String type, String detail) {

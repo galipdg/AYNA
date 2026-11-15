@@ -157,6 +157,7 @@ class RunIntegrationTest {
 		Map<String, Object> failed = result(runId, 0, "failed");
 		failed.put("durationMs", 120);
 		failed.put("message", "Öge 500 ms sonra bulunamadı");
+		failed.put("category", "elementNotFound");
 		writeResult(runId, 0, failed).andExpect(status().isCreated());
 
 		mvc.perform(get("/api/runs/{id}", runId))
@@ -166,7 +167,9 @@ class RunIntegrationTest {
 			.andExpect(jsonPath("$.results[0].durationMs").value(120))
 			.andExpect(jsonPath("$.results[0].message").value("Öge 500 ms sonra bulunamadı"))
 			.andExpect(jsonPath("$.results[0].receivedAt").isString())
-			.andExpect(jsonPath("$.results[1].status").value("passed"));
+			.andExpect(jsonPath("$.results[0].category").value("elementNotFound"))
+			.andExpect(jsonPath("$.results[1].status").value("passed"))
+			.andExpect(jsonPath("$.results[1].category").value(nullValue()));
 		assertThat(count("MATCH (:StepResult {runId: $id, stepIndex: 1})-[:FOR]->(:Step {id: $stepId}) RETURN count(*) AS n",
 				Map.of("id", runId, "stepId", stepIds.get(1)))).isEqualTo(1);
 	}
@@ -258,7 +261,11 @@ class RunIntegrationTest {
 				new Bad(0, Map.of("durationMs", -1), "$.durationMs"), new Bad(0, Map.of("durationMs", 1.5), "$.durationMs"),
 				new Bad(0, Map.of("message", 5), "$.message"), new Bad(0, Map.of("runId", Map.of()), "$.runId"),
 				new Bad(0, Map.of("stepIndex", List.of()), "$.stepIndex"), new Bad(0, Map.of("status", List.of()), "$.status"),
-				new Bad(0, Map.of("status", Map.of()), "$.status"), new Bad(0, Map.of("stepId", Map.of()), "$.stepId")));
+				new Bad(0, Map.of("status", Map.of()), "$.status"), new Bad(0, Map.of("stepId", Map.of()), "$.stepId"),
+				new Bad(0, Map.of("status", "failed", "category", "crashed"), "$.category"),
+				new Bad(0, Map.of("status", "failed", "category", 5), "$.category"),
+				new Bad(0, Map.of("category", "timeout"), "$.category"),
+				new Bad(0, Map.of("status", "notRun", "category", "timeout"), "$.category")));
 		for (Bad bad : cases) {
 			Map<String, Object> body = result(runId, bad.index(), "passed");
 			body.putAll(bad.changes());

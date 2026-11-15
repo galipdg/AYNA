@@ -26,9 +26,9 @@ import com.ayna.server.runs.RunDtos.StepResultResponse;
 import tools.jackson.databind.JsonNode;
 
 /**
- * The HTML report of one run (#59, FR-21): a summary, a step table with status, duration and
- * message, and each step's screenshot, as one self-contained file. Styles are inline and
- * screenshots are `data:` URIs, so the file opens in a browser with no network; its Content
+ * The HTML report of one run (#59, FR-21): a summary, a step table with status, duration,
+ * failure category (FR-35) and message, and each step's screenshot, as one self-contained
+ * file. Styles are inline and screenshots are `data:` URIs, so the file opens in a browser with no network; its Content
  * Security Policy forbids every other source, so it cannot load anything even by mistake.
  * <p>
  * It is written to a stream as it is made, one step at a time, and each screenshot is read only
@@ -201,7 +201,7 @@ final class RunReport {
 				.append("</span></td><td class=\"n\">")
 				.append(result == null || result.durationMs() == null ? "–" : esc(duration(result.durationMs(), w)))
 				.append("</td><td class=\"msg\">")
-				.append(result == null || result.message() == null ? "" : esc(result.message()))
+				.append(result == null ? "" : messageCell(result, w))
 				.append("</td></tr>\n<tr class=\"shot\"><td></td><td colspan=\"4\">");
 			// The step is out before its screenshot is read, so the client sees it arrive.
 			emit(html, writer);
@@ -325,6 +325,18 @@ final class RunReport {
 		return String.format(w.locale, "%.1f %s", ms / 1000.0, w.seconds);
 	}
 
+	/** A step's category first (FR-35), on its own line, then the agent's message as it was sent. */
+	static String messageCell(StepResultResponse result, Words w) {
+		StringBuilder cell = new StringBuilder();
+		if (result.category() != null) {
+			cell.append("<strong class=\"category\">").append(esc(w.category(result.category()))).append("</strong>");
+			if (result.message() != null) {
+				cell.append('\n');
+			}
+		}
+		return cell.append(esc(result.message())).toString();
+	}
+
 	/** Escapes text for HTML content and double-quoted attributes. */
 	static String esc(String text) {
 		if (text == null) {
@@ -362,6 +374,9 @@ final class RunReport {
 				Map.of("equals", "is", "notEquals", "is not", "contains", "contains"),
 				Map.of("running", "Running", "passed", "Passed", "failed", "Failed", "aborted", "Aborted"),
 				Map.of("passed", "passed", "failed", "failed", "notRun", "not run", "repairProposed", "repair proposed"),
+				Map.of("elementNotFound", "Element not found", "unexpectedWindow", "Unexpected window",
+						"assertionFailed", "Check failed", "timeout", "Timed out", "searchIncomplete",
+						"Search incomplete"),
 				"no result");
 
 		static final Words TR = new Words(Locale.forLanguageTag("tr"), "Çalıştırma raporu", "Uygulama", "Başlatan",
@@ -376,6 +391,9 @@ final class RunReport {
 				Map.of("running", "Sürüyor", "passed", "Başarılı", "failed", "Başarısız", "aborted", "Yarıda kesildi"),
 				Map.of("passed", "başarılı", "failed", "başarısız", "notRun", "çalıştırılmadı", "repairProposed",
 						"onarım önerildi"),
+				Map.of("elementNotFound", "Öğe bulunamadı", "unexpectedWindow", "Beklenmeyen pencere",
+						"assertionFailed", "Kontrol tutmadı", "timeout", "Zaman aşımı", "searchIncomplete",
+						"Arama tamamlanamadı"),
 				"sonuç yok");
 
 		final Locale locale;
@@ -418,13 +436,15 @@ final class RunReport {
 
 		private final Map<String, String> resultStatuses;
 
+		private final Map<String, String> categories;
+
 		private final String noResult;
 
 		private Words(Locale locale, String title, String application, String startedBy, String started,
 				String finished, String duration, String steps, String step, String status, String message,
 				String noScreenshot, String yes, String no, String seconds, Map<String, String> keywords,
 				Map<String, String> properties, Map<String, String> operators, Map<String, String> runStatuses,
-				Map<String, String> resultStatuses, String noResult) {
+				Map<String, String> resultStatuses, Map<String, String> categories, String noResult) {
 			this.locale = locale;
 			this.title = title;
 			this.application = application;
@@ -445,6 +465,7 @@ final class RunReport {
 			this.operators = operators;
 			this.runStatuses = runStatuses;
 			this.resultStatuses = resultStatuses;
+			this.categories = categories;
 			this.noResult = noResult;
 		}
 
@@ -462,6 +483,11 @@ final class RunReport {
 
 		String runStatus(String status) {
 			return runStatuses.getOrDefault(status, status);
+		}
+
+		/** Why a failed step failed (FR-35); an unknown category is shown as sent. */
+		String category(String category) {
+			return categories.getOrDefault(category, category);
 		}
 
 		/** A step's status; null is a step with no stored result. */
