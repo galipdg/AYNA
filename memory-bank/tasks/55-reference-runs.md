@@ -23,26 +23,36 @@ Draft set (gold steps of the 8 #36 scenarios were already played with `ayna run`
 | R07 | Required name | `sample-form-name-required` | Type e-mail, Save, Verify "Ad alanı zorunlu" |
 | R08 | City + active filter | `sample-list-city-active` | Select İzmir, Click active only, Search, Verify "Kayıt bulunamadı" |
 | R09 | Wait after refresh | `sample-wait-city-refresh` | Select Bursa, Refresh, Wait open button, Verify "1 kayıt bulundu" |
-| R10 | Discard changes | C.2 detail form | Type name, Back, Click `discardDialog.yesButton`, Verify list screen reached |
+| R10 | Discard changes | C.2 detail form | (main) search "Yılmaz", Open, Type name "Değişti", Back, `discardDialog.yesButton`, Open, Verify name value "Ayşe Yılmaz" |
 
 ## Decisions (small, local to this task)
+- 2026-11-17 — objects go in by script, tests by hand: NFR-26 measures editor-*built* steps, and
+  a script is reproducible for RQ2 resets. Primary sets follow the Spy's `suggestUses` rule, so
+  the grid and the three tab items get a Name (Qt shares their AutomationId).
+- 2026-11-17 — R10 starts on `main`: with `--screen detail` Back only hides the form (no main
+  window), so "list reached" says nothing; reopening and checking the name proves the discard.
+- 2026-11-17 — branch merges `hasan/36-sample-objects` (#259) for `sample.json`; the PR is stacked.
 - 2026-11-17 — started while #44 is still open: both its PRs (#193, #247) are merged, so running
   from the editor is on `main`; anything missing is logged as a failure cause, not worked around.
 
 ## Status
 - [x] Branch, task note, board In progress
-- [ ] Set of 10 agreed with the user
-- [ ] Stack up on Windows (Docker Desktop was not running on 2026-11-17)
-- [ ] Repository objects for SA, tests built in the editor, runs, `eval/runs/week7.md`
-- Next step: agree the set and how objects get into the repository; start Docker Desktop.
+- [x] Set of 10 agreed with the user (2026-11-17)
+- [x] Objects: `eval/apps/sample/load_repository.py` (user's choice over the Spy by hand); 88/88
+      loaded into the local server as app "AYNA Örnek Uygulama", version 1.0; rerun creates 0
+- [ ] Tests built in the editor by the user (manual check below), then runs, `eval/runs/week7.md`
+- Next step: user builds R01–R10 in the editor and runs each; record per-step results.
 
 ## Manual checks
 - (planned) building and running each test in the client is manual, at the Windows machine.
 
 ## Open issues
-- R03 / SC-16: the settings tab items share one AutomationId (#259, open question to galip), so
-  `settings.notificationsTab` may not be addressable. If so, it is a failure with a cause and a ticket.
-- R04 ends with a Verify on another window (`detail`); `ayna run` could not play it from one window.
+- R03 / SC-16: the tab items share one AutomationId; stored with primary {automationId, name}
+  (`parentPath` too for "Genel"). Whether playback finds them is what R03 shows.
+- R04, R05, R10 cross windows. The client plays each step in its object's window (by the captured
+  `windowTitle`; all 88 objects carry one); `ayna run --from-file` cannot (one window per test).
+- 2026-11-17: the full `eval` suite had 11 UIA failures (main screen) while two hand-started
+  `sample_app.py --screen main` processes were open; not caused by this branch, rerun when closed.
 
 ## Handoff
 
