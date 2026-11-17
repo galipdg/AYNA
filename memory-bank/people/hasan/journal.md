@@ -966,3 +966,11 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
 - Next step: nothing is blocked on me. #248 and #253 wait on reviews. The remaining #64 work is
   labelling (five screens, plus the second labeller #29 owes). **#66** (the CLI's JUnit XML) is
   now unblocked for real, since #250 is on `main`.
+
+## 2026-11-17 — reviews, inbox, #36 object list
+
+- Re-reviewed #242 and approved it: my three points were fixed. Non-blocking notes on the rows that still call #63/#240 planned. It merged.
+- PR #255: `recognition/uia.py` now imports from `ayna_agent.errors` (no `websockets`); the DPI test skips off Windows (`skipif`). 756 agent tests pass.
+- Items (1) and (2) of the 11-12 inbox note were already done (pyproject; grid-probes.md + #221 check). Cleaned.
+- PR #259: `eval/nl/objects/sample.json` (85 objects) from `nl_objects.py`, checked against live UIA on all tabs, pages and dialogs. Found: the tab items share one AutomationId (left out, asked galip); a QDateEdit is a Spinner. eval: 255 pass, checker clean.
+- Next: pick the next issue from `gh issue list --assignee @me`; follow up on galip's answer about the tab items.
