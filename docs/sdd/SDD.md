@@ -8,8 +8,8 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
-| Version | 0.4 — draft of sections 1–7 and 9 |
-| Date | 2026-11-08 |
+| Version | 0.5 — draft of sections 1–7 and 9 |
+| Date | 2026-11-15 |
 | Status | Sections 1–4 (#45), 5 (#50), 6 (#48) and 7 (#53) drafted. Section 8 waits for the final RS (#41). Final PDF: #53, due 7 Dec 2026 |
 
 ## Document history
@@ -21,6 +21,7 @@
 | 0.2 | 2026-10-31 | Ömerfaruk Sarıbal | Test design (#48) |
 | 0.3 | 2026-11-07 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12, #21 and #60 merged, and PR #173, PR #174, PR #193 |
 | 0.4 | 2026-11-08 | Ömerfaruk Sarıbal | Status after the client stack (#17, #24, #25, #30, #38, #183–#185), #15 and step schema v0.2 merged; §7 rows for *Step schema v0.2*, *Client UI language* and *Graph schema v0.4*; RQ1's dump script renamed (#199) (#53) |
+| 0.5 | 2026-11-15 | Ömerfaruk Sarıbal | Status after #22, #23, #26, #29, #33, #40, #46, #47, #51, #52, #59, #61, #68, #152 and #221 merged, and #44's editor run and #67's nightly job; hasan's #242 review; contracts frozen as 1.0 (§4.1, §4.3, §6.2); graph model v0.5 and its diagram with accounts; the AI service's token (§2.4.2); measured load (§2.3); §7 rows for *Run screenshots* and *Contracts v1*; PR #240's failure category noted as planned (#53) |
 
 ---
 
@@ -107,11 +108,11 @@ AYNA has six run-time components. The table gives each one's responsibility; §2
 
 | Component | Responsibility | Technology | Code | Owner | Status |
 |---|---|---|---|---|---|
-| **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); login, users and API tokens (#60, PR #179); agent process manager (#17, PR #154; its last Windows check is pending); app shell and style (#183, PR #188); Turkish and English UI (#185, PR #190); Object Spy (#24, #184, PRs #186, #189; the pick hotkey selects the element under the cursor through #22's `elementFromPoint`); add to repository (#25, PR #187); repository view (#30, PR #191); codeless step editor (#38, PR #192; grid rows in PR #220, #205); run history with the report in its own window, without script, and a save to file (#68). Planned: the screens of #44, #75, #78 |
-| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UIA, win32 fallback) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping` (#16, PR #135); element descriptor (#11, PR #175); `listWindows` and `snapshot` on UI Automation (#12, PR #180); healing scorer v0 (#49, PR #141). Planned: #22, #23, #26, #40, #54, #63, #73 |
-| **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | Planned: #61, #66 |
-| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160); accounts, roles and API tokens (#60, PR #179); runs API and live run updates (#44, PR #193); snapshot import (#15, PR #182); repository objects API (#25, #30, PRs #187, #191); step screenshots, run retention and idle timeout (#51, PR #223); HTML run report (#59). Planned: #74 |
-| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39), v0.2 (`V0003`, #60), v0.3 (`V0004`, #44), v0.4 (`V0005`, #15). Planned: vector index (#58) |
+| **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); login, users and API tokens (#60, PR #179); agent process manager (#17, PR #154; its last Windows check is pending); app shell and style (#183, PR #188); Turkish and English UI (#185, PR #190); Object Spy (#24, #184, PRs #186, #189; the pick hotkey in PR #234, its Windows check pending); add to repository (#25, PR #187); repository view (#30, PR #191); codeless step editor (#38, PR #192; grid rows in PR #220, #205); column dropdown from the captured table headers (#221, PR #228); run history with the report in its own window, without script, and a save to file (#68, PR #231; its Windows check pending); running a test from the editor with live step status (#44, PR #247). Planned: the rest of #44, the screens of #75, #78 |
+| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UI Automation; a win32 fallback was measured and not built, #23, PR #236) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping` (#16, PR #135); element descriptor (#11, PR #175); `listWindows` and `snapshot` on UI Automation (#12, PR #180); healing scorer v0 (#49, PR #141); `runSteps` with Click and Type by logical name (#26, PR #200); `elementFromPoint`, the element under the cursor in the client's snapshot (#22, PR #227); playback v1 — all six keywords, the ready gate, checkpoints and the three row shapes (#40, PR #237; Windows check 7 of 7 on 2026-11-14). failure category for FR-35 (#63, PR #251). Planned: #54 (PR #248), #73 |
+| **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | **Built**: `ayna run` from a file or from the server, exit codes 0, 1 and 2 (#61, PR #250). Planned: JUnit XML (#66, PR #254); the sample suite plays through it on a Windows CI runner (#67, PR #252) |
+| **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160); accounts, roles and API tokens (#60, PR #179); runs API and live run updates (#44, PR #193); snapshot import (#15, PR #182); repository objects API (#25, #30, PRs #187, #191); step screenshots, run retention and idle timeout (#51, PR #223); HTML run report (#59, PR #229); table column headers read from the capture (#221, PR #228); run history API with filters (#68, PR #231); REST, WebSocket and agent contracts frozen as v1 with breaking-change checks in CI (#52, PR #224); load test, NFR-07 met (#152, PR #225). a failed step's category (#63, PR #240). Planned: #74 |
+| **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39), v0.2 (`V0003`, #60), v0.3 (`V0004`, #44), v0.4 (`V0005`, #15), v0.5 (#51, properties only). v0.6 (#63, PR #240, properties only). Planned: vector index (#58) |
 | **AI service** | Turkish instruction + candidate objects → suggested steps with reasons. Saves nothing. Uses a local model server. | Python; Ollama or llama.cpp with a 7–8B quantised model | `ai/` | galip | **Built**: constrained generation (#37, PR #142), HTTP service (#71, PR #146). Planned: retrieval (#58), offline packaging (#82). Design: §5 |
 
 ```mermaid
@@ -174,9 +175,9 @@ sequenceDiagram
   participant A as Agent
   participant S as Server
   T->>C: Spy hotkey over a control
-  C->>A: elementFromPoint(x, y)
-  A-->>C: descriptor + bounds
-  C->>C: outline, show properties
+  C->>A: elementFromPoint(x, y), physical pixels
+  A-->>C: the node of the client's snapshot (snapshotId, elementId), or none
+  C->>C: select it in the tree, outline it; else offer to capture (again)
   T->>C: Add to repository as login.loginButton
   C->>A: snapshot(window)
   A-->>C: snapshot document
@@ -247,11 +248,11 @@ flowchart LR
 |---|---|---|---|
 | Test machine | Client and agent. The client starts the agent as a child process with a fresh token and a port chosen by the OS, restarts it up to three times after a crash, and stops it on quit (FR-05). The packaged app brings its own Python interpreter (`AYNA_AGENT_PYTHON`). | One Windows installer, no internet, no development tools (NFR-36) | Planned: installer #84; agent manager built (#17, PR #154; its last Windows check pending) |
 | Backend host | `docker compose up` starts Neo4j, the server and, from #82, the AI service with its model server. Model weights and the embedding model are inside the image; nothing is downloaded at start (NFR-30). | Images loaded from files on an air-gapped machine (#85) | **Built**: Neo4j + server (`docker-compose.yml`, #4). Screenshot volume `screenshots` (#51). Planned: AI service #82 |
-| CI runner | CLI runner with a headless agent on a Windows runner; pulls a suite from the server or reads it from a file, writes JUnit XML. | Same installer or a Python environment on the runner | Planned: #61, #66, #67 |
+| CI runner | CLI runner with a headless agent on a Windows runner; pulls a suite from the server or reads it from a file, writes JUnit XML. | Same installer or a Python environment on the runner | **Built**: the CLI runner (#61, PR #250); a nightly Windows job that plays the sample suite and checks that two bug builds are caught, still through a stand-in for the CLI (#67, PR #249). Planned: JUnit XML (#66), the job on the CLI (#67) |
 
 **Ports.** Only the server's HTTP port is meant for the network. The AI service port (8090) is not published; the server reaches it on the Compose network, and the model server shares the AI service's network namespace because the model client accepts loopback hosts only (proposed for #82). The agent listens on 127.0.0.1 only (NFR-31). The development compose file still publishes Neo4j's ports (7474, 7687); see §2.4.4.
 
-**Sizing.** The backend must serve 10 clients at once with 1 000 repository objects and 500 tests per application (NFR-08). The AI service must run a quantised 7–8B model on 16 GB RAM without a GPU (NFR-13). The server's load test is #152.
+**Sizing.** The backend must serve 10 clients at once with 1 000 repository objects and 500 tests per application (NFR-08). The AI service must run a quantised 7–8B model on 16 GB RAM without a GPU (NFR-13). The server's load test (#152, PR #225, `server/loadtest/`) met NFR-07 under that load on one Apple M3 running both sides: 100 % of 105 443 requests within 500 ms, p95 31.9 ms, no errors (`server/loadtest/results/2026-11-10-apple-m3.md`); a run on the Windows demo machine is still to do.
 
 ### 2.4 Cross-cutting concerns
 
@@ -271,8 +272,8 @@ No component connects outside the closed network at run time: no CDN, telemetry,
 | Client ↔ agent | Agent listens on 127.0.0.1 only; every connection must carry the per-session token (≥ 16 characters) that the client creates and passes in `AYNA_AGENT_TOKEN`, never on the command line; the agent removes it from its environment (NFR-31) | **Built** (#16, #17) |
 | Renderer | Sandbox, context isolation, no Node integration, strict CSP, navigation limited to the entry page, IPC sender check | **Built** (#5, #17) |
 | Client ↔ server | Local accounts with roles admin and tester, passwords as bcrypt hashes; every REST and WebSocket request needs a session or API token, except login, the health check and the API docs (NFR-32, FR-39). Every test edit, run and healing decision stores the acting user (FR-40) | **Built** for REST, the WebSocket handshake and the user on test edits and runs (#60, PR #179; #44, PR #193). Planned: the user on a healing decision (#74) |
-| CI ↔ server | Revocable API token for a CI service account in `AYNA_SERVER_TOKEN` (answer to TBD-10, ADR *Healing proposal transport*; RS NFR-32) | **Built** on the server (#60, PR #179). Planned: the CLI runner's side, #61 |
-| Server ↔ AI service | No authentication; the AI service is reachable only on the Compose network | Planned: #82 |
+| CI ↔ server | Revocable API token for a CI service account in `AYNA_SERVER_TOKEN` (answer to TBD-10, ADR *Healing proposal transport*; RS NFR-32) | **Built** on the server (#60, PR #179) and in the CLI runner, which reads the token only from the environment, never from an option (#61, PR #250) |
+| Server ↔ AI service | On loopback, no authentication. As soon as the service listens off loopback (`--allow-remote`, as on the Compose network of #82) it refuses to start without `AYNA_AI_TOKEN`, and every request must carry it as a Bearer token (`ai/API.md`) | **Built** in the AI service (#71, PR #165). Planned: the server's side (#78), Compose (#82) |
 | Test data | The AI service never logs the instruction text, which may hold passwords | **Built** (PR #146) |
 
 #### 2.4.3 Failures, timeouts and recovery
@@ -285,7 +286,7 @@ No component connects outside the closed network at run time: no CDN, telemetry,
 #### 2.4.4 Other concerns
 
 - **Turkish text.** All interfaces are JSON in UTF-8, and Neo4j stores strings as Unicode, so ç, ğ, ı, İ, ö, ş, ü pass unchanged (NFR-16). Case-insensitive search uses Turkish-aware folding: İ, I and ı fold to i and diacritics are dropped, so "giris" finds "Giriş" (**Built** in the client, `client/src/shared/tree.ts`, used by the Spy, the repository and the test list; #30, #184).
-- **Versioned contracts.** Every contract carries a version and is frozen at G1 (§4.3, NFR-34).
+- **Versioned contracts.** Every contract carries a version; the REST, WebSocket and agent contracts are frozen as 1.0, and CI refuses a breaking change (§4.3, NFR-34).
 - **Testability.** Each component is tested in CI on every pull request (NFR-35); the test design is §6.
 - **Development defaults.** `docker-compose.yml` publishes Neo4j's ports and has a default password, for development only. The installed backend (#84) publishes only the server port and requires `NEO4J_PASSWORD`.
 
@@ -301,13 +302,15 @@ Neo4j Community Edition is the only database (ADR *Neo4j as the single database*
 - **Schema changes** are versioned Cypher migrations in `server/src/main/resources/neo4j/migrations/`, applied by neo4j-migrations when the server starts. A change needs a new migration, an update to `docs/graph-model.md` and, after G1, an ADR.
 - **Files.** Screenshots are PNG files in a server volume, one folder per run; the graph stores only their path (`StepResult.screenshotPath`). Reports are rendered on request and never stored (#59), so retention has nothing more to delete. The server keeps the newest N runs of the whole server (`AYNA_RUN_RETENTION`, default 1000; NFR-28) and deletes older ended runs with their screenshots (NFR-40); a running run with no write for `AYNA_RUN_IDLE_TIMEOUT` (60 min) ends as aborted (ADR *Run screenshots, idle timeout and retention*).
 
-### 3.2 Graph model v0
+### 3.2 Graph model
 
-The graph model is a contract; its full description, with one sample query per relationship, is `docs/graph-model.md` (#14). In short:
+The graph model is a contract; its full description, with one sample query per relationship and its version history (v0.5 on `main`), is `docs/graph-model.md` (#14). In short:
 
 ```mermaid
 graph LR
   Application -- HAS_VERSION --> AppVersion
+  Application -- HAS_TEST --> TestCase
+  Application -- HAS_OBJECT --> RepoObject
   AppVersion -- HAS_WINDOW --> Window
   Window -- CONTAINS --> Element
   Element -- CONTAINS --> Element
@@ -322,6 +325,7 @@ graph LR
   HealingProposal -- FOR --> RepoObject
   HealingProposal -- "CANDIDATE {score}" --> Element
   Rule -- LEARNED_FROM --> HealingProposal
+  User -- HAS_TOKEN --> AuthToken
 ```
 
 | Area | Nodes | Design idea |
@@ -329,12 +333,13 @@ graph LR
 | What the AUT looks like | Application, AppVersion, Window, Element | One subtree per imported snapshot (`snapshotId` on Window and Element). Versions are kept side by side, so two versions can be compared (FR-33). |
 | What tests refer to | RepoObject | A logical name (`screen.element`) with primary and fallback properties. `RESOLVES_TO {version}` says where it is found in each version. Tests never store element properties, so a UI change needs repository changes only (NFR-33). |
 | What tests are | TestCase, Step | Steps in order on `HAS_STEP {order}`. A step stores its keyword, value and checkpoint and points at its target with `TARGETS`; the logical name in the step document is rebuilt from the RepoObject on read, so renaming an object does not touch steps. |
-| What happened | Run, StepResult | One result per step per run, with status, duration and screenshot path. |
+| What happened | Run, StepResult | One result per step per run, with status, duration, message and screenshot path; from v0.6 a failed step's category (FR-35, #63, PR #240). |
 | Healing | HealingProposal, Rule | A proposal for a RepoObject with its scored candidate elements; approved proposals can become rules. |
+| Who did it | User, AuthToken | Local accounts and revocable API tokens; the acting user is a property on what it writes (`createdBy`, `startedBy`, …), never a relationship (FR-40). |
 
-### 3.3 Changes planned before the G1 freeze
+### 3.3 Changes to schema v0
 
-Schema v0 was written before the APIs that use it. The issues below change it; each adds a migration and updates `docs/graph-model.md`.
+Schema v0 was written before the APIs that use it. The issues below change it; each updates `docs/graph-model.md`, and a migration where Neo4j needs a constraint or index.
 
 | Change | Why | Issue | Status |
 |---|---|---|---|
@@ -346,6 +351,8 @@ Schema v0 was written before the APIs that use it. The issues below change it; e
 | `User` and `AuthToken` nodes; acting user on edits, runs and decisions | FR-39, FR-40 | #60, #44, #74 | **Built**: `V0003`, the user on test edits (#60, PR #179) and on runs (#44, PR #193). Planned: on decisions (#74) |
 | `(Run)-[:ON_VERSION]->(AppVersion)`; a copy of the steps on Run; unique `(runId, stepIndex)` on StepResult | History by version (FR-22); results keep their meaning when a test is edited; overlapping retries cannot store a result twice | #44 | **Built** (`V0004`) |
 | Per-candidate data on `CANDIDATE`; whole proposal JSON on `HealingProposal`; `(StepResult)-[:PROPOSED]->(HealingProposal)` | Contributions and raw similarities per candidate; the proposal kept exactly as the agent scored it | #74 | Planned (ADR *Healing proposal transport*, accepted) |
+| `lastActivityAt`, `endedBy` on Run; `screenshotHash`, `screenshotReceivedAt` on StepResult (v0.5) | Idle timeout, retention and repeatable screenshot writes | #51 | **Built**, no migration (PR #223) |
+| `category` on StepResult (v0.6) | A failed step's category (FR-35) | #63 | **Built**: PR #240, no migration |
 | Vector index on `RepoObject.embedding` | NL retrieval (NFR-11) | #58 | Planned |
 
 ### 3.4 Exchange documents
@@ -358,6 +365,8 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 | Element descriptor | `schemas/element.schema.json` | agent → client, server | **Built**: v0.1 on `main` (#11, PR #175) |
 | Window snapshot | `schemas/snapshot.schema.json` | agent → server | **Built**: v0.1 on `main` (#12, PR #180) |
 | Healing proposal | `schemas/healing-proposal.schema.json` | agent → client or CLI runner → server | **Built**: v0.2 on `main` (#149, PR #174) |
+| Live run messages | `schemas/ws-runs.schema.json` | server → clients | **Built**: 1.0 (#52, PR #224); 1.1 adds a failed step's category (PR #240) |
+| Agent messages | `schemas/agent-rpc.schema.json` | client ↔ agent | **Built**: 1.0 (#52, PR #224); 1.1 adds a failed step's category (PR #240) |
 
 ---
 
@@ -367,11 +376,11 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 
 | Interface | Between | Transport | Contract | Version | Status |
 |---|---|---|---|---|---|
-| REST API | client, CLI runner → server | HTTP/1.1, JSON | `docs/api/openapi.yaml`, generated from the server (#31) | v0 | **Built** in part (§4.2) |
-| Live updates | server → clients | WebSocket `/ws/runs`, JSON messages | in the OpenAPI document's description (#31) until #52; ADR *Runs API and live run updates* | v0 | **Built** on the server (#44); the client's screen comes with #44's client half |
-| Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [3] over WebSocket on 127.0.0.1 | `docs/agent-rpc.md` | 0.1 built; 0.2 (step results with proposals) drafted there, ADR accepted | **Built**: 0.1 (PR #135). Planned: 0.2 (#73) |
+| REST API | client, CLI runner → server | HTTP/1.1, JSON | `docs/api/openapi.yaml`, generated from the server (#31) | 1.0, frozen (#52) | **Built** in part (§4.2) |
+| Live updates | server → clients | WebSocket `/ws/runs`, JSON messages | `schemas/ws-runs.schema.json` (#52); ADR *Runs API and live run updates* | 1.0, frozen (#52) | **Built** on the server (#44) and in the editor's live run view (#44, PR #247) |
+| Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [3] over WebSocket on 127.0.0.1 | `schemas/agent-rpc.schema.json` (shapes) and `docs/agent-rpc.md` (behaviour) | 1.0, frozen (#52): 0.1 + `runSteps` (#26) + `elementFromPoint` (#22) | **Built**: 1.0 (PRs #135, #200, #227). Planned: 1.1 failure category (PR #240); step results with healing proposals (#73) |
 | AI service API | server → AI service | HTTP/1.1, JSON | `ai/API.md` | v0 | **Built** (PR #146); design in §5 |
-| Database | server → Neo4j | Bolt | `docs/graph-model.md` + migrations | v0 | **Built** (#14) |
+| Database | server → Neo4j | Bolt | `docs/graph-model.md` + migrations | v0.5 | **Built** (#14 and §3.3) |
 | Exchange documents | all | JSON in the above | `schemas/` | per schema | §3.4 |
 
 ### 4.2 REST API
@@ -384,10 +393,10 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 | Applications | `POST /api/apps` (201; 409 duplicate name; 400 invalid) · `GET /api/apps` | FR-38 | **Built** (#128) |
 | Versions | `POST /api/apps/{id}/versions` (201; 404 unknown app; 409 duplicate) · `GET /api/apps/{id}/versions` | FR-38 | **Built** (#128) |
 | Snapshots | `POST /api/apps/{id}/versions/{v}/snapshots`, idempotent on the snapshot id | FR-04 | **Built** (#15, PR #182); one Window per snapshot id (`V0005`) |
-| Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests) | FR-06 – FR-09 | **Built** (`/api/apps/{id}/repo-objects`, `/api/repo-objects/{id}`; #25, #30, PRs #187, #191) |
+| Repository | create, list and search, rename and edit, delete (refused while steps target the object, naming the tests); a grid object's `columns` from its latest capture | FR-06 – FR-09 | **Built** (`/api/apps/{id}/repo-objects`, `/api/repo-objects/{id}`; #25, #30, #221, PRs #187, #191, #228) |
 | Tests and steps | create, read, replace the step list (validated against the step schema), export and import | FR-11 – FR-14 | **Built** (#39, PR #156) |
 | Runs and results | `POST /api/runs` (copies the steps), `GET /api/runs/{id}`, `GET /api/tests/{id}/runs`, `POST /api/runs/{id}/finish`; `PUT /api/runs/{runId}/results/{stepIndex}`: 201, 200 for an identical repeat, 409 for another body (ADR *Healing proposal schema 0.2*); `PUT`/`GET /api/runs/{runId}/results/{stepIndex}/screenshot` (raw `image/png` after its result; 201, 200 for the same image, 409 for another, 413 over 8 MB); `GET /api/apps/{id}/runs?testId=&status=` (newest 100 of the application, for the run history) | FR-20, FR-21, FR-22, FR-28 | **Built** (#44): plain results; (#51) screenshots, retention, idle timeout; (#68) the application's run list. Planned: #74 (`repairProposed`) |
-| Reports | `GET /api/runs/{runId}/report.html?lang=en\|tr` (default `en`): one self-contained file rendered on request for a run in any state (summary, step table, each screenshot as a `data:` URI, a CSP that allows nothing else); 400 other `lang`, 404 unknown run | FR-21, NFR-09 | **Built** (#59): a 50-step run with 222 KB screenshots in 216 ms (`RunReportIntegrationTest`) |
+| Reports | `GET /api/runs/{runId}/report.html?lang=en\|tr` (default `en`): one self-contained file rendered on request for a run in any state (summary, step table, each screenshot as a `data:` URI, a CSP that allows nothing else); 400 other `lang`, 404 unknown run | FR-21, NFR-09 | **Built** (#59, PR #229): a 50-step run with 222 KB screenshots in 216 ms (`RunReportIntegrationTest`) |
 | Healing | list proposals, approve or reject (`/api/healing/proposals…`) | FR-31, FR-32 | Planned: #74 (shape in ADR *Healing proposal transport*) |
 | NL suggestions | suggest steps for an instruction; AI errors mapped to problems with `code` | FR-25 – FR-27 | Planned: #78 |
 | Change impact | changed objects and affected tests between two versions | FR-33 | Planned: #81 |
@@ -395,11 +404,11 @@ Resources follow the graph (§3.2), under `/api`. JSON bodies use camelCase and 
 
 **Errors.** Every 4xx body is an RFC 9457 problem (`application/problem+json`): `status`, `title`, `detail` (the message for the user, naming the step, object, field or id, NFR-15) and `instance`. A validation 400 adds `errors: [{path, message}]` (at most 50, JSONPath into the body) and `errorCount`. `type` is `urn:ayna:error:<kind>` where a caller must tell two problems with one status apart (the CLI runner, #61), otherwise absent. One global handler writes them; each endpoint lists its statuses in `docs/api/openapi.yaml` (ADR *REST error body*, accepted; **Built** in #158, PR #160). The client reacts to the status code and shows `detail` (`client/src/main/apps.ts`).
 
-**Performance.** 95 % of requests other than report downloads and snapshot imports within 500 ms under the NFR-08 load (NFR-07); the HTML report of a 50-step run within 5 s (NFR-09).
+**Performance.** 95 % of requests other than report downloads, snapshot imports and screenshot uploads within 500 ms under the NFR-08 load (NFR-07; measured, §2.3); the HTML report of a 50-step run within 5 s (NFR-09).
 
 ### 4.3 Versioning and the G1 freeze
 
-Every contract in §4.1 carries a version and is frozen at G1, together with contract tests in CI (NFR-34, #52). After the freeze a change needs an ADR and all three members' approval (`schemas/AGENTS.md`). The step schema accepts only its own version (`version` is a `const`), so a stored document always says which rules it was checked against; moving from 0.1 to 0.2 changes only that field (PR #150).
+Every contract in §4.1 carries a version. The REST, WebSocket and agent contracts were frozen as **1.0** on 2026-11-15 (NFR-34, #52, PR #224; ADR *Contracts v1*). After the freeze, additions (a new optional field, endpoint, method, message or enum value) raise the minor version and every reader ignores what it does not know; anything that removes or narrows needs a new major version. A change to `schemas/` still needs an ADR and all three members' approval (`schemas/AGENTS.md`). The CI job `contracts` fails a pull request on a breaking change: `.github/contracts/schema_compat.py` compares every schema with the base branch, and oasdiff compares the generated `openapi.yaml`. The step schema accepts only its own version (`version` is a `const`), so a stored document always says which rules it was checked against; moving from 0.1 to 0.2 changes only that field (PR #150).
 
 ---
 
@@ -816,12 +825,12 @@ This section has two parts. §6.1–§6.5 describe how AYNA itself is verified: 
 |---|---|---|---|---|---|
 | Unit | Functions and classes without I/O: step validation, schema derivation, healing scorer, settings, URL checks | pytest (agent, ai), JUnit 5 (server), `node --test` (client main process) | CI on every PR; locally before every commit | T | **Built** in every module |
 | Integration | One component with its real neighbour: server + Neo4j (Testcontainers), client agent manager + stand-in agent (`client/src/main/__tests__/fixtures/fake-agent.ts`), AI generator + stand-in Ollama on 127.0.0.1 | same, plus Testcontainers | CI | T | **Built**: server (#4, #14, #128, #39), client (#17), ai (#37) |
-| Contract | Both sides of an interface agree with the frozen contract: shared schema examples, agent JSON-RPC messages, REST API against the generated OpenAPI document. CI fails on a breaking change | schema examples in `schemas/examples/`; contract tests added at the freeze | CI | T | Step schema **built**; REST, WebSocket, JSON-RPC at #52 |
-| Windows | Anything that needs UI Automation on a real desktop: element under cursor, snapshots, playback, win32 fallback, process handling on Windows | pytest with `@pytest.mark.windows` (skipped on macOS with `-m "not windows"`) | CI `agent` job on `windows-latest`; the weekly Windows session for what the runner cannot show | T | Marker **built** (`agent/pyproject.toml`); tests grow with #12, #22, #26, #40 |
-| System | A whole suite through the CLI runner on the sample app, as a user's CI would run it; a bug-injected build must make it fail | CLI runner + headless agent, JUnit XML | Nightly and on demand on a Windows runner | T | Planned: #61, #66, #67 |
+| Contract | Both sides of an interface agree with the frozen contract: shared schema examples, agent JSON-RPC messages, REST API against the generated OpenAPI document. CI fails on a breaking change | schema examples in `schemas/examples/`; the server checks every `/ws/runs` message against `ws-runs.schema.json` (`RunEventsIntegrationTest`); the client checks its agent requests and the replies it reads against `agent-rpc.schema.json` (`agentContract.test.ts`); the CI job `contracts` runs `schema_compat.py` and oasdiff against the base branch | CI | T | **Built**: step schema; REST, WebSocket and JSON-RPC (#52, PR #224). The agent's own check of its replies is still to do (galip) |
+| Windows | Anything that needs UI Automation on a real desktop: element under cursor, snapshots, playback, win32 fallback, process handling on Windows | pytest with `@pytest.mark.windows` (skipped on macOS with `-m "not windows"`) | CI `agent` job on `windows-latest`; the weekly Windows session for what the runner cannot show | T | **Built**: the marker (`agent/pyproject.toml`) and tests for #12, #22, #26 and #40 in the `agent` job, and the sample app's UIA tests (#33, #46, #47) in the `eval` job; they grow with #54 and #63 |
+| System | A whole suite through the CLI runner on the sample app, as a user's CI would run it; a bug-injected build must make it fail | CLI runner + headless agent, JUnit XML | Nightly and on demand on a Windows runner | T | **Built** before the CLI: `.github/workflows/ayna-suite.yml` plays the sample suite green on 1.0 and fails on bug1 and bug4 (#67, PR #249). Planned: through `ayna run` with JUnit XML (#66, #67) |
 | Acceptance | The reference scenarios (SC-01 … in `docs/rs/scenarios.md`) built in the editor and replayed without manual fixes (NFR-26) | the product itself | Weekly Windows session; at gates G0, G2 | D | Planned: #28, #62, #70 |
 | Manual check | What a person must see: Spy overlay and hotkeys, 100 % and 150 % display scaling (NFR-20), status bar, screen layout. Measurements so far run at 125 % (hasan's machine), and every result names its scaling, because location similarity depends on it (#49, PR #166) | script in the shape of `AGENTS.md` §10 | macOS for layout; the weekly Windows session for the rest | D | In use (#17, #32); repeated checks move to `docs/manual-checks/` |
-| Non-functional | Timing (NFR-01 – NFR-13), load (NFR-07, NFR-08), closed network (NFR-29, NFR-30), installer (NFR-36), security boundaries (NFR-31, NFR-32) | timing harnesses in `eval/`, load test (#152), air-gapped run (#85), clean-VM install (#84) | Team hardware, a clean offline Windows VM | T, A | Planned per NFR; security boundaries **built**: agent token refusal (#16), server request refusal (#60) |
+| Non-functional | Timing (NFR-01 – NFR-13), load (NFR-07, NFR-08), closed network (NFR-29, NFR-30), installer (NFR-36), security boundaries (NFR-31, NFR-32) | timing harnesses in `eval/`, load test (#152), air-gapped run (#85), clean-VM install (#84) | Team hardware, a clean offline Windows VM | T, A | **Built**: security boundaries (agent token refusal #16, server request refusal #60); load test, NFR-07 met (#152, PR #225; §2.3); report timing, NFR-09 met (#59). Planned: the others per NFR |
 
 Security boundaries are tested at the unit and integration levels where they are built: the agent refuses a connection without the session token (#16), the renderer's Content-Security-Policy and navigation rules have unit tests (`client/src/main/__tests__/security.test.ts`), the AI service's model client refuses non-loopback hosts, and a name such as `localhost` unless every address it resolves to is loopback (PR #142, PR #173), and the server answers 401 to a request without a valid token (`AuthIntegrationTest`, #60).
 
@@ -831,7 +840,7 @@ Security boundaries are tested at the unit and integration levels where they are
 |---|---|---|
 | macOS developer machines | galip, omer | Unit and integration tests of every module except Windows-marked ones; client layout checks |
 | Windows machine (Windows 10 22H2 / 11, TBD-3) | hasan, with the others at the weekly session | Windows-marked tests, pilot apps, display scaling, manual checks, measurements for RQ1, RQ2, RQ5 |
-| GitHub Actions | everyone, automatically | `server` (Ubuntu, Docker for Testcontainers), `client` (Ubuntu), `ai` (Ubuntu), `agent` (Windows) on every push and pull request; the system test on a Windows runner (#67) |
+| GitHub Actions | everyone, automatically | `server` (Ubuntu, Docker for Testcontainers), `client` (Ubuntu), `ai` (Ubuntu), `agent` and `eval` (Windows), `contracts` (breaking-change checks, #52) on every push and pull request; the system test on a Windows runner (#67) |
 | Clean offline Windows VM | omer | Installer (#84) and air-gapped end-to-end test (#85): no development tools, network disabled |
 
 **Weekly Windows session.** Galip and Ömerfaruk work on macOS. Work that needs Windows is labelled `needs-windows-test` with its commands and manual check in an issue comment. Once a week the three members run the queue on Hasan's machine and post pass or fail on each issue (ADR *Weekly Windows test session for macOS developers*). A failing check stays labelled and goes to the owner's inbox.
@@ -841,10 +850,10 @@ Security boundaries are tested at the unit and integration levels where they are
 | Application | Purpose | Issue |
 |---|---|---|
 | Trial app (PySide6, one login screen) | First recognition and snapshot tests; the 12 trial NL pairs | **Built**: #9 (`eval/apps/trial/`) |
-| Sample app v1 | The reference scenarios, the 40 NL pairs, RQ2 | #33 (technology chosen in D1, #21) |
-| Controlled-change versions of the sample app | RQ4: rename, move, retype, re-parent, AutomationId removed, one combined; each with a ground-truth map old element → new element | #46 |
-| Bug-injected versions of the sample app | RQ5 and the system test: wrong label, disabled button, wrong saved value, missing validation, wrong navigation; each names the scenario that must fail | #47 |
-| Pilot apps on other UI technologies | RQ1 across technologies: KeePass 2 (WinForms) and HandBrake (WPF), KeePassXC (Qt) as an optional third; Notepad++ (Win32) is not a pilot but the fixture for the win32 fallback (#23). Chosen from the UIA tree dumps (`eval/spikes/uia-dump.md`) | #6 (PR #159), #21 |
+| Sample app v1 (PySide6, six screens) | The reference scenarios, the 40 NL pairs, RQ2 | **Built**: #33 (PR #230; technology chosen in D1, #21) |
+| Controlled-change versions of the sample app | RQ4: rename, move, retype, re-parent, AutomationId removed, one combined; each with a ground-truth map old element → new element | **Built**: #46 (PR #238) |
+| Bug-injected versions of the sample app | RQ5 and the system test: wrong label, disabled button, wrong saved value, missing validation, wrong navigation; each names the scenario that must fail | **Built**: #47 (PR #239) |
+| Pilot apps on other UI technologies | RQ1 across technologies: KeePass 2 (WinForms) and HandBrake (WPF), KeePassXC (Qt) as an optional third; Notepad++ (Win32) is not a pilot but the fixture on which the win32 fallback was measured and not built (#23, PR #236). Chosen from the UIA tree dumps (`eval/spikes/uia-dump.md`) | #6 (PR #159), #21 |
 | A HAVELSAN representative app, if shared | Semester-2 pilot | #105 |
 
 ### 6.5 Entry and exit criteria
@@ -913,10 +922,12 @@ The decisions behind this design are ADRs in `memory-bank/decisions/`. The table
 | 2026-10-31 | *Accounts, roles, sessions and API tokens* | Proposed (#60) | A servlet session cookie: sessions lost on restart, CSRF protection needed, a second path for CI tokens. JWT: a library and a signing key, and revocation needs a deny list, which is a token store again. |
 | 2026-11-01 | *Snapshot schema v0: flat pre-order tree, one window, no partial document* | Accepted | Nested children instead of parent ids: every consumer would gain a recursion it does not need. A partial document with `truncated: true`: exactly the input FR-29 forbids healing to use. |
 | 2026-11-03 | *Client UI language: Turkish and English, chosen by the user* | Accepted | Turkish only: the English material (report, advisor demo) would need translated screenshots. English only: testers who do not read English are left out. An i18n library (i18next, FormatJS): a new dependency for about 300 texts whose plurals the code already handles. |
-| 2026-11-05 | *Runs API and live run updates* | Proposed (#44) | STOMP over WebSocket: a framing layer and a client library for one kind of event on one server. Server-sent events: the RS, the SDD and the issue would change. Results that point into the test's current steps: an edit silently changes what old results mean. |
+| 2026-11-05 | *Runs API and live run updates* | Accepted (#44) | STOMP over WebSocket: a framing layer and a client library for one kind of event on one server. Server-sent events: the RS, the SDD and the issue would change. Results that point into the test's current steps: an edit silently changes what old results mean. |
 | 2026-11-07 | *Graph schema v0.4: one Window per snapshot id* | Proposed (#15) | A plain index and a lock node: the index fixes the scans, but the race needs extra code and a second node type. Leaving it to the client's retry (#61): a client cannot know whether a timed-out write committed. |
+| 2026-11-08 | *Run screenshots, idle timeout and retention* | Accepted (#51); extends *Runs API* | The screenshot as base64 inside the step result: megabytes of JSON in the outbox and in every repeat check. Retention per test: disk grows with the number of tests. Leaving an abandoned run running: a stuck entry in every history. Building `repairProposed` now: it would define #74's graph before #74. |
+| 2026-11-08 | *Contracts v1: what the G1 freeze means and how CI enforces it* | Accepted (#52) | An ADR for every change after v1: one for each endpoint the plan already holds. An own Java test against a frozen `openapi-v1.yaml`: our own rules to maintain, and only a comparison with v1. A frozen set of example messages: it does not notice a removed field. |
 
-These ADRs are still listed as Proposed in the index, although the work they describe is on `main`: *Healing proposal schema 0.2* (#149, PR #174), *Accounts, roles, sessions and API tokens* (#60, PR #179), *Runs API and live run updates* (#44, PR #193) and *Graph schema v0.4* (#15, PR #182, migration `V0005`).
+These ADRs are still listed as Proposed in the index, although the work they describe is on `main`: *Healing proposal schema 0.2* (#149, PR #174), *Accounts, roles, sessions and API tokens* (#60, PR #179) and *Graph schema v0.4* (#15, PR #182, migration `V0005`). *Runs API*, *Run screenshots* and *Contracts v1* were accepted on 2026-11-15 (galip on PR #240).
 
 ## 8 Traceability
 
@@ -932,9 +943,10 @@ _Requirement → section table for every FR and NFR of the RS. Filled at #53, on
 | 4 | Retrieval: the server picks the candidate objects and the AI service has no Bolt edge (proposed), or the AI service reads Neo4j | §2.2.2 rule 5, §5 | Settled: the server picks them (#155 review, PR #165); built in #58 |
 | 5 | How live updates are framed on the WebSocket (topics, message shape) | §4.1 | Settled: subscribe per test, JSON messages, no replay (ADR *Runs API and live run updates*, #44) |
 | 6 | `architecture.md` foresees an nginx container; its role (TLS, static files) is not designed | §2.3 | #84 |
-| 7 | `/api/health` has no bound on how long it waits while Neo4j shuts down (`memory-bank/tasks/32-server-settings.md`) | §4.2 | #31 |
-| 8 | RQ1's measure: settled in the #157 review (stable vs positional, interactive population); the labelling procedure for ground truth is not written yet | §6.6 | #64 |
+| 7 | `/api/health` has no bound on how long it waits while Neo4j shuts down (`memory-bank/tasks/32-server-settings.md`) | §4.2 | Open: #31 closed without it, so it needs an issue of its own |
+| 8 | RQ1's measure: settled in the #157 review (stable vs positional, interactive population); the labelling procedure for ground truth | §6.6 | Settled: labelling guide and harness in `eval/rq1/` (#29, PR #233); results in #64 |
 | 9 | RQ2's flaky definition | §6.6 | Settled: per-step comparison, reset between runs, detection limit stated (#157 review) |
 | 10 | RQ3's "without context" condition needs a definition, because the grammar needs a `target` enum (§5.9 #12) | §6.6 | #77 |
 | 11 | Exact McNemar below 25 discordant pairs (proposed) | §6.7 | Settled: exact test for every sample size (#157 review) |
-| 12 | Whether GitHub's `windows-latest` runner gives UI Automation a usable desktop for the system test | §6.2, §6.3 | #67 |
+| 12 | Whether GitHub's `windows-latest` runner gives UI Automation a usable desktop for the system test | §6.2, §6.3 | Settled: yes. PR #249's first run (2026-11-15) typed, clicked and verified on the sample app there, and caught bug1 and bug4 (#67) |
+| 13 | FR-35 asks a category for every failed step, but a step the agent refuses and an action the application rejects fit none of the five | §3.2, §4.1 | #63 (PR #240 leaves the category out for them until then) |

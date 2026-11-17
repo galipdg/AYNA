@@ -38,7 +38,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from ayna_agent.playback import items, rows, triage
@@ -68,6 +68,7 @@ from ayna_agent.playback.resolve import (
     resolve,
 )
 from ayna_agent.playback.rows import RowError, RowFailed, RowsUnavailable
+from ayna_agent.playback.screenshot import StepCapture
 from ayna_agent.playback.tree import Tree
 from ayna_agent.playback.tree import of as tree_of
 
@@ -151,6 +152,12 @@ class StepResult:
     #: log (#63) and because "it clicked, through LegacyIAccessible" is a different fact from
     #: "it clicked".
     performed_with: str | None = None
+    #: Absolute path to this step's PNG on the agent's machine, and when it was taken (#54).
+    #: Absent when there is no image: a `notRun` step is never photographed, and a capture that
+    #: failed does not fail the step (`playback.screenshot.step_capture`). So a reader -- #59's
+    #: report, the client's step list -- treats "no screenshot" as normal.
+    screenshot_path: str | None = None
+    screenshot_at: str | None = None
     #: Which of FR-35's five a failed step belongs to (#63, ADR `2026-11-15-failure-category`).
     #: **Only with `status: failed`, and absent when the failure is not about the application**
     #: -- a keyword this agent has not implemented, a step document it refuses, a provider that
@@ -171,6 +178,8 @@ class StepResult:
             ("message", self.message),
             ("matched", self.matched),
             ("performedWith", self.performed_with),
+            ("screenshotPath", self.screenshot_path),
+            ("screenshotAt", self.screenshot_at),
             ("category", self.category),
         ):
             if value is not None:
@@ -187,6 +196,7 @@ def run_steps(
     patterns: Patterns = uia_patterns,
     now: Callable[[], float] = time.monotonic,
     sleep: Callable[[float], None] = time.sleep,
+    capture: StepCapture | None = None,
     decisions: DecisionLog | None = None,
     context: Mapping[str, Any] | None = None,
 ) -> list[StepResult]:
@@ -195,6 +205,11 @@ def run_steps(
     `targets` maps a logical name to `{"properties": {...}, "fallback": {...}}` -- the
     repository object's primary and fallback sets (#25). Extra members (`serverElementId`,
     `featureVersion`, which healing needs) are ignored here.
+
+    `capture` is #54's screenshot, built by `playback.screenshot.step_capture` and bound to the
+    window under test; it is called after each step that ran, never for a `notRun` one. Injected
+    rather than taken as a window handle so this module stays testable with no desktop, and
+    because the handle belongs to the caller that opened the window, not to the runner.
 
     `decisions` is #63's log: one JSONL line per **failed** step, with the finer `reason` the
     contract's `category` cannot carry and the property sets that were tried, so the failure
@@ -233,6 +248,16 @@ def run_steps(
             sleep=sleep,
             triaged=triaged,
         )
+        # After the step, not before: FR-19's image is the evidence of what the step did, and
+        # for a failed step it is the evidence of what the screen looked like when it failed.
+        if capture is not None:
+            image = capture(index)
+            if image is not None:
+                result = replace(
+                    result,
+                    screenshot_path=image.path,
+                    screenshot_at=image.taken_at,
+                )
         results.append(result)
         if decisions is not None and result.status == FAILED:
             _record(decisions, result, step, targets, triaged, context)

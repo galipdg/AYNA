@@ -34,3 +34,4 @@ One line per decision, newest last. Never edit an accepted ADR — write a new o
 | 2026-11-08 | [Run screenshots, idle timeout and retention](2026-11-08-run-screenshots-and-retention.md) (extends Runs API; `repairProposed` moves to #74) | Accepted (#51) |
 | 2026-11-08 | [Contracts v1: what the G1 freeze means and how CI enforces it](2026-11-08-contracts-v1-freeze.md) | Accepted (#52) |
 | 2026-11-15 | [A failed step's category in the agent, WebSocket and REST contracts (FR-35)](2026-11-15-failure-category.md) (extends Contracts v1) | Proposed (#63) |
+| 2026-11-15 | [A step's screenshot travels as a path, and agent JSON-RPC goes to 1.2](2026-11-15-step-screenshot-transport.md) (extends Contracts v1 and Run screenshots) | Proposed (#54) |
