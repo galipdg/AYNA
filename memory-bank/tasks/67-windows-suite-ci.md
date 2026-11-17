@@ -43,3 +43,9 @@ JUnit XML + job summary. Suite: `.github/suite/smoke.json` (SC-14 login, SC-34 r
 - Criterion 3 (JUnit in the Actions UI) is back to pending until #66: the summary shows the CLI output, not JUnit.
 - Checked on macOS: 13 harness tests; a real `ayna run` subprocess exits 2 (no UIA) and the apps are stopped. Windows run: this PR's CI.
 - Next step: push and PR on omer's OK; read both jobs; after #66, add `--junit out/junit.xml` and read the XML instead of the lines.
+
+## 2026-11-17 — PR #252 merged; JUnit follow-up (branch `omer/67-suite-junit`)
+- PR #252 merged (squash) on hasan's approval. hasan ran all three jobs on Windows: none 2/2 passed, bug1 and bug4 each failed exactly their own test. PR CI also green for the suite jobs. The red `eval` check was the llm-latency CPU flake (0.962 vs 0.95), which this PR does not touch.
+- Decision (criterion 3, answered on PR #254): no third-party reporter action. `ci_suite.py` reads `--junit out/junit.xml` with `ayna_cli.junit.summary_of()`, writes a per-test table to the job summary and uploads the XML as an artifact; the `LINE` regex and `_say` import go.
+- Done on this branch: the module header says the script needs one environment with both the agent and PySide6 (hasan's review on #252).
+- Next step: once #254 merges (it waits for CI, which is blocked by billing), switch `ci_suite.py` to the XML, update its tests and the workflow, open a PR "Closes #67".

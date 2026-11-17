@@ -15,6 +15,10 @@ sample app"). This script is that pipeline's part, nothing more:
 Exit codes are the CLI's own (0, 1, 2) unless `--expect-failed` is given: then 0 when exactly
 the named tests failed and the others passed, 1 when not, 2 when the run itself broke.
 
+The app is started with this script's own interpreter, so run it in **one environment that
+has both the agent and PySide6** (`pip install -e ./agent -e ./eval`). Without PySide6 the app
+dies at once and the CLI only says, 60 s later, that no window with that ClassName appeared.
+
 Until #66 writes JUnit XML, which test passed is read from the CLI's `pass  NAME` /
 `FAIL  NAME` lines (`ayna_cli/cli.py:_say`). Switch to the XML when it exists.
 """
