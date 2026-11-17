@@ -1,12 +1,11 @@
-# The sample suite on a Windows runner (#67): the sample app is started, the suite is played
-# with the agent's playback, and the results are written as JUnit XML.
+# The sample suite on a Windows runner (#67): the sample app is started, and the suite is
+# played with the CLI, `ayna run --from-file` (#61), as a user's pipeline would (SC-33, SC-34).
 #
-# Until the CLI exists (#61, #66) the suite is run by `.github/suite/run_suite.py`, a stand-in
-# for `ayna run --from-file suite.json --junit out.xml`. When the CLI lands, the "Run the
-# suite" steps call it instead and run_suite.py goes.
+# `.github/suite/ci_suite.py` is that pipeline's part: it starts the screens the suite needs,
+# runs the CLI, and for a bug build checks that exactly the right test failed.
 #
-# Results are shown on the run's page (job summary, written by the runner) and kept as the
-# `junit-*` artifact. No third-party reporter action.
+# Results are shown on the run's page (job summary) and kept as the `ayna-run-*` artifact.
+# JUnit XML comes with #66 (`--junit`); no third-party reporter action.
 name: AYNA suite
 
 on:
@@ -26,6 +25,7 @@ on:
       - .github/workflows/ayna-suite.yml
       - .github/suite/**
       - agent/ayna_agent/**
+      - agent/ayna_cli/**
       - eval/apps/sample/**
 
 permissions:
@@ -53,22 +53,22 @@ jobs:
             eval/pyproject.toml
       # The agent (pywinauto) and the sample app (PySide6) in one interpreter.
       - run: pip install -e ./agent -e ./eval
-      - name: Runner tests
+      - name: Harness tests
         run: python -m unittest discover -s .github/suite -v
       # A bug build fails this job: that is what a dispatch with bug1…bug5 shows.
-      - name: Run the suite
+      - name: Run the suite with ayna run
         run: >
-          python .github/suite/run_suite.py .github/suite/smoke.json
+          python .github/suite/ci_suite.py .github/suite/smoke.json
           --app eval/apps/sample/sample_app.py
           --app-arg=--search-delay-ms --app-arg=0
           --app-arg=--bug --app-arg=$env:BUG
           --build $env:BUG
-          --junit out/junit.xml
+          --out out
       - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: junit-${{ env.BUG }}
-          path: out/junit.xml
+          name: ayna-run-${{ env.BUG }}
+          path: out/ayna-run.txt
           if-no-files-found: ignore
 
   # Nightly and on pull requests: each bug build must fail the test that is there to catch it.
@@ -96,21 +96,21 @@ jobs:
             agent/pyproject.toml
             eval/pyproject.toml
       - run: pip install -e ./agent -e ./eval
-      - name: Run the suite, expecting one failure
+      - name: Run the suite with ayna run, expecting one failure
         env:
           BUG: ${{ matrix.bug }}
           TEST: ${{ matrix.test }}
         run: >
-          python .github/suite/run_suite.py .github/suite/smoke.json
+          python .github/suite/ci_suite.py .github/suite/smoke.json
           --app eval/apps/sample/sample_app.py
           --app-arg=--search-delay-ms --app-arg=0
           --app-arg=--bug --app-arg=$env:BUG
           --build $env:BUG
           --expect-failed "$env:TEST"
-          --junit out/junit.xml
+          --out out
       - if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: junit-${{ matrix.bug }}
-          path: out/junit.xml
+          name: ayna-run-${{ matrix.bug }}
+          path: out/ayna-run.txt
           if-no-files-found: ignore

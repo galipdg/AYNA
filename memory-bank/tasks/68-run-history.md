@@ -33,6 +33,7 @@
 
 ## Manual checks
 - pending · omer · on macOS. **Setup:** the `ayna68` stack is up on `http://localhost:28080` (admin `demo` / `demo-pass-68`, seeded); `cd client && npm run dev`; Settings → server `http://localhost:28080`, log in as `demo`, choose "AYNA Deneme Uygulaması". **Steps:** 1. open Runs (Ctrl+4); 2. choose test "Hatalı şifre uyarısı"; 3. choose result "Başarısız"; 4. Raporu aç; 5. close the report, Kaydet…, save to Desktop, open the file with Wi-Fi off; 6. switch language to English and open a report again. **Expected:** 1. three runs, newest first, with pills Başarılı / Başarısız / Yarıda kesildi; 2. one run; 3. still one; 4. a window with the Turkish report and four screenshots; 5. "Rapor kaydedildi: …" and the file opens offline; 6. the report is in English. Teardown: `docker compose -p ayna68 down -v`.
+- 2026-11-15 · omer · macOS, `npm run demo` (during #183's shell check) · Runs screen works; one finding: the row line under Open report / Save sat off the line under Started by, because `td.actions` was `display: flex` and so no longer a table cell. Fixed on `omer/68-runs-row-line` (buttons in a flex `div` inside the cell); omer rechecked: aligned.
 
 ## Open issues
 - `client/src/main/spy.ts` and `src/main/__tests__/demoSeed.test.ts` are not Prettier-clean on `main` already; CI does not run `format:check`. Left alone (out of scope).

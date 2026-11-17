@@ -219,8 +219,15 @@ export const tr: Strings = {
     `Fare bir öğenin üzerindeyken ${label} tuşlarına basarak onu seçin.`,
   spyHotkeyTaken: (label: string) =>
     `${label} başka bir programda kullanılıyor, bu yüzden klavyeyle seçme kapalı.`,
-  spyPicked: (x: number, y: number) =>
-    `${x}, ${y} noktası seçildi. Altındaki öğeyi bulmak için daha yeni bir aracı gerekiyor.`,
+  spyPicked: (x: number, y: number) => `${x}, ${y} noktasındaki öğe seçildi.`,
+  spyPickNotCaptured: (x: number, y: number) =>
+    `${x}, ${y} noktasındaki pencere burada yakalanan pencere değil. Onu yakalayın, sonra tuşlara yeniden basın.`,
+  spyPickCapture: 'Bu pencereyi yakala',
+  spyPickChanged:
+    'Pencere yakalandıktan sonra değişmiş, bu yüzden imlecin altındaki öğe bu ağaçta yok. Yeniden yakalayın, sonra tuşlara yeniden basın.',
+  spyPickOwnWindow: 'Bu, AYNA’nın kendi penceresi. Test ettiğiniz uygulamanın üzerine gelin.',
+  spyPickNoWindow: (x: number, y: number) => `${x}, ${y} noktasında pencere yok.`,
+  spyPickGone: 'Bu pencere artık pencere listesinde yok.',
   spyPropertiesTitle: 'Özellikler',
   spyWindowOnly: 'Pencere yakalanamadığı için yalnız pencere listesinden.',
   spyNotCaptured: 'yakalanmadı',

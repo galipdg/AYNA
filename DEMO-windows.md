@@ -10,10 +10,10 @@ Rehber `main` dalına göre yazıldı (2026-11-08). Açık bir PR'ı denerken o 
 
 | Çalışıyor (`main`) | Henüz yok |
 |---|---|
-| Sunucu, Neo4j, oturum açma, kullanıcılar ve API anahtarları | İmleçle öğe seçme kısayolu (#22). Ekrandaki kısayol ipucu bu yüzden henüz çalışmaz. |
+| Sunucu, Neo4j, oturum açma, kullanıcılar ve API anahtarları | |
 | Uygulama ve sürüm seçimi | İstemciden test çalıştırma (#44, #40'ı bekliyor). Oynatma şimdilik yalnız aracı testleriyle denenir, bkz. [Bölüm 6](#6-testi-çalıştırma-bugün). |
 | Aracının istemciyle başlayıp durması, çökünce yeniden başlaması (#17) | **Çalıştırmalar**, **Onarımlar**, **Değişiklikler** ekranları ("Yakında") |
-| Nesne Gözcüsü: gerçek pencere listesi, canlı yakalama, kırmızı çerçeve, depoya ekleme (#24, #184, #25) | Türkçe komutla test üretme paneli (#78) |
+| Nesne Gözcüsü: gerçek pencere listesi, canlı yakalama, kırmızı çerçeve, imleçle öğe seçme (Ctrl+Shift+A), depoya ekleme (#24, #184, #22, #25) | Türkçe komutla test üretme paneli (#78) |
 | Depo: arama, yeniden adlandırma, düzenleme, kaldırma (#30) | |
 | Kodsuz test editörü (#38), Türkçe ve İngilizce arayüz (#185) | |
 
@@ -171,6 +171,8 @@ Her adımda **Beklenen** satırına bakın. Uymayan adımı not edin ve devam ed
 5. **Gelişmiş** bölümünü açın. **Beklenen:** tüm UI Automation özellikleri listelenir. Okunamayanlarda "yakalanmadı" yazar.
 6. Ağaçta arayın: `user` → 2 eşleşme, `Remember` → 1, `button` → 4, `zzz` → "eşleşen öğe yok" (sayaç eşleşen öğeleri sayar; eşleşmelerin üstündeki pencere satırı da görünür ama sayılmaz). Aramayı silin, ağaç geri gelir.
 7. Deneme uygulamasında boş alanlarla **Login**'e basın, sonra AYNA'da **Yeniden yakala** deyin. **Beklenen:** durum etiketinin metni "Username and password are required" olarak görünür.
+8. Fareyi deneme penceresindeki **Username** kutusunun üzerine getirip **Ctrl+Shift+A**'ya basın. **Beklenen:** ağaçta Username kutusu seçilir (kapalı bir daldaysa dal açılır), sağdaki panel onu gösterir, kutunun etrafında kırmızı çerçeve belirir. Altta "… noktasındaki öğe seçildi." yazar.
+9. Fareyi yakalanmamış bir pencerenin (ör. görev çubuğu) üzerine getirip kısayola basın. **Beklenen:** "…burada yakalanan pencere değil…" uyarısı ve **Bu pencereyi yakala** düğmesi çıkar; düğme o pencereyi seçip yakalar. Fareyi AYNA'nın kendi penceresine getirip basınca "Bu, AYNA'nın kendi penceresi" yazar.
 
 ### 5.4 Depoya ekleme (#25)
 

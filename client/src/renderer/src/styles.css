@@ -1443,11 +1443,14 @@ ul.message {
   font-variant-numeric: tabular-nums;
 }
 
-.runs-table td.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+.runs-table td.runs-actions {
+  width: 1%;
   white-space: nowrap;
+}
+
+.runs-table td.runs-actions .actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
 }
 
 /* Running a test from the editor (#44, wireframe 8). */

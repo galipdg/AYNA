@@ -220,23 +220,26 @@ export default function Runs({ app, onSessionEnded }: Props) {
                     {run.durationMs === null ? '–' : formatDuration(run.durationMs)}
                   </td>
                   <td>{run.startedBy}</td>
-                  <td className="actions">
-                    <button
-                      type="button"
-                      disabled={Boolean(busy)}
-                      onClick={() => report(run, false)}
-                    >
-                      {strings.runsOpenReport}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-quiet"
-                      disabled={Boolean(busy)}
-                      title={strings.runsSaveReportTitle(testName(run))}
-                      onClick={() => report(run, true)}
-                    >
-                      {strings.runsSaveReport}
-                    </button>
+                  <td className="runs-actions">
+                    {/* The cell stays a table cell, so its border lines up with the row's (#68). */}
+                    <div className="actions">
+                      <button
+                        type="button"
+                        disabled={Boolean(busy)}
+                        onClick={() => report(run, false)}
+                      >
+                        {strings.runsOpenReport}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-quiet"
+                        disabled={Boolean(busy)}
+                        title={strings.runsSaveReportTitle(testName(run))}
+                        onClick={() => report(run, true)}
+                      >
+                        {strings.runsSaveReport}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

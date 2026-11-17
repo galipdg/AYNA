@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/183
 - Owner: omer · Branch: `omer/183-ui-design` (stacked on `omer/25-repo-objects`, PR #187, because the shell must hold the Spy and the add-to-repository form)
-- Started: 2026-11-03 · Last update: 2026-11-03
+- Started: 2026-11-03 · Last update: 2026-11-15
 
 ## Approach
 Design first, then code. `docs/ui/` holds the design: `README.md` (principles, review questions), `style-guide.md` (layout, colour tokens, type, components, wording, glossary), `flows.md` (mermaid flows F1–F8), `wireframes.md` (screens 0–14, every RS §3.5.1 screen). After the team review: CSS tokens + component classes in `styles.css`, a shell component (top bar + navigation), and the existing screens moved into it. The Spy's three-panel layout is #184; translation is #185.
@@ -17,13 +17,15 @@ Design first, then code. `docs/ui/` holds the design: `README.md` (principles, r
 ## Status
 - [x] Draft `docs/ui/` (wireframes, flows, style guide)
 - [x] Shell + shared styles (`Shell.tsx`, `Page.tsx`, `Menu.tsx`, `AppMenu.tsx`, `VersionMenu.tsx`, `SettingsPage.tsx`, `Icons.tsx`, `styles.css`); server settings, login, picker, users, tokens, Spy moved in
-- [ ] omer looks at the running shell (dark theme checked by screenshot; light theme, Users, Settings and the menus not yet looked at)
-- [ ] Team review (galip, hasan); record answers to README questions 1–6 here
+- [x] omer looked at the running shell 2026-11-15 (`npm run demo`, macOS): 7/7 steps pass, one finding in Runs fixed (#68)
+- [x] Team review: galip and hasan approved PR #188 (merged 2026-11-08) as the design review. Answers: Q1 keep Repairs in the navigation (galip); Q2 NL panel on the right of the test editor, with insert position, dropped steps in place, two kinds of 422, timeouts 30/35/40 s, no model picker, typed text not logged (galip; for #78); Q3 and Q4 no objection, proposals kept; Q5 1280 × 720 design confirmed, the 960–1280 band now says tables may scroll sideways (hasan, #207); Q6 Turkish words applied in #203 (öğe, Aracı, Başarısız, "En fazla bekle"). hasan's Advanced point: style guide now says Advanced is not only for test engineers and opens itself for a Find-by fix (#204). galip's screen 10 point (contributions, largest-remainder rounding) goes to #75.
 - [ ] Manual check with someone not on the team or at the weekly session
-- Next step: omer's feedback on the running shell; then ask galip and hasan for the review
+- Next step (2026-11-15): the hand check at the weekly session (label `needs-windows-test`, steps on #183); on pass, close #183.
 
 ## Manual checks
 - 2026-11-03 · agent · shell on macOS (dark), real server :8080 + fake agent, driven over CDP · Spy, Later place pass after a fix (long window titles overflowed the panels) · evidence: screenshots in the session only
+- 2026-11-15 · omer · macOS 27, `npm run demo` (Docker server + fake agent) · login and app/version/user/language/agent in the top bar; navigation with unbuilt screens unavailable; version only in the top bar; Settings, Users, API tokens in one style; TR ⇄ EN; light and dark; navigation collapses below 1180 px — **pass 7/7**. Finding: Runs row line misaligned in the actions cell → fixed on `omer/68-runs-row-line`, rechecked: pass. Evidence: omer's screenshot (not kept).
+- pending · weekly session · the same steps on Windows at 100 % and 150 % (criterion 7)
 
 ## Open issues
 - RS §3.5.1 says "layouts and wireframes are in the SDD": the SDD (#45, omer) should link `docs/ui/`, and RS §3.5.1 (galip) may point here instead.
