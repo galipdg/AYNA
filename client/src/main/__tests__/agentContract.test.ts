@@ -55,8 +55,8 @@ const window = {
 }
 
 describe('agent JSON-RPC contract, client side', () => {
-  it('is version 1.1', () => {
-    assert.equal(contract.$defs.version.const, '1.1')
+  it('is version 1.2', () => {
+    assert.equal(contract.$defs.version.const, '1.2')
   })
 
   it('sends requests the contract allows', async () => {

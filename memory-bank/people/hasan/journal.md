@@ -836,6 +836,31 @@ fixing them is `b28f2b9`.
 - **Next step:** a second independent labeller for the report's screen, then #162 (overdue,
   Week 3), which needs the machine idle.
 
+## 2026-11-15 (second session)
+
+- **#47 / PR #239 unblocked.** #238 (#46) had merged, so GitHub had already retargeted #239 to
+  `main`; what it actually needed was an `origin/main` merge, because the squash made every file
+  #46 touched conflict. Resolved "ours" on the three `eval/apps/sample/` files (each is `main`'s
+  content plus #47's additions) and folded four #29 findings that reached `main` through #236
+  into `active.md`'s #29 section rather than letting a one-sided resolution drop them. Pushed
+  with the user's agreement; all six checks green, MERGEABLE / CLEAN.
+- **Found and wrote up an intermittent UIA readiness flake** while verifying that merge: one
+  `eval` run failed on `test_the_right_credentials_are_welcomed_by_name` and the pair
+  `test_bug_uia.py test_sample_uia.py` failed twice more, both with the signature "the text I set
+  did not land". Ruled out a window leak (the tree is clear within 0.3 s of `kill_process_tree`),
+  a cross-window mix-up (two live windows of one class raise `ElementAmbiguousError`), any single
+  bug version, `set_edit_text` on a fresh app, and `test_variant_uia.py` in the same slot. It
+  vanishes under instrumentation, so it went to #69 as flaky-rate data rather than being patched
+  blind. `learnings.md` and the #47 task note have it.
+- **Started and finished the code for #54 (screenshot per step).** Two decisions with the user:
+  the PNG travels as a *path* rather than base64, and there is no Pillow -- `pywin32` captures
+  and `zlib` + `struct` write the file. Moved `frame_bounds` out of `recognition/uia.py` into a
+  new `recognition/frames.py` because importing it dragged in `websockets` and the capture would
+  not run on the root `.venv`. 475 agent tests green, ruff clean, NFR-03 met with room (41 ms at
+  902x564, 91-96 ms at 1920x1020 against 300 ms), and the captured image was opened and checked
+  by eye, not only timed.
+- Next step: push `hasan/54-screenshot-per-step` and open the PR (`Closes #54`), saying in the
+  body that the client side (reading the file and uploading it) is #51's and omer's.
 ## 2026-11-15 — #46 and #47, the sample app's change and bug versions
 
 Session start found nothing of mine left on #40 (PR #237 green, both reviews requested), an
@@ -872,6 +897,33 @@ PR #171 on 31 October, so that debt was already paid. Took Week 6's pair instead
 
 Next step: nothing of mine is blocked on me. Retarget PR #239 to `main` once #238 merges, take
 galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 or #62).
+- Later the same session: the user merged #47, #40 and #162 while #54 was being written, so
+  #54's branch took an `origin/main` merge. It was the small reconciliation the task note had
+  predicted — `runner.py`'s import block and nothing else; `_run_one`'s signature was identical
+  on both sides and the capture hook dropped into #40's loop unchanged. 677 agent tests green.
+  **The merge also turned up a real find**: galip's `ayna_agent/errors.py` was on `main` and
+  `rpc.py` re-exported all four exceptions, but `recognition/uia.py` was still importing them
+  *from* `ayna_agent.rpc`, so the decoupling that file exists for had never taken effect and the
+  UIA backend still could not be imported without `websockets`. One line fixed it; #29's
+  `capture` no longer needs `agent/.venv`. In `learnings.md`, in galip's inbox, and the claims
+  it made stale in `frames.py`, the task note, `active.md` and the PR body are all corrected.
+- **PR #248 is open** for #54 (`Closes #54`), both reviews requested.
+- Third stretch, 2026-11-15: cleared the review queue — approved omer's #241, #243, #234, #249
+  and #247, and requested changes on #242 (SDD v0.5 has #40 under "Planned" though it merged at
+  12:52Z, #47's row lost the **Built** marker, and §6.2's Windows row contradicts §6.3 about the
+  `eval` job). For #249 I ran his nightly suite on this Windows machine, the one check his PR
+  could not do for itself: v1 green, bug1 fails only the login test, bug4 only the required-name
+  test. For #234 both of my earlier objections were fixed, the timeout one better than I asked.
+- Then the two changes omer requested on my #248. The CI one was already fixed; the second was a
+  real break — `additionalProperties: false` on `stepResult` meant every real `runSteps` answer
+  was outside the frozen contract, caught by a person and by no job. Schema to 1.2, an ADR, and
+  a guard that validates the real `StepResult.to_json()` rather than a fake of it. Reviewing
+  #247 also turned up that #44's one-call-per-step design scattered a run's screenshots into one
+  directory per step; the agent half is fixed, the one-line `rpc.py` pass-through is galip's.
+- Next step: nothing of mine is blocked on me. #248 waits on omer's re-review and galip; the
+  Windows queue (#247's check B, #24, #54's second-display case) waits for the weekly session.
+  The next issue to start is **#61** (CLI runner): #40 is on `main` and `ayna_cli*` has to go
+  into `agent/pyproject.toml`'s packages.
 - Fifth stretch, 2026-11-15: #63, the failure triage and decision log, PR #251 with all six
   checks green. The substance was one decision the ADR explicitly left to me: a failure the
   *agent* caused does not get one of FR-35's five, because RQ2 and RQ5 are computed from that
