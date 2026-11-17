@@ -29,6 +29,7 @@ from ayna_agent.playback.runner import (
     StepDocumentError,
     run_steps,
 )
+from ayna_agent.playback.screenshot import StepImage
 
 TRIAL_TREE = Path(__file__).resolve().parent / "data" / "trial-app-tree.json"
 
@@ -447,6 +448,123 @@ def test_both_step_schema_versions_are_read():
 def test_a_document_that_cannot_be_read_raises(document):
     with pytest.raises(StepDocumentError):
         run(document)
+
+
+# --- #54's screenshot per step -------------------------------------------------------------
+
+
+class Camera:
+    """A fake `capture`: records which steps were photographed, with no desktop involved."""
+
+    def __init__(self, fails_on: set[int] | None = None) -> None:
+        self.asked: list[int] = []
+        self.fails_on = fails_on or set()
+
+    def __call__(self, step_index: int) -> StepImage | None:
+        self.asked.append(step_index)
+        if step_index in self.fails_on:
+            # What `step_capture` returns when the capture failed: no image, no exception.
+            return None
+        return StepImage(
+            path=f"C:/runs/7/step-{step_index:04d}.png",
+            taken_at="2026-11-15T14:03:11.250+03:00",
+            width=800,
+            height=600,
+            captured_with="printWindow",
+        )
+
+
+def test_every_step_that_ran_gets_a_screenshot_in_its_result():
+    camera = Camera()
+    results, *_ = run(LOGIN_STEPS, capture=camera)
+    assert camera.asked == [0, 1, 2]
+    assert [r.screenshot_path for r in results] == [
+        "C:/runs/7/step-0000.png",
+        "C:/runs/7/step-0001.png",
+        "C:/runs/7/step-0002.png",
+    ]
+    assert all(r.screenshot_at == "2026-11-15T14:03:11.250+03:00" for r in results)
+
+
+def test_the_screenshot_reaches_the_result_json_in_camel_case():
+    camera = Camera()
+    results, *_ = run(LOGIN_STEPS, capture=camera)
+    body = results[0].to_json()
+    assert body["screenshotPath"] == "C:/runs/7/step-0000.png"
+    assert body["screenshotAt"] == "2026-11-15T14:03:11.250+03:00"
+
+
+def test_a_run_without_a_capture_carries_no_screenshot_fields():
+    """The parameter is optional, so #26's callers and the CLI keep working unchanged."""
+    results, *_ = run(LOGIN_STEPS)
+    assert all(r.screenshot_path is None for r in results)
+    assert "screenshotPath" not in results[0].to_json()
+    assert "screenshotAt" not in results[0].to_json()
+
+
+def test_the_failed_step_is_photographed_and_the_not_run_ones_are_not():
+    """The failing step's image is the one worth having; a step that never ran has no screen."""
+    document = {
+        "version": "0.1",
+        "steps": [
+            {"keyword": "Click", "target": "login.loginButton"},
+            {"keyword": "Click", "target": "login.gone"},
+            {"keyword": "Click", "target": "login.loginButton"},
+        ],
+    }
+    camera = Camera()
+    results, *_ = run(document, capture=camera)
+    assert [r.status for r in results] == ["passed", "failed", "notRun"]
+    assert camera.asked == [0, 1], "a notRun step is not photographed"
+    assert results[1].screenshot_path == "C:/runs/7/step-0001.png"
+    assert results[2].screenshot_path is None
+
+
+def test_a_capture_that_could_not_take_the_image_leaves_the_step_passing():
+    camera = Camera(fails_on={1})
+    results, *_ = run(LOGIN_STEPS, capture=camera)
+    assert [r.status for r in results] == ["passed", "passed", "passed"]
+    assert results[1].screenshot_path is None
+    assert results[0].screenshot_path and results[2].screenshot_path
+
+
+def test_the_capture_runs_after_the_step_not_before():
+    """FR-19's image is evidence of what the step did, so the order matters.
+
+    The fake patterns record each action; the camera records each capture. Interleaving them on
+    one list is the only way to assert the order rather than assume it.
+    """
+    order: list[str] = []
+
+    class Recording(Camera):
+        def __call__(self, step_index: int) -> StepImage | None:
+            order.append(f"shot {step_index}")
+            return super().__call__(step_index)
+
+    patterns = Patterns()
+    real_click = patterns.__call__
+
+    class Watching(Patterns):
+        def __call__(self, element, name):
+            order.append(f"act {name}")
+            return real_click(element, name)
+
+    run(LOGIN_STEPS, patterns=Watching(), capture=Recording())
+    # Each step acts (possibly trying more than one pattern) and only then is photographed.
+    assert order[0].startswith("act")
+    assert [entry for entry in order if entry.startswith("shot")] == [
+        "shot 0",
+        "shot 1",
+        "shot 2",
+    ]
+    assert order.index("shot 0") < order.index("shot 1")
+    for index in (0, 1, 2):
+        acts_before = [
+            position
+            for position, entry in enumerate(order[: order.index(f"shot {index}")])
+            if entry.startswith("act")
+        ]
+        assert acts_before, f"step {index} was photographed before it acted"
 
 
 # --- ready: exists, visible and enabled (#40) -----------------------------------------------
