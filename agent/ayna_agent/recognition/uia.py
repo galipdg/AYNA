@@ -48,14 +48,14 @@ from datetime import datetime
 from typing import Any
 
 from ayna_agent import __version__
-from ayna_agent.model import text_value
-from ayna_agent.recognition import snapshot as snap
-from ayna_agent.rpc import (
+from ayna_agent.errors import (
     BadStepDocument,
     SnapshotTimeout,
     UiaUnavailable,
     WindowNotFound,
 )
+from ayna_agent.model import text_value
+from ayna_agent.recognition import snapshot as snap
 
 log = logging.getLogger(__name__)
 

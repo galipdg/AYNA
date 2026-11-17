@@ -406,6 +406,9 @@ def test_the_awareness_names_cover_every_context():
 
 
 @pytest.mark.windows
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="DPI awareness exists only on Windows"
+)
 def test_setup_leaves_the_process_per_monitor_v2():
     """The bounds contract, as a test rather than as a comment.
 
