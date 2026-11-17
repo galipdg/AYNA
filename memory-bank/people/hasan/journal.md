@@ -872,6 +872,21 @@ PR #171 on 31 October, so that debt was already paid. Took Week 6's pair instead
 
 Next step: nothing of mine is blocked on me. Retarget PR #239 to `main` once #238 merges, take
 galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 or #62).
+- Fifth stretch, 2026-11-15: #63, the failure triage and decision log, PR #251 with all six
+  checks green. The substance was one decision the ADR explicitly left to me: a failure the
+  *agent* caused does not get one of FR-35's five, because RQ2 and RQ5 are computed from that
+  field and a `timeout` that was really "no SelectRow yet" could never be separated out again.
+  The decision log carries the finer reason instead, so every failed step is classified where
+  labelling actually happens. Proposed a sixth contract value rather than bumping a shared
+  schema alone. Found on the way that `RowFailed` and `SelectFailed` each merged "not there"
+  with "the app refused it" — two different findings that a stored result could never split —
+  so both now carry a `kind`.
+- CI caught an import that my local run could not: `python -m pytest` puts the CWD on
+  `sys.path`, bare `pytest` does not. Reproduce the agent job with `.venv/Scripts/pytest.exe`.
+- Next step: nothing is blocked on me. #248, #250 and #251 all wait on reviews; the Windows
+  queue (#247's check B, #24, #54's second-display case) waits for the weekly session. The next
+  unblocked issue of mine is **#66** (the CLI's JUnit XML), which would stack on #250's branch
+  until that merges — worth waiting for rather than stacking again.
 - Fourth stretch, 2026-11-15: #61, the CLI runner (`ayna run`), PR #250 with all six checks
   green. Built to FR-23 rather than the issue's summary, which omits the token, the delivery
   condition and exit 2. Ran it for real twice, and the second run is the reason to keep doing
@@ -884,3 +899,18 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   (#247's check B, #24, #54's second-display case) waits for the weekly session. After that the
   open Week 8 issue is **#62**, which needs omer's #44 (PR #247) merged first, or **#66** (the
   CLI's JUnit XML), which is mine and unblocked by #250.
+- Sixth stretch, 2026-11-15: #64's RQ1 report, PR #253, opened as *Part of #64* rather than
+  closing it — the generator is done but only 2 of 7 captured screens are labelled, so NFR-27
+  is answered honestly as "not demonstrated" (39/41 = 95.1 %, Wilson [83.9, 98.7]) rather than
+  claimed. Two rules carry the design: judge on the lower bound, and never print a verdict
+  without its coverage. Checked the statistic against numeric root-finding on the equation the
+  closed form solves — and my own six hand-written expectations were what turned out wrong.
+- Looking at the measured rows also corrected a `learnings.md` entry of mine: the nameless WPF
+  MenuItems are proposed as `{className}` alone, not `{className, parentPath}`, because
+  `propose` keeps a property only while it narrows the match. #73 would have looked for a
+  signal that was never proposed.
+- Almost everything merged today, including my #61 (#250) and #63 (#251). After #250, the
+  existing `agent/.venv` needed `pip install -e` again before `ayna_cli`'s tests would collect.
+- Next step: nothing is blocked on me. #248 and #253 wait on reviews. The remaining #64 work is
+  labelling (five screens, plus the second labeller #29 owes). **#66** (the CLI's JUnit XML) is
+  now unblocked for real, since #250 is on `main`.

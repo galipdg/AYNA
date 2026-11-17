@@ -68,8 +68,23 @@ class RowsUnavailable(Exception):
     """The target is not something whose rows playback can address."""
 
 
+#: Why a `RowFailed` happened, for #63's triage. Plain strings rather than `playback.triage`'s
+#: names, because triage imports this module and not the other way round.
+ROW_NOT_FOUND = "notFound"
+ROW_REFUSED = "refused"
+
+
 class RowFailed(Exception):
-    """`SelectRow` could not select the row, with the reason already worded for the result."""
+    """`SelectRow` could not select the row, with the reason already worded for the result.
+
+    `kind` says which of the two it was, because they are different findings and #63 must not
+    merge them: a row that is **not there** is evidence about recognition, while a row the
+    application **refused to select** is evidence about the application's behaviour.
+    """
+
+    def __init__(self, message: str, kind: str = ROW_NOT_FOUND) -> None:
+        self.kind = kind
+        super().__init__(message)
 
 
 @dataclass(frozen=True, slots=True)

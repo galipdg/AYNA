@@ -351,6 +351,31 @@ export interface ScreenPoint {
   y: number
 }
 
+/**
+ * What `elementFromPoint` found at a point (`docs/agent-rpc.md`). Every field may be null: no
+ * window there (`handle`), nothing captured for that window (`snapshotId`), or the window has
+ * changed since the capture (`elementId`). `element` is the snapshot's own descriptor.
+ */
+export interface ElementHit {
+  handle: number | null
+  bounds: Bounds | null
+  snapshotId: string | null
+  elementId: string | null
+  element: ElementDescriptor | null
+}
+
+export type ElementFromPointResult =
+  { ok: true; hit: ElementHit } | { ok: false; reason: AgentFailure; detail?: string }
+
+/**
+ * One press of the pick hotkey: the cursor point and what the agent found there. `ownWindow`
+ * is true when the point is over one of AYNA's own windows, which the Spy does not inspect.
+ */
+export type PickEvent = { point: ScreenPoint } & (
+  | { ok: true; hit: ElementHit; ownWindow: boolean }
+  | { ok: false; reason: AgentFailure; detail?: string }
+)
+
 /** Whether the Spy's pick hotkey is active; `label` is the key combination to show. */
 export interface PickHotkeyState {
   active: boolean
@@ -435,8 +460,11 @@ export interface AynaApi {
    * when another program holds the key combination.
    */
   setPickHotkey(enabled: boolean): Promise<PickHotkeyState>
-  /** Calls `listener` with the cursor position each time the pick hotkey is pressed. */
-  onPick(listener: (point: ScreenPoint) => void): () => void
+  /**
+   * Calls `listener` each time the pick hotkey is pressed, with the cursor position and the
+   * element the agent found under it.
+   */
+  onPick(listener: (pick: PickEvent) => void): () => void
   /** Logs in to the saved server; the session lasts until logout, expiry or a server change. */
   login(username: string, password: string): Promise<LoginResult>
   /** Ends the session on the server (best effort) and forgets it. */

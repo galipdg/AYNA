@@ -294,6 +294,27 @@ Append-only. One entry per session, newest at the bottom:
 - Found that every Element keeps `siblingIndex`, so the header order survives in the graph: `columns` is read from the captured tree at request time (`GridColumns`), with no snapshot, graph or migration change and no ADR (omer had first agreed to an `Element.columns` property + ADR, which I proposed on the wrong belief that the order was lost).
 - Client: the row picker's and the `cell` check's column field is a dropdown with "Other…" when columns are known. #221's criteria rewritten on GitHub. Notes to galip (#37: `columns` can be incomplete, do not reject on it) and hasan (Windows check).
 - Next: PR on omer's OK, manual check on #221 with `needs-windows-test`; then #59.
+
+## 2026-11-12 – 2026-11-14 (nineteenth session) · PR sweep
+- Merged on omer's word: #229 (#59; hasan's three fixes first: streaming report, `repairProposed`, `TZ`), #228 (#221; hasan's two client points), #230 (hasan's #33, after a macOS run), #231 (#68; hasan's fix first: report temp files swept at quit and start; "Part of #68" until the Windows screen check). hasan merged #227 and #232 himself after merging `main` (I do not push to his branches, omer's choice).
+- #224: `main` merged twice (decisions index, `active.md`), `elementFromPoint` into agent-rpc 1.0. Waits for galip.
+- Reviews: #227 approved after `142a6c6`; #230, #232 and #233 approved.
+- Next: #24 on `omer/24-pick-hotkey`.
+
+## 2026-11-14 — #24 pick hotkey
+- Built the client half of the pick: main calls `elementFromPoint` on the key press, the Spy selects the node or offers capture / capture again; fake agent answers it for `dev:mock`. PR #234 ("Part of #24"), Windows check posted on #24 with `needs-windows-test`.
+- SSH to GitHub still times out; fetch/push over HTTPS with gh credentials worked.
+- Next: CI and reviews on #234, Windows check, then #224 / #44.
+
+## 2026-11-14 — #24 macOS check
+- Session start: `main` unchanged (`d788d64`), no review requests, inbox handled. PR #234 CI green, no reviews yet; #224 still waits for galip; #40 still open, so #44 waits.
+- omer ran the `dev:mock` pick check on macOS: all steps pass (task note).
+- Next: reviews on #234, Windows check at the weekly session, then #224 / #44.
+
+## 2026-11-15 — #24 review fix, PR sweep
+- hasan's changes on #234: `AgentQueue` so a pick waits behind a longer capture; `Highlighter.suspend()` brings the frame back. 252 tests green, pushed, re-review asked.
+- Reviewed and approved hasan's #235–#239; merged #236 and #238 on omer's word. #235, #237 and #239 conflict in hasan's files after that, so they are left to him (comments on each).
+- Next: re-review of #234, Windows check, #224 (galip), #44 after #237.
 ## 2026-11-15 (twenty-second session) · board check, FR-35 failure category
 - Session start: `main` has #224 (#52 contracts v1, merged by omer) and hasan's #29, #23, #46. PR #234 (#24) waits for hasan's re-review of `c414e02` and the Windows check. No review requests.
 - Board check on omer's word: 23 issues In progress, none closable. Mine wait for a Windows check (#17, #24, #38, #68, #184, #204, #206), galip's RS update (#185 NFR-17/TBD-2, #152 NFR-07/08), team review (#183) or are still in progress (#44, #53, #10). No closed issue left outside Done.
@@ -301,3 +322,5 @@ Append-only. One entry per session, newest at the bottom:
 - Next: push and PR on omer's OK; hasan fills the field in #63.
 - 2026-11-15 · #185 #152 #67 · Ticked and closed #185 and #152 (RS 0.9 in #244 met the last criteria). `docs/graph-model.md`: three ADRs now accepted. #67 found blocked by #66/#61 (hasan's CLI). Next: omer decides on #67 (wait, or a pre-CLI skeleton) and the SDD §7 flip on #242.
 - 2026-11-15 · #67 · Skeleton without the CLI: ayna-suite.yml, run_suite.py stand-in (JUnit, summary, --expect-failed), smoke suite; 12 tests pass on macOS. Windows run pending (PR CI).
+- 2026-11-15 · PR sweep · Merged #250, #251, #241, #234; approved #248 (merged main into it; waits for galip on the schema); #242 fixed after hasan's review; #246 main merged in. Next: galip's approvals (#248, #246), hasan's re-review (#242), #67 on the CLI.
+- 2026-11-15 · #67 · ayna-suite.yml now runs `ayna run --from-file` through .github/suite/ci_suite.py (starts the screens, summary, --expect-failed); run_suite.py dropped. 13 harness tests on macOS; Windows run pending the PR.

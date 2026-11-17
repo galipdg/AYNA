@@ -27,18 +27,36 @@ function toDip(rect: Rect): Rect {
 export class Highlighter {
   private window: BrowserWindow | undefined
   private hideTimer: NodeJS.Timeout | undefined
+  /** What is on screen now and until when; undefined while hidden. */
+  private shown: { bounds: Bounds; until: number } | undefined
 
-  show(bounds: Bounds): void {
+  show(bounds: Bounds, forMs: number = SHOW_MS): void {
     const window = this.ensureWindow()
     window.setBounds(frameRect(bounds, toDip, BORDER))
     window.showInactive()
     clearTimeout(this.hideTimer)
-    this.hideTimer = setTimeout(() => this.hide(), SHOW_MS)
+    this.shown = { bounds, until: Date.now() + forMs }
+    this.hideTimer = setTimeout(() => this.hide(), forMs)
   }
 
   hide(): void {
     clearTimeout(this.hideTimer)
+    this.shown = undefined
     if (this.window && !this.window.isDestroyed()) this.window.hide()
+  }
+
+  /**
+   * Hides the frame for a moment (a hit test must not find it) and returns a function that puts
+   * it back for the time it had left, unless something else was shown or hidden in between.
+   */
+  suspend(): () => void {
+    const before = this.shown
+    this.hide()
+    if (!before) return () => {}
+    return () => {
+      const left = before.until - Date.now()
+      if (this.shown === undefined && left > 0) this.show(before.bounds, left)
+    }
   }
 
   /** Call when the main window closes, so this hidden window does not keep the app alive. */
