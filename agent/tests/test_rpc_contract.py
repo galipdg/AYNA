@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
+from ayna_agent.playback.runner import StepResult
 from ayna_agent.rpc import (
     INTERNAL_ERROR,
     INVALID_PARAMS,
@@ -69,14 +70,27 @@ HIT = {
 }
 NO_WINDOW = dict.fromkeys(("handle", "bounds", "snapshotId", "elementId", "element"))
 RESULTS = [
-    {"stepIndex": 0, "status": "passed", "durationMs": 7, "performedWith": "SetValue"},
+    {
+        "stepIndex": 0,
+        "status": "passed",
+        "durationMs": 7,
+        "performedWith": "SetValue",
+        # #54: a step that ran carries its screenshot. The fake used to leave these out,
+        # which is exactly why the 1.1 schema's `additionalProperties: false` could forbid
+        # them while every real answer sent them (caught in #248's review).
+        "screenshotPath": r"C:\Users\t\AppData\Local\Temp\ayna-screenshots\run-1\step-0000.png",
+        "screenshotAt": "2026-11-15T14:03:11.250+03:00",
+    },
     {
         "stepIndex": 1,
         "status": "failed",
         "durationMs": 10_000,
         "stepId": "c0ffee00-0000-4000-8000-000000000001",
         "message": "login.loginButton was not found within 10000 ms",
+        "screenshotPath": "/tmp/ayna-screenshots/run-1/step-0001.png",
+        "screenshotAt": "2026-11-15T14:03:21.402+03:00",
     },
+    # A notRun step is never photographed, so it carries neither field (#54).
     {"stepIndex": 2, "status": "notRun", "durationMs": 0},
 ]
 STEPS = {
@@ -221,3 +235,51 @@ def test_every_error_is_in_the_contract(desktop, message, code):
     answer = reply(desktop, message)
     check("failure", answer)
     assert answer["error"]["code"] == code
+
+
+# --- the real StepResult, not a fake of it ------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "result",
+    [
+        StepResult(step_index=0, status="passed", duration_ms=7),
+        StepResult(
+            step_index=1,
+            status="passed",
+            duration_ms=31,
+            step_id="c0ffee00-0000-4000-8000-000000000001",
+            matched="fallback",
+            performed_with="Invoke",
+            screenshot_path=r"C:\Temp\ayna-screenshots\run-1\step-0001.png",
+            screenshot_at="2026-11-15T14:03:11.250+03:00",
+        ),
+        StepResult(
+            step_index=2,
+            status="failed",
+            duration_ms=10_000,
+            message="login.loginButton was not found within 10000 ms",
+            matched="primary",
+            screenshot_path="/tmp/ayna-screenshots/run-1/step-0002.png",
+            screenshot_at="2026-11-15T14:03:21.402+03:00",
+        ),
+        StepResult(
+            step_index=3,
+            status="notRun",
+            duration_ms=0,
+            message="not run: an earlier step failed",
+        ),
+    ],
+    ids=["bare", "passed-with-screenshot", "failed-with-screenshot", "notRun"],
+)
+def test_what_the_runner_really_writes_is_in_the_contract(result):
+    """The fake above shapes its answers by hand; this one asks `StepResult` itself.
+
+    The gap this closes is a real one. The 1.1 schema set `additionalProperties: false` on
+    `stepResult` while #54 was adding `screenshotPath` and `screenshotAt`, so **every** real
+    `runSteps` answer was outside the contract — and nothing failed, because the only
+    step results any test validated were hand-written dicts that happened not to carry the
+    new fields (found by omer reviewing #248, not by CI). A field added to `StepResult`
+    without the schema now fails here instead.
+    """
+    check("stepResult", result.to_json())
