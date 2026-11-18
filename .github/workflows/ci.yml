@@ -56,7 +56,7 @@ jobs:
           }
           area server    'server/|schemas/|docs/api/'
           area client    'client/|schemas/'
-          area agent     'agent/|schemas/|eval/apps/trial/'
+          area agent     'agent/|schemas/|eval/apps/trial/|\.github/suite/'
           area ai        'ai/|schemas/|eval/nl/'
           area contracts 'schemas/|docs/api/|\.github/contracts/'
           area eval      'eval/|agent/ayna_agent/|ai/ayna_ai/|client/src/shared/|docs/rs/scenarios\.md|schemas/'
