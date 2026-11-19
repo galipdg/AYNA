@@ -326,6 +326,73 @@ def select(row: Row, tree: Tree, patterns: Patterns = uia_patterns) -> str | Non
     return None
 
 
+#: Above this many rows, `make_current` does not walk down with the arrow key: 500 presses at
+#: :data:`KEY_PAUSE_S` is five seconds, and the step reports the row as not current instead.
+MAX_KEYED_ROWS = 500
+
+#: The pause between two key presses while moving to a row; pywinauto's own default (50 ms)
+#: would make row 100 cost five seconds.
+KEY_PAUSE_S = 0.01
+
+
+class Keyboard:
+    """Focus through UI Automation, keys to whatever has the focus. Never coordinates.
+
+    A seam so `make_current` is tested without a desktop; `agent/tests/conftest.py` replaces
+    :data:`keyboard` for every test, so no unit test ever presses a real key.
+    """
+
+    def focus(self, element: Any) -> bool:
+        return _try(lambda: getattr(element, "element", element).SetFocus())
+
+    def send(self, keys: str) -> None:
+        from pywinauto import keyboard as pywinauto_keyboard
+
+        pywinauto_keyboard.send_keys(keys, pause=KEY_PAUSE_S)
+
+
+#: The keyboard `make_current` uses; replaced in tests.
+keyboard = Keyboard()
+
+
+def make_current(
+    row: Row,
+    grid_index: int,
+    tree: Tree,
+    patterns: Patterns = uia_patterns,
+    keys: Keyboard | None = None,
+) -> bool:
+    """Make `row` the target's **current** row, not only its selected one (#265).
+
+    On a Qt table, `SelectionItem.Select` (and MSAA's take-focus) changes the selection model
+    but not the current index, so an application that acts on `currentRow()` -- the common
+    idiom, and the sample app's Open button -- still acts on the old row, while a person's click
+    sets both. Measured on the sample app (2026-11-19): Select, SetFocus, both, and
+    `accSelect(TAKEFOCUS|TAKESELECTION)` all left "Open" on row 1; only the keyboard moved it.
+    So: focus the grid through UI Automation, `Ctrl+Home` to its first row, then `Down` to the
+    row -- the keys a person would press, which move the current index *and* the selection.
+
+    Only for a table with no row element (`row.is_row` False, Qt's shape): where the provider
+    has real rows, `Select` is its own selection and keys are not needed. Returns True when the
+    row is still the selected one afterwards (the keys landed where they should), False when
+    it could not be done or the keys went elsewhere -- then the step's own selection is put
+    back, and the caller says so in the step's message.
+    """
+    if row.is_row:
+        return True
+    keys = keyboard if keys is None else keys
+    if row.index > MAX_KEYED_ROWS or not keys.focus(tree.infos[grid_index]):
+        return False
+    keys.send("^{HOME}" + "{DOWN}" * (row.index - 1))
+    item = patterns(tree.infos[row.element], "SelectionItem")
+    if item is None:
+        return False
+    if _read(lambda: item.CurrentIsSelected):
+        return True
+    _try(lambda: item.Select())
+    return False
+
+
 def whole_row_selected(
     row: Row, tree: Tree, patterns: Patterns = uia_patterns
 ) -> bool | None:
@@ -372,6 +439,18 @@ def selected_a_cell(name: str, want: Address) -> str:
     return (
         f"{name}: the target selects cells rather than rows, so the first cell of "
         f"{want.describe()} is selected"
+    )
+
+
+def not_current(name: str, want: Address) -> str:
+    """`SelectRow` selected the row but could not make it the current one (#265).
+
+    A passing step with a message, like :func:`selected_a_cell`: the row *is* selected, which
+    is what the step asked, but an application acting on its current row will not see it.
+    """
+    return (
+        f"{name}: {want.describe()} is selected, but playback could not make it the "
+        "current row, so an action on 'the current row' may still use another one"
     )
 
 
