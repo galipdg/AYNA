@@ -47,7 +47,7 @@ class PointingDesktop:
     def snapshot(self, handle, timeout_ms):
         raise AssertionError("elementFromPoint must not take the snapshot path")
 
-    def run_steps(self, handle, steps, targets, default_timeout_ms=None):
+    def run_steps(self, handle, steps, targets, default_timeout_ms=None, run_id=None):
         raise AssertionError("elementFromPoint must not take the playback path")
 
     def element_from_point(self, x, y):
