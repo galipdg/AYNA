@@ -32,10 +32,32 @@ def test_the_file_matches_the_datasets_schema(built):
     jsonschema.validate(built, schema)
 
 
-def test_no_two_objects_share_an_automation_id(built):
-    """`eval/nl/check_pairs.py` rejects that, which is why the tab items are not listed."""
-    ids = [obj["automationId"] for obj in built["objects"].values()]
-    assert len(ids) == len(set(ids))
+def test_objects_share_an_automation_id_only_when_their_names_differ(built):
+    """`eval/nl/check_pairs.py` rejects a shared id unless every object gives a distinct
+    `name`: only the settings tab items do, because Qt gives them the tab bar's id."""
+    by_id: dict[str, list[dict]] = {}
+    for obj in built["objects"].values():
+        by_id.setdefault(obj["automationId"], []).append(obj)
+    shared = {i: objs for i, objs in by_id.items() if len(objs) > 1}
+    assert set(shared) == {"QApplication.settings.tabs.qt_tabwidget_tabbar"}
+    names = [
+        obj.get("name")
+        for obj in shared["QApplication.settings.tabs.qt_tabwidget_tabbar"]
+    ]
+    assert None not in names and len(set(names)) == len(names)
+
+
+def test_the_settings_tab_items_are_listed_with_their_names(built):
+    tabs = {
+        name: (obj["controlType"], obj["name"])
+        for name, obj in built["objects"].items()
+        if obj["controlType"] == "TabItem"
+    }
+    assert tabs == {
+        "settings.generalTab": ("TabItem", "Genel"),
+        "settings.notificationsTab": ("TabItem", "Bildirimler"),
+        "settings.advancedTab": ("TabItem", "Gelişmiş"),
+    }
 
 
 def test_every_screen_and_dialog_has_its_window(built):
