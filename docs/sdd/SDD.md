@@ -8,7 +8,7 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Design Description in the style of IEEE 1016-2009 [1] |
-| Version | 0.5 — draft of sections 1–7 and 9 |
+| Version | 0.6 — draft of sections 1–9 |
 | Date | 2026-11-15 |
 | Status | Sections 1–4 (#45), 5 (#50), 6 (#48) and 7 (#53) drafted. Section 8 waits for the final RS (#41). Final PDF: #53, due 7 Dec 2026 |
 
@@ -22,6 +22,7 @@
 | 0.3 | 2026-11-07 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12, #21 and #60 merged, and PR #173, PR #174, PR #193 |
 | 0.4 | 2026-11-08 | Ömerfaruk Sarıbal | Status after the client stack (#17, #24, #25, #30, #38, #183–#185), #15 and step schema v0.2 merged; §7 rows for *Step schema v0.2*, *Client UI language* and *Graph schema v0.4*; RQ1's dump script renamed (#199) (#53) |
 | 0.5 | 2026-11-15 | Ömerfaruk Sarıbal | Status after #22, #23, #26, #29, #33, #40, #46, #47, #51, #52, #59, #61, #68, #152 and #221 merged, and #44's editor run and #67's nightly job; hasan's #242 review; contracts frozen as 1.0 (§4.1, §4.3, §6.2); graph model v0.5 and its diagram with accounts; the AI service's token (§2.4.2); measured load (§2.3); §7 rows for *Run screenshots* and *Contracts v1*; PR #240's failure category noted as planned (#53) |
+| 0.6 | 2026-11-19 | Ömerfaruk Sarıbal | §8 Traceability from RS 1.0 (#41, PR #267): every FR and NFR to the sections that design it; §9 row 13 settled; Agent and CLI rows after #54 and #66 merged (#53) |
 
 ---
 
@@ -109,8 +110,8 @@ AYNA has six run-time components. The table gives each one's responsibility; §2
 | Component | Responsibility | Technology | Code | Owner | Status |
 |---|---|---|---|---|---|
 | **Client** | All user screens: server connection and application choice, Object Spy, repository, codeless editor, NL chat panel, run view and history, healing approval. Starts and supervises the local agent. | Electron + React, TypeScript | `client/` | omer | **Built**: settings, server check, application picker (#32); login, users and API tokens (#60, PR #179); agent process manager (#17, PR #154; its last Windows check is pending); app shell and style (#183, PR #188); Turkish and English UI (#185, PR #190); Object Spy (#24, #184, PRs #186, #189; the pick hotkey in PR #234, its Windows check pending); add to repository (#25, PR #187); repository view (#30, PR #191); codeless step editor (#38, PR #192; grid rows in PR #220, #205); column dropdown from the captured table headers (#221, PR #228); run history with the report in its own window, without script, and a save to file (#68, PR #231; its Windows check pending); running a test from the editor with live step status (#44, PR #247). Planned: the rest of #44, the screens of #75, #78 |
-| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UI Automation; a win32 fallback was measured and not built, #23, PR #236) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping` (#16, PR #135); element descriptor (#11, PR #175); `listWindows` and `snapshot` on UI Automation (#12, PR #180); healing scorer v0 (#49, PR #141); `runSteps` with Click and Type by logical name (#26, PR #200); `elementFromPoint`, the element under the cursor in the client's snapshot (#22, PR #227); playback v1 — all six keywords, the ready gate, checkpoints and the three row shapes (#40, PR #237; Windows check 7 of 7 on 2026-11-14). failure category for FR-35 (#63, PR #251). Planned: #54 (PR #248), #73 |
-| **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | **Built**: `ayna run` from a file or from the server, exit codes 0, 1 and 2 (#61, PR #250). Planned: JUnit XML (#66, PR #254); the sample suite plays through it on a Windows CI runner (#67, PR #252) |
+| **Agent** | The only component that touches the AUT: lists windows, reads the element tree and snapshots, picks the element under the cursor, plays steps with smart waits and screenshots, scores healing candidates. | Python, pywinauto (UI Automation; a win32 fallback was measured and not built, #23, PR #236) | `agent/ayna_agent/` | hasan (recognition, playback), galip (`rpc.py`, `heal/`) | **Built**: JSON-RPC server with token handshake and `ping` (#16, PR #135); element descriptor (#11, PR #175); `listWindows` and `snapshot` on UI Automation (#12, PR #180); healing scorer v0 (#49, PR #141); `runSteps` with Click and Type by logical name (#26, PR #200); `elementFromPoint`, the element under the cursor in the client's snapshot (#22, PR #227); playback v1 — all six keywords, the ready gate, checkpoints and the three row shapes (#40, PR #237; Windows check 7 of 7 on 2026-11-14). failure category for FR-35 (#63, PR #251); a PNG of the window after every step (#54, PR #248). Planned: #73 |
+| **CLI runner** | Runs a suite without the client: in-process agent, results to the server or to a file, JUnit XML. | Python | `agent/ayna_cli/` | hasan | **Built**: `ayna run` from a file or from the server, exit codes 0, 1 and 2 (#61, PR #250). JUnit XML that validates (#66, PR #254). Planned: the sample suite plays through it on a Windows CI runner (#67, PR #252) |
 | **Server** | The shared system of record: applications and versions, snapshots, object repository, tests and steps, runs and step results, screenshots, reports, healing proposals and decisions, users. Validates everything it stores and pushes live run status. Calls the AI service on behalf of the client. | Java 21, Spring Boot 4 | `server/` | omer | **Built**: health check, applications and versions API (#4, #128); tests and steps API (#39, PR #156); graph schema v0 and v0.1 migrations (#14, #39); OpenAPI contract and problem-details errors (#31, #158, PR #160); accounts, roles and API tokens (#60, PR #179); runs API and live run updates (#44, PR #193); snapshot import (#15, PR #182); repository objects API (#25, #30, PRs #187, #191); step screenshots, run retention and idle timeout (#51, PR #223); HTML run report (#59, PR #229); table column headers read from the capture (#221, PR #228); run history API with filters (#68, PR #231); REST, WebSocket and agent contracts frozen as v1 with breaking-change checks in CI (#52, PR #224); load test, NFR-07 met (#152, PR #225). a failed step's category (#63, PR #240). Planned: #74 |
 | **Database** | Graph of applications, UI elements, repository objects, tests, runs and healing data; vector index for retrieval. | Neo4j 5 Community | `server/src/main/resources/neo4j/migrations/` | omer | **Built**: schema v0 (#14), v0.1 (`V0002`, #39), v0.2 (`V0003`, #60), v0.3 (`V0004`, #44), v0.4 (`V0005`, #15), v0.5 (#51, properties only). v0.6 (#63, PR #240, properties only). Planned: vector index (#58) |
 | **AI service** | Turkish instruction + candidate objects → suggested steps with reasons. Saves nothing. Uses a local model server. | Python; Ollama or llama.cpp with a 7–8B quantised model | `ai/` | galip | **Built**: constrained generation (#37, PR #142), HTTP service (#71, PR #146). Planned: retrieval (#58), offline packaging (#82). Design: §5 |
@@ -931,7 +932,103 @@ These ADRs are still listed as Proposed in the index, although the work they des
 
 ## 8 Traceability
 
-_Requirement → section table for every FR and NFR of the RS. Filled at #53, once the RS (#35) is final._
+Every functional and non-functional requirement of RS 1.0 (#41), and the sections of this document that design it. The RS gives each requirement's priority, source, issues and verification method, and §5.8 maps the AI requirements to scenarios; this table only answers "where is it designed". A section reference names where the requirement is met, not every place that mentions it. 40 FR and 46 NFR; each appears once.
+
+#### 8.1 Functional requirements
+
+| Requirement | Subject | Design |
+|---|---|---|
+| FR-01 | Element under a screen point | §2.2 (Agent), §2.2.3 pick flow, §4.1 |
+| FR-02 | Spy element tree | §2.2.1, §2.2.3 pick flow |
+| FR-03 | Element without AutomationId or Name | §2.2 (Agent), §3.4 element descriptor |
+| FR-04 | Window snapshot | §2.2.3, §3.2, §3.4, §4.2 |
+| FR-05 | Client starts and stops the agent | §2.2.1, §2.3, §2.4.3 |
+| FR-06 | Add a picked element to the repository | §2.2.3 pick flow, §3.2, §4.2 |
+| FR-07 | Unique logical name per application | §2.2.3, §3.3, §4.2 |
+| FR-08 | Repository view: search, rename, edit | §2.2.1, §3.2, §4.2 |
+| FR-09 | No delete of an object a step uses | §3.2, §4.2 |
+| FR-10 | Locate a target by the object's primary properties | §2.2 (Agent), §3.4, §5.5.1 |
+| FR-11 | Tests as validated step lists | §3.4 step document, §4.2, §5.3 |
+| FR-12 | Codeless editor | §2.2.1, §4.2 |
+| FR-13 | Invalid step highlighted | §2.2.1, §3.4 |
+| FR-14 | Test export and import | §3.4, §4.2 |
+| FR-15 | Verify steps | §2.2 (Agent), §3.4 |
+| FR-16 | Smart wait before each step | §2.2 (Agent), §2.4.3 |
+| FR-17 | Step fails when the wait ends | §2.4.3, §5.6.1 |
+| FR-18 | Click, Type, Select, SelectRow, Wait | §2.2 (Agent), §3.4 |
+| FR-19 | Screenshot after each step | §2.2.3 run flow, §3.1, §4.1, §4.2 |
+| FR-20 | Run from the editor with live status | §2.2.3 run flow, §4.1, §4.2 |
+| FR-21 | HTML run report | §4.2 |
+| FR-22 | Run history | §3.2, §4.2 |
+| FR-23 | CLI runner | §2.2 (CLI runner), §2.3 |
+| FR-24 | JUnit XML | §2.2 (CLI runner), §6.2 |
+| FR-25 | NL description → steps | §2.2.3, §5.2, §5.4 |
+| FR-26 | Drop steps with unknown targets | §5.1, §5.2, §5.3 |
+| FR-27 | NL panel: review before saving | §2.2.3, §5.2 |
+| FR-28 | Everything but NL works without the AI service | §2.4.3, §5.1 |
+| FR-29 | Healing candidates on a missing target | §5.5.1–§5.5.4 |
+| FR-30 | Never act on a healing candidate | §2.2.2, §5.1, §5.5.1, §5.5.5 |
+| FR-31 | Healing proposal screen | §4.2, §5.5.4, §5.5.5 |
+| FR-32 | Approved proposal updates the object | §2.2.2, §4.2, §5.5.5 |
+| FR-33 | Changed objects between two versions | §3.1, §3.2, §4.2 |
+| FR-34 | Change-impact view | §2.2 (Client), §3.2 |
+| FR-35 | Failure category | §3.2, §4.1, §5.6.1 |
+| FR-36 | Decision log | §5.6.2 |
+| FR-37 | Server URL on first run | §2.2.1, §2.4.3 |
+| FR-38 | Applications and versions | §3.2, §4.2 |
+| FR-39 | Local accounts and roles | §2.4.2, §3.2, §4.2 |
+| FR-40 | Acting user on every edit and decision | §2.4.2, §3.2, §5.5.5 |
+
+#### 8.2 Non-functional requirements
+
+| Requirement | Subject | Design |
+|---|---|---|
+| NFR-01 | Spy pick time | §2.2.3 pick flow, §6.2 |
+| NFR-02 | Snapshot time | §2.2.3, §5.5.2, §6.2 |
+| NFR-03 | Screenshot cost per step | §2.2 (Agent), §6.2 |
+| NFR-04 | Action time per step | §6.2 |
+| NFR-05 | Default step timeout | §2.4.3, §3.4 |
+| NFR-06 | Live status within 1 s | §2.2.3 run flow, §4.1 |
+| NFR-07 | REST response time | §2.3, §4.2, §6.2 |
+| NFR-08 | 10 clients, 1 000 objects, 500 tests | §2.3, §6.2 |
+| NFR-09 | Report of a 50-step run | §4.2, §6.2 |
+| NFR-10 | Healing candidate time | §5.5.2 |
+| NFR-11 | Retrieval query time | §5.4 |
+| NFR-12 | NL generation latency | §5.2, §5.7 |
+| NFR-13 | AI hardware | §2.3, §5.2 |
+| NFR-14 | Usable without programming | §1.3, §2.2.1 |
+| NFR-15 | Errors name what failed | §2.4.3, §4.2 |
+| NFR-16 | Turkish characters | §2.4.4 |
+| NFR-17 | Turkish and English UI | §2.2.1, §7 |
+| NFR-18 | SUS score | — (Won't in semester 1) |
+| NFR-19 | Supported Windows versions | §2.3, §6.3 |
+| NFR-20 | 100 % and 150 % scaling | §6.2, §6.3 |
+| NFR-21 | AUT reached only through a driver | §1.2, §2.2.2 |
+| NFR-22 | No language model at run time | §2.2.2, §5.1 |
+| NFR-23 | No per-user licence costs | §1.3, §5.4 |
+| NFR-24 | Neo4j as the only database | §3.1, §7 |
+| NFR-25 | Flaky rate | §6.6 |
+| NFR-26 | Reference scenarios replay | §6.2, §6.5 |
+| NFR-27 | Recognition rate on pilot apps | §6.6 |
+| NFR-28 | 100 runs stored | §3.1 |
+| NFR-29 | Closed network at run time | §2.1, §2.4.1 |
+| NFR-30 | AI service offline | §2.3, §5.1 |
+| NFR-31 | Agent on loopback with a token | §2.4.2 |
+| NFR-32 | Password hashes and tokens | §2.4.2 |
+| NFR-33 | Healing keeps tests unchanged | §3.2, §5.5.5 |
+| NFR-34 | Versioned, frozen contracts | §2.4.4, §4.3 |
+| NFR-35 | Tests and linters in CI | §2.4.4, §6.1 |
+| NFR-36 | One Windows installer | §2.3, §6.3 |
+| NFR-37 | NL accuracy with context | §5.7, §6.6 |
+| NFR-38 | UUID `id` on every node | §3.2, §3.3 |
+| NFR-39 | Snapshots kept per version | §3.2, §4.2 |
+| NFR-40 | Screenshots as files | §3.1 |
+| NFR-41 | Schema changes only by migration | §3.3 |
+| NFR-42 | Open standards for contracts | §3.4, §4.1 |
+| NFR-43 | Site settings outside the image | §2.3 |
+| NFR-44 | Backup and restore | §2.3 |
+| NFR-45 | Results survive a server outage | §2.2.3 run flow, §2.4.3 |
+| NFR-46 | AI port not published | §2.3, §2.4.2 |
 
 ## 9 Open issues
 
@@ -949,4 +1046,4 @@ _Requirement → section table for every FR and NFR of the RS. Filled at #53, on
 | 10 | RQ3's "without context" condition needs a definition, because the grammar needs a `target` enum (§5.9 #12) | §6.6 | #77 |
 | 11 | Exact McNemar below 25 discordant pairs (proposed) | §6.7 | Settled: exact test for every sample size (#157 review) |
 | 12 | Whether GitHub's `windows-latest` runner gives UI Automation a usable desktop for the system test | §6.2, §6.3 | Settled: yes. PR #249's first run (2026-11-15) typed, clicked and verified on the sample app there, and caught bug1 and bug4 (#67) |
-| 13 | FR-35 asks a category for every failed step, but a step the agent refuses and an action the application rejects fit none of the five | §3.2, §4.1 | #63 (PR #240 leaves the category out for them until then) |
+| 13 | FR-35 asks a category for every failed step, but a step the agent refuses and an action the application rejects fit none of the five | §3.2, §4.1 | Settled: they carry no category and the decision log keeps a finer reason (#63, PR #251; RS 1.0 FR-35) |
