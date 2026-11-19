@@ -188,7 +188,7 @@ sequenceDiagram
   T->>C: Spy hotkey over a control
   C->>A: elementFromPoint(x, y), physical pixels
   A-->>C: the node of the client's snapshot (snapshotId, elementId), or none
-  C->>C: select it in the tree, outline it; else offer to capture (again)
+  C->>C: select and outline it in the tree, or offer to capture (again)
   T->>C: Add to repository as login.loginButton
   C->>A: snapshot(window)
   A-->>C: snapshot document
@@ -213,7 +213,7 @@ sequenceDiagram
     C->>S: PUT /api/runs/{runId}/results/{stepIndex} (outbox, retried)
     S-->>W: step status over WebSocket
   end
-  Note over A,C: repairProposed stops the test, remaining steps notRun (FR-30)
+  Note over C,A: repairProposed stops the test,<br/>remaining steps notRun (FR-30)
 ```
 
 **Turkish instruction to suggested steps** (FR-25 – FR-27; #71, #78):
