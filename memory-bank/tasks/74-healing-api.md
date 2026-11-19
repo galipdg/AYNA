@@ -23,14 +23,15 @@ The shape is set by two ADRs: `2026-10-28-healing-proposal-transport` (Accepted)
 - [x] Branch from `main`, board In progress (2026-11-19)
 - [x] Design OK from omer (approve rewrites primary/fallback; Rule; V0006)
 - [x] `healing/` package, `RunService` write path, `V0006`, graph-model v0.7, OpenAPI regenerated; 187 server tests pass (20 new: `HealingProposalSchemaTest` 4, `HealingIntegrationTest` 16)
-- [ ] `ws-runs` contract: a `repairProposed` result goes out on `/ws/runs` with a status that 1.1's `stepStatus` enum does not list (see Open issues)
-- Next step: settle the ws-runs bump with omer, then push and open the PR (`Closes #74`; reviewers galip, hasan).
+- [x] 2026-11-19: ws-runs **1.2** adds the step status `repairProposed` (omer's OK); ADR `2026-11-19-ws-runs-repair-proposed` (Proposed, needs galip's and hasan's approval); `schema_compat.py`: no breaking change; 188 server tests pass. Notes in galip's and hasan's inboxes.
+- Next step: push and open the PR (`Closes #74`; reviewers galip, hasan; body asks both to approve the ws-runs ADR) once omer says so.
 
 ## Manual checks
 - None needed: the API is fully covered by the integration tests. #75 (approval screen) will need a by-hand check.
 
 ## Open issues
-- **ws-runs 1.1** `$defs/stepStatus` is `passed|failed|notRun`; its description says "#74 adds repairProposed" (minor bump). `schemas/` is shared, so it needs omer's OK and a note to galip/hasan.
+- **Client drops `repairProposed`:** `client/src/shared/liveRun.ts` `STEP_STATUSES` has only the three 1.1 statuses, and line 86 returns null for any other. It must accept and show `repairProposed` before #73 produces one. Do it with #75 or as a small client issue.
+- **SDD** §4.1 names ws-runs 1.1 (PR #271). If #74 merges before the SDD is submitted (7 Dec), update that line and rebuild the PDF.
 - **agent-rpc** `runSteps` result `status` does not list `repairProposed` either. That is #73's bump (hasan/galip), not this issue's.
 - ADR `2026-10-31-healing-proposal-schema-0-2` is still Proposed although its schema is on `main`; this code accepts only `"0.2"`.
 - #73 (producer) is open, so there is no end-to-end run yet; the tests use the shared examples with the trial-login snapshot plus the three candidates.

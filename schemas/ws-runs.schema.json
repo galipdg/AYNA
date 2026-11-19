@@ -15,7 +15,7 @@
   "$defs": {
     "version": {
       "description": "Version of this contract. It is not sent on the wire; bump it on every change (minor for additions, major for a breaking change).",
-      "const": "1.1"
+      "const": "1.2"
     },
     "id": {
       "description": "A server id (UUID text).",
@@ -93,7 +93,7 @@
         "durationMs": { "type": ["integer", "null"], "minimum": 0 },
         "message": { "type": ["string", "null"] },
         "category": {
-          "description": "Since 1.1 (FR-35, #63): why a failed step failed, as the agent sent it; null for any other step and when the agent did not say. A server older than 1.1 leaves it out.",
+          "description": "Since 1.1 (FR-35, #63): why a failed step failed, as the agent sent it; null for any other step and when the agent did not say. Since 1.2 a repairProposed step may carry elementNotFound. A server older than 1.1 leaves it out.",
           "oneOf": [{ "$ref": "#/$defs/failureCategory" }, { "type": "null" }]
         }
       }
@@ -109,7 +109,7 @@
       }
     },
     "runStatus": {
-      "description": "Status of a run. New values may be added in a minor version (#74 adds repairProposed); show an unknown one as it is.",
+      "description": "Status of a run. A run with a repairProposed step ends as failed. New values may be added in a minor version; show an unknown one as it is.",
       "enum": ["running", "passed", "failed", "aborted"]
     },
     "failureCategory": {
@@ -117,8 +117,8 @@
       "enum": ["elementNotFound", "unexpectedWindow", "assertionFailed", "timeout", "searchIncomplete"]
     },
     "stepStatus": {
-      "description": "Status of a step result. New values may be added in a minor version (#74 adds repairProposed); show an unknown one as it is.",
-      "enum": ["passed", "failed", "notRun"]
+      "description": "Status of a step result. repairProposed (since 1.2, #74): no element matched the step's target and the agent proposed candidates instead of acting; the step was not performed, the run fails, and the proposal waits for review at GET /api/healing/proposals/{id}. New values may be added in a minor version; show an unknown one as it is.",
+      "enum": ["passed", "failed", "notRun", "repairProposed"]
     },
     "runSummary": {
       "description": "A run without its step document and results; the shape of RunSummary in docs/api/openapi.yaml.",

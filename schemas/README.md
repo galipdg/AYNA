@@ -59,9 +59,9 @@ Decision: [`2026-11-01-snapshot-schema-v0`](../memory-bank/decisions/2026-11-01-
 
 Examples: [`examples/snapshot/trial-login.json`](examples/snapshot/trial-login.json) (the trial app's login window, 14 elements, rebuilt by the tests from the tree captured on Windows for #11, so the example cannot drift from the agent) and [`examples/snapshot/cases.json`](examples/snapshot/cases.json).
 
-## Live run status (`ws-runs.schema.json`, version 1.1)
+## Live run status (`ws-runs.schema.json`, version 1.2)
 
-Every message on the WebSocket `/ws/runs`: `subscribe` and `unsubscribe` from the client; `subscribed`, `run.started`, `run.stepResult`, `run.finished` and `error` from the server, told apart by `type`. The root schema accepts any one of them; each is also a `$defs` entry. The version is `$defs/version`; it is not sent on the wire. 1.1 adds `category` to `run.stepResult` (FR-35, ADR `2026-11-15-failure-category`). Decision: [`2026-11-05-runs-api-and-live-updates`](../memory-bank/decisions/2026-11-05-runs-api-and-live-updates.md). Code: `server/src/main/java/com/ayna/server/runs/RunEvents.java`. Tests: `RunEventsIntegrationTest` checks every message it sends and receives against this file.
+Every message on the WebSocket `/ws/runs`: `subscribe` and `unsubscribe` from the client; `subscribed`, `run.started`, `run.stepResult`, `run.finished` and `error` from the server, told apart by `type`. The root schema accepts any one of them; each is also a `$defs` entry. The version is `$defs/version`; it is not sent on the wire. 1.1 adds `category` to `run.stepResult` (FR-35, ADR `2026-11-15-failure-category`); 1.2 adds the step status `repairProposed` (#74, ADR `2026-11-19-ws-runs-repair-proposed`). Decision: [`2026-11-05-runs-api-and-live-updates`](../memory-bank/decisions/2026-11-05-runs-api-and-live-updates.md). Code: `server/src/main/java/com/ayna/server/runs/RunEvents.java`. Tests: `RunEventsIntegrationTest` checks every message it sends and receives against this file.
 
 ## Agent JSON-RPC (`agent-rpc.schema.json`, version 1.1)
 
