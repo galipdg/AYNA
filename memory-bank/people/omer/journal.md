@@ -37,6 +37,12 @@ Append-only. One entry per session, newest at the bottom:
 - Correction while checking: TestComplete persists a healed locator only if the user accepts it; takeaway reworded.
 - Next: PR `Closes #18`, then #32.
 
+## 2026-10-26 · #10
+- PR #125 merged → #18 closed and Done. Picked #10 (Week 1, team, nobody had started); board → In progress.
+- Wrote `docs/literature.md` skeleton: assignment table split by ownership, entry format, gaps table copied verbatim from the plan's "What has been done". Annotated Hammoudi [3], Leotta [4], Healenium [23], each with "Source checked".
+- Leotta PDF unreachable (sepl.dibris.unige.it refuses connections); only abstract figures used.
+- Draft PR #126 (`Closes #10`); inbox notes to galip and hasan with their sources.
+- Next: #32 while #126 waits for teammates.
 ## 2026-10-26 · #32
 - Started #32 on `omer/32-server-settings`, board → In progress; agreed with omer to keep #32 open until the picker (needs #15) instead of splitting it.
 - Client: `src/main/server.ts` (URL normalisation + `/api/health` check, 5 failure types), `src/main/settings.ts` (`userData/settings.json`), IPC `settings:get` / `server:check` / `server:connect`, `ServerSettings.tsx` first-run screen. 22 tests green, build green; checked against the real compose backend (all 5 outcomes); omer's manual UI check passed (7 steps).
