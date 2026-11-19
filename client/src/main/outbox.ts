@@ -8,7 +8,15 @@ import type { WriteAnswer } from './runs.ts'
 import { systemClock, type Clock } from './runWindows.ts'
 
 export type OutboxEntry =
-  | { kind: 'result'; serverUrl: string; runId: string; stepIndex: number; body: Record<string, unknown> }
+  | {
+      kind: 'result'
+      serverUrl: string
+      runId: string
+      stepIndex: number
+      body: Record<string, unknown>
+    }
+  /** A step's PNG, queued right after its result (#261); `path` is the client's own copy. */
+  | { kind: 'screenshot'; serverUrl: string; runId: string; stepIndex: number; path: string }
   | { kind: 'finish'; serverUrl: string; runId: string; status: RunStatus }
 
 export type SetAsideEntry = OutboxEntry & { answer: 'gone' | 'conflict' }
@@ -28,6 +36,11 @@ export interface OutboxFile {
 export interface OutboxSender {
   serverUrl(): string | null
   put(entry: OutboxEntry): Promise<WriteAnswer>
+  /**
+   * The entry left the queue for good: delivered, refused, or set aside with its run. A
+   * screenshot's file and a finished run's folder can go then (#261).
+   */
+  released?(entry: OutboxEntry): Promise<void>
 }
 
 export const FIRST_RETRY_MS = 1_000
@@ -101,12 +114,14 @@ export class Outbox {
     if (entry.kind === 'finish') {
       this.state.open = this.state.open.filter((run) => run.runId !== entry.runId)
     }
-    if (this.isSetAside(entry.runId)) {
+    const setAside = this.isSetAside(entry.runId)
+    if (setAside) {
       this.state.setAside.push({ ...entry, answer: this.setAsideAnswer(entry.runId) })
     } else {
       this.state.entries.push(entry)
     }
     await this.save()
+    if (setAside) await this.release(entry)
     void this.send()
   }
 
@@ -128,7 +143,9 @@ export class Outbox {
 
   /** Resolves when nothing is being sent: the queue is empty, or waiting for a sign-in. */
   idle(): Promise<void> {
-    return this.sending ? new Promise((resolve) => this.idleWaiters.push(resolve)) : Promise.resolve()
+    return this.sending
+      ? new Promise((resolve) => this.idleWaiters.push(resolve))
+      : Promise.resolve()
   }
 
   /** Stops sending; what is queued stays on disk for the next start. */
@@ -151,14 +168,25 @@ export class Outbox {
           this.retryMs = 0
           this.remove(entry)
           await this.save()
+          await this.release(entry)
+        } else if (answer === 'conflict' && entry.kind === 'screenshot') {
+          // One image the server will not take (too large, not a PNG, another one already):
+          // the run and its results are still good, so only the image goes.
+          this.log(
+            `[outbox] the server refused the screenshot of step ${entry.stepIndex} of run ${entry.runId}`,
+          )
+          this.remove(entry)
+          await this.save()
+          await this.release(entry)
         } else if (answer === 'retry') {
           this.retryMs = Math.min(this.retryMs ? this.retryMs * 2 : FIRST_RETRY_MS, LAST_RETRY_MS)
           await this.clock.sleep(this.retryMs)
         } else if (answer === 'unauthorized') {
           this.paused = true
         } else {
-          this.setRunAside(entry.runId, answer)
+          const moved = this.setRunAside(entry.runId, answer)
           await this.save()
+          for (const gone of moved) await this.release(gone)
         }
       }
     } finally {
@@ -167,12 +195,24 @@ export class Outbox {
     }
   }
 
-  private setRunAside(runId: string, answer: 'gone' | 'conflict'): void {
+  private setRunAside(runId: string, answer: 'gone' | 'conflict'): OutboxEntry[] {
     const [moved, kept] = partition(this.state.entries, (entry) => entry.runId === runId)
     this.state.entries = kept
     this.state.setAside.push(...moved.map((entry) => ({ ...entry, answer })))
     this.log(`[outbox] the server refused run ${runId} (${answer}); its results were set aside`)
     for (const listener of this.setAsideListeners) listener(runId)
+    return moved
+  }
+
+  /** Tells the sender an entry is done with; a failure there never stops the queue. */
+  private async release(entry: OutboxEntry): Promise<void> {
+    try {
+      await this.sender.released?.(entry)
+    } catch (error) {
+      this.log(
+        `[outbox] cleaning up after run ${entry.runId}: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
   }
 
   private isSetAside(runId: string): boolean {

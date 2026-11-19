@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { rmSync } from 'node:fs'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
@@ -54,11 +54,13 @@ import {
   listRunningRuns,
   listRuns,
   putResult,
+  putScreenshot,
   reportFileName,
 } from './runs.ts'
 import type { LiveRun } from '../shared/liveRun.ts'
 import { Outbox } from './outbox.ts'
 import { Runner } from './runner.ts'
+import { OWN_SCREENSHOT_DIR, removeOwnRunDir, screenshotKeeper } from './screenshots.ts'
 import { RunEvents, type WebSocketLike } from './runEvents.ts'
 import { perStepPlayer } from './stepPlayer.ts'
 import { checkServer } from './server.ts'
@@ -362,17 +364,32 @@ function registerIpc() {
   }))
   // Running a test from the editor (#44): results go through the outbox, which sends each to
   // the server it belongs to while a session for that server exists.
+  // Step screenshots wait here until the outbox has sent them (#261).
+  const screenshotRoot = join(app.getPath('userData'), OWN_SCREENSHOT_DIR)
+  const screenshots = screenshotKeeper(screenshotRoot)
   const outboxReady = Outbox.open(join(app.getPath('userData'), OUTBOX_FILE), {
     serverUrl: () => session?.serverUrl ?? null,
     put: async (entry) => {
       const token = session && session.serverUrl === entry.serverUrl ? session.token : null
       if (!token) return 'unauthorized'
-      const answer =
-        entry.kind === 'result'
-          ? await putResult(entry.serverUrl, entry.runId, entry.body, { token })
-          : await finishRun(entry.serverUrl, entry.runId, entry.status, { token })
+      let answer
+      if (entry.kind === 'result') {
+        answer = await putResult(entry.serverUrl, entry.runId, entry.body, { token })
+      } else if (entry.kind === 'screenshot') {
+        const png = await readFile(entry.path).catch(() => null)
+        // An image gone from disk can never be sent; the outbox drops just that image.
+        if (!png) return 'conflict'
+        answer = await putScreenshot(entry.serverUrl, entry.runId, entry.stepIndex, png, { token })
+      } else {
+        answer = await finishRun(entry.serverUrl, entry.runId, entry.status, { token })
+      }
       if (answer === 'unauthorized') session = null
       return answer
+    },
+    // Screenshots of the application under test: none stays on disk once it is no use.
+    released: async (entry) => {
+      if (entry.kind === 'screenshot') await unlink(entry.path).catch(() => undefined)
+      if (entry.kind === 'finish') await removeOwnRunDir(screenshotRoot, entry.runId)
     },
   })
   const runEvents = new RunEvents({
@@ -397,9 +414,7 @@ function registerIpc() {
     if (run.runId !== runner?.current()?.runId) sendRun(run)
   })
   let runner: Runner | null = null
-  void outboxReady.then((outbox) =>
-    outbox.onSetAside((runId) => runner?.markNotStored(runId)),
-  )
+  void outboxReady.then((outbox) => outbox.onSetAside((runId) => runner?.markNotStored(runId)))
 
   /** After a sign-in: deliver what waits, close runs a crash left open, follow live runs. */
   async function signedIn() {
@@ -438,6 +453,7 @@ function registerIpc() {
       agent,
       player: perStepPlayer(agent),
       outbox,
+      screenshots,
       serverUrl: serverUrl ?? '',
     })
     next.onChange(sendRun)
