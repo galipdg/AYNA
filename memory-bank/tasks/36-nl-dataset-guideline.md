@@ -54,6 +54,7 @@ Everything that does not need the sample app is done now; the 40 sample-app pair
 - 12 sentences on one screen say little about RQ3; the numbers only show the format works end to end.
 
 ## Manual checks
+- 2026-11-19 · pending Windows session · §7.6 playback of galip's 8 scenarios and `test_nl_objects_uia.py` with the tab items · steps on #36 (label `needs-windows-test`)
 - none: no UI. The trial objects' AutomationIds come from hasan's Windows-verified `test_uia.py` (#9), not re-checked here.
 
 ## Open issues
