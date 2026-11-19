@@ -9,7 +9,7 @@ import {
   type RefObject,
 } from 'react'
 import type { RepoObjectSummary } from '../../shared/api.ts'
-import type { RowState } from '../../shared/liveRun.ts'
+import { rowNote, type RowState } from '../../shared/liveRun.ts'
 import {
   CHECK_PROPERTIES,
   GRID_CONTROL_TYPES,
@@ -246,6 +246,7 @@ export default function StepTable({
             items.some((object) => object.name === draft.target),
           )
           const problemId = `step-problems-${draft.key}`
+          const note = results?.[index] ? rowNote(results[index]) : null
           const describedBy = mine.length > 0 ? problemId : undefined
           const dropClass =
             dropAt === index && dragFrom !== undefined && dragFrom !== index
@@ -402,10 +403,10 @@ export default function StepTable({
                   </button>
                 </td>
               </tr>
-              {results?.[index]?.kind === 'failed' && results[index].outcome?.message && (
-                <tr className="step-failure">
+              {note && (
+                <tr className={note.failed ? 'step-note step-failure' : 'step-note'}>
                   <td />
-                  <td colSpan={results ? 7 : 6}>{serverText(results[index].outcome!.message!)}</td>
+                  <td colSpan={7}>{serverText(note.text)}</td>
                 </tr>
               )}
               {mine.length > 0 && (
@@ -457,11 +458,15 @@ function ResultCell({ state }: { state: RowState }) {
     return (
       <td className="step-result result-playing">
         ●{' '}
-        {strings.runWaiting(formatDuration(state.waitedMs ?? 0), formatDuration(state.timeoutMs ?? 0))}
+        {strings.runWaiting(
+          formatDuration(state.waitedMs ?? 0),
+          formatDuration(state.timeoutMs ?? 0),
+        )}
       </td>
     )
   }
-  if (kind === 'skipped') return <td className="step-result result-skipped">– {strings.runSkipped}</td>
+  if (kind === 'skipped')
+    return <td className="step-result result-skipped">– {strings.runSkipped}</td>
   return <td className="step-result result-pending">·</td>
 }
 
