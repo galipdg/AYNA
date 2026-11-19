@@ -4,10 +4,11 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import type { Settings } from '../shared/api.ts'
+import { isLanguage } from '../shared/language.ts'
 
 export const SETTINGS_FILE = 'settings.json'
 
-const DEFAULTS: Settings = { serverUrl: null, applicationId: null }
+const DEFAULTS: Settings = { serverUrl: null, applicationId: null, language: null }
 
 /** Reads the settings; a missing, unreadable or malformed file yields the defaults. */
 export async function loadSettings(file: string): Promise<Settings> {
@@ -22,12 +23,14 @@ export async function loadSettings(file: string): Promise<Settings> {
     serverUrl: typeof stored.serverUrl === 'string' ? stored.serverUrl : DEFAULTS.serverUrl,
     applicationId:
       typeof stored.applicationId === 'string' ? stored.applicationId : DEFAULTS.applicationId,
+    language: isLanguage(stored.language) ? stored.language : DEFAULTS.language,
   }
 }
 
 /** The settings after connecting to `serverUrl`: application ids belong to one server. */
 export function withServer(settings: Settings, serverUrl: string): Settings {
   return {
+    ...settings,
     serverUrl,
     applicationId: settings.serverUrl === serverUrl ? settings.applicationId : null,
   }

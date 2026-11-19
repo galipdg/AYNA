@@ -1,0 +1,79 @@
+[
+  {
+    "id": "handbrake",
+    "app": "HandBrake",
+    "version": "1.11.2",
+    "technology": "WPF",
+    "process": "HandBrake.exe",
+    "pilot": "P1",
+    "note": "A 'main-video' screen (Video tab selected) was registered and then dropped on 2026-11-14: without a source loaded every tab reads enabled false, including Summary, so the tab cannot be selected, and loading a source would contradict this screen set's 'no source loaded' state. Measuring the tab pages needs its own screen set with a source, which is not RQ1's question.",
+    "screens": [
+      {
+        "name": "main-summary",
+        "state": "Main window after a fresh start, no source loaded. The source-picker overlay is dismissed; the tab strip is present but every tab is disabled, which is what no source loaded means here.",
+        "open": "Start HandBrake and dismiss the source picker. Verify before trusting the capture: the toolbar's 'Choose Source' button must read enabled true. If it is false the picker was still up and the capture is of another screen."
+      },
+      {
+        "name": "preferences",
+        "state": "Preferences window, General page.",
+        "open": "Tools -> Preferences."
+      },
+      {
+        "name": "queue",
+        "state": "Queue window, empty queue.",
+        "open": "Queue in the toolbar."
+      }
+    ]
+  },
+  {
+    "id": "keepass2",
+    "app": "KeePass 2",
+    "version": "2.61.1",
+    "technology": "WinForms",
+    "process": "KeePass.exe",
+    "pilot": "P2",
+    "screens": [
+      {
+        "name": "main",
+        "state": "ayna-demo.kdbx open, the General group selected, entry list showing its five columns.",
+        "open": "Open C:\\ayna-pilots\\ayna-demo.kdbx with the password ayna-demo."
+      },
+      {
+        "name": "entry-editor",
+        "state": "Add Entry dialog, Entry tab, nothing typed.",
+        "open": "Entry -> Add Entry (Ctrl+I)."
+      },
+      {
+        "name": "options",
+        "state": "Options dialog, Security tab.",
+        "open": "Tools -> Options, then the Security tab."
+      },
+      {
+        "name": "open-database",
+        "state": "Open Database dialog, master password prompt.",
+        "open": "File -> Open -> Open File, pick ayna-demo.kdbx, stop at the password prompt."
+      }
+    ]
+  },
+  {
+    "id": "keepassxc",
+    "app": "KeePassXC",
+    "version": "2.8.0",
+    "technology": "Qt Widgets",
+    "process": "KeePassXC.exe",
+    "pilot": null,
+    "screens": [
+      {
+        "name": "main",
+        "state": "ayna-demo.kdbx open, root group selected.",
+        "open": "Open the demo database."
+      },
+      {
+        "name": "entry-editor",
+        "state": "Add Entry form in the main window, Entry page.",
+        "open": "Entries -> New Entry."
+      }
+    ],
+    "note": "Third pilot only after the first two run end to end and only if the locking behaviour can be switched off (D1 ADR). Not measured by default; pass the id explicitly."
+  }
+]

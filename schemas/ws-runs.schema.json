@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ayna:schema:ws-runs",
+  "title": "AYNA live run status (/ws/runs)",
+  "description": "Every message on the WebSocket /ws/runs between the server and a client: what the client sends to subscribe to the tests it has open, and the run events the server sends for them (FR-20, NFR-06; ADR runs-api-and-live-updates). One JSON object per text frame; `type` tells them apart. The upgrade request carries the same Bearer token as REST: 401 without a valid one, and close code 1008 within 60 s when it expires or is revoked. Nothing is replayed: after `subscribed` and after a reconnect, read GET /api/tests/{testId}/runs?status=running and GET /api/runs/{runId} and merge by stepIndex. A reader ignores properties and message types it does not know, so additions are not breaking. Frozen as v1 with the other contracts (#52, ADR contracts-v1-freeze); changing it needs an ADR and all three owners' approval (schemas/AGENTS.md).",
+  "oneOf": [
+    { "$ref": "#/$defs/subscribe" },
+    { "$ref": "#/$defs/unsubscribe" },
+    { "$ref": "#/$defs/subscribed" },
+    { "$ref": "#/$defs/runStarted" },
+    { "$ref": "#/$defs/runStepResult" },
+    { "$ref": "#/$defs/runFinished" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "version": {
+      "description": "Version of this contract. It is not sent on the wire; bump it on every change (minor for additions, major for a breaking change).",
+      "const": "1.1"
+    },
+    "id": {
+      "description": "A server id (UUID text).",
+      "type": "string",
+      "minLength": 1
+    },
+    "subscribe": {
+      "description": "Client to server: send me the run events of this test. Answered by `subscribed`; a message without testId or with an unknown type is answered by `error` and the connection stays.",
+      "type": "object",
+      "required": ["type", "testId"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "subscribe" },
+        "testId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "unsubscribe": {
+      "description": "Client to server: stop sending this test's events. Not answered.",
+      "type": "object",
+      "required": ["type", "testId"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "unsubscribe" },
+        "testId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "subscribed": {
+      "description": "Server to client: the subscription is in place; events of this test follow from now on.",
+      "type": "object",
+      "required": ["type", "testId"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "subscribed" },
+        "testId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "runStarted": {
+      "description": "Server to client: a run of the test started (POST /api/runs).",
+      "type": "object",
+      "required": ["type", "testId", "run"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.started" },
+        "testId": { "$ref": "#/$defs/id" },
+        "run": { "$ref": "#/$defs/runSummary" }
+      }
+    },
+    "runFinished": {
+      "description": "Server to client: a run of the test finished (POST /api/runs/{runId}/finish).",
+      "type": "object",
+      "required": ["type", "testId", "run"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.finished" },
+        "testId": { "$ref": "#/$defs/id" },
+        "run": { "$ref": "#/$defs/runSummary" }
+      }
+    },
+    "runStepResult": {
+      "description": "Server to client: a step result was stored (PUT /api/runs/{runId}/results/{stepIndex}). A repeat of a stored result is not sent again.",
+      "type": "object",
+      "required": ["type", "testId", "runId", "stepIndex", "stepId", "status", "durationMs", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "run.stepResult" },
+        "testId": { "$ref": "#/$defs/id" },
+        "runId": { "$ref": "#/$defs/id" },
+        "stepIndex": {
+          "description": "Position of the step in the step document copied when the run started, from 0.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "stepId": { "type": ["string", "null"] },
+        "status": { "$ref": "#/$defs/stepStatus" },
+        "durationMs": { "type": ["integer", "null"], "minimum": 0 },
+        "message": { "type": ["string", "null"] },
+        "category": {
+          "description": "Since 1.1 (FR-35, #63): why a failed step failed, as the agent sent it; null for any other step and when the agent did not say. A server older than 1.1 leaves it out.",
+          "oneOf": [{ "$ref": "#/$defs/failureCategory" }, { "type": "null" }]
+        }
+      }
+    },
+    "error": {
+      "description": "Server to client: the last client message could not be used. The connection stays open.",
+      "type": "object",
+      "required": ["type", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "error" },
+        "detail": { "type": "string" }
+      }
+    },
+    "runStatus": {
+      "description": "Status of a run. New values may be added in a minor version (#74 adds repairProposed); show an unknown one as it is.",
+      "enum": ["running", "passed", "failed", "aborted"]
+    },
+    "failureCategory": {
+      "description": "The categories of agent-rpc.schema.json $defs/failureCategory (FR-35, TBD-5). New values may be added in a minor version: show an unknown one as it is.",
+      "enum": ["elementNotFound", "unexpectedWindow", "assertionFailed", "timeout", "searchIncomplete"]
+    },
+    "stepStatus": {
+      "description": "Status of a step result. New values may be added in a minor version (#74 adds repairProposed); show an unknown one as it is.",
+      "enum": ["passed", "failed", "notRun"]
+    },
+    "runSummary": {
+      "description": "A run without its step document and results; the shape of RunSummary in docs/api/openapi.yaml.",
+      "type": "object",
+      "required": ["id", "testId", "appVersionId", "status", "stepCount", "startedBy", "startedAt", "finishedAt", "durationMs"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "testId": { "$ref": "#/$defs/id" },
+        "appVersionId": { "$ref": "#/$defs/id" },
+        "status": { "$ref": "#/$defs/runStatus" },
+        "stepCount": { "type": "integer", "minimum": 0 },
+        "startedBy": {
+          "description": "Who started the run; username is null once that account is deleted.",
+          "type": "object",
+          "required": ["id", "username"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": ["string", "null"] },
+            "username": { "type": ["string", "null"] }
+          }
+        },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "finishedAt": {
+          "description": "Null while the run is running.",
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "durationMs": {
+          "description": "Null while the run is running.",
+          "type": ["integer", "null"],
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

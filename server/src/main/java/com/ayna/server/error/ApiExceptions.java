@@ -11,6 +11,15 @@ public final class ApiExceptions {
 	private ApiExceptions() {
 	}
 
+	/** 401: the login failed; a missing or invalid token is answered by the security chain. */
+	public static class UnauthorizedException extends RuntimeException {
+
+		public UnauthorizedException(String message) {
+			super(message);
+		}
+
+	}
+
 	/** 404: an id in the path names nothing. */
 	public static class NotFoundException extends RuntimeException {
 
@@ -24,6 +33,15 @@ public final class ApiExceptions {
 	public static class ConflictException extends RuntimeException {
 
 		public ConflictException(String message) {
+			super(message);
+		}
+
+	}
+
+	/** 413: the body is larger than the endpoint takes, such as a screenshot over the limit. */
+	public static class TooLargeException extends RuntimeException {
+
+		public TooLargeException(String message) {
 			super(message);
 		}
 

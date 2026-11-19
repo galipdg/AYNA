@@ -1,0 +1,64 @@
+{
+  "version": "0.2",
+  "steps": [
+    {
+      "id": "6c8c3f44-a4dd-499f-ba33-50810b8bb2d3",
+      "keyword": "Type",
+      "target": "main.searchInput",
+      "value": "Yılmaz"
+    },
+    {
+      "id": "06d9a730-484f-48cc-bb03-1bd97f6ea2de",
+      "keyword": "Click",
+      "target": "main.searchButton"
+    },
+    {
+      "id": "520dd44b-d6c4-422f-898b-9df40553ad4d",
+      "keyword": "Verify",
+      "target": "main.customerGrid",
+      "checkpoint": { "property": "rowExists", "row": { "value": "Yılmaz" }, "operator": "equals", "expected": true },
+      "timeoutMs": 5000
+    },
+    {
+      "id": "11dc1266-7f56-44f4-9b85-5508998b5636",
+      "keyword": "Verify",
+      "target": "main.customerGrid",
+      "checkpoint": { "property": "rowCount", "operator": "equals", "expected": 2 }
+    },
+    {
+      "id": "2aeeda88-4de1-4bd9-b068-934a8c544f69",
+      "keyword": "Verify",
+      "target": "main.customerGrid",
+      "checkpoint": { "property": "cell", "row": { "index": 1 }, "column": "Ad", "operator": "equals", "expected": "Ahmet" }
+    },
+    {
+      "id": "483d9f08-75ca-489f-923e-f391a7010b3f",
+      "keyword": "Verify",
+      "target": "main.customerGrid",
+      "checkpoint": {
+        "property": "cell",
+        "row": { "column": "Ad", "value": "Ayşe" },
+        "column": "Şehir",
+        "operator": "contains",
+        "expected": "Ankara"
+      }
+    },
+    {
+      "id": "4885afb5-c7ba-4fbb-97cc-5b702a5c487c",
+      "keyword": "SelectRow",
+      "target": "main.customerGrid",
+      "row": { "column": "Ad", "value": "Ayşe" }
+    },
+    {
+      "id": "819a111b-7253-473b-8999-5f1823b12ab7",
+      "keyword": "Click",
+      "target": "main.openButton"
+    },
+    {
+      "id": "7734e609-179c-4e82-ab9d-959539695b79",
+      "keyword": "Verify",
+      "target": "detail.nameInput",
+      "checkpoint": { "property": "value", "operator": "equals", "expected": "Ayşe" }
+    }
+  ]
+}

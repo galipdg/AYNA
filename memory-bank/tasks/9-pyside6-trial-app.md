@@ -32,6 +32,10 @@ screen sample app in #33.
 - 2026-10-25 — Credential rules kept as a pure `authenticate()` function instead of
   inline widget code, so criterion 3 is covered by an OS-independent test as well as
   by the UIA test.
+- **2026-11-12 — superseded:** `eval/apps/trial/requirements.txt` is gone since #122
+  (omer, merged 2026-10-31). Dependencies live in `eval/pyproject.toml` and the setup command
+  is `.venv/Scripts/python.exe -m pip install -e "eval[dev]"` from the repository root. The
+  decision below records what was true in #9.
 - 2026-10-25 — Dependencies recorded in `eval/apps/trial/requirements.txt` and
   installed into `.venv` (user's choice, asked per §7). A repo-wide `pyproject.toml`
   was rejected for now: it is devops territory and would need an ADR.

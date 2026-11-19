@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ayna:schema:step",
   "title": "AYNA test steps",
-  "description": "An ordered list of keyword steps: a test case, the NL assistant's answer or a playback request. The shared contract of editor, NL assistant, recorder, agent and server. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md); see memory-bank/decisions/2026-10-27-step-schema-v0.md.",
+  "description": "An ordered list of keyword steps: a test case, the NL assistant's answer or a playback request. The shared contract of editor, NL assistant, recorder, agent and server. Changing it needs an ADR and all three owners' approval (schemas/AGENTS.md); see memory-bank/decisions/2026-10-27-step-schema-v0.md and 2026-10-28-step-schema-v0-2-rows.md.",
   "type": "object",
   "properties": {
     "version": {
-      "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change.",
-      "const": "0.1"
+      "description": "Schema version of this document. Each schema release accepts only its own version; bump it on every change. A 0.1 document becomes a 0.2 document by changing only this field.",
+      "const": "0.2"
     },
     "steps": {
       "description": "Steps in execution order. An empty list is a test with no steps yet.",
@@ -20,7 +20,7 @@
   "$defs": {
     "step": {
       "title": "Step",
-      "description": "One keyword action on one repository object. Before every step, playback waits until the target exists, is visible and enabled (smart wait), for at most timeoutMs.",
+      "description": "One keyword action on one repository object. Before every step, playback waits until the target exists, is visible and enabled (smart wait), for at most timeoutMs. SelectRow then also waits, within the same timeoutMs, until its row exists; a Verify of cell, rowExists or rowCount re-reads the target until the check holds, within the same timeoutMs.",
       "type": "object",
       "properties": {
         "id": {
@@ -28,11 +28,11 @@
           "$ref": "#/$defs/uuid"
         },
         "keyword": {
-          "description": "Click: click the target. Type: replace the target's text with value (an empty value clears it). Select: choose the item whose text is value in the target list or combo box. Verify: check the checkpoint on the target. Wait: only wait until the target is ready; never a fixed sleep.",
-          "enum": ["Click", "Type", "Select", "Verify", "Wait"]
+          "description": "Click: click the target. Type: replace the target's text with value (an empty value clears it). Select: choose the item whose text is value in the target list or combo box. SelectRow: select the row of the target grid or list that row addresses; afterwards only that row is selected. Verify: check the checkpoint on the target. Wait: only wait until the target is ready; never a fixed sleep.",
+          "enum": ["Click", "Type", "Select", "SelectRow", "Verify", "Wait"]
         },
         "target": {
-          "description": "Logical name of a repository object, never a coordinate or a raw UI Automation property.",
+          "description": "Logical name of a repository object, never a coordinate or a raw UI Automation property. For SelectRow and row checks: the grid or list, never a row or a cell.",
           "$ref": "#/$defs/logicalName"
         },
         "value": {
@@ -40,12 +40,16 @@
           "type": "string",
           "maxLength": 1000
         },
+        "row": {
+          "description": "The row SelectRow selects. Not allowed for the other keywords (a Verify gives its row in the checkpoint).",
+          "$ref": "#/$defs/row"
+        },
         "checkpoint": {
           "description": "The check of a Verify step. Not allowed for the other keywords.",
           "$ref": "#/$defs/checkpoint"
         },
         "timeoutMs": {
-          "description": "Longest wait for the target to become ready, in milliseconds. Absent means the run's default timeout.",
+          "description": "Longest wait for the target (and for SelectRow and row checks, its row or check) to become ready, in milliseconds. Absent means the run's default timeout.",
           "type": "integer",
           "minimum": 0,
           "maximum": 600000
@@ -76,44 +80,120 @@
         {
           "if": { "required": ["keyword"], "properties": { "keyword": { "const": "Wait" } } },
           "then": { "properties": { "value": false, "checkpoint": false } }
+        },
+        {
+          "if": {
+            "required": ["keyword"],
+            "properties": { "keyword": { "enum": ["Click", "Type", "Select", "Verify", "Wait"] } }
+          },
+          "then": { "properties": { "row": false } }
+        },
+        {
+          "if": { "required": ["keyword"], "properties": { "keyword": { "const": "SelectRow" } } },
+          "then": { "required": ["row"], "properties": { "value": false, "checkpoint": false } }
         }
       ]
     },
     "checkpoint": {
       "title": "Checkpoint",
-      "description": "Compares one property of the target with an expected value. Text comparisons are exact and case-sensitive.",
+      "description": "Compares one property of the target, or of a row or cell of the target, with an expected value. Text comparisons are exact and case-sensitive.",
       "type": "object",
       "properties": {
         "property": {
-          "description": "name: UI Automation Name (a label's or button's text). value: ValuePattern value (the text of an edit box or combo box). enabled: IsEnabled. visible: on screen (not IsOffscreen). checked: TogglePattern state is On. selected: SelectionItemPattern IsSelected.",
-          "enum": ["name", "value", "enabled", "visible", "checked", "selected"]
+          "description": "Of the target: name: UI Automation Name (a label's or button's text). value: ValuePattern value (the text of an edit box or combo box). enabled: IsEnabled. visible: on screen (not IsOffscreen). checked: TogglePattern state is On. selected: SelectionItemPattern IsSelected. Of a grid or list target: cell: the text of the cell in row and column; grid only, since a list has no columns (check a list item with rowExists or Select it by text). rowExists: a row (or list item) matches row. rowCount: number of rows, header rows not counted; for a list, the number of list items.",
+          "enum": ["name", "value", "enabled", "visible", "checked", "selected", "cell", "rowExists", "rowCount"]
         },
         "operator": {
-          "description": "equals / notEquals: whole value; contains: expected is a substring. Boolean properties allow only equals.",
+          "description": "equals / notEquals: whole value; contains: expected is a substring. Boolean properties and rowCount allow only equals.",
           "enum": ["equals", "notEquals", "contains"]
         },
         "expected": {
-          "description": "A string for name and value (may be empty), a boolean for the other properties.",
-          "type": ["string", "boolean"]
+          "description": "A string for name, value and cell (may be empty), an integer for rowCount, a boolean for the other properties.",
+          "type": ["string", "boolean", "integer"]
+        },
+        "row": {
+          "description": "cell and rowExists: the row the check reads. Not allowed for the other properties.",
+          "$ref": "#/$defs/row"
+        },
+        "column": {
+          "description": "cell: the column of the cell. Not allowed for the other properties.",
+          "$ref": "#/$defs/column"
         }
       },
       "required": ["property", "operator", "expected"],
       "additionalProperties": false,
       "allOf": [
         {
-          "if": { "required": ["property"], "properties": { "property": { "enum": ["name", "value"] } } },
+          "if": { "required": ["property"], "properties": { "property": { "enum": ["name", "value", "cell"] } } },
           "then": { "properties": { "expected": { "type": "string", "maxLength": 1000 } } }
         },
         {
           "if": {
             "required": ["property"],
-            "properties": { "property": { "enum": ["enabled", "visible", "checked", "selected"] } }
+            "properties": { "property": { "enum": ["enabled", "visible", "checked", "selected", "rowExists"] } }
           },
           "then": {
             "properties": { "operator": { "const": "equals" }, "expected": { "type": "boolean" } }
           }
+        },
+        {
+          "if": {
+            "required": ["property"],
+            "properties": {
+              "property": { "enum": ["name", "value", "enabled", "visible", "checked", "selected"] }
+            }
+          },
+          "then": { "properties": { "row": false, "column": false } }
+        },
+        {
+          "if": { "required": ["property"], "properties": { "property": { "const": "cell" } } },
+          "then": { "required": ["row", "column"] }
+        },
+        {
+          "if": { "required": ["property"], "properties": { "property": { "const": "rowExists" } } },
+          "then": { "required": ["row"], "properties": { "column": false } }
+        },
+        {
+          "if": { "required": ["property"], "properties": { "property": { "const": "rowCount" } } },
+          "then": {
+            "properties": {
+              "operator": { "const": "equals" },
+              "expected": { "type": "integer", "minimum": 0, "maximum": 100000 },
+              "row": false,
+              "column": false
+            }
+          }
         }
       ]
+    },
+    "row": {
+      "title": "Row",
+      "description": "One row of a grid or list target; for a list, the row is the list item itself. {index}: the index-th row from the top as the target shows it now, counted from 1, header rows not counted. {value, column?}: the first row from the top with a cell whose text is exactly value (case-sensitive), in that column if column is given, else in any column. A cell's text is its ValuePattern value when that value is non-empty, else its UI Automation Name (Qt cells and list items have an empty ValuePattern and carry their text in Name; a WinForms DataGridView cell's Name is its column header and row index, and its text is the Value).",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "index": { "type": "integer", "minimum": 1, "maximum": 100000 }
+          },
+          "required": ["index"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "column": { "$ref": "#/$defs/column" },
+            "value": { "type": "string", "minLength": 1, "maxLength": 1000 }
+          },
+          "required": ["value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "column": {
+      "description": "A grid column, by its header text exactly as the grid shows it (case-sensitive): the Name of a column header from UI Automation's TablePattern.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
     },
     "logicalName": {
       "description": "screen.element in lowerCamelCase ASCII, e.g. login.userNameInput (memory-bank/project/conventions.md).",

@@ -56,6 +56,14 @@ export function isAllowedNavigation(url: string, entryUrl: string): boolean {
   }
 }
 
+/**
+ * Whether an IPC call comes from the app's own page. Every `ipcMain.handle` checks it, so
+ * a frame that is not the entry page (should one ever load) cannot use the bridge.
+ */
+export function isTrustedSender(frameUrl: string | undefined, entryUrl: string): boolean {
+  return frameUrl !== undefined && isAllowedNavigation(frameUrl, entryUrl)
+}
+
 /** webPreferences for every AYNA window; `preload` is the preload script's absolute path. */
 export function secureWebPreferences(preload: string) {
   return {
@@ -63,6 +71,23 @@ export function secureWebPreferences(preload: string) {
     contextIsolation: true,
     nodeIntegration: false,
     sandbox: true,
+    webSecurity: true,
+    allowRunningInsecureContent: false,
+    webviewTag: false,
+    spellcheck: false,
+  }
+}
+
+/**
+ * webPreferences for the run report window (#68): a server-rendered page that needs no script
+ * and no bridge, so it gets neither. The report also carries its own CSP (#59).
+ */
+export function reportWebPreferences() {
+  return {
+    contextIsolation: true,
+    nodeIntegration: false,
+    sandbox: true,
+    javascript: false,
     webSecurity: true,
     allowRunningInsecureContent: false,
     webviewTag: false,

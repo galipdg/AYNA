@@ -1,0 +1,82 @@
+{
+  "$comment": "Named test cases for snapshot.schema.json, as JSON Patches (RFC 6902) on `base`. Invalid cases name the JSON Schema keyword (`rule`) that must reject them. Tests: agent/tests/test_snapshot.py. In `base`, the window and all 14 element descriptors come from a real UI Automation capture of the trial app (#9, #11) and `capture.durationMs` is the measured median of six real snapshots of that window (28-32 ms, 2026-11-01, Windows 11, 125 % scaling); `snapshotId` and `capture.startedAt` are fixed by the test fixture so that the file is reproducible.",
+  "base": "trial-login.json",
+  "valid": [
+    {
+      "name": "a window whose title, class name and dpi could not be read",
+      "patch": [
+        { "op": "remove", "path": "/window/title" },
+        { "op": "remove", "path": "/window/className" },
+        { "op": "remove", "path": "/window/dpi" }
+      ]
+    },
+    {
+      "name": "an elevated process, whose exe name and version are unreadable",
+      "patch": [{ "op": "replace", "path": "/app", "value": {} }]
+    },
+    {
+      "name": "the window alone, as a snapshot of a window with no children",
+      "patch": [
+        { "op": "replace", "path": "/elements", "value": [{ "id": "e0", "parentId": null, "element": { "controlType": "Window" } }] },
+        { "op": "replace", "path": "/capture/elementCount", "value": 1 }
+      ]
+    },
+    {
+      "name": "a label the toolkit itself confirmed through LabeledBy",
+      "patch": [{ "op": "replace", "path": "/elements/8/element/nearestLabelSource", "value": "labeledBy" }]
+    },
+    {
+      "name": "a window on a monitor left of and above the primary one",
+      "patch": [
+        { "op": "replace", "path": "/window/bounds", "value": [-1920, -200, -1470, 5] },
+        { "op": "replace", "path": "/elements/0/element/bounds", "value": [-1920, -200, -1470, 5] }
+      ]
+    },
+    {
+      "name": "a walk with a smaller budget than the default, as the timeoutMs param sets",
+      "patch": [{ "op": "replace", "path": "/capture/budgetMs", "value": 2000 }]
+    },
+    {
+      "name": "a walk in which some property reads failed",
+      "patch": [{ "op": "replace", "path": "/capture/readErrors", "value": 7 }]
+    },
+    {
+      "$comment": "A gap in the contract, not a wish: `minLength: 1` cannot say \"not only spaces\", so this document is schema-valid. The agent never writes one (`ayna_agent.model._blank`), but a Java or TypeScript producer could. Raised on the snapshot-schema-v0 ADR, because closing it changes element.schema.json too.",
+      "name": "a whitespace-only name, which the schema cannot refuse",
+      "patch": [{ "op": "replace", "path": "/elements/0/element/name", "value": "   " }]
+    }
+  ],
+  "invalid": [
+    { "name": "a version this release does not speak", "rule": "const", "patch": [{ "op": "replace", "path": "/version", "value": "0.2" }] },
+    { "name": "no snapshot id", "rule": "required", "patch": [{ "op": "remove", "path": "/snapshotId" }] },
+    { "name": "a snapshot id that is not a string", "rule": "type", "patch": [{ "op": "replace", "path": "/snapshotId", "value": 42 }] },
+    { "name": "an empty snapshot id", "rule": "minLength", "patch": [{ "op": "replace", "path": "/snapshotId", "value": "" }] },
+    { "name": "no capture block", "rule": "required", "patch": [{ "op": "remove", "path": "/capture" }] },
+    { "name": "a capture without its element count", "rule": "required", "patch": [{ "op": "remove", "path": "/capture/elementCount" }] },
+    { "name": "a capture without its feature version", "rule": "required", "patch": [{ "op": "remove", "path": "/capture/featureVersion" }] },
+    { "name": "a feature version in upper case", "rule": "pattern", "patch": [{ "op": "replace", "path": "/capture/featureVersion", "value": "Features-V0" }] },
+    { "name": "a fractional duration", "rule": "type", "patch": [{ "op": "replace", "path": "/capture/durationMs", "value": 312.5 }] },
+    { "name": "a budget of zero, which no walk can meet", "rule": "minimum", "patch": [{ "op": "replace", "path": "/capture/budgetMs", "value": 0 }] },
+    { "name": "a timestamp without a time zone", "rule": "minLength", "patch": [{ "op": "replace", "path": "/capture/startedAt", "value": "2026-10-31T17:42" }] },
+    { "name": "an unknown capture key", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/capture/machine", "value": "Windows-11" }] },
+    { "name": "an exe path instead of its file name", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/app/exePath", "value": "C:/ayna-pilots/KeePass.exe" }] },
+    { "name": "a window without its handle", "rule": "required", "patch": [{ "op": "remove", "path": "/window/handle" }] },
+    { "name": "a handle of zero", "rule": "minimum", "patch": [{ "op": "replace", "path": "/window/handle", "value": 0 }] },
+    { "name": "the process name, which the app block carries instead", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/window/processName", "value": "python.exe" }] },
+    { "name": "no elements at all", "rule": "minItems", "patch": [{ "op": "replace", "path": "/elements", "value": [] }] },
+    { "name": "an element without its id", "rule": "required", "patch": [{ "op": "remove", "path": "/elements/3/id" }] },
+    { "name": "an element without a parentId key, which the root needs as null", "rule": "required", "patch": [{ "op": "remove", "path": "/elements/3/parentId" }] },
+    { "name": "a parentId that is a number", "rule": "oneOf", "patch": [{ "op": "replace", "path": "/elements/3/parentId", "value": 2 }] },
+    { "name": "the tree links written inside the descriptor", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/elements/3/element/parentId", "value": "e2" }] },
+    { "name": "the pattern probes of the #6 dump, which a snapshot does not read", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/elements/3/element/patterns", "value": ["Invoke"] }] },
+    { "name": "an empty name, which is left out rather than stored", "rule": "minLength", "patch": [{ "op": "replace", "path": "/elements/0/element/name", "value": "" }] },
+    { "name": "a localised control type", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/elements/0/element/localizedControlType", "value": "Pencere" }] },
+    { "name": "bounds with three numbers", "rule": "minItems", "patch": [{ "op": "replace", "path": "/elements/0/element/bounds", "value": [560, 210, 1010] }] },
+    { "name": "fractional bounds", "rule": "type", "patch": [{ "op": "replace", "path": "/elements/0/element/bounds", "value": [560.5, 210, 1010, 415] }] },
+    { "name": "a dpi of zero", "rule": "minimum", "patch": [{ "op": "replace", "path": "/elements/0/element/dpi", "value": 0 }] },
+    { "name": "a negative sibling index", "rule": "minimum", "patch": [{ "op": "replace", "path": "/elements/1/element/siblingIndex", "value": -1 }] },
+    { "name": "a label source that is not one of the three rules", "rule": "enum", "patch": [{ "op": "replace", "path": "/elements/8/element/nearestLabelSource", "value": "above" }] },
+    { "name": "a window handle of zero on an element", "rule": "minimum", "patch": [{ "op": "replace", "path": "/elements/0/element/nativeWindowHandle", "value": 0 }] },
+    { "name": "an unknown top-level key", "rule": "additionalProperties", "patch": [{ "op": "add", "path": "/screenshot", "value": "runs/1/step-2.png" }] }
+  ]
+}

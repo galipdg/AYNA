@@ -3,17 +3,33 @@ name = "ayna-agent"
 version = "0.0.0"
 description = "AYNA automation agent (pywinauto) and headless CLI runner"
 requires-python = ">=3.11"
-dependencies = ["websockets~=17.3"]
+dependencies = [
+    "websockets~=17.3",
+    # The UI Automation backend (#12). Pure Python, so it installs anywhere; it pulls
+    # comtypes and pywin32 only on Windows, where the real reading happens.
+    "pywinauto>=0.6.9",
+]
+
+[project.scripts]
+# FR-23's command. `ayna run --from-file suite.json`, or `--server URL --suite NAME`.
+ayna = "ayna_cli.cli:console_entry"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff~=0.17.2", "jsonschema~=4.26"]
+dev = [
+    "pytest>=8",
+    "ruff~=0.17.2",
+    "jsonschema~=4.26",
+    # #66 validates the CLI's JUnit XML against the Apache Ant schema. Tests only: no module
+    # under `ayna_agent/` or `ayna_cli/` imports it, so nothing ships to a closed network.
+    "xmlschema~=4.3",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["ayna_agent*"]
+include = ["ayna_agent*", "ayna_cli*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

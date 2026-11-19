@@ -19,6 +19,8 @@ from ayna_ai.generate import (
 from ayna_ai.ollama import ModelServerError, ModelTimeout
 from ayna_ai.validate import NO_MATCH, load_step_schema
 
+SCHEMA_VERSION = load_step_schema()["properties"]["version"]["const"]
+
 TEXT = "Kullanıcı adı alanına admin yaz ve giriş butonuna tıkla."
 STEPS = [
     {"keyword": "Type", "target": "login.userNameInput", "value": "admin"},
@@ -41,7 +43,7 @@ def reply(content: str, done_reason: str = "stop") -> dict:
 
 
 def document(steps=STEPS) -> str:
-    return json.dumps({"version": "0.1", "steps": steps}, ensure_ascii=False)
+    return json.dumps({"version": SCHEMA_VERSION, "steps": steps}, ensure_ascii=False)
 
 
 class FakeClient:
@@ -61,7 +63,7 @@ class FakeClient:
 def test_valid_output_returns_the_document_and_metrics(spike_objects):
     result = StepGenerator(FakeClient(reply(document()))).generate(TEXT, spike_objects)
     assert result.status is Status.OK and result.ok
-    assert result.document == {"version": "0.1", "steps": STEPS}
+    assert result.document == {"version": SCHEMA_VERSION, "steps": STEPS}
     assert result.errors == [] and result.dropped == []
     assert (result.prompt_tokens, result.output_tokens) == (441, 38)
     assert result.load_s == 0.05
@@ -83,7 +85,7 @@ def test_request_is_constrained_and_deterministic(spike_objects):
     system, user = body["messages"]
     assert user == {"role": "user", "content": TEXT}
     assert "- customer.cityCombo — Şehir listesi" in system["content"]
-    assert '"version": "0.1"' in system["content"]
+    assert f'"version": "{SCHEMA_VERSION}"' in system["content"]
     assert (
         f"after the dash), or {NO_MATCH} if none of them fits:\n" in system["content"]
     )
@@ -122,12 +124,16 @@ def test_unknown_format_is_refused():
     ("content", "done_reason", "status"),
     [
         (
-            '{"version": "0.1", "steps": [{"keyword": "Click", "target": "login.lo',
+            '{"version": "'
+            + SCHEMA_VERSION
+            + '", "steps": [{"keyword": "Click", "target": "login.lo',
             "stop",
             "invalid_json",
         ),
         (
-            '{"version": "0.1", "steps": [{"keyword": "Type", "value": "}}}}}}',
+            '{"version": "'
+            + SCHEMA_VERSION
+            + '", "steps": [{"keyword": "Type", "value": "}}}}}}',
             "length",
             "truncated",
         ),
@@ -148,9 +154,12 @@ def test_unparseable_output_is_a_failure(spike_objects, content, done_reason, st
     ("output", "error"),
     [
         (json.dumps({"steps": STEPS}), "$: 'version' is a required property"),
-        (json.dumps({"version": "0.2", "steps": STEPS}), "$.version"),
-        (json.dumps({"version": "0.1", "steps": STEPS[0]}), "$.steps"),
-        (json.dumps({"version": "0.1", "steps": STEPS, "x": 1}), "$: Additional"),
+        (json.dumps({"version": "0.0", "steps": STEPS}), "$.version"),
+        (json.dumps({"version": SCHEMA_VERSION, "steps": STEPS[0]}), "$.steps"),
+        (
+            json.dumps({"version": SCHEMA_VERSION, "steps": STEPS, "x": 1}),
+            "$: Additional",
+        ),
         (json.dumps(STEPS), "$: "),
     ],
     ids=["no version", "wrong version", "steps not a list", "extra field", "a list"],
@@ -232,7 +241,7 @@ def test_a_bad_step_is_dropped_with_its_reason_and_the_rest_kept(
         TEXT, spike_objects
     )
     assert result.status is Status.OK
-    assert result.document == {"version": "0.1", "steps": STEPS}
+    assert result.document == {"version": SCHEMA_VERSION, "steps": STEPS}
     (dropped,) = result.dropped
     assert (dropped.index, dropped.code, dropped.step) == (1, code, step)
     assert dropped.reason.startswith(reason), dropped.reason
@@ -265,6 +274,62 @@ def test_an_answer_without_steps_has_no_valid_steps(spike_objects):
     )
     assert result.status is Status.NO_VALID_STEPS
     assert result.dropped == [] and result.errors == ["the answer has no steps"]
+    assert result.step_limit_reached is False
+
+
+# --- step limit (#142 review: a cap must not shorten an answer silently) -------
+
+
+def steps_of(count: int) -> list[dict]:
+    return [STEPS[i % 2] for i in range(count)]
+
+
+def test_the_step_limit_is_the_grammars_max_items(spike_objects):
+    client = FakeClient(reply(document()))
+    generator = StepGenerator(client, GenerationSettings(max_steps=3))
+    generator.generate(TEXT, spike_objects)
+    assert generator.step_limit == 3
+    assert client.bodies[0]["format"]["properties"]["steps"]["maxItems"] == 3
+    assert StepGenerator(FakeClient()).step_limit == 12
+
+
+@pytest.mark.parametrize(
+    ("steps", "reached"),
+    [
+        (steps_of(2), False),
+        (steps_of(3), True),
+        # A dropped step counts: the model wrote it.
+        ([*steps_of(2), {"keyword": "Click", "target": NO_MATCH}], True),
+        # Longer than the grammar allows: the server ignored it, nothing was cut.
+        (steps_of(4), False),
+    ],
+)
+def test_an_answer_at_the_step_limit_is_flagged(spike_objects, steps, reached):
+    generator = StepGenerator(
+        FakeClient(reply(document(steps))), GenerationSettings(max_steps=3)
+    )
+    result = generator.generate(TEXT, spike_objects)
+    assert result.ok
+    assert result.step_limit_reached is reached
+    assert result.to_dict()["step_limit_reached"] is reached
+
+
+def test_every_step_dropped_at_the_limit_is_still_flagged(spike_objects):
+    steps = [{"keyword": "Click", "target": NO_MATCH}] * 3
+    generator = StepGenerator(
+        FakeClient(reply(document(steps))), GenerationSettings(max_steps=3)
+    )
+    result = generator.generate(TEXT, spike_objects)
+    assert result.status is Status.NO_VALID_STEPS
+    assert result.step_limit_reached is True
+
+
+def test_without_the_grammar_there_is_no_step_limit(spike_objects):
+    generator = StepGenerator(
+        FakeClient(reply(document(steps_of(12)))), GenerationSettings(format="json")
+    )
+    assert generator.step_limit is None
+    assert generator.generate(TEXT, spike_objects).step_limit_reached is False
 
 
 def test_timeout_is_a_failure_with_latency(spike_objects):
@@ -300,6 +365,7 @@ def test_latency_is_logged_per_scenario(spike_objects, caplog):
             38,
             2,
         )
+        assert record["step_limit_reached"] is False
 
 
 REASONED = [
@@ -313,7 +379,7 @@ def test_reasons_are_asked_for_and_returned_beside_the_steps(spike_objects):
     generator = StepGenerator(client, GenerationSettings(reasons=True))
     result = generator.generate(TEXT, spike_objects)
     assert result.ok
-    assert result.document == {"version": "0.1", "steps": STEPS}
+    assert result.document == {"version": SCHEMA_VERSION, "steps": STEPS}
     assert result.reasons == [
         "'kullanıcı adı alanına admin yaz'",
         "'giriş butonuna tıkla'",
@@ -453,6 +519,7 @@ def test_cli_batch_writes_results_and_a_latency_log(fake_ollama, batch_files, ca
     assert summary["by_status"] == {"ok": 2}
     assert summary["keyword_match"] == 1
     assert summary["steps_dropped"] == 1
+    assert summary["step_limit_reached"] == 0
     assert results["scenarios"][1]["dropped"] == [
         {
             "index": 1,
@@ -484,7 +551,10 @@ def test_cli_batch_writes_results_and_a_latency_log(fake_ollama, batch_files, ca
 
 def test_cli_exits_1_when_a_scenario_fails(fake_ollama, batch_files):
     inputs, objects, tmp = batch_files
-    serve(fake_ollama, [document(), '{"version": "0.1", "steps": [{"keyword": "Cl'])
+    serve(
+        fake_ollama,
+        [document(), '{"version": "' + SCHEMA_VERSION + '", "steps": [{"keyword": "Cl'],
+    )
     out = tmp / "results.json"
     argv = ["--input", str(inputs), "--objects", str(objects), "--out", str(out)]
     assert main(argv + ["--host", fake_ollama.url, "--no-warmup"]) == 1

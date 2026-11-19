@@ -1,5 +1,6 @@
 package com.ayna.server.tests;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,15 +10,18 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.Value;
 import org.springframework.stereotype.Service;
 
+import com.ayna.server.auth.UserRef;
 import com.ayna.server.error.ApiExceptions.ConflictException;
 import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
 import com.ayna.server.error.FieldError;
+import com.ayna.server.runs.ScreenshotStore;
 import com.ayna.server.tests.TestDtos.TestExport;
 import com.ayna.server.tests.TestDtos.TestResponse;
 import com.ayna.server.tests.TestDtos.TestSummary;
@@ -43,17 +47,21 @@ public class TestService {
 
 	private final ObjectMapper mapper;
 
-	public TestService(Driver driver, StepSchema schema, ObjectMapper mapper) {
+	private final ScreenshotStore screenshots;
+
+	public TestService(Driver driver, StepSchema schema, ObjectMapper mapper, ScreenshotStore screenshots) {
 		this.driver = driver;
 		this.schema = schema;
 		this.mapper = mapper;
+		this.screenshots = screenshots;
 	}
 
-	public TestResponse createTest(String appId, String name) {
+	/** `userId` is the account that makes the change (#60); every write stores it. */
+	public TestResponse createTest(String appId, String name, String userId) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
-				String id = create(tx, appId, name);
-				return new TestResponse(id, appId, name, document(tx, id, true));
+				String id = create(tx, appId, name, userId);
+				return response(tx, id);
 			});
 		}
 	}
@@ -80,37 +88,53 @@ public class TestService {
 		}
 	}
 
-	public TestResponse renameTest(String testId, String name) {
+	public TestResponse renameTest(String testId, String name, String userId) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
 				String appId = appOf(tx, testId);
 				requireUniqueName(tx, appId, name, testId);
 				tx.run("MATCH (t:TestCase {id: $id}) SET t.name = $name", Map.of("id", testId, "name", name)).consume();
+				touch(tx, testId, userId);
 				return response(tx, testId);
 			});
 		}
 	}
 
+	/**
+	 * A run means nothing without its test, so its runs, their results (#44) and their screenshots
+	 * (#51) go too. The files go after the commit; a folder left behind is removed by the next sweep.
+	 */
 	public void deleteTest(String testId) {
+		List<String> runIds;
 		try (Session session = driver.session()) {
-			session.executeWriteWithoutResult(tx -> {
+			runIds = session.executeWrite(tx -> {
 				appOf(tx, testId);
+				List<String> ids = tx.run("""
+						MATCH (:TestCase {id: $id})<-[:OF]-(r:Run)
+						OPTIONAL MATCH (r)-[:HAS_RESULT]->(sr:StepResult)
+						WITH r, r.id AS runId, collect(sr) AS results
+						FOREACH (sr IN results | DETACH DELETE sr)
+						DETACH DELETE r
+						RETURN runId""", Map.of("id", testId)).list(r -> r.get("runId").asString());
 				tx.run("MATCH (:TestCase {id: $id})-[:HAS_STEP]->(s:Step) DETACH DELETE s", Map.of("id", testId))
 					.consume();
 				tx.run("MATCH (t:TestCase {id: $id}) DETACH DELETE t", Map.of("id", testId)).consume();
+				return ids;
 			});
 		}
+		screenshots.deleteRuns(runIds);
 	}
 
 	/**
 	 * Replaces the whole step list: a step with an `id` keeps its node, a step without one is
 	 * new, and a step left out is deleted. Reordering is a replace with the same ids.
 	 */
-	public TestResponse replaceSteps(String testId, JsonNode document) {
+	public TestResponse replaceSteps(String testId, JsonNode document, String userId) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
 				String appId = appOf(tx, testId);
 				writeSteps(tx, testId, appId, document, "$");
+				touch(tx, testId, userId);
 				return response(tx, testId);
 			});
 		}
@@ -126,7 +150,7 @@ public class TestService {
 	}
 
 	/** Creates a new test from an exported file; nothing is written if any part is invalid. */
-	public TestResponse importTest(String appId, JsonNode file) {
+	public TestResponse importTest(String appId, JsonNode file, String userId) {
 		if (!file.isObject() || !TestDtos.EXPORT_FORMAT.equals(file.path("format").asString(""))) {
 			throw new InvalidRequestException("$.format", "Not an AYNA test file: 'format' must be '"
 					+ TestDtos.EXPORT_FORMAT + "'");
@@ -137,23 +161,31 @@ public class TestService {
 		}
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
-				String id = create(tx, appId, name);
+				String id = create(tx, appId, name, userId);
 				writeSteps(tx, id, appId, file.path("document"), "$.document");
 				return response(tx, id);
 			});
 		}
 	}
 
-	private String create(TransactionContext tx, String appId, String name) {
+	private String create(TransactionContext tx, String appId, String name, String userId) {
 		requireApp(tx, appId);
 		requireUniqueName(tx, appId, name, null);
 		String id = UUID.randomUUID().toString();
 		tx.run("""
 				MATCH (a:Application {id: $appId})
-				CREATE (a)-[:HAS_TEST]->(:TestCase {id: $id, name: $name})""",
-				Map.of("appId", appId, "id", id, "name", name))
+				WITH a, datetime() AS now
+				CREATE (a)-[:HAS_TEST]->(:TestCase {id: $id, name: $name, createdBy: $userId, createdAt: now,
+				  updatedBy: $userId, updatedAt: now})""",
+				Map.of("appId", appId, "id", id, "name", name, "userId", userId))
 			.consume();
 		return id;
+	}
+
+	private static void touch(TransactionContext tx, String testId, String userId) {
+		tx.run("MATCH (t:TestCase {id: $id}) SET t.updatedBy = $userId, t.updatedAt = datetime()",
+				Map.of("id", testId, "userId", userId))
+			.consume();
 	}
 
 	/** `prefix` is where the document sits in the request body, so error paths point into it. */
@@ -270,6 +302,11 @@ public class TestService {
 		return props;
 	}
 
+	/** The test's steps with their ids, read inside the caller's transaction (a run copies them, #44). */
+	public JsonNode stepDocument(TransactionContext tx, String testId) {
+		return document(tx, testId, true);
+	}
+
 	/** The test's steps as a step document; `withIds` is false for exports. */
 	private JsonNode document(TransactionContext tx, String testId, boolean withIds) {
 		ObjectNode document = mapper.createObjectNode();
@@ -307,7 +344,25 @@ public class TestService {
 
 	private TestResponse response(TransactionContext tx, String testId) {
 		String appId = appOf(tx, testId);
-		return new TestResponse(testId, appId, name(tx, testId), document(tx, testId, true));
+		Record r = tx.run("""
+				MATCH (t:TestCase {id: $id})
+				OPTIONAL MATCH (c:User {id: t.createdBy})
+				OPTIONAL MATCH (u:User {id: t.updatedBy})
+				RETURN t.name AS name, t.createdAt AS createdAt, t.updatedAt AS updatedAt,
+				  t.createdBy AS createdBy, c.username AS createdByName,
+				  t.updatedBy AS updatedBy, u.username AS updatedByName""", Map.of("id", testId)).single();
+		return new TestResponse(testId, appId, r.get("name").asString(), document(tx, testId, true),
+				userRef(r.get("createdBy"), r.get("createdByName")), instant(r.get("createdAt")),
+				userRef(r.get("updatedBy"), r.get("updatedByName")), instant(r.get("updatedAt")));
+	}
+
+	/** Null for a test written before accounts existed (#60). */
+	private static UserRef userRef(Value id, Value username) {
+		return id.isNull() ? null : new UserRef(id.asString(), username.isNull() ? null : username.asString());
+	}
+
+	private static Instant instant(Value value) {
+		return value.isNull() ? null : value.asZonedDateTime().toInstant();
 	}
 
 	private static String name(TransactionContext tx, String testId) {

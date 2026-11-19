@@ -1,10 +1,10 @@
 // Server URL handling and the connection check. Kept free of Electron imports so
 // plain `node --test` can use it; the main process passes in the real `fetch`.
 
-import type { ConnectionResult } from '../shared/api.ts'
+import { CHECK_TIMEOUT_MS, type ConnectionResult } from '../shared/api.ts'
 
 export const HEALTH_PATH = '/api/health'
-export const CHECK_TIMEOUT_MS = 5000
+export { CHECK_TIMEOUT_MS }
 
 /**
  * Turns what the user typed into a base URL, or null if it cannot be one.

@@ -1,15 +1,71 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import { IPC, type AynaApi } from '../shared/api.ts'
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import { IPC, type AgentStatus, type AynaApi, type PickEvent } from '../shared/api.ts'
+import type { LiveRun } from '../shared/liveRun.ts'
 
 const api: AynaApi = {
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
   getSettings: () => ipcRenderer.invoke(IPC.getSettings),
+  getLanguage: () => ipcRenderer.invoke(IPC.getLanguage),
+  setLanguage: (language) => ipcRenderer.invoke(IPC.setLanguage, language),
   checkServer: (url) => ipcRenderer.invoke(IPC.checkServer, url),
   connectServer: (url) => ipcRenderer.invoke(IPC.connectServer, url),
   listApplications: () => ipcRenderer.invoke(IPC.listApplications),
   createApplication: (name, technology) =>
     ipcRenderer.invoke(IPC.createApplication, name, technology),
   chooseApplication: (id) => ipcRenderer.invoke(IPC.chooseApplication, id),
+  listVersions: (appId) => ipcRenderer.invoke(IPC.listVersions, appId),
+  createVersion: (appId, version) => ipcRenderer.invoke(IPC.createVersion, appId, version),
+  addToRepository: (object) => ipcRenderer.invoke(IPC.addToRepository, object),
+  listRepoObjects: (appId) => ipcRenderer.invoke(IPC.listRepoObjects, appId),
+  getRepoObject: (id) => ipcRenderer.invoke(IPC.getRepoObject, id),
+  updateRepoObject: (id, change) => ipcRenderer.invoke(IPC.updateRepoObject, id, change),
+  deleteRepoObject: (id) => ipcRenderer.invoke(IPC.deleteRepoObject, id),
+  listTests: (appId) => ipcRenderer.invoke(IPC.listTests, appId),
+  createTest: (appId, name) => ipcRenderer.invoke(IPC.createTest, appId, name),
+  getTest: (id) => ipcRenderer.invoke(IPC.getTest, id),
+  renameTest: (id, name) => ipcRenderer.invoke(IPC.renameTest, id, name),
+  deleteTest: (id) => ipcRenderer.invoke(IPC.deleteTest, id),
+  saveSteps: (id, document) => ipcRenderer.invoke(IPC.saveSteps, id, document),
+  validateSteps: (document) => ipcRenderer.invoke(IPC.validateSteps, document),
+  listRuns: (appId, filter) => ipcRenderer.invoke(IPC.listRuns, appId, filter),
+  openReport: (runId) => ipcRenderer.invoke(IPC.openReport, runId),
+  saveReport: (runId, fileName) => ipcRenderer.invoke(IPC.saveReport, runId, fileName),
+  startRun: (testId, appVersionId) => ipcRenderer.invoke(IPC.startRun, testId, appVersionId),
+  stopRun: () => ipcRenderer.invoke(IPC.stopRun),
+  chooseRunWindow: (handle) => ipcRenderer.invoke(IPC.chooseRunWindow, handle),
+  watchRuns: (testId) => ipcRenderer.invoke(IPC.watchRuns, testId),
+  onRun: (listener) => {
+    const forward = (_event: IpcRendererEvent, run: LiveRun) => listener(run)
+    ipcRenderer.on(IPC.run, forward)
+    return () => ipcRenderer.removeListener(IPC.run, forward)
+  },
+  getAgentStatus: () => ipcRenderer.invoke(IPC.getAgentStatus),
+  onAgentStatus: (listener) => {
+    const forward = (_event: IpcRendererEvent, status: AgentStatus) => listener(status)
+    ipcRenderer.on(IPC.agentStatus, forward)
+    return () => ipcRenderer.removeListener(IPC.agentStatus, forward)
+  },
+  retryAgent: () => ipcRenderer.invoke(IPC.retryAgent),
+  listWindows: () => ipcRenderer.invoke(IPC.listWindows),
+  snapshot: (handle, budgetMs) => ipcRenderer.invoke(IPC.snapshot, handle, budgetMs),
+  highlight: (bounds) => ipcRenderer.invoke(IPC.highlight, bounds),
+  setPickHotkey: (enabled) => ipcRenderer.invoke(IPC.setPickHotkey, enabled),
+  onPick: (listener) => {
+    const forward = (_event: IpcRendererEvent, pick: PickEvent) => listener(pick)
+    ipcRenderer.on(IPC.pick, forward)
+    return () => ipcRenderer.removeListener(IPC.pick, forward)
+  },
+  login: (username, password) => ipcRenderer.invoke(IPC.login, username, password),
+  logout: () => ipcRenderer.invoke(IPC.logout),
+  currentUser: () => ipcRenderer.invoke(IPC.currentUser),
+  listUsers: () => ipcRenderer.invoke(IPC.listUsers),
+  createUser: (username, password, role) =>
+    ipcRenderer.invoke(IPC.createUser, username, password, role),
+  updateUser: (id, change) => ipcRenderer.invoke(IPC.updateUser, id, change),
+  removeUser: (id) => ipcRenderer.invoke(IPC.removeUser, id),
+  listTokens: (userId) => ipcRenderer.invoke(IPC.listTokens, userId),
+  createToken: (userId, name) => ipcRenderer.invoke(IPC.createToken, userId, name),
+  revokeToken: (tokenId) => ipcRenderer.invoke(IPC.revokeToken, tokenId),
 }
 
 // Only these functions cross the bridge; ipcRenderer itself never reaches the renderer.

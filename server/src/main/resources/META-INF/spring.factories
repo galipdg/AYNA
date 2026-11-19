@@ -1,0 +1,2 @@
+# Listeners that must hear about a failed start whichever bean failed (as beans, they may not exist yet).
+org.springframework.context.ApplicationListener=com.ayna.server.Neo4jAuthFailureHint

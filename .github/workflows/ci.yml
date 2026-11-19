@@ -13,8 +13,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Which jobs this push or pull request needs (2026-11-17). Every job used to run on every
+  # change, a memory-only PR included, and that spent the account's monthly Actions minutes in
+  # two weeks (the two Windows jobs count double). A job runs when its own folder, a folder it
+  # reads, or this file changed. No third-party action: a plain `git diff`.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.areas.outputs.server }}
+      client: ${{ steps.areas.outputs.client }}
+      agent: ${{ steps.areas.outputs.agent }}
+      ai: ${{ steps.areas.outputs.ai }}
+      contracts: ${{ steps.areas.outputs.contracts }}
+      eval: ${{ steps.areas.outputs.eval }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Changed areas
+        id: areas
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            files=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          elif [ -n "$BEFORE" ] && ! [[ "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            files=$(git diff --name-only "$BEFORE" HEAD)
+          else
+            files=".github/workflows/ci.yml" # no base to compare with: run everything
+          fi
+          echo "$files"
+          # One extended regex per job: its own folder, what it reads from elsewhere, this file.
+          area() {
+            if grep -qE "^(\.github/workflows/ci\.yml|$2)" <<< "$files"; then
+              echo "$1=true" >> "$GITHUB_OUTPUT"; echo "-> $1"
+            else
+              echo "$1=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          area server    'server/|schemas/|docs/api/'
+          area client    'client/|schemas/'
+          area agent     'agent/|schemas/|eval/apps/trial/|\.github/suite/'
+          area ai        'ai/|schemas/|eval/nl/'
+          area contracts 'schemas/|docs/api/|\.github/contracts/'
+          area eval      'eval/|agent/ayna_agent/|ai/ayna_ai/|client/src/shared/|docs/rs/scenarios\.md|schemas/'
+
   server:
     name: server (build + test)
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,6 +89,8 @@ jobs:
 
   client:
     name: client (lint + build)
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,6 +102,16 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: client/package-lock.json
+      # electron-builder downloads Electron and its SHASUMS256.txt from GitHub on every run;
+      # 5xx answers to the checksum file failed most builds on 2026-11-08 (#213). A cached zip
+      # is used without that request. The cache fills on the first green run.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: electron-${{ runner.os }}-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: electron-${{ runner.os }}-
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
@@ -59,6 +121,8 @@ jobs:
 
   agent:
     name: agent (ruff + pytest, Windows)
+    needs: changes
+    if: needs.changes.outputs.agent == 'true'
     runs-on: windows-latest
     defaults:
       run:
@@ -77,6 +141,8 @@ jobs:
 
   ai:
     name: ai (ruff + pytest)
+    needs: changes
+    if: needs.changes.outputs.ai == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -93,8 +159,53 @@ jobs:
       - run: ruff format --check .
       - run: pytest
 
+  # The frozen contracts (#52, ADR contracts-v1-freeze): a change that could break the other side
+  # fails unless it comes with a new major version. Each side's own tests check that it matches the
+  # contract; this job compares the contract with the one on the base branch.
+  contracts:
+    name: contracts (breaking changes)
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ubuntu-latest
+    env:
+      OASDIFF_VERSION: "1.34.1"
+      OASDIFF_SHA256: 75775f65b0adebd26a8e013af51a799342dfdc6262d89efa9e3b7bdf89657d90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Base to compare with
+        id: base
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            echo "ref=origin/$BASE_REF" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=$BEFORE" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checker tests
+        run: python -m unittest discover -s .github/contracts -v
+      - name: Schemas (step, element, snapshot, healing proposal, ws-runs, agent-rpc)
+        run: python .github/contracts/schema_compat.py --base "${{ steps.base.outputs.ref }}"
+      - name: Install oasdiff
+        run: |
+          curl -fsSL -o /tmp/oasdiff.tar.gz \
+            "https://github.com/oasdiff/oasdiff/releases/download/v${OASDIFF_VERSION}/oasdiff_${OASDIFF_VERSION}_linux_amd64.tar.gz"
+          echo "${OASDIFF_SHA256}  /tmp/oasdiff.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/oasdiff.tar.gz -C /tmp oasdiff
+      - name: REST (docs/api/openapi.yaml)
+        run: .github/contracts/rest_compat.sh "${{ steps.base.outputs.ref }}" /tmp/oasdiff
+
   eval:
     name: eval (ruff + pytest, Windows)
+    needs: changes
+    if: needs.changes.outputs.eval == 'true'
     # Windows so the trial app's UI Automation tests (@pytest.mark.windows) run too.
     runs-on: windows-latest
     defaults:

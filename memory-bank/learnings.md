@@ -26,6 +26,7 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
 - 2026-10-26 · omer · git · On some networks SSH to github.com (port 22 and ssh.github.com:443) times out while HTTPS works → one-off `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' fetch|push https://github.com/galipdg/AYNA.git …` without changing global config.
 - 2026-10-26 · omer · #18 · support.ranorex.com (Zendesk) returns 403 to curl and WebFetch, so link checks report its articles as broken → read them through the public Zendesk API `https://support.ranorex.com/api/v2/help_center/en-us/articles/<id>.json` (title + body) or search with `/api/v2/help_center/articles/search.json?query=…`.
 - 2026-10-27 · galip · git · `merge=union` brings deleted lines back: if one branch deletes handled items from an `inbox.md` while another open branch appends to the same file, the merge (in either order) keeps the deleted items next to the new one (tested in a scratch repo) → delete handled inbox items only when no open PR touches that inbox (`gh pr list --search "<path>"`), or delete them again after those PRs merge.
+- 2026-10-28 · galip · #147 · Grammar-constrained decoding keeps the JSON shape but not the content of a free string: with the step schema's derived grammar, qwen3:8b filled a checkpoint's `column` (free string, `maxLength` 100) with `}}]}</think>` and 100 characters of garbage, and the document was still schema-valid → narrow every free string whose values are known (targets, column headers, list items) to an `enum` in the generation schema, and keep `maxLength` on the rest.
 - 2026-10-27 · galip · ai · `pip install -e` worked once, then `import ayna_ai` failed with ModuleNotFoundError: on galip's Mac new files under the repo get the macOS `hidden` flag (`ls -lO` shows `hidden`), and Python 3.11.13+ / 3.15 `site.py` skips hidden `.pth` files, so the editable-install hook is ignored. `chflags nohidden` on the `.pth` helps only until the flag is set again (it came back within the hour) → run `PYTHONPATH=. pytest` (and `PYTHONPATH=. python -m ...`) from the module folder. CI is not affected.
 - 2026-10-27 · galip · ai · jsonschema (4.26) reports a field forbidden by a `false` subschema (e.g. `"then": {"properties": {"value": false}}` for a Click step) at the **enclosing object** with "False schema does not allow 'x'": `absolute_path` and `schema_path` do not name the field → to name it, find the key whose value `is error.instance` (see `_describe` in `ai/ayna_ai/validate.py`); do not filter such errors by path.
 - 2026-10-27 · galip · ai · Ollama (0.40.11, qwen3:8b) at temperature 0 with a fixed seed gave **different answers to the identical request** on the same Mac (SC-27 sentence: `none.noMatch` in 4 runs, `login.passwordInput` in 4 later runs) — the earlier runs coincided with heavy machine load / other clients and a different prompt-cache state; it only shows when the decision is close → treat "deterministic" as "nearly always", run RQ3/model comparisons on an otherwise idle machine, record the load, and repeat borderline cases.
@@ -35,6 +36,8 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
 - 2026-10-29 · omer · #31 · springdoc 3.x (Boot 4) keeps Swagger UI's default `url: "https://petstore.swagger.io/v2/swagger.json"` in `swagger-initializer.js` and only appends `configUrl`; the UI falls back to it if the config fails → set `springdoc.swagger-ui.disable-swagger-default-url=true` (and `validator-url=none`) on a closed network. For a stable generated `openapi.yaml`, also set `springdoc.writer-with-order-by-keys=true` and a fixed server URL, else the test's random port leaks into `servers:`.
 - 2026-10-29 · omer · github · Pushing over HTTPS with `gh auth git-credential` is rejected for any commit that touches `.github/workflows/` ("refusing to allow an OAuth App to create or update workflow … without `workflow` scope") → `gh auth refresh -h github.com -s workflow` once (browser approval; inside Claude Code's `!` run it needs `-h`, else run it in a separate terminal).
 - 2026-10-29 · omer · #158 · springdoc 3.x: once a controller method has a swagger `@ApiResponse` (e.g. a 404) and no `@ResponseStatus`, the generated 200 response disappears from the contract → add error responses with an `OperationCustomizer` instead (`@ErrorResponses` + `OpenApiConfig.errorResponses()`); it runs after the success response is built. Also: Spring omits `type` from a `ProblemDetail` body when it is `about:blank`.
+- 2026-10-31 · omer · docker · Server exits at start with `AuthenticationException: The client is unauthorized` after `NEO4J_PASSWORD` was changed in `.env`: Neo4j applies `NEO4J_AUTH` only when the volume is first created → keep the old password or `docker compose down -v` (deletes the data). Neo4j 5 also refuses to start (exit 70) with a password under 8 characters; the AYNA first admin needs 8 too.
+- 2026-10-31 · omer · github · Merging a stacked PR (base = another feature branch) skips the review gate twice: GitHub allows it with no approvals, and `Closes #n` does not fire because the base is not `main`; the code then reaches `main` inside the base PR, whose older approvals do not cover it (#168 → #160) → never merge a stacked PR into its base; wait for the base to merge, retarget to `main`, then review. To undo, revert the squash commit on the base branch and open a new PR from the original branch.
 - 2026-10-31 · omer · ci · GitHub-hosted `windows-latest` runners have an interactive desktop: the `eval` job launches the PySide6 trial app and drives it with pywinauto UIA (`eval/apps/trial/tests/test_uia.py`, 5 tests, ~3 s) with no extra setup. Useful for #67 (sample suite on a Windows runner).
 - 2026-10-29 · hasan · #6 · A Qt Widgets AutomationId is present but usually **not unique**: Qt builds it as the dotted path of `objectName`s and a widget without an `objectName` contributes its *class name* instead, so siblings collide (in KeePassXC 2.8 all 14 toolbar buttons are `Application.MainWindow.toolBar.QToolButton`; only 8% of its interactive AutomationIds are unique in their window). The path also grows with nesting depth and passes 200 characters around 11 levels, and inserting any widget above an element rewrites its id → on Qt, treat AutomationId as a weak property and never match on it alone; in WPF and WinForms every id that exists *is* unique in its window (100% in both).
 - 2026-10-29 · hasan · #6 · UIA's `LabeledBy` is populated for **0 of 204** interactive elements across WinForms, WPF, Qt and Win32 (KeePass 2, HandBrake, KeePassXC, Notepad++), read from the raw `IUIAutomationElement.CurrentLabeledBy` with 0 read errors — apps simply do not set `AutomationProperties.LabeledBy` / a Qt buddy label → find a field's label geometrically (nearest `Text` left of or above it inside the same container), do not rely on `LabeledBy`. `AcceleratorKey` is 0% everywhere too; `AccessKey` (the `&` mnemonic) is the one secondary text property that is populated, 13–39%.
@@ -48,4 +51,435 @@ Append-only. Non-obvious things learned the hard way that help everyone. Format:
 - 2026-10-29 · hasan · #22 · `IUIAutomation::ElementFromPoint` costs **~5 ms** (median 4.7 ms, max 6.0 ms over 5 calls) on a WinForms window, so NFR-01's 300 ms budget for the Spy pick is comfortable and whatever risk that requirement carries is in filling the property panel afterwards, not in the hit test.
 - 2026-10-29 · hasan · #49 · The healing scorer's location similarity has its cut-off in **physical** pixels (`1 - d/100 px`), while a layout shift is a device-independent quantity, so the same movement scores differently per display scaling: a control moved 64 DIP scores 0.36 at 100%, **0.20 at 125%** (this machine, DPI 120), 0.04 at 150% and 0.00 at 200% → divide the distance by `dpi/96` (`GetDpiForWindow`, which `eval/spikes/uia_dump.py` already records per window) before comparing, or an RQ4 number is not comparable between machines.
 - 2026-10-29 · hasan · git · **The `merge=union` conflict flag cascades, so a batch of PRs has to be merged one at a time.** Nine open PRs all appended to `memory-bank/people/hasan/inbox.md`, so GitHub flagged every one of them as conflicting (it ignores the union driver — see omer's 2026-10-29 entry). Merging the first one re-flags the remaining eight, because each still appends to the same trailing region: the fix is not a one-off, it is `git merge origin/main` + push on every remaining branch **after each merge**. Nine PRs cost nine rounds. Verify a re-sync with `git diff --name-only origin/main...<branch>` before and after — if the file set shrinks, that is the stacked-PR cleanup (the base PR's files dropping out), not content loss; if it grows, stop. Chaining the branches into each other collapses it to one round but invalidates reviews that were given on the individual diffs → not worth it. The real fix is to stop appending to one shared file: a directory of dated one-fact files never conflicts (proposed, needs an ADR).
+- 2026-10-31 · hasan · #161 · A UI Automation walk of a WinForms window costs ~18 ms per element — until the application stops pumping messages, and then it collapses: with a modal message box open (KeePass's "password is weak" Yes/No box), a traversal-only walk of the window behind it took **230 s for 85 elements** against 0.6 s for the same 114-element walk with the box closed. The median element stayed at 1.4 ms; six container elements (the dialog window 72.5 s, the main window 30 s, a ComboBox 24 s, the ToolBar 18 s) absorbed 170 s of it, because `GetFirstChild`/`FindAll` on a container needs the provider's UI thread and the box owns it. A *tracked menu* does not do this (1.55 s with the File menu open) — the message box's own modal loop does. Consequences: (1) any snapshot/search deadline must be enforced on a timer, not between elements, because a single call can block for a minute; (2) "the app is showing a message box" is a far more likely cause of a snapshot timeout than "the window is huge", so report what the walk was blocked on; (3) when a measurement on a desktop app is 100× out, suspect a modal dialog before suspecting the framework. Measured with `eval/spikes/uia_probe.py`, raw data in `eval/spikes/uia-probe-keepass2-modal.json`.
+- 2026-11-01 · hasan · #161 #12 · **A walk that starts from every top-level window counts an owned dialog twice.** An owned modal dialog (KeePass 2's *Add Entry*, Notepad++'s *Find*) is both a top-level window — so `find_windows` returns it as a root — and a child of its owner in the UIA tree, so a pre-order walk over those roots visits its whole subtree twice. `uia_dump.walk` deduplicates by window handle and was right; `uia_probe.py` did not and reported 154 elements for a tree of 114 (#170 review caught it from the depths in the slowest table: the same pane at depth 0 and at depth 1). Two things make this hard to spot: the inflated count sits in the *totals* (~26 % too high here) while the *per-element* mean looks fine — in fact flattered, because the second pass over an already-realised subtree is cheaper, which is why the corrected per-element cost went **up** from 11.6 to 18.5 ms. So: deduplicate by handle (`None`/0 never skipped, first visit wins, subtree included), order the roots owner-first so depths are real, and report what was skipped. Anything that walks windows — #12's snapshot, Spy, healing candidate collection — needs this, and a number that cannot be decomposed into count × per-element should not be trusted.
+
+- 2026-11-01 · #12 #16 · **`python -m some.module` makes two copies of that module, and
+  `isinstance` then fails across them.** `ayna_agent/rpc.py` run as `python -m ayna_agent.rpc`
+  is imported as `__main__`; the recognition backend then does
+  `from ayna_agent.rpc import UiaUnavailable`, which imports the file *again* under its real
+  name. The two copies have two different `UiaUnavailable` classes, so the backend's error
+  sailed past the dispatcher's `except UiaUnavailable` and came out as `-32603 Internal error`
+  instead of `-32001`. Nothing in the unit tests sees this: they import `ayna_agent.rpc`
+  normally, and only the subprocess test that actually runs the CLI caught it. Fix, and the
+  pattern for any `__main__` module that others import from:
+  `if __name__ == "__main__": from ayna_agent.rpc import main as _main; sys.exit(_main())`.
+- 2026-11-01 · #12 #161 · **A UIA walk's cost is dominated by how many properties you read,
+  not by the framework.** The same KeePass 2 (WinForms) window that #161 measured at 2.26 s for
+  114 elements with the #6 dump's 17 properties + 10 pattern probes walks in **819 ms** when it
+  reads only the 12 properties the element descriptor stores (7.2 ms per element against 19.8).
+  So a budget derived from the dump's reader is an upper bound for the snapshot's, with a lot of
+  room in it.
+- 2026-11-01 · #12 · **A window that stops pumping messages cannot be escaped from inside the
+  walk, and the timer design works.** Measured against a Qt window whose GUI thread slept 40 s:
+  the very first UIA read blocked, so no between-element clock check could ever fire, and the
+  walk thread was still inside that call. Running the walk on its own daemon thread and having
+  the caller `join(budget + 250 ms)` returned `-32002` after **2251 ms** of a 2 000 ms budget,
+  twice in a row in the same process, and snapshots of that window worked again (58 ms) once it
+  thawed. The cost is one leaked daemon thread per timeout, which is why the backend counts them
+  and logs the count at shutdown.
 - 2026-11-01 · hasan · #71 #16 #17 · **On Windows a TCP connect to a closed port on 127.0.0.1 can time out instead of being refused**, so "the service is not running" arrives as a *timeout*, not as "connection refused". Measured twice in a row on the project machine (Windows 11 26300, default Defender Firewall): `socket.connect` and `urllib.request.urlopen` to a port nobody listens on both raised `TimeoutError` after the full 2 s, where macOS/Linux raise `ECONNREFUSED` in microseconds — the SYN is dropped, not answered with RST. It is not deterministic: in one run of the ai suite the same free port was refused for one call and dropped for the next. Why it matters beyond a test: code that distinguishes "down" from "slow" by which exception fired gets the answer wrong on our deployment platform. In the AI service (#71) `ModelTimeout` maps to HTTP 504 `timeout` while `cannot reach` maps to 503 `server_error`, and `ai/API.md` tells the client to retry on 504 but to disable the panel on 503 — so a model server that is simply not running can tell the user to retry, after the whole request timeout has elapsed. The same shape is in the agent RPC handshake (#16/#135) and the client's agent process manager (#17). Rule: decide "unreachable" by whether the *connection* came up (a short `create_connection` probe, or a connect timeout separate from the read timeout), never by the exception type alone, and never let a liveness check inherit a 30 s request timeout.
+- 2026-11-01 · omer · server · **After switching branches, run `./mvnw clean test`, not `./mvnw test`.** Maven never deletes resources that left `src/`, so a migration from another branch (here `V0003__accounts_and_tokens.cypher` from #60) stays in `target/classes`, neo4j-migrations applies it, and `GraphSchemaMigrationIntegrationTest` fails with unexpected labels (`User`, `AuthToken`) and an extra migration. CI is unaffected (fresh checkout).
+
+- 2026-11-01 · omer · GitHub's "This branch has conflicts" ignores `.gitattributes`, so `merge=union` files (inboxes, journals, `learnings.md`, `decisions/README.md`) block a PR even though `git merge origin/main` locally resolves them silently. Fix: merge `main` into the branch and push the merge commit. To see what GitHub sees: `git --attr-source=4b825dc642cb6eb9a060e54bf8d69288fbee4904 merge-tree --write-tree --name-only origin/main <branch>` (empty tree as attribute source, git ≥ 2.40).
+
+## 2026-11-01 — a Qt AutomationId is not unique inside an item view
+
+Qt builds an AutomationId from the `objectName` chain, but an item view's children (table rows
+and cells, list items, tree items) have no `objectName` of their own, so they inherit their
+**container's** id verbatim. Measured two ways: each of KeePassXC's four `QListWidget`
+ListItems carries its `List` parent's AutomationId exactly (`eval/spikes/uia-dumps/keepassxc.json`,
+#6), and #150 measured the same for every cell of a Qt table.
+
+Consequences, because this bites in three places: a "no duplicated AutomationId" test on the
+sample app (#33) would fail on its own results grid, so it must exclude ListItem, DataItem and
+TreeItem; the Spy (#24) and the element descriptor (#11) must not present an AutomationId as a
+unique identifier inside an item view; and items are addressed by Name, or by row and cell from
+step schema v0.2. Written into ADR `2026-10-31-pilot-apps-and-sample-app-technology` (#21).
+- 2026-11-01 · omer · git · **A branch stacked on a PR that was squash-merged conflicts with `main` everywhere the base PR touched** (add/add on every new file), because `main` has the base PR's content but not its commits. Do not resolve by hand and do not merge the base branch's tip if it carries a revert. Find the last commit of the base branch your branch contains (or the merge commit where both histories meet, e.g. `acce05c` for #60), then `git merge origin/main`, `T=$(git merge-tree --write-tree --merge-base=<that commit> <branch> origin/main | head -1)`, `git restore --source=$T --staged --worktree :/`, fix only the remaining real conflicts, commit. Check: `git diff --name-only <that commit> <branch>` and `git diff --cached --name-only origin/main` list the same files.
+- 2026-11-01 · #12 · **`Path.read_text(newline=...)` is Python 3.13 only; `write_text(newline=...)`
+  is 3.10.** The asymmetry is easy to miss and both modules declare `requires-python = ">=3.11"`.
+  My machine runs 3.13, so two tests passed locally and failed in CI, which uses 3.11.9. For a
+  byte-exact comparison use `path.read_bytes().decode("utf-8")` anyway: it is version-proof and it
+  is what "the same file" actually means. **General point: the only Python on this Windows machine
+  is 3.13, so nothing here can verify the 3.11 floor — CI is the only check, and a green local run
+  is not evidence that the version floor holds.**
+- 2026-11-02 · galip · A repo under an iCloud-synced `~/Desktop` (macOS "Desktop & Documents" with "Optimize Mac Storage") gets files evicted to "dataless" placeholders, including `.venv` packages and `.git` loose objects and reflogs (`find . -flags +dataless`). Reading one blocks and then fails with `TimeoutError: [Errno 60]`. pytest fails on import; `git push` updates the remote but cannot append the local reflog, so `origin/*` goes stale; Finder sync leaves " 2" duplicates. `brctl download` did not restore them here. Keep the checkout outside iCloud folders. Until then, run the tests from a venv created outside them.
+- 2026-11-03 · omer · #15 · **A shared schema the server reads must be listed in three places**: `server/pom.xml` (resources include), `server/Dockerfile` (COPY) and `server/Dockerfile.dockerignore` (`!schemas/...`). `./mvnw test` passes with only the pom entry; the Docker image then fails at startup because the bean cannot read the file. Build the image (`docker build -f server/Dockerfile .`) after adding one.
+- 2026-11-03 · omer · #15 · **The compose Neo4j volume remembers migrations from other branches.** After running a branch that adds `V0003`, starting the server from a branch without it fails with "More migrations have been applied to the database than locally resolved". Not a bug in the branch: test against a throwaway Neo4j (`docker run --rm neo4j:5.26-community` on its own network) instead of wiping the shared volume.
+- 2026-11-03 · omer · #185 · **Every `electron-vite dev` started from `client/` hot-reloads the renderer of the current checkout**, even instances started earlier from another branch (Vite takes the next free port, 5173 → 5174 → …). When the new renderer calls a bridge method the old preload lacks, that window goes blank. A second instance with the same `--remoteDebuggingPort` cannot bind it (`bind() failed`), and CDP silently reaches the *old* window. Before checking a branch: `ps -eo pid,lstart,command | grep electron-vite`, close old instances, and use a fresh debugging port.
+
+- 2026-11-05 · omer · git · `git grep -E '\bfoo'` on macOS finds nothing and reports no error, because the system regex library has no `\b`: a search for references can look clean when it is not → use `git grep -P`, or spell out the boundary as `(^|[^A-Za-z0-9-])foo`. Also, git treats a row edited directly above a row another branch inserts as a conflict, even with no shared line: test with `git merge-tree --write-tree --name-only` before promising two PRs will not conflict.
+- 2026-11-03 · omer · #15 · **A shared schema the server reads must be listed in three places**: `server/pom.xml` (resources include), `server/Dockerfile` (COPY) and `server/Dockerfile.dockerignore` (`!schemas/...`). `./mvnw test` passes with only the pom entry; the Docker image then fails at startup because the bean cannot read the file. Build the image (`docker build -f server/Dockerfile .`) after adding one.
+- 2026-11-03 · omer · #15 · **The compose Neo4j volume remembers migrations from other branches.** After running a branch that adds `V0003`, starting the server from a branch without it fails with "More migrations have been applied to the database than locally resolved". Not a bug in the branch: test against a throwaway Neo4j (`docker run --rm neo4j:5.26-community` on its own network) instead of wiping the shared volume.
+- 2026-11-05 · omer · #44 · Neo4j Community enforces composite uniqueness (`REQUIRE (n.a, n.b) IS UNIQUE`), and with it a losing concurrent write ends in `ClientException` code `Neo.ClientError.Schema.ConstraintValidationFailed`, which `executeWrite` does not retry → catch that code and read again if a repeat is legal (`RunService.writeResult`). Without the catch, 8 overlapping writes fail at once.
+- 2026-11-05 · omer · #44 · Node's global WebSocket (undici, used in the Electron main process) sends no `Origin` header, so Spring's default same-origin WebSocket check lets it through with no `setAllowedOrigins`; the Bearer header passes the normal security chain because the upgrade is an ordinary GET.
+- 2026-11-05 · omer · #170 · **A race can hide under CPU load.** `test_the_request_log_holds_no_instruction_text` failed 9 of 1 500 repeats on an idle machine and 0 of 300 under heavy load, so a load run proved nothing. To show a timing cause, inject a delay at the suspected point and compare the fix on the same setup. Also in zsh: `kill $pids` does not split a space-separated string, so background loops keep running; use an array and check with `ps` afterwards.
+
+## 2026-11-07 — KeePass 2's entry list is a UIA List with no Grid or Table pattern (hasan, #150/#147)
+
+Measured on Windows 11 Pro 26300 at 120 DPI, KeePass 2 from `C:\ayna-pilots\keepass2\` with the
+demo database, raw UIA through pywinauto 0.6.9 after `eval/spikes/kp_state.py main`:
+
+- `m_lvEntries` (`WindowsForms10.SysListView32…`) is a UIA **List** whose only patterns are
+  `Selection` and `LegacyIAccessible`. **No Grid pattern, no Table pattern**, so `GridPattern`
+  `RowCount`/`GetItem` and `TablePattern.GetColumnHeaders` are all unavailable on it.
+- Its ControlView children are a `Header` (5 `HeaderItem`s: Title, User Name, Password, URL, Notes)
+  and one `ListItem` per entry. So **the list has columns without having a TablePattern** — the
+  reason `cell` is grid-only is the `column` definition (a TablePattern header Name), not "a list
+  has no columns".
+- Each `ListItem`'s `Name` is the **Title column only**, but it has **five `Text` children, one per
+  column, in header order**, each carrying its column's text in `Name`. The #6 dump showed none of
+  them because it was taken with the Add Entry dialog on top. So a per-column read on a
+  pattern-less list is possible through those children — which is how #40 answers
+  `rowExists {value}` and `{value, column}` on KeePass 2.
+- **No ValuePattern anywhere** on the list, the items or the Text children. The v0.2 cell-text rule
+  (non-empty ValuePattern value, else Name) therefore reads Name, which is correct — and means
+  Name-first and Value-first are indistinguishable on every WinForms control we actually have.
+- Source [9] of the v0.2 ADR (a `DataGridView` cell's Name is the column header plus the row index)
+  stays **docs-only**: no pilot app has a `DataGridView` (KeePass 2 is SysListView32, HandBrake is
+  WPF, Notepad++ is Win32, KeePassXC is Qt), so it cannot be checked until the sample app (#33).
+
+## 2026-11-07 — Turkish search needs NFD diacritic stripping, not only the dotted/dotless i (hasan, #185/#184)
+
+`foldText` in the client folded `İ`/`I`/`ı` to `i` — the subtle half, and right — but left `ş ğ ü ö ç`
+alone, so "kullanici" found "Kullanıcı" while "giris" did **not** find "Giriş". Half a folded
+keyboard is worse than none: the first success teaches the user to expect the second.
+`.replace(/[İIı]/g,'i').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase()` handles every
+case — the five others decompose to a base letter plus a combining mark, while `ı` has no mark to
+strip, which is why the explicit replace has to stay and has to come first.
+
+## 2026-11-07 — `eval/` has two different `uia_dump.py` modules, and they collide (hasan)
+
+`eval/apps/trial/uia_dump.py` (5.8 kB, the trial app's AutomationId check) and
+`eval/spikes/uia_dump.py` (20.6 kB, the #6 tree dumper) are **different files with the same module
+name**, and nothing packages either of them. Each tree is green on its own —
+`pytest eval/apps/trial/tests` 12 passed, `pytest eval/spikes` 26 passed — but
+**`pytest eval/` from the repo root fails 26 of 38**, because whichever `uia_dump` is imported first
+shadows the other in `sys.modules`.
+
+It is invisible today: `testpaths = ["apps/trial/tests"]` means the bare `pytest` never collects
+`spikes/`, the documented command is `pytest eval/apps/trial/tests`, and CI runs the trial tests
+only. So this is not a regression — but a plain `pytest eval/` looks like 26 real failures, and the
+next person to widen `testpaths` or point CI at the whole folder will meet it.
+
+Tracked as **#199**, with the three options (rename one module, `--import-mode=importlib`, or make
+both trees packages); the fix touches omer's CI job, which is why it is an issue and not a quiet
+change. **Always name the path when
+running eval tests**, and treat a batch failure there as this collision until proved otherwise.
+
+## 2026-11-07 — the agent had never actually been per-monitor-v2 DPI aware (hasan, #12)
+
+`docs/agent-rpc.md` and `schemas/snapshot.schema.json` both promise bounds "as UI Automation
+reports them to a **per-monitor-v2** DPI aware agent". Measured on this machine: the process was
+**per-monitor-v1**, and nothing we wrote had set it.
+
+Three mistakes stacked up, and each one hid the next:
+
+1. `DPI_AWARENESS_CONTEXT` is a **pointer-sized handle**. `user32.SetProcessDpiAwarenessContext(-4)`
+   through ctypes' default argument conversion truncates it to 32 bits, so on 64-bit Windows the
+   call fails with **`ERROR_INVALID_PARAMETER` (87)**. Declaring `argtypes = [c_void_p]` and passing
+   `c_void_p(-4)` makes it succeed.
+2. The old code treated **87 the same as 5** (`ERROR_ACCESS_DENIED`, "awareness is already set") and
+   logged `INFO  DPI awareness was already set before the backend started`. A malformed call looked
+   like a benign one.
+3. The very next statement in `setup()` imports pywinauto, **which sets the process to
+   per-monitor-v1 itself**. So the process always ended up aware — just not the way the contract
+   says — and the log line above was technically true by the time anyone read it.
+
+**`GetAwarenessFromDpiAwarenessContext` cannot tell v1 from v2.** The `DPI_AWARENESS` enum has no
+value of its own for v2, so both read as `PER_MONITOR_AWARE` (2). Comparing contexts with
+**`AreDpiAwarenessContextsEqual`** is the only way to ask the question, and it is what
+`recognition.uia.dpi_awareness()` now does.
+
+**What it did and did not break.** v1 and v2 are both *unscaled*, so every bounds number measured so
+far is still right and no stored snapshot is wrong. What v2 adds is per-monitor behaviour for
+dialogs and child windows and DPI-scaled non-client areas — i.e. exactly the mixed-DPI case that is
+still unmeasured (every number we have is from one 120-DPI display). So this was a latent
+contract violation, not a wrong measurement.
+
+**General point: a success log is not evidence.** This one said "already set" for weeks on a call
+that had never worked. When an API's outcome is load-bearing for a contract, *read the state back*
+and warn when it is not what was promised, rather than inferring it from a return value — which is
+what the function does now, and what `test_setup_leaves_the_process_per_monitor_v2` pins in a fresh
+interpreter (awareness can be set only once per process, so an in-process test cannot check it).
+
+## 2026-11-07 — one window has three different rectangles, and we were reporting the wrong one (hasan, #16/#184)
+
+Measured on the trial app at 150 % scaling, during the Windows session for #184:
+
+```
+Win32 GetWindowRect        472 x 261   <- what listWindows reported
+DWM extended frame bounds  456 x 253   <- what a person sees
+UIA BoundingRectangle      450 x 213   <- what snapshot reports (per element)
+```
+
+- **`GetWindowRect` is 8 px too big on the left, right and bottom.** Since Windows 10 a resizable
+  window carries an **invisible** resize border outside its visible frame and `GetWindowRect`
+  includes it. (The same effect makes a maximised browser report `[-11, -11, 1931, 1019]` on a
+  1920×1080 screen — the negative origin is not a bug in the reader.) The border is DPI-scaled, so
+  it is 8 px at 150 % and 11 px elsewhere; never hard-code it.
+- **UIA's rectangle is 38 px short at the top**: no title bar. Right for an *element*, wrong for
+  "the window".
+- **`DwmGetWindowAttribute(DWMWA_EXTENDED_FRAME_BOUNDS, …)`** is the only one of the three that
+  means "the window as it looks": invisible border out, title bar in.
+
+The user spotted it the way a tester would — the Spy's red frame around a *window* sat outside the
+window — while the frame around every *element* was exactly right. So `listWindows` now reports the
+DWM rectangle and `docs/agent-rpc.md` says which rectangle it is, and says explicitly that it is
+**not** the same as `snapshot`'s `window.bounds`. Both are called `bounds`, which is what let the
+difference hide.
+
+**General point: "bounds" is not one concept on Windows.** Any new coordinate consumer (#54's
+screenshot crop, #23's win32 fallback, the overlay) has to say which of the three it means.
+
+## 2026-11-08 — `--import-mode=importlib` does not fix duplicate module names (#199)
+
+The two `uia_dump.py` modules under `eval/` (trial app and spikes) shadow each other for a whole
+`pytest eval` run. `--import-mode=importlib` looked like the one-line fix and **is not**: measured,
+`pytest eval -q --import-mode=importlib` still aborts collection with
+`ImportError: cannot import name 'MAX_DEPTH' from 'uia_dump'`. The import mode governs how pytest
+imports *test* modules; here the clash is between two *source* modules of the same name imported by
+other source modules (`spikes/uia_probe.py`, `spikes/kp_state.py`). What decides the winner is
+`apps/trial/tests/conftest.py` doing `sys.path.insert(0, …/apps/trial)`, which lasts for the whole
+process, so a `pythonpath` entry for both folders would only re-create the ambiguity. The fix is a
+unique module name (now `spikes/uia_tree_dump.py`) or real packages. Rule of thumb: inside one
+pytest run, every module name under a tree must be unique, whatever the import mode.
+
+- 2026-11-08 · omer · #208 · **On Windows, `docker compose up` publishes a host port that another program already holds, and says nothing.** hasan's machine had EnterpriseDB's Apache (`PEMHTTPD-x64`, auto-start) on IPv4 8080: the server started, the container's own `/api/health` said UP, and every `http://localhost:8080` request reached Apache (`http://[::1]:8080` reached the server, because Apache listened on IPv4 only) → set `AYNA_SERVER_PORT` in `.env` (Compose publishes `${AYNA_SERVER_PORT:-8080}`), and check who holds a port with `netstat -ano | findstr :8080` before a demo.
+- 2026-11-08 · omer · #208 · Spring Boot: an `ApplicationListener<ApplicationFailedEvent>` that is a `@Component` hears about a failed start only if its bean was created before the bean that failed, and in our test it logged its line twice → register it in `META-INF/spring.factories` under `org.springframework.context.ApplicationListener` (once, whichever bean fails). A `FailureAnalyzer` prints a tidier block but logs the original stack trace only at DEBUG.
+
+## 2026-11-08 — Merging `main` into a stacked branch after a squash merge can resurrect deleted files (omer, #186–#197)
+
+After the PR below it is squash-merged, the next branch in a stack still carries the original
+commits, so `git merge origin/main` uses an old merge base. Two things go wrong: (1) every line
+the lower PR touched and the branch later changed again conflicts, and (2) worse, silently, a file
+the branch **deleted** comes back, because relative to the old base `main` "added" it
+(`VersionBar.tsx` on #188). What worked: when `main`'s tree equals a commit the branch already
+contains (`git rev-parse origin/main^{tree}` = `<prev-branch-tip>^{tree}`), record the merge with
+`git merge -s ours origin/main` — the branch's tree is exactly right. Otherwise re-merge each
+conflicted file with an explicit base (`git merge-file ours <base> theirs`, base = the lower branch's
+version the branch was built on). Always compare the merged tree with what you expect before
+pushing, and regenerate `docs/api/openapi.yaml` instead of resolving it by hand.
+- 2026-11-08 · omer · #52 · **oasdiff `breaking` does not flag a removed response field when the field is optional** (1.34.1: `response-optional-property-removed` is INFO, so even `--fail-on WARN` passes). springdoc marks no response property as required, so in our generated `openapi.yaml` every response field is optional. `.github/contracts/oasdiff-levels.txt` raises that check to ERR. Check a level with `oasdiff checks changelog | grep <id>`.
+
+## 2026-11-10 — A descriptor for one element is not the same thing as a descriptor from a walk (hasan, #22)
+
+`elementFromPoint` looked like "hit-test, then describe the element". It is not, and the reason
+generalises to anything that wants a descriptor outside a snapshot walk: **three of the twelve
+descriptor properties are derived from the element's surroundings, not read from it.**
+`nearestLabel` needs its siblings and its parent's siblings (`model.nearest_label` rules 2 and
+3), `parentPath` needs the whole ancestor chain, `siblingIndex` needs its position among all its
+siblings. Fetching those for one element costs a property read per sibling, which is unbounded —
+picking a row in KeePass 2's entry list would read every other row — and far worse, an element
+whose siblings were not read gets `nearestLabel: None`, which is **indistinguishable from "this
+element has no label"**. The same element would then have two different descriptors depending on
+whether a snapshot happened to be open, and a repository object saved from one would not match
+the other.
+
+So `elementFromPoint` answers out of the snapshot the agent took last, returning *that* element,
+and the lookup is by stored bounds first (pure Python, no COM call in the common case) with
+`CompareElements` only when several elements share a rectangle. Measured: median 3.39 ms against
+#22's 300 ms budget.
+
+→ Before deriving a descriptor anywhere new (#23's win32 fallback, #54, a recorder), check which
+properties need the tree. If the tree is not there, say so in the shape of the answer instead of
+returning a quietly weaker descriptor.
+
+## 2026-11-10 — A UIA hit test answers with what is *visible*, which breaks a test runner's own window (hasan, #22)
+
+`ElementFromPoint` returns the deepest element **on screen** at the point, so the first run of
+the #22 Windows test failed with "another window answered": the trial app was behind the terminal
+running pytest, and the hit test was right. The fixture now forces the window topmost with
+`SetWindowPos(HWND_TOPMOST, …, SWP_NOACTIVATE)` — above the others without stealing the keyboard —
+and waits one frame for the compositor.
+
+Two follow-ons. **A container's centre is not its own element**: the second failure was asserting
+that every element is found at the centre of its own rectangle, which is false for anything with
+children (the window's centre answered a check box, correctly). The invariant that does hold is
+"the answer is that element or one of its descendants", with the exact answer asserted only for
+leaves. **And for the Spy:** anything the client draws under the cursor will be hit instead of the
+target, so an overlay has to be click-through.
+- 2026-11-10 · omer · git · **GitHub ignores `merge=union`**: after one memory PR merged, the next PR touching `journal.md` showed CONFLICTING on GitHub although `git merge origin/main` locally was clean (#217 after #222). Merging `main` into the branch locally and pushing clears it. `active.md` is overwrite-only, so every open branch of the same person conflicts on it; take `main`'s side while merging a train of PRs and write the final `active.md` on the last branch to merge.
+- 2026-11-08 · omer · #51 · **A second Compose stack can run beside the one you are using**, for a smoke test on the real image without stopping it: `docker compose -p <other-name> -f docker-compose.yml -f override.yml up -d --build`, where the override has `ports: !reset []` under `neo4j` and `ports: !override ["28080:8080"]` under `server`. The project name gives it its own containers and volumes; `down -v` with the same `-p` and files removes only those.
+- 2026-11-12 · hasan · #29 · **A Turkish string printed by a Python script on this machine is mojibake, and the fix is one line.** The console here is cp1254, so `measure.py`'s markdown summary printed its em dash as `?` and would have mangled a Turkish control name — in the terminal *and* when redirected to a file, because Python picks the encoding from the locale either way. Any script of ours that prints Turkish (a summary meant to be pasted into an issue, a failure message, a dump) should do `sys.stdout.reconfigure(encoding="utf-8")` at the top of `main()`, guarded with `hasattr`. Separate from the file side: a **CSV needs the UTF-8 BOM** (`encoding="utf-8-sig"`) or Excel on a Turkish Windows reads `Şifre` as `Åifre`, and the team reads these files in Excel long before they reach the report.
+- 2026-11-12 · hasan · #29 · **A `sys.path` insert inside a module cannot be relied on by its tests, because ruff reorders their imports.** `eval/rq1/measure.py` adds `agent/` to `sys.path` before importing `ayna_agent`, which works when it is run as a script. Its test module did `import measure` *and* `from ayna_agent.model import ...`; ruff's isort put the `ayna_agent` line in the third-party block, i.e. **above** `import measure`, and collection died with `ModuleNotFoundError` — after the formatter ran, not before. Put the path setup in `conftest.py`, which pytest imports before any test module, and nothing depends on import order. (It also makes the test file honest: it is not relying on a side effect of another import.)
+- 2026-11-12 · hasan · #29 · **`eval/`'s CI runs a bare `pytest` from `eval/`, so a new test folder runs nowhere until `testpaths` lists it.** `eval/pyproject.toml` had `testpaths = ["apps/trial/tests"]`; a green `pytest eval/rq1/tests` locally says nothing about CI. Every new `eval/rqN/` folder has to add itself to `testpaths` (and to ruff's `src` if its tests import a local module).
+
+## 2026-11-12 — `Invoke` is not enough for a Click (hasan, #221's Windows check, for #40)
+
+Driving HandBrake 1.11.2 (WPF) to open its queue, `IUIAutomationInvokePattern::Invoke` on the
+toolbar **Queue** button threw `COMError -2147220992` while a real mouse click on the same
+element worked. The element reported the Invoke pattern and was visible and enabled; it simply
+refused to be invoked. Earlier in the same session the opposite happened on HandBrake's
+"Check for updates?" dialog: `click_input()` left the dialog open and `invoke()` dismissed it.
+
+→ **Playback (#40) cannot implement Click as one call.** Try the pattern, and on a `COMError`
+fall back to a real click at the element's centre (and the reverse where a click does not land),
+rather than reporting the step as failed. Two of our four pilot apps already disagree about which
+one works, so this is the common case, not an edge case. The same applies to any Spy or recorder
+action that "presses" something.
+
+## 2026-11-12 — Where a teammate's Windows check gets written down (hasan, #221)
+
+Running someone else's `needs-windows-test` check leaves notes that belong to **three** different
+places, and the rules collide: the result is an issue comment, a gotcha belongs here, but the
+session's own journal and `active.md` are mine while the branch under test is theirs — and
+nothing of mine may be committed on their branch. What works: do the run on their branch, post
+the result as an issue comment (that is the durable record and it needs no branch at all), and
+put only append-only memory (`learnings.md`, `journal.md`) on a small branch of your own cut from
+`main`, where `merge=union` keeps it conflict-free.
+
+→ Do **not** reach for `active.md` for this: it is overwrite-merged, so a third divergent copy on
+a third branch is a conflict waiting to happen. It can wait until one of your own PRs merges.
+## 2026-11-12 — A stored rectangle is not an identity (hasan, #22, from omer's #227 review)
+
+Looking an element up in a cached snapshot by its **bounds** is sound only while the window keeps
+the same elements in the same rectangles, and the changes that break that are the ordinary ones: a
+tab switched (HandBrake's settings), a list scrolled (KeePass 2's entry list), a wizard or dialog
+page replaced by one with the same layout. Each leaves the rectangle exactly where it was with a
+different element behind it, so a lookup that trusts geometry answers with the *stale* node and
+nothing in the reply says so — the tester then saves the wrong element as a repository object.
+
+`IUIAutomation::CompareElements` (pywinauto's `UIAElementInfo.__eq__`) is the only honest answer to
+"is this the same element", and it costs about **0.2 ms**: `elementFromPoint`'s median went from
+3.39 ms to 2.2–2.5 ms across runs on the same machine, i.e. the comparison is inside the noise.
+Measure before deciding a correctness check is too expensive to make.
+
+→ Any cache keyed on geometry (the Spy's pick, a recorder, playback resolving a target against a
+previous walk) needs an identity check before it names an element, and a *refusal* ("capture
+again") is a better answer than a plausible wrong one. Where identity cannot be had, comparing the
+cheap properties a provider answers from its own state (`controlType`, `name`, `automationId`)
+catches the replaced-control cases that geometry misses.
+
+## 2026-11-12 — Confirming the display scaling needs a DPI-aware process (hasan, #22)
+
+A `@pytest.mark.windows` criterion of the form "tested at 100 % and 150 %" is only worth anything
+if you can show the process *saw* two different scalings. Asking Windows from the wrong process
+gives a confident wrong answer: a DPI-unaware one (PowerShell, `GetDeviceCaps(LOGPIXELSX)`)
+reports **96 DPI whatever the real scale is**, because Windows virtualises it. At 125 % it also
+answered 96, which would have "confirmed" a scaling that was never set.
+
+Two ways to get the truth, both used for #22's check:
+- call `SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2 = -4)` **before** `GetDpiForSystem()`
+  in the probe process (96 / 120 / 144 for 100 / 125 / 150 %);
+- better, read it from the product code: the snapshot's `window.dpi` and every element's `dpi`
+  (`GetDpiForWindow`, #43/#49), with `dpi_awareness()` reporting `per-monitor-v2`. That also shows
+  the *physical* bounds changing — the trial login window went 360 × 164 → 540 × 246, exactly 1.5×
+  — which no virtualised reading would reveal.
+
+The scale change itself needs a person in Settings, but it applies to newly started apps at once:
+no sign-out is needed as long as the test launches its own app, which is why these runs took
+minutes rather than a session.
+
+→ When a criterion names display scalings, record the DPI the product read at each one, not the
+scale you clicked. Also: `agent/.venv` has no PySide6, so a script that starts a pilot or trial
+app outside pytest must launch it with the **repository root** `.venv/Scripts/python.exe` — the
+Windows tests do exactly that via `_python_with_pyside()`.
+- 2026-11-12 · hasan · #33 · **`QT_QPA_PLATFORM=offscreen` set in a pytest process poisons every app the run starts afterwards.** `eval/apps/sample/tests/test_screens.py` set it at import time so the widget tests need no display; a child process inherits it, so the real app came up with no window and `pywinauto`'s `window.wait("visible ready")` timed out 30 s × 30 tests — all 25 sample UIA tests *and* the trial app's 5 errored, while each passed alone (12:40 of pure timeout). Fix: choose the platform in Qt's own argv, `QApplication(["pytest", "-platform", "offscreen"])`, so nothing leaks into the environment; `launch_app()` additionally drops the variable from the child's env, which also covers a CI shell that exports it. Rule: never set a Qt (or any plugin-selecting) environment variable in a test process that starts the application under test as a child.
+- 2026-11-12 · hasan · #33 · **The #199 module-name clash can be green locally and red in CI, because the winner depends on how pytest was started.** `eval/apps/sample/app.py` beside `eval/apps/trial/app.py`: both apps' `tests/conftest.py` do `sys.path.insert(0, <their own folder>)`, so the conftest loaded **last** wins for the whole process. `pytest eval` from the repository root walks folders alphabetically (sample, then trial) and the trial app's `from app import …` got the trial app — green. CI runs bare `pytest` from `eval/`, which loads conftests in `testpaths` order (trial, then sample), and the same import got the *sample* app: `ImportError: cannot import name 'INVALID_MESSAGE' from 'app'` (run 43260442861). Two conclusions: a module you only ever *run* is not exempt from the one-name-per-tree rule, since it is still importable; and `pytest eval` is not the run CI does — reproduce CI with `cd eval; ../.venv/Scripts/python.exe -m pytest -q` before pushing anything that adds a module to `eval/`.
+- 2026-11-14 · hasan · **`gh auth refresh` needs `--hostname` in this shell.** Plain
+  `gh auth refresh -s project` exits with "--hostname required when not running
+  interactively", which is why several sessions recorded "the agent cannot set the Project
+  status" as if it were a permission problem. The working form is
+  `gh auth refresh --hostname github.com --scopes project`; the user runs it (it is a device
+  flow, so it needs a browser), and afterwards `gh project item-edit` works from the agent.
+- 2026-11-14 · hasan · **`model.describe_tree` loops for ever on a node that is its own
+  ancestor.** Its ancestor walk is `while walker is not None: walker = by_id.get(...)` with no
+  seen-set, so a hand-written tree where a node's `parent` is itself hangs pytest with no
+  output — which is exactly how I lost a test run on #40. Unreachable from a real UIA walk
+  (parents come from the walker and only go upward), so it is a fixture hazard, not a bug in
+  the product: **when you build tree fixtures by hand, give every node a parent above it**.
+  Noted as an open issue in the #40 task note rather than fixed, because `model.py` is
+  normative under #11.
+- 2026-11-14 · hasan · **A helper module next to the tests is importable by its bare name.**
+  `agent/tests/grids.py` is imported as `import grids` from two test files: pytest's default
+  import mode prepends each test file's directory to `sys.path` when there is no
+  `__init__.py`, and a module without a `test_` prefix is not collected. Worth knowing before
+  copying a fixture into a second test file — the #40 row shapes are measurements, and two
+  copies of a measurement drift.
+- 2026-11-14 · hasan · **`get_elem_interface` needs the raw element, and it fails by returning
+  nothing.** pywinauto's pattern lookup wants an `IUIAutomationElement`, while the walk hands
+  every caller a `UIAElementInfo`; given the wrapper it raises `AttributeError`, which the usual
+  `except Exception: return None` turns into "this pattern is not supported". So the mistake is
+  **silent and total**: every pattern read in four of #40's modules read as unsupported on real
+  Windows while 612 unit tests passed, because a fake patterns function accepts the fake element
+  either way. **Unwrap at the seam, in the lookup itself** (`playback/actions.uia_patterns`
+  does now), not at each call site, and when a provider "supports nothing", check the shape of
+  what you handed the lookup before you believe it.
+- 2026-11-14 · hasan · **A UIA call that returns without complaint has not necessarily done
+  anything.** On a Qt (PySide6) `QComboBox`, `SelectionItem.Select()` on a popup item, `Invoke`
+  on the item, `LegacyIAccessible.Select()` and the box's own `Value.SetValue()` all return
+  cleanly and change nothing; only `LegacyIAccessible.DoDefaultAction()` on the item works. The
+  item even reports `IsSelected` **true** afterwards — it records the popup highlight, not the
+  choice. **Read the control back, and read the control rather than the item.** Also: measure
+  each route from a clean start, because the first pass of this measurement said two more
+  routes worked, and they were only inheriting the state the previous route had set.
+- 2026-11-14 · hasan · **Qt applies a choice asynchronously and closes its popup by itself.**
+  The combo box still read its old value 11 ms after the call and the new one at 32 ms, so a
+  confirmation read straight after the call sees the old value; and a popup opened through
+  `ExpandCollapse` shuts about a second later, taking its items out of the tree. Anything that
+  expands a Qt control once and then relies on it staying open will not see a late-filling
+  list — **re-expand while it shows nothing**, and give a read-back one poll interval.
+
+- 2026-11-14 · hasan · #162 · **A warm-up only warms what it actually asks for.**
+  `StepGenerator.warm_up` sends its own minimal body and never goes through `request_body`, so
+  a subclass that changes the request (here `options.num_gpu = 0`) warms the *other*
+  configuration and the first timed request silently pays for the model reload. The symptom is
+  a `warm-up 0.0s` line beside a first request far above the median — in this case 34.5 s
+  against a 15.3 s p50, which produced a false "1 of 10 requests exceeded the 30 s deadline".
+  Anything measuring latency through a subclassed client should check that its warm-up and its
+  measured requests load the same thing.
+- 2026-11-14 · hasan · #162 · **Ollama reuses a runner already loaded CPU-only.** A request
+  that does not mention `num_gpu` does *not* force a reload onto the GPU; it is served by
+  whatever runner is loaded. Measured on Ollama 0.40.16 by pre-loading `qwen3:8b` with
+  `num_gpu: 0` and then calling `POST /ai/generate-steps`, which has no such option:
+  `/api/ps` still reported `size_vram: 0`. This is the only reason a service that builds its
+  own request can be measured CPU-only — and the same fact is a trap in the other direction, so
+  **unload with `ollama stop` before a run that is supposed to use the GPU**, and read
+  `size_vram` rather than trusting the configuration you asked for.
+- 2026-11-14 · hasan · #162 · **A model that fits in VRAM beats a better model that does not,
+  and it reverses the ranking between machines.** `gemma4:e4b-it-qat` loads as 3.1 GB and runs
+  100 % on a 6 GB RTX 3060; `qwen3:8b` loads as 6.0 GB, does not fit, and runs 30 % CPU /
+  70 % GPU. Result: gemma4 is 3.2× faster on Windows while being the *slower* of the two on the
+  M2 Mac. A fully VRAM-resident model is also almost immune to the machine's own CPU load
+  (1.65 → 1.70 s under 59 % busy, against 5.34 → 6.29 s), which matters because AYNA's agent,
+  client and server share the box during a run. So "which model is faster" is a question about
+  the box, not the model.
+- 2026-11-14 · hasan · #162 · **Measure with the deadline raised, then compute the share that
+  would have exceeded it.** The AI service answers 504 at 30 s, so measuring it as shipped
+  censors exactly the tail the question is about. Run with `--timeout 600` and count afterwards.
+- 2026-11-14 · hasan · #162 · **`powershell.exe` is not always on `PATH`** for a process started
+  from the POSIX shell here, so a helper shelling out to it returns nothing and a measurement
+  silently loses its load figure. `ctypes.windll.kernel32.GetSystemTimes` is stdlib, exact and
+  has no `PATH` dependency. `nvidia-smi` is in `C:\Windows\System32`, so it needs the absolute
+  path for the same reason.
+- 2026-11-14 · hasan · #29 · **The recognition backend cannot be imported without `websockets`.** `agent/ayna_agent/recognition/uia.py` takes its four exception types from `ayna_agent.rpc`, which imports `websockets.asyncio.server` at module level, so any consumer of the UIA backend needs the WebSocket server dependency. RQ1's `capture` is the first consumer that is not the RPC server, and it fails on the repo-root `.venv` with `cannot load the UIA backend: No module named 'websockets'`. Run `capture` on `agent/.venv`. Fix requested in galip's inbox (move the exceptions to a dependency-free module and re-export).
+- 2026-11-14 · hasan · #29 · **A screen is the topmost window, not every window of the process.** `measure.py capture` used to snapshot all of a process's windows and number the files, so KeePass 2's `Add Entry` state wrote `entry-editor-1.json` (the dialog) *and* `entry-editor-2.json` (the main form behind it). `measure` counts every snapshot file of an app, so the main window's controls were counted twice and the rate was wrong. `list_windows` comes from `EnumWindows`, which answers in Z-order with the top window first, so `windows[0]` is the staged screen; the foreground window is **not** usable for this, because the terminal running the command is in front. Any harness that captures "a screen" by process has this bug waiting.
+- 2026-11-14 · hasan · #29 · **Leave no UIA-driven app open when running the `eval` suite.** With KeePass 2 and HandBrake open, `eval/apps/trial/tests/test_uia.py` printed a `Windows fatal exception: code 0x8001010d` traceback (`RPC_E_CANTCALLOUT_ININPUTSYNCCALL`) and the run took 57 s; with them closed, the same five tests pass in 2.1 s and print nothing. pywinauto's `wait_until_passes` retries through it so nothing fails — but the dump reads exactly like a crash in a CI log.
+- 2026-11-14 · hasan · #29 · **A capture proves nothing unless the screen was in the state the registry names, and `enabled` is the cheap tell.** My first HandBrake RQ1 capture was taken with the source picker still up; the giveaway was that *every* toolbar button, including `Open Source`, read `enabled: false`. It was named `main-summary` and the numbers derived from it (45 controls / 97.8 %) went to the issue before anyone noticed; the real `main-summary` has 36 controls / 97.2 %. Before trusting a capture, check that the controls which should be live actually read `enabled: true`. Two captures of one window in different enabled states are **not** two screens for recognition purposes: `enabled` is in `NEVER_MATCH`, so the identity properties are identical and measuring both only double-weights that window.
+- 2026-11-14 · hasan · #29 · **A nameless WPF `MenuItem` inside a named `Menu` is the one control shape AYNA cannot identify today, and an element with no `bounds` is not a control at all.** HandBrake's `Options` split button and its two `When Done` dropdowns reach UIA as `MenuItem`s with no `automationId` and no `name`; the name sits on the parent `Menu`, which the descriptor does not reach for, so `suggestUses` escalates to `{className, parentPath}` and sibling dropdowns match each other. That is a real recognition failure on controls a tester targets (HandBrake's Queue screen measures 4/6 = 66.7 % against KeePass 2's Options 35/35). It is **not** the `siblingIndex` question the first RQ1 comment raised: that one was `e20`, a toolbar `Button` with **no `bounds` key**, `enabled: false` and no identity -- a WPF template part that is never rendered. Two lessons for anything reading a snapshot: a missing `bounds` is the cheap test for "not a control", and identity that lives on an ancestor is invisible to a per-element descriptor (#11, #40, #73).
+- 2026-11-14 · hasan · **Close the sample app before running `eval`'s suite.** A leftover
+  instance makes `apps/sample/tests/test_sample_uia.py` fail four tests on the `main` screen:
+  the tests launch their own copy, two windows then carry the same title, and the lookup finds
+  two where it expects one. The failures read like real UIA bugs — "no automation id", "fewer
+  than eight interactive controls" — and say nothing about a second window, which cost me a
+  diagnosis. Same hazard for any pilot app left open from a manual check.
+- 2026-11-15 · hasan · #46 · **Clearing a Qt widget's `objectName` does not remove its AutomationId -- Qt puts the class name there instead.** `login.loginButton` with an empty `objectName` reaches UIA as `QApplication.login.QPushButton`, measured for `QPushButton`, `QLineEdit` and `QTableWidget` on three screens (`eval/apps/sample/tests/test_variant_uia.py`, 23 of 23 pass). Three consequences for anything that reasons about ids: a control that "lost its id" still has one, so a check that counts controls *without* an AutomationId (#33's second criterion, `uia_check.py`) passes on a screen where every scenario's locator fails; the id is no longer the logical name; and it is not unique, because two same-class siblings that both lose their name would collide. The ground truth for #46's `v2e` predicted an empty id and had to be regenerated.
+- 2026-11-15 · hasan · #46 · **A grid's inner UIA elements inherit the grid's AutomationId.** `QApplication.main.customerGrid` is reported by the `QTableWidget` *and* by its Pane and its four Headers -- six elements with one id -- because those are not Qt widgets and have no name of their own. So a lookup by AutomationId must filter to the app's own widgets (`uia_check.is_app_widget`: UIA ClassName starts with `Q`), the same rule that excludes the window frame's Minimize/Maximize/Close. Anything resolving a step by id alone (playback, #73's healer, a measurement harness) will otherwise see an ambiguous match on every grid.
+- 2026-11-15 · hasan · #46 · **`isVisible()` is `False` for every widget of a window that has not been shown, so never copy it when replacing a widget during construction.** #46's retype layer built the replacement with `setVisible(old.isVisible())` inside `__init__` and hid all five retyped controls for good: they were absent from the UIA tree entirely, which looked like Qt refusing the retype rather than a visibility bug. `isHidden()` is the property that means "explicitly hidden" and is the one to carry over. Related: a retyped widget is created last, and Qt's UIA tree follows child order rather than layout order, so the control also moves to the end of its parent's tree order -- there is no supported way to reorder a parent's children.
+- 2026-11-15 · omer · #245 · **With stateless bearer auth, a `StreamingResponseBody` (or any async return) must let the ASYNC dispatch through Spring Security, and MockMvc tests will not tell you.** Spring MVC finishes such a response on a second, ASYNC dispatch; `authorizeHttpRequests` checks it again, the bearer filter's context is gone, and `AuthorizationDeniedException` fires after the 200 and part of the body are committed: clients see a truncated chunked body (`curl` exit 18), and the server logs only "response is already committed". `SecurityConfig` now permits `DispatcherType.ASYNC` and `ERROR` (both continue a REQUEST dispatch that was already authorized). MockMvc missed it because `SignedIn`'s test security context survives `asyncDispatch`; only a `RANDOM_PORT` test with a real token and HTTP client reproduces it (`auth/RunReportOverHttpIntegrationTest`).
+- 2026-11-15 · omer · GitHub's mergeability check ignores `.gitattributes` `merge=union`: a PR whose only overlap with `main` is an append-only file (an `inbox.md`, `learnings.md`) can show CONFLICTING while `git merge origin/main` locally merges it cleanly. Merge locally and push before assuming a real conflict.
+- 2026-11-15 · omer · #17 · `AgentManager`'s `listenTimeoutMs` covers both the port line and the WebSocket handshake. A test that wants the handshake to time out must still give the fake agent (`node --experimental-strip-types`) time to start: 200 ms failed on a cold CI runner with "did not report its port" (PR #242). Keep such timeouts at 2 s or more.
+- 2026-11-15 · galip · memory · **Clearing an inbox while teammates' PRs still append to it brings the deleted entries back.** `inbox.md` merges with `merge=union`: a deletion that reaches the line where another branch appended becomes a conflict hunk, and union resolves it by keeping both sides, so every deleted entry returns. Tried with `git merge-tree` against four open PRs. With the file's last entry kept as an anchor, the two branches cut from today's `main` merged cleanly, but the two cut from an older `main` brought all 43 entries back. So delete handled inbox items only once the open PRs that touch your inbox have merged, and check first with `git merge-tree --write-tree HEAD origin/<branch>`. This is probably also how the descriptor entry got into galip's inbox three times.
+- 2026-11-15 · hasan · #47 · **A Qt signal keeps calling the method that existed when `connect` ran, so a behaviour patch has to replace the *class* method (or a module global), never the instance's.** #47's bug-injected versions patch behaviour, and the obvious shape -- a per-window hook at the end of `__init__`, as #46's UI-change layer uses -- cannot work: `windows.py` connects its slots inside `__init__`, and `self.on_login = …` afterwards leaves every connected signal on the original bound method. So a bug version is installed **before the first window exists** (`sample_app.py` reads `--bug` before `open_screen`) and patches `model`/`windows.<Class>`; `bug_patch.reset()` restores the originals, because the patches are process-wide and one pytest process compares the correct build with the broken one. A second trap in the same file: `model.py` does `from texts import …`, so a text bug must patch `model.LOGIN_WELCOME` -- patching `texts.LOGIN_WELCOME` changes nothing, because the from-import copied the value at import time.
+- 2026-11-15 · hasan · #47 #69 · **Two live windows of one class in the UIA tree raise `ElementAmbiguousError`, so a stale app is never silently mistaken for the new one -- which also means "it answered the wrong value" has to be a readiness race, not a window mix-up.** Resolving #239's merge, the `eval` suite failed once on `test_the_right_credentials_are_welcomed_by_name` and twice more on the pair `test_bug_uia.py test_sample_uia.py`, both with the signature "the text I set did not land". The obvious culprit, a bug-injected app outliving its fixture, is measurably not it: `kill_process_tree` leaves the tree clear within 0.3 s, and pywinauto's `window.wait("visible ready")` on a class that matches twice raises instead of resolving (measured by launching the same screen twice). What `wait("visible ready")` does **not** promise is that a Qt window will accept input: the flake survives every narrowing (each bug version alone, 12 fresh `set_edit_text` read-backs, `test_variant_uia.py` in the same slot) and disappears under a plugin that enumerates windows around each launch, which is itself evidence that it is timing. Carried to #69 as flaky-rate data rather than patched blind; the lesson for any UIA harness is that a window-identity gate and an input-readiness gate are two different gates, and only the first one is cheap to assert.
+- 2026-11-15 · hasan · #54 #29 · **A dependency-free module nothing imports fixes nothing: check the call sites, not the file's existence.** `agent/ayna_agent/errors.py` was written so a backend could raise its exceptions without pulling in `websockets`, and it reached `main` with `rpc.py` re-exporting all four -- but `recognition/uia.py` was still importing them *from* `ayna_agent.rpc`, so `import ayna_agent.recognition.uia` kept failing with `No module named 'websockets'` and #29's `capture` kept needing `agent/.venv`. The file was right, the one line that had to change was not changed, and nothing failed loudly because the agent's own venv has `websockets`. Found while merging `origin/main` into #54, because a screenshot that imports the UIA backend for one rectangle cannot run on the repo-root `.venv`. Two lessons: a decoupling is done when the last importer moves, not when the new module lands; and the cheap test for "did it work" is `python -c "import <module>"` on the *thinnest* environment that should be able to run it, which is exactly the check that no CI job was doing.
+- 2026-11-15 · hasan · #54 · **A screen read is not a window read, so never check a `PrintWindow` capture against `GetPixel`.** #54's orientation test asserted that the first row of the captured buffer matched the screen pixel at the window's top-left corner -- true on my desktop, and CI failed it (`b'\x00\x00\x00'` against `b'\x91\xb9\xd3'`). Both reasons are the point of using `PrintWindow` in the first place: it draws the window itself, so anything overlapping the window changes the screen and not the capture; and on Windows 11 a **rounded corner** leaves that exact pixel undrawn in the capture while the screen shows the desktop behind it. The fix is to assert a property of the reader rather than of the picture: read the same bitmap top-down and bottom-up (`GetDIBits` with `biHeight` negative and positive) and require the rows to be each other's reverse, with a repeated top-down read so a repainting window skips instead of failing. General rule for any screenshot test: if the assertion can be changed by another window moving, it is testing the desktop, not the code.
+- 2026-11-15 · hasan · #54 #52 · **A contract test that validates a hand-written fake tests the fake.** `schemas/agent-rpc.schema.json` froze `stepResult` with `additionalProperties: false`, so when #54 added `screenshotPath` and `screenshotAt` **every real `runSteps` answer went outside the contract** — and the whole contract suite stayed green, on both sides, because the only step results anything validated were dicts written by hand in the tests, which happened not to carry the new fields. A human reviewer found it; no job did. Two fixes, and the second is the one that generalises: the fake now carries the fields, and a new case validates what `StepResult.to_json()` itself produces, in four shapes. Checked by reverting the schema — three cases fail. The rule for any contract test: at least one case must come from the code that really builds the message, or the test only proves that two hand-written things agree. The same hole is worth looking for wherever `additionalProperties: false` meets a dataclass that someone will extend.
+- 2026-11-15 · hasan · #63 · **`python -m pytest` and bare `pytest` do not see the same `sys.path`, so a test import can be green locally and red in CI.** `python -m pytest` puts the **current directory** on `sys.path`; the `pytest` executable does not. From `agent/` that is the difference between `from tests.test_playback_triage import …` working and failing with `ModuleNotFoundError: No module named 'tests'` — `tests/` has no `__init__.py`, so it is not a package, and what makes its modules importable is pytest's own prepend-import mode putting **`tests/` itself** on the path (which is why `import grids` works). CI runs bare `pytest` from `agent/`, so PR #251 went red on a suite that passed here 689/689. Two rules: share test helpers through a plain module in `tests/` imported by bare name (`from playback_fakes import …`), never from one test module into another with a `tests.` prefix; and reproduce the agent job with **`.venv/Scripts/pytest.exe`** from `agent/`, not with `python -m pytest`. Same family as the 2026-11-12 `pytest eval` vs `cd eval; pytest` finding — the invocation is part of the test environment.
+- 2026-11-15 · omer · A Python script on a GitHub Windows runner prints through cp1252: an emoji or other non-cp1252 text in `print` raises UnicodeEncodeError (PR #249's first run). Call `sys.stdout.reconfigure(encoding="utf-8")` or set `PYTHONUTF8=1`.
+- 2026-11-15 · hasan · CI · **A red check is not always a red branch: GitHub can fail every job in 1-2 s for billing, and it looks exactly like a broken PR.** On PR #254 all six jobs went red with "The job was not started because recent account payments have failed or your spending limit needs to be increased". The tell is the **duration**: 1-2 s for a job that normally takes 45 s to 4 min means it never started, and `gh run view <id>` shows the reason under ANNOTATIONS rather than in any job log (`gh run view --job <id> --log-failed` answers "log not found", because there is no log). Worth checking before debugging a branch: compare with the last run that passed and look for a config change in between -- here there was none, and the previous run 22 minutes earlier was green. Only the repository owner's billing settings can clear it.
+- 2026-11-15 · hasan · #64 #29 · **Correction to my 2026-11-14 entry: the nameless WPF `MenuItem`s are proposed as `{className}` alone, not `{className, parentPath}`.** Building RQ1's report put the measured rows in front of me: `primaryProperties=className`, `primary={"className": "MenuItem"}`, `matchCount=2`. `measure.propose` (and `suggestUses`, which it mirrors) keeps a property only **while it narrows the match** — `parentPath` is considered and then dropped, because the two dropdowns share the same parent `Menu` and it narrows nothing. The substance of the original entry stands (a nameless control inside a named parent is the one shape AYNA cannot identify, and sibling dropdowns match each other), but the proposed set is one property, not two. Worth having right for #73: a healer told the set is `{className, parentPath}` would look for a parent-path signal that was never proposed. The general lesson is the smaller one — "the descriptor has property X" and "the proposal kept property X" are different claims, and only the second is in `primaryProperties`.
+- 2026-11-15 · hasan · #61 · **A new sub-package in `agent/` needs `pip install -e` again, or its tests fail to collect in an existing venv.** #250 added `ayna_cli*` to `[tool.setuptools.packages.find]`, and after merging it `agent/.venv/Scripts/pytest.exe` stopped with `ModuleNotFoundError: No module named 'ayna_cli'` on three files — the editable install records which packages it exposes at install time, so a package added later is invisible until `.venv/Scripts/python.exe -m pip install -e ".[dev]"` is run again. CI never sees this because it installs from scratch every run, which is exactly why it is worth writing down: the failure only happens on a machine that has been working for a while, and it looks like a broken merge rather than a stale venv.
+- 2026-11-17 · omer · **CI runs only the jobs a change touches.** `ci.yml`'s `changes` job diffs the PR (or the push) and each job runs when its folder, a folder it reads, or `ci.yml` changed: server ← `server/ schemas/ docs/api/`; client ← `client/ schemas/`; agent ← `agent/ schemas/ eval/apps/trial/ .github/suite/` (`test_cli_suite.py` pins `smoke.json`); ai ← `ai/ schemas/ eval/nl/`; contracts ← `schemas/ docs/api/ .github/contracts/`; eval ← `eval/ agent/ayna_agent/ ai/ayna_ai/ client/src/shared/ docs/rs/scenarios.md schemas/`. A memory-only PR runs no test job. **If your tests start reading a file outside these folders, add it to the job's regex**, or a change there will not run them. Why: in November every job ran on every change and the private repo's monthly Actions minutes (~3000, Windows ×2) ran out on 2026-11-15; GitHub then refuses every job with a "payments failed or spending limit" message.

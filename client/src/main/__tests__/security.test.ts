@@ -4,6 +4,8 @@ import {
   contentSecurityPolicy,
   isAllowedNavigation,
   isAllowedRequest,
+  isTrustedSender,
+  reportWebPreferences,
   secureWebPreferences,
 } from '../security.ts'
 
@@ -73,6 +75,21 @@ describe('isAllowedNavigation', () => {
   })
 })
 
+describe('isTrustedSender', () => {
+  const entry = 'file:///app/out/renderer/index.html'
+
+  it("accepts only the entry page's frame", () => {
+    assert.ok(isTrustedSender(entry, entry))
+    assert.ok(isTrustedSender(`${DEV}/`, DEV))
+    assert.equal(isTrustedSender('file:///app/out/renderer/other.html', entry), false)
+    assert.equal(isTrustedSender('https://example.com/', entry), false)
+  })
+
+  it('rejects a destroyed frame', () => {
+    assert.equal(isTrustedSender(undefined, entry), false)
+  })
+})
+
 describe('secureWebPreferences', () => {
   it('isolates the renderer from Node', () => {
     const prefs = secureWebPreferences('/app/out/preload/index.js')
@@ -82,5 +99,16 @@ describe('secureWebPreferences', () => {
     assert.equal(prefs.webSecurity, true)
     assert.equal(prefs.webviewTag, false)
     assert.equal(prefs.preload, '/app/out/preload/index.js')
+  })
+})
+
+describe('reportWebPreferences', () => {
+  it('gives the report window no script, no Node and no bridge', () => {
+    const prefs = reportWebPreferences()
+    assert.equal(prefs.javascript, false)
+    assert.equal(prefs.contextIsolation, true)
+    assert.equal(prefs.nodeIntegration, false)
+    assert.equal(prefs.sandbox, true)
+    assert.equal('preload' in prefs, false)
   })
 })

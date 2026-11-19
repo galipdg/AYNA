@@ -8,8 +8,8 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Requirements Specification in the style of ISO/IEC/IEEE 29148:2018 §9.6 [40] |
-| Version | 0.7 — draft |
-| Date | 2026-10-31 |
+| Version | 0.9 — draft |
+| Date | 2026-11-15 |
 | Status | Draft, reviewed by Ömerfaruk and Hasan (#35, PR #143); their comments are folded in. The use cases are the team's proposal until the advisor agrees them (#19, Appendix E.2). Final PDF: #41, due 23 Nov 2026 |
 
 ## Document history
@@ -20,6 +20,8 @@
 | 0.5 | 2026-10-27 | Galip | Full draft (#35): every section filled; FR and NFR tables of #34 moved in from `docs/rs/scenarios.md`; NFR-37–NFR-44 added; use-case catalogue, traceability and open items. Review by Galip and Ömerfaruk pending |
 | 0.6 | 2026-10-29 | Galip | Review comments of Ömerfaruk and Hasan on PR #143 (#35): FR-30 and FR-23 follow the healing-proposal-transport ADR (the client or CLI runner delivers results; CLI exit codes 0/1/2); API tokens for CI close TBD-10 (FR-23, FR-39, NFR-32); FR-08 keeps steps on rename; FR-35 gets a fifth category, "search incomplete", and FR-29 heals only after a complete search (TBD-5 closed); NFR-02, NFR-04, NFR-05 reworded; the owners' numbers team-confirmed (TBD-4); load test #152 (TBD-9 closed); TBD-6 closed; NFR-45 (result outbox) and NFR-46 (AI service port) added |
 | 0.7 | 2026-10-31 | Galip | NFR-45: a result the server refuses as invalid is set aside and shown, not retried (Ömerfaruk's review of PR #164; ADR healing proposal transport) |
+| 0.8 | 2026-11-02 | Galip | §2.2 project documents brought up to date: REST API v0 generated (#160, Ömerfaruk's #31 note), element, snapshot and healing-proposal schemas merged, SDD sections merged. NFR-32 names its public endpoints: login, health, the OpenAPI document and Swagger UI (Ömerfaruk, #60) |
+| 0.9 | 2026-11-15 | Galip | TBD-2 closed: the client is in Turkish and English, chosen by the user (NFR-17; ADR client-ui-language, #185). NFR-07 and NFR-08 confirmed by the load test (#152, Ömerfaruk, 2026-11-10: 100.0 % of requests within 500 ms, p95 31.9 ms) |
 | 1.0 | planned, 23 Nov 2026 | Galip | Submitted version (#41) |
 
 Approval: each version is approved in a pull request by the three team members; the advisor reviews the draft at the Tuesday meeting. Galip leads the RS (ADR windows-work-to-hasan); the plan still names Hasan (TBD-8).
@@ -140,7 +142,7 @@ Users are Turkish-speaking testers and test engineers in a defence or public-sec
 - In semester 1, ROLE-1 to ROLE-3 are responsibilities, not separate accounts, and one person may hold all three.
 - The AUT is a passive system actor.
 - The advisor, the HAVELSAN mentor, the AUT's development teams (who receive the testability guideline, #94) and researchers reusing the evaluation set (C4) are stakeholders but not users.
-- The client's language is open (TBD-2). Step values, expected values and NL descriptions are Turkish (NFR-16).
+- The client is in Turkish and English, chosen by the user (NFR-17; TBD-2 closed). Step values, expected values and NL descriptions are Turkish (NFR-16).
 
 #### 1.3.4 Limitations
 
@@ -265,22 +267,23 @@ Numbers follow the plan's reference list ("AYNA – 14-Week Project Plan", [1]�
 
 ### 2.2 Project documents
 
-| Document | Path | Issue | Status on 2026-10-27 |
+| Document | Path | Issue | Status on 2026-11-02 |
 |---|---|---|---|
 | Project brief | [`memory-bank/project/brief.md`](../../memory-bank/project/brief.md) | — | merged |
 | Architecture | [`memory-bank/project/architecture.md`](../../memory-bank/project/architecture.md) | — | merged |
 | Decisions (ADRs) | [`memory-bank/decisions/README.md`](../../memory-bank/decisions/README.md) | — | merged |
 | Glossary | [`memory-bank/project/glossary.md`](../../memory-bank/project/glossary.md) | — | merged |
-| Requirements workshop notes | [`docs/requirements-workshop.md`](../requirements-workshop.md) | #19 | PR #138; draft awaiting the advisor |
-| Reference scenarios (Appendix C) | [`docs/rs/scenarios.md`](scenarios.md) | #34 | PR #140 |
+| Requirements workshop notes | [`docs/requirements-workshop.md`](../requirements-workshop.md) | #19 | merged; §7 awaits the advisor |
+| Reference scenarios (Appendix C) | [`docs/rs/scenarios.md`](scenarios.md) | #34 | merged |
 | Tool comparison matrix | [`docs/tool-matrix.md`](../tool-matrix.md) | #18 | merged |
-| Literature review | `docs/literature.md` | #10, #20 | PR #126 (part 1), PR #139 (part 2) |
+| Literature review | `docs/literature.md` | #10, #20 | PR #126 (draft; section 2 from #139 is in it) |
 | Graph model | [`docs/graph-model.md`](../graph-model.md) | #14 | merged |
-| Step schema | `schemas/step.schema.json` | #13 | PR #134 |
-| Element and snapshot schemas | `schemas/element.schema.json`, `schemas/snapshot.schema.json` | #11, #12 | planned |
-| Agent JSON-RPC contract | `docs/agent-rpc.md` | #16 | PR #135 |
-| REST API (generated) | `docs/api/openapi.yaml` | #31, #52 | planned |
-| Software Design Document | `docs/sdd/` | #45, #53 | planned |
+| Step schema | [`schemas/step.schema.json`](../../schemas/step.schema.json) | #13, #147 | 0.1 merged (#134); 0.2 in PR #150 |
+| Element and snapshot schemas | [`schemas/element.schema.json`](../../schemas/element.schema.json), [`schemas/snapshot.schema.json`](../../schemas/snapshot.schema.json) | #11, #12 | 0.1 merged (#175, #180) |
+| Healing proposal schema | [`schemas/healing-proposal.schema.json`](../../schemas/healing-proposal.schema.json) | #149 | 0.2 merged (#174) |
+| Agent JSON-RPC contract | [`docs/agent-rpc.md`](../agent-rpc.md) | #16 | 0.1 merged (#135); 0.2 draft in the same file |
+| REST API (generated) | [`docs/api/openapi.yaml`](../api/openapi.yaml) | #31, #52 | v0 merged (#160); frozen as v1 at #52 |
+| Software Design Document | [`docs/sdd/SDD.md`](../sdd/SDD.md), [`docs/sdd/SDD-ai.md`](../sdd/SDD-ai.md) | #45, #48, #50, #53 | §1–4 and §6 merged (#155, #157); AI sections (#144) join as §5 at #53 |
 
 ## 3 Requirements
 
@@ -466,8 +469,8 @@ Numbers taken from an issue or the plan cite it. Every other number is marked "(
 | NFR-04 | Timed from the end of the smart wait to the return of the action, and leaving out the screenshot, the agent shall complete a step within 500 ms (proposed, to confirm). Re-reads of a checkpoint that is repeated until it holds, within the step's timeout (grid-row checks, #147), count as waiting, not as the step. | Must | UC-09 | T — timings in the playback tests (#40) |
 | NFR-05 | A step without `timeoutMs` shall wait at most 10 000 ms (team-confirmed, #143; advisor Q5 pending); the default shall be configurable per run, and `timeoutMs` per step from 0 to 600 000 ms, where 0 means check once without waiting, not "use the default". | Must | UC-09; #40; step schema (#13) | T |
 | NFR-06 | A step's status shall appear in every client that has the test open within 1 s of the agent's step result (team-confirmed, #140; advisor Q5 pending). | Must | UC-09; #44 | T + D — SC-17 |
-| NFR-07 | The server shall answer 95 % of REST requests, other than report downloads, snapshot imports and screenshot uploads, within 500 ms under the load of NFR-08 (team-confirmed, #140; advisor Q5 pending). | Must | Q5 (#19) | T — load test (#152) |
-| NFR-08 | One server shall serve at least 10 clients working at the same time, with at least 1 000 repository objects and 500 tests per application (team-confirmed, #140; advisor Q5 pending). | Must | Q5 (#19); CON-04 | T — load test (#152) |
+| NFR-07 | The server shall answer 95 % of REST requests, other than report downloads, snapshot imports and screenshot uploads, within 500 ms under the load of NFR-08 (team-confirmed, #140; confirmed by the load test, #152; advisor Q5 pending). | Must | Q5 (#19) | T — load test (#152): met on 2026-11-10, 100.0 % within 500 ms, overall p95 31.9 ms, 0 errors (`server/loadtest/results/2026-11-10-apple-m3.md`; method in `server/loadtest/README.md`) |
+| NFR-08 | One server shall serve at least 10 clients working at the same time, with at least 1 000 repository objects and 500 tests per application (team-confirmed, #140; confirmed by the load test, #152; advisor Q5 pending). | Must | Q5 (#19); CON-04 | T — load test (#152): 10 clients without pauses, 1 000 objects and 500 tests of 10 steps in one application, on one Apple M3 with server and Neo4j in 4 CPUs / 4.1 GiB (`server/loadtest/results/2026-11-10-apple-m3.md`). Not covered: WebSocket (NFR-06), and the load generator ran on the server's machine |
 | NFR-09 | The server shall generate the HTML report of a 50-step run within 5 s (team-confirmed, #140; advisor Q5 pending). | Must | UC-10; #59 | T |
 | NFR-10 | Healing candidates for one repository object shall be generated within 1 s. | Must | UC-12; #42 | T — SC-29 |
 | NFR-11 | A retrieval query for NL context (vector top-k plus the current screen's subgraph) shall return within 200 ms. | Must | UC-08; #58 | T |
@@ -484,7 +487,7 @@ AYNA's users are mostly not programmers (§1.3.3), so the requirement is codeles
 | NFR-14 | A user shall be able to inspect elements, maintain the repository, build tests with checkpoints, run them, read reports and decide on healing proposals in the client without writing code or typing JSON. | Must | brief; ROLE-1; UC-02–UC-04, UC-06, UC-07, UC-09, UC-10, UC-12 | D — SC-14, SC-17, SC-30 at the weekly session |
 | NFR-15 | Every error shown to the user shall name the step, repository object, field or URL it concerns. | Must | #25, #32, #39, #40 | I — review of messages; T where an issue fixes the text (#39, #40) |
 | NFR-16 | The system shall accept, store, show and replay Turkish characters (ç, ğ, ı, İ, ö, ş, ü) in test names, step values, expected values and NL descriptions without change. | Must | CON-03 | T — SC-20, SC-26 |
-| NFR-17 | The client's labels and messages shall be in TBD-2 (Turkish, English or both; Q4). | Must | CON-03; Q4 (#19) | I |
+| NFR-17 | The client's labels and messages shall be available in Turkish and in English, in the language the user chooses; the choice applies at once and is kept on the machine (TBD-2 closed: team decision 2026-11-03, ADR client-ui-language, #185). | Must | CON-03; Q4 (#19); #185 | I, T — a client test keeps the two dictionaries in step |
 | NFR-18 | In a SUS study with non-programmer users, AYNA shall score at least 68 (proposed, to confirm). | Won't (S1) | brief; #104 | A — SUS study, semester 2 (#104) |
 
 ### 3.5 Interface requirements
@@ -509,7 +512,7 @@ The client is one desktop window per test machine. The screens and the requireme
 | Change impact | Choose two versions, follow links to affected tests | FR-34 | #81 |
 | Agent status indicator | See whether the local agent is connected | FR-05 | #17 |
 
-Rules that apply to every screen: no code or JSON (NFR-14), errors that name their subject (NFR-15), Turkish text kept intact (NFR-16), one UI language (NFR-17, TBD-2), and correct picking and outlining under display scaling:
+Rules that apply to every screen: no code or JSON (NFR-14), errors that name their subject (NFR-15), Turkish text kept intact (NFR-16), one UI language at a time, the user's choice (NFR-17), and correct picking and outlining under display scaling:
 
 | ID | Requirement | Priority | Source | Verification |
 |---|---|---|---|---|
@@ -635,7 +638,7 @@ AYNA runs in-house for one test unit, so semester 1 sets no uptime percentage. W
 | NFR-29 | At run time no AYNA component (client, agent, CLI runner, server, Neo4j, AI service) shall connect to a host outside the closed network: no CDN, telemetry, auto-update, licence check or cloud model, and the client shall load all of its fonts, scripts and styles from the installed files. | Must | CON-01; brief; architecture | D — firewall log in the air-gapped test (#85), SC-36; I — client bundle |
 | NFR-30 | The AI service shall start and generate steps with the network disabled, with the model weights and the embedding model bundled in its image and nothing downloaded at start. | Must | CON-01; #71, #82 | T — #82; D — SC-36 |
 | NFR-31 | The agent shall listen on 127.0.0.1 only and refuse every connection that does not carry the per-session token (at least 16 characters, created by the client and passed in an environment variable, never in a command line or URL) in an `Authorization: Bearer` header. | Must | CON-07; #16 | T — agent RPC tests (#16) |
-| NFR-32 | The server shall store passwords only as bcrypt hashes (#60) and refuse every REST and WebSocket request except login unless it carries a valid session or a valid API token (team-confirmed, #140; advisor Q8 pending). | Must | UC-15; #60 | T |
+| NFR-32 | The server shall store passwords only as bcrypt hashes (#60) and refuse every REST and WebSocket request unless it carries a valid session or a valid API token, except three public endpoints: login, the health check `GET /api/health` (the Compose healthcheck and the client's first-run server check, SC-02) and the OpenAPI document with Swagger UI (team-confirmed, #140; advisor Q8 pending). | Must | UC-15; #60; ADR accounts and tokens | T |
 | NFR-46 | The AI service's port shall not be published on the backend host; only the server shall reach the AI service, over the Compose network. | Must | CON-01; #82 | I — review of `docker-compose.yml` (#82) |
 
 #### 3.8.4 Maintainability
@@ -1103,14 +1106,14 @@ Every `TBD-n` in the document, with its owner and the issue that closes it. By t
 | ID | Item | Where it is used | Owner | Closes in |
 |---|---|---|---|---|
 | TBD-1 | Pilot apps P1 and P2 (product and UI technology) | C.2; SC-06, SC-07, SC-23; NFR-27; §4.2 | hasan | D1, #21 (after #6) |
-| TBD-2 | Client UI language: Turkish, English or both | NFR-17; §1.3.3 | galip (advisor, Q4) | #19 §7 |
+| TBD-2 | **Closed 2026-11-03** (team decision, #185): Turkish and English, chosen by the user (ADR client-ui-language) | NFR-17; §1.3.3 | galip (advisor, Q4) | #185 |
 | TBD-3 | Supported Windows versions of the test machines. Note for the decision: Windows 10 22H2 has been out of mainstream support since 14 Oct 2025, and closed-network sites often run LTSC editions (D5) | NFR-19; §1.3.5, §3.5.3 | hasan, omer | Weekly Windows session, before #41 |
 | TBD-4 | Numbers marked "(proposed, to confirm)": NFR-04 (500 ms per step; hasan holds playback to it, verifiable once #40 exists), NFR-13 (16 GB RAM, no GPU), NFR-18 (SUS ≥ 68), NFR-19 (Windows versions). Team-confirmed, advisor Q5 pending: NFR-02 (sample-app windows only), NFR-05 (hasan, #143); NFR-06–NFR-09 (omer, #140). NFR-32 is team-confirmed (#140); its open point is Q8 | §3.3–§3.8 | hasan: NFR-04 · galip: NFR-13, NFR-18 | Q5 at the advisor meeting; before #41 |
 | TBD-5 | **Closed 2026-10-29** (hasan, #143 review). Boundary between "element not found" and "timeout": "element not found" when no element matches the primary or fallback properties by the end of the wait (healing starts); "timeout" when an element matches but does not become visible and enabled in time (no healing). Added: a fifth category, "search incomplete", when the search or the snapshot runs out of its budget before covering the window; it never starts healing, because candidates from an incomplete tree would give a confident but unfounded proposal | FR-29, FR-35; SC-19, SC-25, SC-29; UC-09, UC-11 | hasan | Built in #40, #63; the budget in #12 |
 | TBD-6 | **Closed 2026-10-29** (hasan, #143 and #151 reviews). After a "repair proposed" step the agent performs no further step of that test, its remaining steps are marked "not run", the run is failed, and in a suite the next test runs. One run gives at most one proposal | FR-30; SC-29, SC-31; UC-12 | hasan | Built in #73 |
 | TBD-7 | The project's own licence, for the code and for the open evaluation set (C4) | §1.3.5 | team (galip raises it) | Team decision before #41; needed by #90 at the latest |
 | TBD-8 | RS lead: the plan's "Team and roles" and WP1 rows still name Hasan as RS lead, while ADR windows-work-to-hasan moved the RS chain (#27, #34, #35, #41) to Galip. The plan (Claude Docs) needs updating | Document history; §4.4 | galip | Next plan revision, before #41 |
-| TBD-9 | **Closed 2026-10-29** (omer, #143 review): the load test for NFR-07 and NFR-08 is #152 (Week 8, before G2); its tool is chosen there | NFR-07, NFR-08 | omer | #152 |
+| TBD-9 | **Closed 2026-10-29** (omer, #143 review): the load test for NFR-07 and NFR-08 is #152. Run on 2026-11-10: both met, numbers kept (`server/loadtest/results/2026-11-10-apple-m3.md`) | NFR-07, NFR-08 | omer | #152 |
 | TBD-10 | **Closed 2026-10-29** (omer, #143 review; option 5a of ADR healing proposal transport). The CLI runner authenticates with a revocable API token of a CI service account, passed in `AYNA_SERVER_TOKEN` as a Bearer token; no human password lives on the CI machine | FR-23, FR-39; NFR-32; UC-14; ROLE-5; §3.5.4 | omer, hasan | #60, #61 |
 | TBD-11 | One reference numbering for RS, SDD and report. The RS keeps the plan's [1]–[39] and adds [40]–[43]. `docs/literature.md` numbers differ from the plan, and #20 gives other sources the provisional numbers [40]–[47] | §2.1 | galip, omer | Before #41 |
 
@@ -1123,7 +1126,7 @@ The requirements workshop (#19) put eight questions to the advisor; its §7 reco
 | Q1 | Are ROLE-1 to ROLE-5 right, and are the account roles admin and tester enough, or does approving healing need its own permission? | §1.3.3; UC-12, UC-15; FR-39 | Open |
 | Q2 | Are UC-01 to UC-16 complete, and is the cut-order priority acceptable? | §3.1, Appendix B; every Source column | Open |
 | Q3 | Is the out-of-scope list right, especially the recorder and data-driven tests in semester 2? | §1.2 (OOS-08, OOS-10) | Open |
-| Q4 | Client UI in Turkish, English or both? May the RS be in English? | NFR-17 (TBD-2); the whole document | Open |
+| Q4 | Client UI in Turkish, English or both? May the RS be in English? | NFR-17 (TBD-2); the whole document | UI language decided by the team (both, TBD-2 closed, #185); the RS language is still open |
 | Q5 | Which response times and capacity should the RS commit to? | §3.3 (TBD-4), NFR-07, NFR-08 | Open |
 | Q6 | Is there a course RS template, or is the 29148 structure acceptable? | The structure of this document; Appendix D | Open |
 | Q7 | Any HAVELSAN mentor input on the target technology; should the RS name the pilot apps? | TBD-1; §1.3.5 (D5) | Open |

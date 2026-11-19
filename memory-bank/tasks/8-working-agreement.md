@@ -58,6 +58,7 @@ Not applicable — a document, no runtime behaviour.
   closed in this session no matter how good the document is.
 - 2026-10-25 — `eval/` has no CI job and no `pyproject.toml`, while
   `conventions.md` requires `pyproject.toml` + `ruff` for every Python module.
+  (**2026-11-12: no longer true — #122 replaced it with `eval/pyproject.toml`.**)
   `eval/apps/trial/` currently uses `requirements.txt` (user's choice in #9) and
   has never been linted, so nothing guards its 7 pure tests. omer offered to add
   the job once eval has a `pyproject.toml` (his note in hasan's inbox, #3).

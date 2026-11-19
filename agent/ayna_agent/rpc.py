@@ -33,8 +33,19 @@ from websockets.http11 import Request, Response
 
 from ayna_agent import __version__
 
+# Defined without the WebSocket server's imports, so a backend can raise them on its own
+# (#29); re-exported here because the names were contractual before the move.
+from ayna_agent.errors import (
+    BadStepDocument,
+    SnapshotTimeout,
+    UiaUnavailable,
+    WindowNotFound,
+)
+
 HOST = "127.0.0.1"
-RPC_VERSION = "0.1"
+# `$defs/version` of schemas/agent-rpc.schema.json that this agent implements (ADR
+# contracts-v1-freeze). Bump it with the schema: an addition is a minor version.
+RPC_VERSION = "1.2"
 TOKEN_ENV = "AYNA_AGENT_TOKEN"
 MIN_TOKEN_LENGTH = 16
 MAX_TIMEOUT_MS = 600_000
@@ -50,18 +61,6 @@ UIA_UNAVAILABLE = -32001
 SNAPSHOT_TIMEOUT = -32002
 
 log = logging.getLogger(__name__)
-
-
-class WindowNotFound(Exception):
-    """No top-level window has the requested handle (it may have closed)."""
-
-
-class UiaUnavailable(Exception):
-    """UI Automation cannot run here: not Windows, or no backend yet."""
-
-
-class SnapshotTimeout(Exception):
-    """The snapshot walk ran out of its time budget before it finished."""
 
 
 class Desktop(Protocol):
@@ -81,9 +80,35 @@ class Desktop(Protocol):
         when the budget runs out."""
         ...
 
+    def element_from_point(self, x: int, y: int) -> dict[str, Any]:
+        """The element at a physical-pixel point, for the Spy's pick hotkey (#22).
+
+        Never raises for the point itself: a point with no window, or one in a window the
+        backend has not captured, is an answer with nulls, so the client has one code path."""
+        ...
+
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+        run_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Play a step document against one window; one result per step, in order (#26).
+
+        `run_id` groups the screenshots of one run in one directory (#54), also when a client
+        sends one step per call (#44).
+
+        Reading the window is how a target is resolved, so this raises the same errors as
+        `snapshot`. A step that merely fails is a `failed` result, not an error: a run that
+        returns results is more useful than one that raises."""
+        ...
+
 
 class UnavailableDesktop:
-    """Stand-in until recognition/ provides a UI Automation backend (#12)."""
+    """A desktop that answers -32001 to everything. Used by the tests, and a deliberate
+    stand-in for a host where `UiaDesktop.setup()` cannot run (#12)."""
 
     def __init__(self, reason: str) -> None:
         self.reason = reason
@@ -92,6 +117,19 @@ class UnavailableDesktop:
         raise UiaUnavailable(self.reason)
 
     def snapshot(self, handle: int, timeout_ms: int | None) -> dict[str, Any]:
+        raise UiaUnavailable(self.reason)
+
+    def element_from_point(self, x: int, y: int) -> dict[str, Any]:
+        raise UiaUnavailable(self.reason)
+
+    def run_steps(
+        self,
+        handle: int,
+        steps: dict[str, Any],
+        targets: dict[str, Any],
+        default_timeout_ms: int | None = None,
+        run_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         raise UiaUnavailable(self.reason)
 
 
@@ -115,6 +153,8 @@ class Dispatcher:
             "ping": self._ping,
             "listWindows": self._list_windows,
             "snapshot": self._snapshot,
+            "elementFromPoint": self._element_from_point,
+            "runSteps": self._run_steps,
         }
 
     async def handle(self, text: str) -> str | None:
@@ -182,6 +222,85 @@ class Dispatcher:
             )
         return await self._run(self._desktop.snapshot, handle, timeout_ms)
 
+    async def _element_from_point(self, params: Params) -> dict[str, Any]:
+        """`elementFromPoint` (#22), for the Spy's pick hotkey.
+
+        `x` and `y` are **signed**: they are physical pixels in virtual-desktop coordinates,
+        and a maximised window on a scaled display starts at a negative origin, so the check
+        is "an int" rather than `_positive_int`.
+        """
+        required = {"x", "y"}
+        if not isinstance(params, dict) or not required <= set(params):
+            raise RpcError(
+                INVALID_PARAMS, 'Invalid params: expected {"x": <int>, "y": <int>}'
+            )
+        unknown = set(params) - required
+        if unknown:
+            raise RpcError(INVALID_PARAMS, f"Invalid params: unknown {sorted(unknown)}")
+        for name in ("x", "y"):
+            if not _an_int(params[name]):
+                raise RpcError(INVALID_PARAMS, f"Invalid params: {name} must be an int")
+        return await self._run(
+            self._desktop.element_from_point, params["x"], params["y"]
+        )
+
+    async def _run_steps(self, params: Params) -> dict[str, Any]:
+        """`runSteps` (#26, the request `docs/agent-rpc.md` leaves to #40).
+
+        `runId` and `appVersionId` are accepted and ignored: they are what the healing
+        transport needs (#149) and carrying them from the start means the client can send one
+        shape before and after #40. Unknown keys are still refused, so a typo is not silently
+        dropped.
+        """
+        required = {"handle", "steps", "targets"}
+        if not isinstance(params, dict) or not required <= set(params):
+            raise RpcError(
+                INVALID_PARAMS,
+                'Invalid params: expected {"handle": <int>, "steps": {...}, "targets": {...}}',
+            )
+        unknown = set(params) - required - {"runId", "appVersionId", "defaultTimeoutMs"}
+        if unknown:
+            raise RpcError(INVALID_PARAMS, f"Invalid params: unknown {sorted(unknown)}")
+        handle = params["handle"]
+        if not _positive_int(handle):
+            raise RpcError(
+                INVALID_PARAMS, "Invalid params: handle must be a positive int"
+            )
+        if not isinstance(params["steps"], dict):
+            raise RpcError(
+                INVALID_PARAMS, "Invalid params: steps must be a step document object"
+            )
+        targets = params["targets"]
+        if not isinstance(targets, dict) or not all(
+            isinstance(target, dict) for target in targets.values()
+        ):
+            raise RpcError(
+                INVALID_PARAMS,
+                "Invalid params: targets must map a logical name to its property sets",
+            )
+        default_timeout_ms = params.get("defaultTimeoutMs")
+        if "defaultTimeoutMs" in params and not (
+            _positive_int(default_timeout_ms) and default_timeout_ms <= MAX_TIMEOUT_MS
+        ):
+            raise RpcError(
+                INVALID_PARAMS,
+                f"Invalid params: defaultTimeoutMs must be an int from 1 to {MAX_TIMEOUT_MS}",
+            )
+        run_id = params.get("runId")
+        if run_id is not None and not isinstance(run_id, str):
+            raise RpcError(INVALID_PARAMS, "Invalid params: runId must be a string")
+        # The backend names the run's screenshot directory after `run_id` and checks that it
+        # can be one (#54); a client sending one step per call (#44) needs the same folder.
+        results = await self._run(
+            self._desktop.run_steps,
+            handle,
+            params["steps"],
+            targets,
+            default_timeout_ms,
+            run_id,
+        )
+        return {"results": results}
+
     async def _run(self, call: Callable[..., Any], *args: Any) -> Any:
         loop = asyncio.get_running_loop()
         try:
@@ -194,10 +313,19 @@ class Dispatcher:
             ) from exc
         except SnapshotTimeout as exc:
             raise RpcError(SNAPSHOT_TIMEOUT, f"Snapshot timeout: {exc}") from exc
+        except BadStepDocument as exc:
+            # A document the runner cannot read at all is a caller mistake, so -32602 rather
+            # than -32603. Everything a single *step* can get wrong is a `failed` result.
+            raise RpcError(INVALID_PARAMS, f"Invalid params: {exc}") from exc
+
+
+def _an_int(value: Any) -> bool:
+    """An int of any sign. `True` is an `int` in Python and is not one here."""
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 def _positive_int(value: Any) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+    return _an_int(value) and value > 0
 
 
 def _valid_id(value: Any) -> bool:
@@ -370,8 +498,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    # Swapped for the recognition/ backend once it exists (#12, hasan).
-    desktop = UnavailableDesktop("no UI Automation backend yet (#12)")
+    # The recognition backend reads UI Automation and sets this process's DPI awareness in
+    # its setup(). Where it cannot run (not Windows, no pywinauto) the server still starts
+    # and every UIA method answers -32001 with the reason (`UiaDesktop.setup`).
+    from ayna_agent.recognition.uia import UiaDesktop
+
+    desktop: Desktop = UiaDesktop()
     try:
         asyncio.run(_serve_forever(desktop, token, args.port))
     except KeyboardInterrupt:
@@ -380,4 +512,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run the module's own `main`, not this `__main__` copy of it. `python -m ayna_agent.rpc`
+    # imports this file as `__main__`, and the recognition backend imports it again as
+    # `ayna_agent.rpc`; the two copies then have two different `UiaUnavailable` classes, so a
+    # backend's error escaped the dispatcher as -32603 instead of -32001 (#12).
+    from ayna_agent.rpc import main as _main
+
+    sys.exit(_main())

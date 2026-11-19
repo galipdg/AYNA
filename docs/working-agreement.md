@@ -16,12 +16,19 @@ Issue: [#8](https://github.com/galipdg/AYNA/issues/8).
 
 | id | Person | GitHub | Owns (primary) |
 |---|---|---|---|
-| `galip` | Galip Enes Doğan | @galipdg | `ai/`, `agent/ayna_agent/recognition/`, `agent/ayna_agent/heal/`, `eval/nl/` |
-| `omer` | Ömerfaruk Sarıbal | @omerfaruksaribal | `server/`, `client/`, `.github/`, `docker/` |
-| `hasan` | Hasan Berk Yanıkkaya | @HasanBerk18 | `agent/ayna_agent/playback/`, `agent/ayna_cli/`, `eval/` (except `nl/`), `docs/` |
+| `galip` | Galip Enes Doğan | @galipdg | `ai/`, `agent/ayna_agent/heal/`, `agent/ayna_agent/rpc.py`, `eval/nl/`, `docs/rs/`, `docs/report/` |
+| `omer` | Ömerfaruk Sarıbal | @omerfaruksaribal | `server/`, `client/`, `.github/`, `docker/`, `docs/sdd/`, `docs/ui/` |
+| `hasan` | Hasan Berk Yanıkkaya | @HasanBerk18 | `agent/ayna_agent/recognition/`, `agent/ayna_agent/playback/`, `agent/ayna_cli/`, `eval/` (except `nl/`), `docs/` (except `rs/`, `report/`, `sdd/`, `ui/`) |
 
 Shared by all three: `schemas/` (frozen contracts — changing one needs an ADR and
 everyone's approval), `memory-bank/project/`, `memory-bank/decisions/`.
+
+This table follows ADR *windows-work-to-hasan*: work that needs a Windows machine (UI
+Automation, pilot apps, measurements on them) is hasan's, which moved
+`agent/ayna_agent/recognition/` to him. The client screens stay with omer, who builds them
+on macOS and checks them at the weekly Windows session (§11). The root
+[`AGENTS.md`](../AGENTS.md) §2 holds the same table and is the version the agents read, so
+the two must be changed together.
 
 **Stay in your lane.** Change only what you own or what the current issue clearly
 requires. If someone else's code or memory needs a change, do not edit it: append

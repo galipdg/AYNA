@@ -1,0 +1,1852 @@
+{
+  "version": "0.1",
+  "snapshotId": "2d99e291-0c34-49eb-b844-2afce89bade9",
+  "capture": {
+    "startedAt": "2026-11-14T10:51:34+03:00",
+    "durationMs": 1364,
+    "budgetMs": 5000,
+    "elementCount": 87,
+    "readErrors": 0,
+    "agentVersion": "0.0.0",
+    "featureVersion": "features-v0"
+  },
+  "app": {
+    "exeName": "KeePass.exe",
+    "fileVersion": "2.61.1.0"
+  },
+  "window": {
+    "handle": 329464,
+    "title": "Options",
+    "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+    "processId": 2100,
+    "bounds": [
+      566,
+      202,
+      1353,
+      817
+    ],
+    "dpi": 120
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parentId": null,
+      "element": {
+        "automationId": "OptionsForm",
+        "name": "Options",
+        "controlType": "Window",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          566,
+          202,
+          1353,
+          817
+        ],
+        "dpi": 120,
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329464
+      }
+    },
+    {
+      "id": "e1",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_tbSearch",
+        "name": "Remember recently used files:",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          585,
+          774,
+          826,
+          796
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "helpText": "Search...",
+        "accessKey": "Alt+r",
+        "nativeWindowHandle": 329458
+      }
+    },
+    {
+      "id": "e2",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_tabMain",
+        "controlType": "Tab",
+        "className": "WindowsForms10.SysTabControl32.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          585,
+          315,
+          1334,
+          763
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 263920
+      }
+    },
+    {
+      "id": "e3",
+      "parentId": "e2",
+      "element": {
+        "automationId": "m_tabSecurity",
+        "name": "Security",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          589,
+          342,
+          1330,
+          759
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329454
+      }
+    },
+    {
+      "id": "e4",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_linkSecOptAdm",
+        "name": "For administrators",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          834,
+          731,
+          948,
+          747
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 0,
+        "nearestLabel": "For experts",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329452
+      }
+    },
+    {
+      "id": "e5",
+      "parentId": "e4",
+      "element": {
+        "name": "For administrators",
+        "controlType": "Hyperlink",
+        "bounds": [
+          834,
+          731,
+          941,
+          747
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Text",
+        "siblingIndex": 0,
+        "nearestLabel": "For experts",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e6",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_linkSecOptEx",
+        "name": "For experts",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          748,
+          731,
+          822,
+          747
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 1,
+        "nearestLabel": "More security options:",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329448
+      }
+    },
+    {
+      "id": "e7",
+      "parentId": "e6",
+      "element": {
+        "name": "For experts",
+        "controlType": "Hyperlink",
+        "bounds": [
+          748,
+          731,
+          815,
+          747
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Text",
+        "siblingIndex": 0,
+        "nearestLabel": "More security options:",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e8",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_lblSecOpt",
+        "name": "More security options:",
+        "controlType": "Text",
+        "className": "WindowsForms10.STATIC.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          593,
+          731,
+          730,
+          747
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 591574
+      }
+    },
+    {
+      "id": "e9",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_numLockAfterGlobalTime",
+        "name": "Spinner",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1025,
+          388,
+          1113,
+          410
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 3,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 918620
+      }
+    },
+    {
+      "id": "e10",
+      "parentId": "e9",
+      "element": {
+        "automationId": "1050270",
+        "name": "NumericUpDown",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1092,
+          389,
+          1112,
+          409
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 1050270
+      }
+    },
+    {
+      "id": "e11",
+      "parentId": "e10",
+      "element": {
+        "name": "Up",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          389,
+          1112,
+          399
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e12",
+      "parentId": "e10",
+      "element": {
+        "name": "Down",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          399,
+          1112,
+          409
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e13",
+      "parentId": "e9",
+      "element": {
+        "automationId": "394974",
+        "name": "Spinner",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1027,
+          390,
+          1091,
+          408
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 394974
+      }
+    },
+    {
+      "id": "e14",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_cbLockAfterGlobalTime",
+        "name": "Lock workspace after global user inactivity (seconds):",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          597,
+          389,
+          943,
+          409
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 4,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+o",
+        "nativeWindowHandle": 329442
+      }
+    },
+    {
+      "id": "e15",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_lvSecurityOptions",
+        "controlType": "List",
+        "className": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          597,
+          484,
+          1316,
+          722
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 5,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 329446
+      }
+    },
+    {
+      "id": "e16",
+      "parentId": "e15",
+      "element": {
+        "automationId": "NonClientVerticalScrollBar",
+        "name": "Vertical",
+        "controlType": "ScrollBar",
+        "bounds": [
+          1293,
+          486,
+          1314,
+          720
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List",
+        "siblingIndex": 0,
+        "nearestLabel": "General",
+        "nearestLabelSource": "geometric",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e17",
+      "parentId": "e16",
+      "element": {
+        "automationId": "UpButton",
+        "name": "Line up",
+        "controlType": "Button",
+        "bounds": [
+          1293,
+          486,
+          1314,
+          507
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/ScrollBar",
+        "siblingIndex": 0,
+        "nearestLabel": "General",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e18",
+      "parentId": "e16",
+      "element": {
+        "automationId": "ScrollbarThumb",
+        "name": "Position",
+        "controlType": "Thumb",
+        "bounds": [
+          1293,
+          507,
+          1314,
+          613
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/ScrollBar",
+        "siblingIndex": 1,
+        "nearestLabel": "General",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e19",
+      "parentId": "e16",
+      "element": {
+        "automationId": "DownPageButton",
+        "name": "Page down",
+        "controlType": "Button",
+        "bounds": [
+          1293,
+          613,
+          1314,
+          699
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/ScrollBar",
+        "siblingIndex": 2,
+        "nearestLabel": "General",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e20",
+      "parentId": "e16",
+      "element": {
+        "automationId": "DownButton",
+        "name": "Line down",
+        "controlType": "Button",
+        "bounds": [
+          1293,
+          699,
+          1314,
+          720
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/ScrollBar",
+        "siblingIndex": 3,
+        "nearestLabel": "Clipboard (Main Entry List)",
+        "nearestLabelSource": "parentRow",
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e21",
+      "parentId": "e15",
+      "element": {
+        "name": "General",
+        "controlType": "Group",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          486,
+          1293,
+          662
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e22",
+      "parentId": "e21",
+      "element": {
+        "name": "Lock workspace when minimizing main window to taskbar",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          512,
+          1292,
+          532
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e23",
+      "parentId": "e22",
+      "element": {
+        "name": "Lock workspace when minimizing main window to taskbar",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          512,
+          1292,
+          532
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e24",
+      "parentId": "e21",
+      "element": {
+        "name": "Lock workspace when minimizing main window to tray",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          533,
+          1292,
+          553
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e25",
+      "parentId": "e24",
+      "element": {
+        "name": "Lock workspace when minimizing main window to tray",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          533,
+          1292,
+          553
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e26",
+      "parentId": "e21",
+      "element": {
+        "name": "Lock workspace when locking the computer or switching the user",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          554,
+          1292,
+          574
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e27",
+      "parentId": "e26",
+      "element": {
+        "name": "Lock workspace when locking the computer or switching the user",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          554,
+          1292,
+          574
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e28",
+      "parentId": "e21",
+      "element": {
+        "name": "Lock workspace when the computer is about to be suspended",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          575,
+          1292,
+          595
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 3,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e29",
+      "parentId": "e28",
+      "element": {
+        "name": "Lock workspace when the computer is about to be suspended",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          575,
+          1292,
+          595
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e30",
+      "parentId": "e21",
+      "element": {
+        "name": "Lock workspace when the remote control mode changes",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          596,
+          1292,
+          616
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 4,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e31",
+      "parentId": "e30",
+      "element": {
+        "name": "Lock workspace when the remote control mode changes",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          596,
+          1292,
+          616
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e32",
+      "parentId": "e21",
+      "element": {
+        "name": "Exit instead of locking the workspace after the specified time",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          617,
+          1292,
+          637
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 5,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e33",
+      "parentId": "e32",
+      "element": {
+        "name": "Exit instead of locking the workspace after the specified time",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          617,
+          1292,
+          637
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e34",
+      "parentId": "e21",
+      "element": {
+        "name": "Always exit instead of locking the workspace",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          638,
+          1292,
+          658
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 6,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e35",
+      "parentId": "e34",
+      "element": {
+        "name": "Always exit instead of locking the workspace",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          638,
+          1292,
+          658
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e36",
+      "parentId": "e15",
+      "element": {
+        "name": "Clipboard (Main Entry List)",
+        "controlType": "Group",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          662,
+          1293,
+          720
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e37",
+      "parentId": "e36",
+      "element": {
+        "name": "Clear clipboard when closing KeePass",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          688,
+          1292,
+          708
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e38",
+      "parentId": "e37",
+      "element": {
+        "name": "Clear clipboard when closing KeePass",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          688,
+          1292,
+          708
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e39",
+      "parentId": "e36",
+      "element": {
+        "name": "Do not store data in the Windows clipboard history and the cloud clipboard",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          709,
+          1292,
+          720
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e40",
+      "parentId": "e39",
+      "element": {
+        "name": "Do not store data in the Windows clipboard history and the cloud clipboard",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "bounds": [
+          599,
+          709,
+          1292,
+          720
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e41",
+      "parentId": "e36",
+      "element": {
+        "name": "Use 'Clipboard Viewer Ignore' clipboard format",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e42",
+      "parentId": "e41",
+      "element": {
+        "name": "Use 'Clipboard Viewer Ignore' clipboard format",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e43",
+      "parentId": "e15",
+      "element": {
+        "name": "Advanced",
+        "controlType": "Group",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List",
+        "siblingIndex": 3,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e44",
+      "parentId": "e43",
+      "element": {
+        "name": "Use native support library (for faster key transformations, etc.)",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e45",
+      "parentId": "e44",
+      "element": {
+        "name": "Use native support library (for faster key transformations, etc.)",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e46",
+      "parentId": "e43",
+      "element": {
+        "name": "Show warning when the key transformation settings are weak",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e47",
+      "parentId": "e46",
+      "element": {
+        "name": "Show warning when the key transformation settings are weak",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e48",
+      "parentId": "e43",
+      "element": {
+        "name": "Prevent certain screen captures",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e49",
+      "parentId": "e48",
+      "element": {
+        "name": "Prevent certain screen captures",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e50",
+      "parentId": "e43",
+      "element": {
+        "name": "Enter master key on secure desktop",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 3,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e51",
+      "parentId": "e50",
+      "element": {
+        "name": "Enter master key on secure desktop",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e52",
+      "parentId": "e43",
+      "element": {
+        "name": "Clear master key command line parameters after using them once",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 4,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e53",
+      "parentId": "e52",
+      "element": {
+        "name": "Clear master key command line parameters after using them once",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e54",
+      "parentId": "e43",
+      "element": {
+        "name": "Remember master password (in encrypted form) of a database while it is open",
+        "controlType": "ListItem",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group",
+        "siblingIndex": 5,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e55",
+      "parentId": "e54",
+      "element": {
+        "name": "Remember master password (in encrypted form) of a database while it is open",
+        "controlType": "Text",
+        "frameworkId": "WinForm",
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/List/Group/ListItem",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": true
+      }
+    },
+    {
+      "id": "e56",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_numClipClearTime",
+        "name": "Spinner",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1025,
+          420,
+          1113,
+          442
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 6,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 6096740
+      }
+    },
+    {
+      "id": "e57",
+      "parentId": "e56",
+      "element": {
+        "automationId": "1771004",
+        "name": "NumericUpDown",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1092,
+          421,
+          1112,
+          441
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 1771004
+      }
+    },
+    {
+      "id": "e58",
+      "parentId": "e57",
+      "element": {
+        "name": "Up",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          421,
+          1112,
+          431
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e59",
+      "parentId": "e57",
+      "element": {
+        "name": "Down",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          431,
+          1112,
+          441
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e60",
+      "parentId": "e56",
+      "element": {
+        "automationId": "5113024",
+        "name": "Spinner",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1027,
+          422,
+          1091,
+          440
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 5113024
+      }
+    },
+    {
+      "id": "e61",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_cbClipClearTime",
+        "name": "Clipboard auto-clear time (seconds; main entry list):",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          597,
+          421,
+          928,
+          441
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 7,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+c",
+        "nativeWindowHandle": 1508206
+      }
+    },
+    {
+      "id": "e62",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_numDefaultExpireDays",
+        "name": "Spinner",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1025,
+          452,
+          1113,
+          474
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 8,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 262260
+      }
+    },
+    {
+      "id": "e63",
+      "parentId": "e62",
+      "element": {
+        "automationId": "6292236",
+        "name": "NumericUpDown",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1092,
+          453,
+          1112,
+          473
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 6292236
+      }
+    },
+    {
+      "id": "e64",
+      "parentId": "e63",
+      "element": {
+        "name": "Up",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          453,
+          1112,
+          463
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e65",
+      "parentId": "e63",
+      "element": {
+        "name": "Down",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          463,
+          1112,
+          473
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e66",
+      "parentId": "e62",
+      "element": {
+        "automationId": "4458412",
+        "name": "Spinner",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1027,
+          454,
+          1091,
+          472
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 4458412
+      }
+    },
+    {
+      "id": "e67",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_cbDefaultExpireDays",
+        "name": "By default, new entries expire in the following number of days:",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          597,
+          453,
+          985,
+          473
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 9,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+n",
+        "nativeWindowHandle": 3866784
+      }
+    },
+    {
+      "id": "e68",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_cbLockAfterTime",
+        "name": "Lock workspace after KeePass inactivity (seconds):",
+        "controlType": "CheckBox",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          597,
+          357,
+          931,
+          377
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 10,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+l",
+        "nativeWindowHandle": 4326512
+      }
+    },
+    {
+      "id": "e69",
+      "parentId": "e3",
+      "element": {
+        "automationId": "m_numLockAfterTime",
+        "name": "Spinner",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1025,
+          356,
+          1113,
+          378
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane",
+        "siblingIndex": 11,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 4851572
+      }
+    },
+    {
+      "id": "e70",
+      "parentId": "e69",
+      "element": {
+        "automationId": "263934",
+        "name": "NumericUpDown",
+        "controlType": "Spinner",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1092,
+          357,
+          1112,
+          377
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 263934
+      }
+    },
+    {
+      "id": "e71",
+      "parentId": "e70",
+      "element": {
+        "name": "Up",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          357,
+          1112,
+          367
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e72",
+      "parentId": "e70",
+      "element": {
+        "name": "Down",
+        "controlType": "Button",
+        "bounds": [
+          1092,
+          367,
+          1112,
+          377
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e73",
+      "parentId": "e69",
+      "element": {
+        "automationId": "132864",
+        "name": "Spinner",
+        "controlType": "Edit",
+        "className": "WindowsForms10.EDIT.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1027,
+          358,
+          1091,
+          376
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab/Pane/Spinner",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": false,
+        "offscreen": false,
+        "nativeWindowHandle": 132864
+      }
+    },
+    {
+      "id": "e74",
+      "parentId": "e2",
+      "element": {
+        "name": "Security",
+        "controlType": "TabItem",
+        "bounds": [
+          587,
+          317,
+          673,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e75",
+      "parentId": "e2",
+      "element": {
+        "name": "Policy",
+        "controlType": "TabItem",
+        "bounds": [
+          673,
+          317,
+          748,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e76",
+      "parentId": "e2",
+      "element": {
+        "name": "Interface (1)",
+        "controlType": "TabItem",
+        "bounds": [
+          748,
+          317,
+          855,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 3,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e77",
+      "parentId": "e2",
+      "element": {
+        "name": "Interface (2)",
+        "controlType": "TabItem",
+        "bounds": [
+          855,
+          317,
+          962,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 4,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e78",
+      "parentId": "e2",
+      "element": {
+        "name": "Integration",
+        "controlType": "TabItem",
+        "bounds": [
+          962,
+          317,
+          1062,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 5,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e79",
+      "parentId": "e2",
+      "element": {
+        "name": "Advanced",
+        "controlType": "TabItem",
+        "bounds": [
+          1062,
+          317,
+          1162,
+          340
+        ],
+        "dpi": 120,
+        "parentPath": "Window/Tab",
+        "siblingIndex": 6,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e80",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnCancel",
+        "name": "Cancel",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1234,
+          771,
+          1334,
+          799
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 2,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 132866
+      }
+    },
+    {
+      "id": "e81",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_btnOK",
+        "name": "OK",
+        "controlType": "Button",
+        "className": "WindowsForms10.BUTTON.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          1126,
+          771,
+          1226,
+          799
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 3,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 132868
+      }
+    },
+    {
+      "id": "e82",
+      "parentId": "e0",
+      "element": {
+        "automationId": "m_bannerImage",
+        "controlType": "Pane",
+        "className": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+        "frameworkId": "WinForm",
+        "bounds": [
+          569,
+          234,
+          1350,
+          308
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 4,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "nativeWindowHandle": 132870
+      }
+    },
+    {
+      "id": "e83",
+      "parentId": "e0",
+      "element": {
+        "controlType": "TitleBar",
+        "bounds": [
+          589,
+          205,
+          1350,
+          234
+        ],
+        "dpi": 120,
+        "parentPath": "Window",
+        "siblingIndex": 5,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    },
+    {
+      "id": "e84",
+      "parentId": "e83",
+      "element": {
+        "automationId": "MenuBar",
+        "name": "System",
+        "controlType": "MenuBar",
+        "bounds": [
+          575,
+          211,
+          603,
+          239
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Alt+Space"
+      }
+    },
+    {
+      "id": "e85",
+      "parentId": "e84",
+      "element": {
+        "name": "System",
+        "controlType": "MenuItem",
+        "bounds": [
+          575,
+          211,
+          603,
+          239
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar/MenuBar",
+        "siblingIndex": 0,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false,
+        "accessKey": "Space"
+      }
+    },
+    {
+      "id": "e86",
+      "parentId": "e83",
+      "element": {
+        "name": "Close",
+        "controlType": "Button",
+        "bounds": [
+          1307,
+          203,
+          1351,
+          234
+        ],
+        "dpi": 120,
+        "parentPath": "Window/TitleBar",
+        "siblingIndex": 1,
+        "windowTitle": "Options",
+        "enabled": true,
+        "offscreen": false
+      }
+    }
+  ]
+}

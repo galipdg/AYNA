@@ -2,19 +2,40 @@
 
 Only galip's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-10-28 (orchestrator session: subagents opened PRs #137–#146, #150, #151; follow-up issues #147–#149)
-- Current issue: none in progress locally. Everything not blocked by a teammate is in review.
-- PRs in review (all CI green). The ones marked "stacked" must merge after their base:
-  - #134 `Closes #13` step schema v0 → then #142 `Refs #37` generator (stacked on #134) → then #146 `Refs #71` NL service (stacked on #142); #145 `Refs #36` NL guideline + checker (stacked on #134)
-  - #135 `Refs #16` agent RPC (waits on hasan's #12 for `snapshot`); #141 `Closes #49` healing scorer
-  - #138 `Closes #19` workshop pre-read (**do not merge before the advisor agrees**: fill §7, tick criterion 2) · #137 `Closes #27` RS outline (needs all three approvals) · #140 `Closes #34` scenarios/FR/NFR · #143 `Closes #35` RS draft (stacked on #137, #140, #138; omer must review)
-  - #144 `Closes #50` SDD AI sections in `docs/sdd/SDD-ai.md` (omer folds it into SDD.md at #53) · #139 `Refs #20` literature section 2 → into `omer/10-literature-review` (omer to add `Closes #20` to #126)
-  - #150 `Refs #147` step schema v0.2 rows (`SelectRow`, `cell`/`rowExists`/`rowCount` checks; ADR Proposed; stacked on #134) · #151 `Refs #149` healing proposal transport (`run.stepResult` → client outbox → `PUT /api/runs/{runId}/results/{stepIndex}`; fractions as strings; ADR Proposed; stacked on #135)
-- Next step: get the advisor's answers to Q1–Q8 (`docs/requirements-workshop.md` §7 on PR #138), then propagate them into #140/#143. Run the #71 offline manual check (task note `tasks/71-nl-service.md`). Answer review comments.
-- Blocked on teammates: #42 and #43 (hasan's #11/#12), the 40 pairs of #36 and then #57 (#33 ← #21 ← #6), #58 (omer's #25 + #36), #72 (#71 + #57), #76 (#49 + hasan's #46), #21 D1 (hasan's #6). #131 GPU request is on hold.
-- Follow-up issues opened 2026-10-28: #147 step schema v0.2 grid/list rows (galip, Week 6), #148 server load test NFR-07/08 (omer, proposed owner, Week 9), #149 healing proposal transport agent → server (galip with hasan/omer, Week 7). #21 and #80 got a comment: ADRs go to `memory-bank/decisions/`, not `docs/adr/`.
-- Plan doc ("AYNA – 14-Week Project Plan (Merged)") fixes: "Decision models" row (only Decider is CPU), LLM gaps row ("not desktop" is wrong: UFO), RS lead Hasan → Galip, and the reference numbering clashes with `docs/literature.md` (TBD-11; asked omer).
-- Inbox: handled but not yet deleted: omer #3, hasan #9, omer #7 (→ #131), omer #10. Delete them only when no open PR touches `people/galip/inbox.md` (#126 still does).
-- After the #150 ADR is approved: add `SelectRow` to RS FR-11 (#35), limit `column` to the grid's known headers in the #37 derivation, adopt in the #36 guideline. After the #151 ADR is approved: comment on #73/#74, update SDD AI-5 and RS TBD-6/TBD-10.
-- PR #126 (omer) conflicts with main only in `people/omer/active.md`: omer must merge main; #20 lands through it.
-- Open questions: project licence (TBD-7, team decision before #41); 30 s service timeout is tight on a loaded laptop (#71); qwen3:8b matched gold on 3/12 trial pairs vs gemma4 9/12 (#36): input for #72/#80.
+- Last update: 2026-11-19 (main-checkout session: reviews, RS final, inbox round, #36 pairs).
+- **Open PRs of mine, each waiting on reviews. galip merges them, in this order:**
+  1. **#267 RS 1.0 + PDF (#41, due 23 Nov).** After merge, **galip submits `docs/rs/RS-1.0.pdf` to the course** and comments the date and channel on #41, then closes it. Reviewers: omer and hasan. Rebuild with `python docs/rs/build_pdf.py` (needs `markdown` and Chrome) if the text changes.
+  2. **#269 inbox round:** `runId` pass-through, `rpcVersion` 1.2, `agent-rpc.md` rows, screenshot ADR Accepted, inbox cleared. Its Windows check (one `run-<runId>` folder per run) is posted on #44, label `needs-windows-test`; #36's is on #36.
+  3. **#259 → #260 (hasan) → #270 (mine, #36):** after #260 merges, retarget #270 to `main` and add `Closes #36`. hasan's §7.6 playback of my 8 scenarios is pending (Windows).
+- **Inbox:** every entry is handled. The five kept on `main` are merge anchors for #259 and #260 (`learnings.md` 2026-11-15; checked with `git merge-tree`). After those two merge, delete all but the two that are still galip's to act on:
+  - **CI billing:** Actions refused every job this morning while the repository was private (omer, #262). By 10:19Z it was public again and CI ran green on my branches. If it goes private again, Settings → Billing → the Actions spending limit or the failed payment is the only fix.
+  - **Copilot review (#256):** remove the Copilot rule from Settings → Rules → Rulesets → `protect-main`, and turn off Settings → Copilot → Code review if it is on. Keep the one-approval rule.
+- **Asked of others, not mine to do:**
+  - **hasan:**
+    - rebuild `bug5` as "list screen without its search button" (SC-31 in RS 1.0);
+    - multi-window playback and `unexpectedWindow`;
+    - approve the `failure-category` ADR (asked on #240) and the `healing-proposal-schema-0-2` ADR (#174);
+    - the 7 `test_playback_rows.py` tests that need `comtypes` on macOS;
+    - review my generator commit `2f2ec67` in #270.
+  - **omer:** finish #126 (it closes #10 and #20; section 2 is done), and take `main`'s side of my inbox when he merges.
+- **Next issues:**
+  - **#37** criterion 1: run `ai/ayna_ai/generate.py` on the 40 sample pairs with qwen3:8b and gemma4 once #270 merges. Ollama is installed (`/opt/homebrew/bin/ollama`) but its server was not running. Decide hasan's `max_text` cap first (#71 task note).
+  - **#147:** criterion 3 is met by #270 (guideline) and #40 (playback). Still to come: #37's prompt lines and derived schema for rows (do not narrow `column` to an enum, omer #221), and omer's confirmation for the step editor (#38), asked on #270.
+  - **Week 6 (24–30 Nov):** #43 (`heal/features.py`), #42 (`heal/candidates.py`), #226 (the `rpc.py` half waits on hasan's `SnapshotTimeout` fields).
+  - **#149:** AC2 waits on #74 (omer).
+  - **`ai/` (#71/#78):**
+    - an optional `reasons` request field;
+    - a 60 s default timeout (RS NFR-12 now says 60 s);
+    - `warm_up` must send the same `options` as `request_body`;
+    - label latencies as Apple silicon or Windows in `ai/README.md` and `ai/API.md`;
+    - fix `ai/spikes/llm-smoke.md`'s reproducibility claim.
+- **Human-only, overdue:**
+  - #19 (advisor workshop; RS Appendix E.2 waits on it);
+  - #131 (GPU request; draft in `ai/spikes/gpu-request-draft.md`, on hold for support programmes);
+  - #28 (G0 gate, team).
+- Local tools on this Mac:
+  - The venvs under `~/Desktop` hang (iCloud).
+  - Scratch venvs on Python 3.12 work, since `python3` is 3.15 and has no PySide6 wheels: `python3.12 -m venv <scratch>/venv-agent`, then pip the pins from `agent/pyproject.toml`, then `cd agent && PYTHONPATH=. pytest -m "not windows"`. Result: 812 passed, plus 7 `comtypes` failures, also on `main`.
+  - For `eval` and `ai/tests/test_nl_dataset.py`: `jsonschema pytest PySide6-Essentials`, run with `QT_QPA_PLATFORM=offscreen`.
+  - Client: Node ≥ 22.12 at `/opt/homebrew/opt/node@22/bin`.
+  - Server: needs Java 21 and Docker; this Mac has Java 17.

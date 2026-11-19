@@ -5,7 +5,7 @@
 | Issue | #36: this guideline and the first 40 pairs, written together with Hasan |
 | Next | #57: grow to 100 pairs (at least 20 by outsiders) and freeze a 30-pair held-out split |
 | Used by | #37 (constrained generation: 100 % of outputs on the 40 pairs parse and validate), #71 (model comparison), #77 (RQ3: step-level accuracy with and without repository context) |
-| Contract | Gold steps are `schemas/step.schema.json` v0.1 documents (#13, ADR `2026-10-27-step-schema-v0`) |
+| Contract | Gold steps are `schemas/step.schema.json` v0.2 documents (#13, #147; ADRs `2026-10-27-step-schema-v0`, `2026-10-28-step-schema-v0-2-rows`) |
 | Files | `pairs.jsonl` (dev set) · `heldout.jsonl` + `heldout.sha256` (frozen split, from #57) · `objects/<app>.json` · `pair.schema.json` · `objects.schema.json` · `check_pairs.py` |
 
 A **pair** is one Turkish test description, written as a tester would write it, together with its **gold steps**: the step document a perfect NL assistant would return for it. This file says how to write the description, how to label the gold steps and how pairs are stored, reviewed and used. Section numbers are referenced from the pairs' `notes` and from `check_pairs.py`.
@@ -35,7 +35,7 @@ One JSON object per line, UTF-8, Turkish characters written as they are (not `\u
 | `origin` | yes | `team` or `outsider` (#57). |
 | `author` | yes | `galip`, `hasan`, `omer`; for outsiders an anonymous code `ext-01`, `ext-02`… — never a name. |
 | `text` | yes | The description exactly as written. Line breaks are allowed (numbered lists); no leading or trailing white space. |
-| `gold` | yes | Step document `{"version": "0.1", "steps": [...]}` with at least one step and no step `id`. |
+| `gold` | yes | Step document `{"version": "0.2", "steps": [...]}` with at least one step and no step `id`. |
 | `notes` | no | Labelling choices a reviewer should know, with the rule number. |
 
 A worked example (pretty-printed here; in the file it is one line):
@@ -46,7 +46,7 @@ A worked example (pretty-printed here; in the file it is one line):
   "scenarioType": "login", "scenario": "trial-login-ok", "style": "polite",
   "origin": "team", "author": "galip",
   "text": "Lütfen kullanıcı adına ve şifreye admin yazıp Login'e tıklayın; ardından durum mesajının \"Welcome, admin!\" olduğunu kontrol edin.",
-  "gold": {"version": "0.1", "steps": [
+  "gold": {"version": "0.2", "steps": [
     {"keyword": "Type", "target": "login.usernameInput", "value": "admin"},
     {"keyword": "Type", "target": "login.passwordInput", "value": "admin"},
     {"keyword": "Click", "target": "login.loginButton"},
@@ -74,15 +74,17 @@ The types follow the sample app's screens (#33) and the reference scenarios in `
 | `login` | Types credentials, logs in, checks the welcome or error text | Login | SC-14, SC-17, SC-21, SC-26 |
 | `form` | Fills fields, chooses from a combo box, saves or goes back, checks the result or a validation message | Detail form | SC-19, SC-22, SC-34 |
 | `listSearch` | Searches, picks an item from a list, opens it | List screen | SC-18 |
-| `settings` | Switches tabs, toggles check boxes, checks their state | Settings with tabs | SC-16 |
+| `settings` | Switches tabs, toggles check boxes (§6.8), checks their state | Settings with tabs | SC-16 |
 | `dialog` | Checks a modal dialog's message and answers it (Yes/No/OK) | Dialog | SC-20, SC-22 |
 | `wizard` | Moves through pages with Next/Back/Finish, selects on a page, checks the summary | Wizard | SC-20 |
 | `checkpoint` | Only checks: texts and states, no action | any | SC-16, SC-21 |
 | `wait` | Waits explicitly for a control, with or without a time limit | any (the list screen's late grid) | SC-18, SC-19 |
 
+**Reading results per type.** Six types name a screen, but `checkpoint` and `wait` name a kind of step, and rules 1 and 2 come first. A login scenario with one explicit wait is therefore a `wait` pair, and the `wait` type mixes every screen. Accuracy per scenario type is not accuracy per screen: say so wherever per-type results are reported (#77, the thesis).
+
 **Quotas.** #36 (40 sample-app pairs): 5 pairs per type, from at least 2 scenarios, in at least 3 styles (the acceptance criterion "≥ 3 phrasing variants per scenario type" is read as ≥ 3 distinct `style` values per type, which the checker counts). Across the 40, use every style at least 4 times and tag about a quarter `implicitTarget`. #57 (100): 12–13 per type; outsider pairs fill whichever types they fall into.
 
-**Grids.** Schema v0 cannot select or check a grid row (`Verify main.customerGrid name contains "Yılmaz"` checks the grid's UIA Name, not its rows; #37). A `listSearch` pair may Select only in a list or combo box; a grid row is out of scope (§6.7) until a later schema version.
+**Grids.** Schema v0 cannot select or check a grid row (`Verify main.customerGrid name contains "Yılmaz"` checks the grid's UIA Name, not its rows; #37). A `listSearch` pair may Select only in a list or combo box; a grid row is out of scope (§6.7) until the labelling rules for schema v0.2's `SelectRow` and row checks (#147) are written with the sample-app pairs (#36).
 
 ## 4. Turkish vocabulary
 
@@ -93,7 +95,7 @@ The NL assistant must understand many surface forms; the gold is the same for al
 | Turkish (typical forms) | Keyword | Example → gold step |
 |---|---|---|
 | tıkla, bas (tıklayın, basıp, bastıktan sonra, basınca) | Click | *Kaydet'e tıkla* → Click `detail.saveButton` |
-| işaretle, işaretini kaldır, tikle (check box) | Click | *Remember me kutusunu işaretle* → Click `login.rememberMeCheckBox` — Click toggles: label it only if the start state gives the state the text wants |
+| işaretle, tikle (an unchecked check box); işaretini kaldır (a checked one) | Click | *Remember me kutusunu işaretle* → Click `login.rememberMeCheckBox` (it starts unchecked). Click toggles: only the form that changes the box from its start state is a pair, and `notes` names that state (§6.8) |
 | aç, geç, seç (a tab, a radio button, a menu item) | Click | *Bildirimler sekmesine geç* → Click `settings.notificationsTab` |
 | yaz, gir, doldur, … olarak gir / ayarla / değiştir, … yap (edit box) | Type | *Ad alanını Ayşe ile doldur* → Type `detail.nameInput` "Ayşe" |
 | temizle, sil, boşalt (edit box) | Type with `""` | *Arama kutusunu temizle* → Type `main.searchInput` "" |
@@ -101,7 +103,7 @@ The NL assistant must understand many surface forms; the gold is the same for al
 | doğrula, kontrol et, emin ol, bak, … olmalı, … görünmeli, … yazmalı, … beklenir | Verify | §4.2 |
 | bekle, … görünene / gelene / açılana / etkinleşene kadar bekle | Wait | §4.3 |
 
-**Implicit actions.** Some verbs name a goal, not a control. Expand them into the steps a tester performs on that screen (§6.2): *giriş yap* (Click the login button, after any credentials the text gives), *admin/admin ile giriş yap* (Type user name, Type password, Click login), *Yılmaz'ı ara* (Type the search box, Click the search button), *kaydet* (Click Save), *onayla* (Click Yes/OK), *vazgeç / iptal et* (Click No/Cancel), *ileri / geri git* (Click Next/Back), *bitir* (Click Finish), *kapat* (Click the dialog's close or OK button).
+**Implicit actions.** Some verbs name a goal, not a control. Expand them into the steps a tester performs on that screen (§6.2): *giriş yap* (Click the login button, after any credentials the text gives), *admin/admin ile giriş yap* (Type user name, Type password, Click login), *Yılmaz'ı ara* (Type the search box, Click the search button), *kaydet* (Click Save), *onayla* (Click Yes/OK), *vazgeç / iptal et* (Click No/Cancel), *ileri / geri git* (Click Next/Back), *bitir* (Click Finish), *kapat* (Click the dialog's close or OK button), *kaydı sil* (Click the screen's delete button; *sil* is Type `""` only on an edit box).
 
 ### 4.2 Checks
 
@@ -142,9 +144,10 @@ The NL assistant must understand many surface forms; the gold is the same for al
 
 - Values may be quoted (`'…'`, `"…"`, `“…”`, `‘…’`) or bare. Quotes are never part of the value.
 - A case suffix after an apostrophe or a closing quote is dropped: *Ankara'yı* → "Ankara"; *"Kalite Güvence"yi* → "Kalite Güvence"; *'Welcome, admin!' yazdığını* → "Welcome, admin!"; *1234'ü* → "1234".
-- The same suffix without an apostrophe (informal writing: *Ankarayı*, *Logine*) is dropped the same way.
-- Suffixes on control names (*kullanıcı adı alanına*, *Kaydet butonuna*, *Kaydet'e*, *şifreye*) only identify the target. *Kaydet'e tıkla* targets the button whose text is "Kaydet".
-- When a value could itself end in what looks like a suffix (*admini*: "admin" or "admini"?), team writers quote the value; for outsider texts label the likely reading and say so in `notes`.
+- **Team pairs: quote a value whose end could read as a suffix.** Some values end in what looks like a case or possessive suffix (*Kalite Güvencesi*, *admini*). Written bare, *Kalite Güvencesi* reads as "Kalite Güvencesi" or as "Kalite Güvence" + *-si*. The checker cannot tell either: both strings are in the text. Team writers quote such a value (*'Kalite Güvencesi' seç*). The reviewer checks this (§9).
+- **Team pairs: never glue a suffix to a bare value.** In a team text a bare value stands as a whole word, with nothing attached: write *Ankara'yı*, not *Ankarayı*. `check_pairs.py` enforces this for `origin: team` (`bare-suffix`: the value occurs only with letters or digits attached). An `informal` team pair (§5) has neither apostrophes nor quotes, so phrase its sentence so that the value takes no suffix: *sehir: ankara* or *ankara sec*, not *ankarayi sec*.
+- **Outsider texts are kept as written.** There a suffix written without an apostrophe (*Ankarayı*) is dropped the same way as after one. When a value could itself end in a suffix (*admini*: "admin" or "admini"?), label the most likely reading and record it in `notes`, e.g. `value read as "admin" (4.4)`.
+- Suffixes on control names (*kullanıcı adı alanına*, *Kaydet butonuna*, *Kaydet'e*, *Logine*, *şifreye*) only identify the target. *Kaydet'e tıkla* targets the button whose text is "Kaydet". The quoting rules apply to values and expected texts, not to control names.
 
 ### 4.5 Verb forms
 
@@ -177,7 +180,7 @@ A negated action (*Login'e tıklama*) is not a step; such texts are out of scope
 **Tags** (`tags`, optional):
 
 - `implicitTarget` — at least one target is not named, only implied by a goal (*giriş yap*, *admin/admin ile*, *kaydet*, *hatası görünmeli* with no label named).
-- `informal` — written as people type in a hurry: no Turkish characters (*sifre*), no apostrophes (*Logine*), lower case, small typos. Values stay recognisable (§6.4).
+- `informal` — written as people type in a hurry: no Turkish characters (*sifre*), no apostrophes (*Logine*), lower case, small typos. Values stay recognisable (§6.4); in a team pair a value still stands whole, with no suffix (§4.4).
 - `reordered` — text order differs from execution order (*Login'e basmadan önce … yaz*).
 
 **Writing useful variants.** Variants of a scenario must keep the meaning (identical gold) but differ in at least two of: verb form (§4.5); how controls are referred to (visible text *Login'e*, role noun *giriş butonuna*, goal only *giriş yap*); sentence structure (one compound sentence, several sentences, a list); connectors (*ve*, *-Ip*, *sonra*, *ardından*, *-DIktAn sonra*, *önce … sonra*); quoting; order. Do not make a variant by changing one word: the set should show how differently people write, not how robust a model is to synonyms alone. The checker rejects texts that are identical after folding case and diacritics.
@@ -230,16 +233,30 @@ Apply §4.3: Wait only for an explicit *bekle* on a target; a time limit goes on
 
 ### 6.7 Out of scope for step schema v0
 
+Schema v0.2 (#147) adds `SelectRow` and the `cell`, `rowExists` and `rowCount` checks. Until their labelling rules are written with the sample-app pairs (#36), grid rows, cells and item counts stay out of scope here.
+
 Do not write texts that need any of these; drop outsider texts that contain them (and count them for #57, as a finding of what users ask for):
 
 - double or right click, hover, drag and drop, scrolling;
 - keyboard keys and shortcuts (*Enter'a bas*, *Tab*, *Ctrl+S*);
 - appending to a field (*sonuna ekle*): Type replaces the text;
+- setting a check box to the state it already has (*işaretini kaldır* on an unchecked box): Click toggles (§6.8);
 - fixed sleeps and waiting until something disappears;
 - grid or table rows and cells, item counts or order, numeric comparisons, starts/ends with, does not contain, patterns;
 - conditions, loops, data-driven repetition (*eğer … ise*, *her şehir için*);
 - starting or closing the app, other apps, file dialogs, screenshots or visual checks;
 - negated actions as assertions (*Login'e tıklama*).
+
+### 6.8 Check boxes
+
+In playback (#40) a Click on a check box toggles it. Step schema v0 has no keyword for "make sure it is checked". If *işaretle* and *işaretini kaldır* both became the same Click, two texts with opposite meanings would share one gold, which teaches the model to ignore the negation. A pair would also become silently wrong on an app that starts in the other state (#145 review). So:
+
+- **Start state.** The box's state where the scenario starts: the app's default on that screen (§6.1), unless an earlier step of the same pair changed it. Take it from the app (its source, README or a UIA check), never from the text. The trial app's *Remember me* box starts unchecked. The start state assumes the app was reset before the pair (see #40/#69); pairs are not valid run back to back without one.
+- **Only the form that changes the box.** On an unchecked box, *işaretle* / *tikle* → Click. On a checked box, *işaretini kaldır* → Click. The other form asks for the state the box already has. It has no correct gold in v0: do not write it (§6.7), and drop an outsider text that needs it (§8).
+- **Record the state.** Every pair with a Click on a CheckBox says in `notes` which start state it assumed: `start state: unchecked` (or `checked`). A pair that clicks several boxes gives one phrase per box, each naming that box and no other by its logical name: `start state: <box> unchecked; start state: <box> checked`, e.g. `start state: settings.emailNotificationsCheck unchecked`. `check_pairs.py` requires the phrases (`start-state`); the reviewer checks that each state is right.
+- A text that only checks a state (*işaretli olmalı*) is Verify `checked` (§4.2). It needs no start state.
+
+A keyword that sets a state (`Check` / `Uncheck`, or Click with an expected end state) is a step-schema question for a version after v0.2 (#147).
 
 ## 7. Writing the sample-app pairs (once #33 lands)
 
@@ -282,13 +299,15 @@ Every pair is labelled by one person and reviewed by another before it is merged
 - [ ] Implicit actions are expanded and coordinated targets split (§6.2).
 - [ ] Each target is the control the text means; keyword and property fit its control type (§6.3).
 - [ ] Values and expected texts are verbatim; Select values are item texts (§6.4).
+- [ ] Team pairs: a value whose end could read as a suffix is quoted, and no bare value has a suffix glued to it (§4.4). Outsider pairs: the reading of such a value is in `notes`.
+- [ ] Every check-box Click changes the box from its start state, and `notes` gives that state, one phrase per box when there are several (§6.8).
 - [ ] Property, operator and boolean expected follow §4.2; `timeoutMs` only where the text gives a limit, on the right step (§4.3).
 - [ ] `scenarioType`, `scenario`, `style` and `tags` are right; variants of a scenario have identical gold.
 - [ ] Nothing out of scope (§6.7); no personal data.
 - [ ] A positive team scenario would pass on the app version (§6.4).
 - [ ] `check_pairs.py` passes.
 
-For #57, have both labellers label 20 pairs independently and report the share with identical gold, as a check that these rules make the gold reproducible.
+For #57, have both labellers label 20 **outsider** pairs independently and report the share with identical gold, as a check that these rules make the gold reproducible. Team pairs would agree by construction: their writer had the gold in mind.
 
 ## 10. Checking the set
 
@@ -299,4 +318,4 @@ ai/.venv/bin/python eval/nl/check_pairs.py               # this folder; exit 1 o
 ai/.venv/bin/python eval/nl/check_pairs.py --min-styles 0   # while a type has fewer than 3 styles
 ```
 
-It prints pairs per app and scenario type with the styles used, then every problem as `file:line: [code] message`. Besides the two schemas it checks unique ids and texts, id prefixes, the app version, targets in the object list, keyword and property against control type, Select values against `items`, values present in the text, the type rules of §3, identical gold within a scenario, no scenario on both sides of the held-out split, the held-out hash and at least three styles per type. The ai CI job runs it through `ai/tests/test_nl_dataset.py` until `eval/` has its own CI job (#122).
+It prints pairs per app and scenario type with the styles used, then every problem as `file:line: [code] message`. Besides the two schemas (the `style`, `tags`, `scenarioType` and `origin` values are closed lists there) it checks unique ids and texts, id prefixes, the app version, targets in the object list, keyword and property against control type, Select values against `items`, values present in the text, no suffix glued to a bare value in team pairs (§4.4), a start state in `notes` for every clicked check box, one phrase naming each box when there are several (§6.8), the type rules of §3, identical gold within a scenario, no scenario on both sides of the held-out split, the held-out hash and at least three styles per type. The ai CI job runs it through `ai/tests/test_nl_dataset.py`. The `eval` CI job (#122) lints this folder but runs only the trial app's tests so far.

@@ -1,0 +1,193 @@
+{
+ "format": "ayna-uia-probe/0",
+ "measured_at": "2026-10-31T19:32:02",
+ "platform": "Windows-11-10.0.26300-SP0",
+ "python": "3.13.0",
+ "pywinauto": "0.6.9",
+ "windows": [
+  {
+   "handle": 2033148,
+   "title": "KeePass",
+   "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1",
+   "dpi": 120
+  }
+ ],
+ "modes": [
+  {
+   "mode": "navigate",
+   "elements": 85,
+   "total_s": 230.0497053998988,
+   "per_element_ms": {
+    "min": 0.041300198063254356,
+    "max": 72508.98110005073,
+    "p50": 1.440499909222126,
+    "p90": 9058.731599943712,
+    "p99": 72508.98110005073
+   },
+   "slowest": [
+    {
+     "ms": 72508.98110005073,
+     "depth": 1,
+     "control_type": "Window",
+     "name": "Create Master Key",
+     "automation_id": "KeyCreationForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 30161.512200022116,
+     "depth": 0,
+     "control_type": "Window",
+     "name": "KeePass",
+     "automation_id": "MainForm",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 24114.20559999533,
+     "depth": 2,
+     "control_type": "ComboBox",
+     "name": null,
+     "automation_id": "1836666",
+     "class_name": "WindowsForms10.COMBOBOX.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 18321.84309978038,
+     "depth": 1,
+     "control_type": "ToolBar",
+     "name": null,
+     "automation_id": "m_toolMain",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12059.52120013535,
+     "depth": 5,
+     "control_type": "List",
+     "name": null,
+     "automation_id": "m_lvEntries",
+     "class_name": "WindowsForms10.SysListView32.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12059.15919994004,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": null,
+     "automation_id": "1311980",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 12050.95519986935,
+     "depth": 2,
+     "control_type": "Window",
+     "name": "KeePass",
+     "automation_id": "",
+     "class_name": "#32770"
+    },
+    {
+     "ms": 9064.204899827018,
+     "depth": 1,
+     "control_type": "Pane",
+     "name": null,
+     "automation_id": "m_splitHorizontal",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9058.731599943712,
+     "depth": 3,
+     "control_type": "Pane",
+     "name": null,
+     "automation_id": "m_splitVertical",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9041.56140005216,
+     "depth": 4,
+     "control_type": "Pane",
+     "name": null,
+     "automation_id": "2622980",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 9035.461800172925,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": null,
+     "automation_id": "3540314",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 6032.833100063726,
+     "depth": 2,
+     "control_type": "Pane",
+     "name": null,
+     "automation_id": "1443330",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 3151.8137000966817,
+     "depth": 1,
+     "control_type": "MenuBar",
+     "name": null,
+     "automation_id": "m_menuMain",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 3082.103499909863,
+     "depth": 1,
+     "control_type": "StatusBar",
+     "name": null,
+     "automation_id": "m_statusMain",
+     "class_name": "WindowsForms10.Window.8.app.0.2bf8098_r6_ad1"
+    },
+    {
+     "ms": 103.56999980285764,
+     "depth": 6,
+     "control_type": "Header",
+     "name": "Header Control",
+     "automation_id": "Header",
+     "class_name": "SysHeader32"
+    },
+    {
+     "ms": 16.199700068682432,
+     "depth": 7,
+     "control_type": "HeaderItem",
+     "name": "Notes",
+     "automation_id": "HeaderItem 4",
+     "class_name": ""
+    },
+    {
+     "ms": 13.770300196483731,
+     "depth": 7,
+     "control_type": "HeaderItem",
+     "name": "URL",
+     "automation_id": "HeaderItem 3",
+     "class_name": ""
+    },
+    {
+     "ms": 13.731300132349133,
+     "depth": 7,
+     "control_type": "HeaderItem",
+     "name": "Title",
+     "automation_id": "HeaderItem 0",
+     "class_name": ""
+    },
+    {
+     "ms": 13.615800067782402,
+     "depth": 7,
+     "control_type": "HeaderItem",
+     "name": "Password",
+     "automation_id": "HeaderItem 2",
+     "class_name": ""
+    },
+    {
+     "ms": 12.563399970531464,
+     "depth": 7,
+     "control_type": "HeaderItem",
+     "name": "User Name",
+     "automation_id": "HeaderItem 1",
+     "class_name": ""
+    }
+   ],
+   "read_errors": 0,
+   "run": 1
+  }
+ ]
+}
