@@ -11,6 +11,7 @@ import {
   listRunningRuns,
   listRuns,
   putResult,
+  putScreenshot,
   reportFileName,
 } from '../runs.ts'
 
@@ -193,7 +194,18 @@ describe('a run from the editor (#44)', () => {
     const seen: { url?: string; init?: RequestInit } = {}
     const document = { version: '0.2', steps: [{ keyword: 'Click', target: 'login.okButton' }] }
     const answer = await createRun(base, 't1', 'v1', {
-      fetch: fakeFetch(201, { ...summary, status: 'running', finishedAt: null, durationMs: null, document, results: [] }, seen),
+      fetch: fakeFetch(
+        201,
+        {
+          ...summary,
+          status: 'running',
+          finishedAt: null,
+          durationMs: null,
+          document,
+          results: [],
+        },
+        seen,
+      ),
     })
     assert.equal(seen.url, `${base}/api/runs`)
     assert.equal(seen.init?.method, 'POST')
@@ -218,20 +230,63 @@ describe('a run from the editor (#44)', () => {
       [503, 'retry'],
     ]
     for (const [status, expected] of cases) {
-      const answer = await putResult(base, 'r1', { stepIndex: 0, status: 'passed' }, { fetch: fakeFetch(status, {}) })
+      const answer = await putResult(
+        base,
+        'r1',
+        { stepIndex: 0, status: 'passed' },
+        { fetch: fakeFetch(status, {}) },
+      )
       assert.equal(answer, expected, `HTTP ${status}`)
     }
     assert.equal(await putResult(base, 'r1', { stepIndex: 0 }, { fetch: throwing }), 'retry')
     assert.equal(await putResult(null, 'r1', { stepIndex: 0 }, {}), 'retry')
     const seen: { url?: string; init?: RequestInit } = {}
-    await putResult(base, 'r/1', { runId: 'r/1', stepIndex: 3, status: 'passed' }, { fetch: fakeFetch(201, {}, seen) })
+    await putResult(
+      base,
+      'r/1',
+      { runId: 'r/1', stepIndex: 3, status: 'passed' },
+      { fetch: fakeFetch(201, {}, seen) },
+    )
     assert.equal(seen.url, `${base}/api/runs/r%2F1/results/3`)
     assert.equal(seen.init?.method, 'PUT')
   })
 
+  it('putScreenshot sends the PNG and maps statuses (#261)', async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
+    const seen: { url?: string; init?: RequestInit } = {}
+    assert.equal(
+      await putScreenshot(base, 'r/1', 2, png, { fetch: fakeFetch(201, {}, seen) }),
+      'stored',
+    )
+    assert.equal(seen.url, `${base}/api/runs/r%2F1/results/2/screenshot`)
+    assert.equal(seen.init?.method, 'PUT')
+    assert.equal((seen.init?.headers as Record<string, string>)['content-type'], 'image/png')
+    assert.equal(seen.init?.body, png)
+    const cases: [number, string][] = [
+      [200, 'stored'],
+      [404, 'gone'],
+      [409, 'conflict'],
+      [413, 'conflict'],
+      [415, 'conflict'],
+      [400, 'conflict'],
+      [503, 'retry'],
+      [401, 'unauthorized'],
+    ]
+    for (const [status, expected] of cases) {
+      assert.equal(
+        await putScreenshot(base, 'r1', 0, png, { fetch: fakeFetch(status, {}) }),
+        expected,
+        `HTTP ${status}`,
+      )
+    }
+  })
+
   it('finishRun posts the status', async () => {
     const seen: { url?: string; init?: RequestInit } = {}
-    assert.equal(await finishRun(base, 'r1', 'aborted', { fetch: fakeFetch(200, summary, seen) }), 'stored')
+    assert.equal(
+      await finishRun(base, 'r1', 'aborted', { fetch: fakeFetch(200, summary, seen) }),
+      'stored',
+    )
     assert.equal(seen.url, `${base}/api/runs/r1/finish`)
     assert.deepEqual(JSON.parse(String(seen.init?.body)), { status: 'aborted' })
     assert.equal(await finishRun(base, 'r1', 'passed', { fetch: fakeFetch(409, {}) }), 'conflict')
@@ -239,10 +294,28 @@ describe('a run from the editor (#44)', () => {
 
   it('getRun reads results', async () => {
     const results = [
-      { id: 'b', stepIndex: 1, stepId: null, status: 'failed', durationMs: 4, message: 'x', receivedAt: 'z' },
-      { id: 'a', stepIndex: 0, stepId: 's1', status: 'passed', durationMs: 3, message: null, receivedAt: 'z' },
+      {
+        id: 'b',
+        stepIndex: 1,
+        stepId: null,
+        status: 'failed',
+        durationMs: 4,
+        message: 'x',
+        receivedAt: 'z',
+      },
+      {
+        id: 'a',
+        stepIndex: 0,
+        stepId: 's1',
+        status: 'passed',
+        durationMs: 3,
+        message: null,
+        receivedAt: 'z',
+      },
     ]
-    const answer = await getRun(base, 'r1', { fetch: fakeFetch(200, { ...summary, document: {}, results }) })
+    const answer = await getRun(base, 'r1', {
+      fetch: fakeFetch(200, { ...summary, document: {}, results }),
+    })
     assert.ok(answer.ok)
     assert.deepEqual(
       answer.outcomes.map((o) => [o.stepIndex, o.status]),

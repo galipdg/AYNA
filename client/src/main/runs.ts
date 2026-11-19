@@ -212,7 +212,11 @@ export async function putResult(
   options: Options = {},
 ): Promise<WriteAnswer> {
   const path = `/api/runs/${encodeURIComponent(runId)}/results/${String(body.stepIndex)}`
-  const init = { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
+  const init = {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }
   return writeAnswer(await request(baseUrl, path, init, options))
 }
 
@@ -224,9 +228,38 @@ export async function finishRun(
   options: Options = {},
 ): Promise<WriteAnswer> {
   const path = `/api/runs/${encodeURIComponent(runId)}/finish`
-  const init = { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status }) }
+  const init = {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status }),
+  }
   return writeAnswer(await request(baseUrl, path, init, options))
 }
+
+/**
+ * Stores a step's screenshot (#261, ADR run-screenshots): the PNG's bytes, after the step's
+ * result. A body the server will never take (too large, not a PNG, another image for the step)
+ * is a `conflict`, which the outbox treats as that image's end, not the run's. Never throws.
+ */
+export async function putScreenshot(
+  baseUrl: string | null,
+  runId: string,
+  stepIndex: number,
+  png: Uint8Array,
+  options: Options = {},
+): Promise<WriteAnswer> {
+  const path = `/api/runs/${encodeURIComponent(runId)}/results/${String(stepIndex)}/screenshot`
+  const init = { method: 'PUT', headers: { 'content-type': 'image/png' }, body: png }
+  const answer = await request(baseUrl, path, init, {
+    timeoutMs: SCREENSHOT_TIMEOUT_MS,
+    ...options,
+  })
+  if (answer.ok && (answer.status === 413 || answer.status === 415)) return 'conflict'
+  return writeAnswer(answer)
+}
+
+/** A full-screen PNG is a few MB; more time than a JSON write. */
+export const SCREENSHOT_TIMEOUT_MS = 30_000
 
 function writeAnswer(answer: Answer): WriteAnswer {
   if (!answer.ok) return answer.reason === 'unauthorized' ? 'unauthorized' : 'retry'

@@ -72,6 +72,8 @@ interface Setup {
   capturedElement?: RunnerDeps['capturedElement']
   /** The outbox's `add` rejects from this call on (0-based), as on a full disk. */
   addFailsFrom?: number
+  /** Gives the runner a screenshot keeper that records its calls; `keep` answers this path. */
+  keep?: (runId: string, stepIndex: number, agentPath: string) => string | null
   agentConnected?: boolean
 }
 
@@ -81,6 +83,7 @@ function setup(options: Setup = {}) {
   const opened: string[] = []
   let adds = 0
   const states: LiveRun[] = []
+  const shots: string[] = []
   let now = 0
   const clock: Clock = {
     now: () => now,
@@ -128,6 +131,18 @@ function setup(options: Setup = {}) {
     clock,
     log: () => {},
   }
+  if (options.keep) {
+    const keep = options.keep
+    deps.screenshots = {
+      async keep(runId, stepIndex, agentPath) {
+        shots.push(`keep ${runId} ${stepIndex} ${agentPath} after ${outbox.length} entries`)
+        return keep(runId, stepIndex, agentPath)
+      },
+      async release(runId) {
+        shots.push(`release ${runId} after ${outbox.length} entries`)
+      },
+    }
+  }
   const runner = new Runner(deps)
   runner.onChange((run) => states.push(run))
   /** Resolves with the run once it has finished. */
@@ -141,9 +156,13 @@ function setup(options: Setup = {}) {
     })
   const summaryOf = () =>
     outbox.map((entry) =>
-      entry.kind === 'result' ? `${entry.stepIndex}:${String(entry.body.status)}` : `finish:${entry.status}`,
+      entry.kind === 'result'
+        ? `${entry.stepIndex}:${String(entry.body.status)}`
+        : entry.kind === 'screenshot'
+          ? `${entry.stepIndex}:png ${entry.path}`
+          : `finish:${entry.status}`,
     )
-  return { runner, played, outbox, opened, states, finished, summaryOf }
+  return { runner, played, outbox, opened, states, finished, summaryOf, shots }
 }
 
 /** Resolves once `test` holds for the runner's current run. */
@@ -193,10 +212,19 @@ describe('the runner', () => {
         [7, 2, 's3'],
       ],
     )
-    assert.deepEqual(played[0].target, { properties: { automationId: 'login.userInput', windowTitle: LOGIN }, fallback: {} })
+    assert.deepEqual(played[0].target, {
+      properties: { automationId: 'login.userInput', windowTitle: LOGIN },
+      fallback: {},
+    })
     const first = outbox[0]
     assert.ok(first.kind === 'result')
-    assert.deepEqual(first.body, { runId: 'r1', stepIndex: 0, stepId: 's1', status: 'passed', durationMs: 30 })
+    assert.deepEqual(first.body, {
+      runId: 'r1',
+      stepIndex: 0,
+      stepId: 's1',
+      status: 'passed',
+      durationMs: 30,
+    })
   })
 
   it('marks the rest notRun after a failure', async () => {
@@ -237,7 +265,9 @@ describe('the runner', () => {
   })
 
   it('stops when the chooser is answered with Stop', async () => {
-    const { runner, played, finished, summaryOf } = setup({ windows: [win(41, LOGIN), win(42, LOGIN)] })
+    const { runner, played, finished, summaryOf } = setup({
+      windows: [win(41, LOGIN), win(42, LOGIN)],
+    })
     await runner.start('t1', 'v1')
     await until(runner, (run) => run.choosing !== null)
     runner.choose(null)
@@ -247,8 +277,15 @@ describe('the runner', () => {
   })
 
   it('asks for a window when the target has no title', async () => {
-    const objects = [object('login.userInput'), object('login.passwordInput'), object('login.okButton')]
-    const { runner, played, finished } = setup({ objects, windows: [win(7, LOGIN), win(9, 'Notepad')] })
+    const objects = [
+      object('login.userInput'),
+      object('login.passwordInput'),
+      object('login.okButton'),
+    ]
+    const { runner, played, finished } = setup({
+      objects,
+      windows: [win(7, LOGIN), win(9, 'Notepad')],
+    })
     await runner.start('t1', 'v1')
     const choosing = await until(runner, (run) => run.choosing !== null)
     assert.equal(choosing.choosing?.title, null)
@@ -334,7 +371,11 @@ describe('the runner', () => {
   })
 
   it('reads window titles from the captures once, before the first step', async () => {
-    const objects = [object('login.userInput'), object('login.passwordInput'), object('login.okButton')]
+    const objects = [
+      object('login.userInput'),
+      object('login.passwordInput'),
+      object('login.okButton'),
+    ]
     const asked: string[] = []
     let playedBeforeLastRead = false
     let reads = 0
@@ -352,7 +393,11 @@ describe('the runner', () => {
     const run = await finished()
     assert.equal(run.status, 'passed')
     assert.equal(run.choosing, null)
-    assert.deepEqual(asked.sort(), ['id-login.okButton', 'id-login.passwordInput', 'id-login.userInput'])
+    assert.deepEqual(asked.sort(), [
+      'id-login.okButton',
+      'id-login.passwordInput',
+      'id-login.userInput',
+    ])
     assert.equal(playedBeforeLastRead, false)
   })
 
@@ -372,5 +417,76 @@ describe('the runner', () => {
     assert.equal(run.problem, 'not-stored')
     const again = await runner.start('t1', 'v1')
     assert.equal(again.ok, true, 'not busy any more')
+  })
+})
+
+describe('the runner with step screenshots (#261)', () => {
+  const agentPng = (request: PlayRequest) =>
+    `/tmp/ayna-screenshots/run-r1/step-0000.png#${request.stepIndex}`
+  const withShot = (request: PlayRequest): PlayedStep => ({
+    ...passed(request),
+    screenshotPath: agentPng(request),
+  })
+
+  /** Resolves once the runner has released the run's agent folders. */
+  const released = (shots: string[]) =>
+    new Promise<void>((resolve) => {
+      const check = () =>
+        shots.some((line) => line.startsWith('release')) ? resolve() : setImmediate(check)
+      check()
+    })
+
+  it("takes each step's image before the next step and queues it right after the result", async () => {
+    const { runner, finished, summaryOf, shots } = setup({
+      play: withShot,
+      keep: (_run, index) => `/own/r1/step-${index}.png`,
+    })
+    await runner.start('t1', 'v1')
+    await finished()
+    await released(shots)
+    assert.deepEqual(summaryOf(), [
+      '0:passed',
+      '0:png /own/r1/step-0.png',
+      '1:passed',
+      '1:png /own/r1/step-1.png',
+      '2:passed',
+      '2:png /own/r1/step-2.png',
+      'finish:passed',
+    ])
+    assert.deepEqual(shots, [
+      'keep r1 0 /tmp/ayna-screenshots/run-r1/step-0000.png#0 after 0 entries',
+      'keep r1 1 /tmp/ayna-screenshots/run-r1/step-0000.png#1 after 2 entries',
+      'keep r1 2 /tmp/ayna-screenshots/run-r1/step-0000.png#2 after 4 entries',
+      'release r1 after 7 entries',
+    ])
+  })
+
+  it('queues no image for a step without one, or one the keeper could not take', async () => {
+    const { runner, finished, summaryOf, shots } = setup({
+      play: (request) => (request.stepIndex === 1 ? passed(request) : withShot(request)),
+      keep: (_run, index) => (index === 2 ? null : `/own/r1/step-${index}.png`),
+    })
+    await runner.start('t1', 'v1')
+    await finished()
+    await released(shots)
+    assert.deepEqual(summaryOf(), [
+      '0:passed',
+      '0:png /own/r1/step-0.png',
+      '1:passed',
+      '2:passed',
+      'finish:passed',
+    ])
+  })
+
+  it('releases the agent folders when the run ends badly too', async () => {
+    const { runner, finished, shots } = setup({
+      play: withShot,
+      keep: () => '/own/x.png',
+      addFailsFrom: 1,
+    })
+    await runner.start('t1', 'v1')
+    assert.equal((await finished()).status, 'aborted')
+    await released(shots)
+    assert.equal(shots.filter((line) => line.startsWith('release')).length, 1)
   })
 })

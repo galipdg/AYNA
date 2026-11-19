@@ -38,7 +38,9 @@ describe('the per-step player', () => {
     assert.deepEqual(params, {
       handle: 657704,
       steps: { version: '0.2', steps: [{ keyword: 'Click', target: 'login.okButton' }] },
-      targets: { 'login.okButton': { properties: { automationId: 'okButton' }, fallback: { name: 'OK' } } },
+      targets: {
+        'login.okButton': { properties: { automationId: 'okButton' }, fallback: { name: 'OK' } },
+      },
       runId: 'r1',
       appVersionId: 'v1',
     })
@@ -49,9 +51,27 @@ describe('the per-step player', () => {
     assert.equal(calls[1][2], 2000 + 10_000)
   })
 
+  it("passes on the agent's screenshot path, and none when there is none (#261)", async () => {
+    const path = 'C:\\Temp\\ayna-screenshots\\run-r1\\step-0000.png'
+    const shot = {
+      results: [{ stepIndex: 0, status: 'passed', screenshotPath: path, screenshotAt: 'x' }],
+    }
+    assert.equal((await perStepPlayer(agent(shot)).play(request())).screenshotPath, path)
+    const none = { results: [{ stepIndex: 0, status: 'passed' }] }
+    assert.equal('screenshotPath' in (await perStepPlayer(agent(none)).play(request())), false)
+  })
+
   it("puts the run's index on the result", async () => {
     const answer = {
-      results: [{ stepIndex: 0, status: 'failed', durationMs: 12, message: 'gone', category: 'elementNotFound' }],
+      results: [
+        {
+          stepIndex: 0,
+          status: 'failed',
+          durationMs: 12,
+          message: 'gone',
+          category: 'elementNotFound',
+        },
+      ],
     }
     const played = await perStepPlayer(agent(answer)).play(request())
     assert.deepEqual(played, {

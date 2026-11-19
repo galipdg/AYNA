@@ -27,10 +27,14 @@ export interface PlayRequest {
   appVersionId: string
 }
 
-/** `agentGone`: the agent stopped, so the run cannot go on. It never reaches the server. */
+/**
+ * `agentGone`: the agent stopped, so the run cannot go on. It never reaches the server.
+ * `screenshotPath`: the agent's PNG of the window after the step (agent-rpc 1.2), if it took one.
+ */
 export interface PlayedStep {
   outcome: StepOutcome
   agentGone: boolean
+  screenshotPath?: string
 }
 
 export interface StepPlayer {
@@ -73,11 +77,15 @@ export function perStepPlayer(agent: AgentCaller): StepPlayer {
         }
       }
       const results = (answer as { results?: unknown } | null)?.results
-      const outcome = Array.isArray(results) ? stepOutcomeFrom(results[0]) : null
+      const first: unknown = Array.isArray(results) ? results[0] : null
+      const outcome = stepOutcomeFrom(first)
       if (!outcome) {
         return { outcome: failed('the agent answered something unexpected'), agentGone: false }
       }
-      return { outcome: { ...outcome, stepIndex, stepId }, agentGone: false }
+      const path = (first as { screenshotPath?: unknown }).screenshotPath
+      const played: PlayedStep = { outcome: { ...outcome, stepIndex, stepId }, agentGone: false }
+      if (typeof path === 'string' && path) played.screenshotPath = path
+      return played
     },
   }
 }
