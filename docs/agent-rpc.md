@@ -297,6 +297,37 @@ known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback mat
 heals) and `performedWith` (the pattern that did it). **A failed step stops the run** and every
 step after it is `notRun` (TBD-6).
 
+**The screenshot (#54, FR-19).** Every step that *ran* is photographed straight after it acted,
+and its result carries `screenshotPath` and `screenshotAt`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `screenshotPath` | string, optional | Absolute path to the PNG **on the machine the agent runs on**. The client reads the bytes from there and uploads them under #51's contract (`PUT /api/runs/{runId}/results/{stepIndex}/screenshot`). |
+| `screenshotAt` | string, optional | When the image was taken: ISO 8601 with a UTC offset, to the millisecond. |
+
+The image travels as a path, not as base64 in this message: a 50-step run is about 15 MB of PNG,
+base64 would add a third to that, and the agent and the client always share a machine. The PNG is
+cropped to the window as a person sees it — DWM's extended frame bounds, not `GetWindowRect` with
+its invisible resize border — so the image and a candidate's `bounds` are in one coordinate space
+(physical pixels, virtual-desktop coordinates; see [Starting the agent](#starting-the-agent)).
+
+**Both fields are absent whenever there is no image, and that is not an error.** A `notRun` step
+is never photographed, because it never reached a screen; and a capture that fails is logged and
+skipped rather than failing the step, since the commonest reason a step fails is that the window
+is not what the test expected — including gone. A reader (#59's report, the client's step list)
+must treat a missing screenshot as normal.
+
+Nothing deletes these files. The agent cannot know when the client has finished uploading them,
+so whoever owns the run owns the cleanup.
+
+**One directory per run — once `runId` reaches the backend.** `UiaDesktop.run_steps` names the
+directory after the run when it is given the run id, and falls back to a timestamp otherwise.
+`_run_steps` still only accepts `runId` and drops it (the table above), so **today every call
+opens its own directory**. That is invisible to a caller that plays a whole run in one call, and
+wrong for one that sends a step at a time as #44's client does: a seven-step run leaves seven
+folders, each with a single `step-0000.png`, and there is no one folder for the client to delete.
+Passing `params["runId"]` through is one line in `rpc.py` (#54, asked of galip).
+
 **Why a step failed (#63, FR-35).** A `failed` step may carry a `category`, one of
 `elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete` (ADR
 *A failed step's category*). It appears **only** with `status: failed`, never more than one, and
@@ -327,20 +358,25 @@ difference tells a tester whether to fix the locator or to wait longer.
       "login.loginButton": {"properties": {"automationId": "QApplication.loginWindow.loginButton"},
                             "fallback": {"name": "Login", "controlType": "Button"}}}}}
 ← {"jsonrpc": "2.0", "id": 7, "result": {"results": [
-    {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue"},
+    {"stepIndex": 0, "status": "passed", "durationMs": 31, "matched": "primary", "performedWith": "SetValue",
+     "screenshotPath": "C:\\Users\\you\\AppData\\Local\\Temp\\ayna-screenshots\\run-20261115-140311-004812\\step-0000.png",
+     "screenshotAt": "2026-11-15T14:03:11.250+03:00"},
     {"stepIndex": 1, "status": "failed", "durationMs": 10000, "matched": "primary",
      "category": "elementNotFound",
-     "message": "no element matches login.loginButton (automationId=…) within 10000 ms"}]}}
+     "message": "no element matches login.loginButton (automationId=…) within 10000 ms",
+     "screenshotPath": "C:\\Users\\you\\AppData\\Local\\Temp\\ayna-screenshots\\run-20261115-140311-004812\\step-0001.png",
+     "screenshotAt": "2026-11-15T14:03:21.402+03:00"}]}}
 ```
 
 A document the agent cannot read at all is `-32602`; a handle that is not a top-level window is
 `-32000`, and a window that cannot be read inside its budget is `-32002`, because reading the
 window is how a target is resolved.
 
-**Not yet:** screenshots (#54), healing (#73), the `run.stepResult` notifications below, and
-finding the window without a handle. `repairProposed` is not emitted until #74 is on `main`, as
-agreed on #223. `ping` still answers `rpcVersion` `"0.1"`; see the note at the top about which
-number `runSteps` and `elementFromPoint` belong to.
+**Not yet:** healing (#73), the `run.stepResult` notifications below, and finding the window
+without a handle. `repairProposed` is not emitted until #74 is on `main`, as agreed on #223.
+Screenshots came off this list with #54 and are documented above. `ping` still answers
+`rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
+`elementFromPoint` belong to.
 
 ## Errors
 
@@ -449,7 +485,7 @@ One notification per step of the run, in step order, when the step has finished 
 
 The other fields are the ones `runSteps` returns per step: `durationMs` and `message` (#40; the name `durationMs` matches `timeoutMs` and `budgetMs`, hasan on #193), `matched` and `performedWith`. #63 adds a failed step's `category` (proposed in PR #240), and #54 adds the screenshot's.
 
-**Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`; the names are #54's and #40's to settle), so the approval screen can say how much older the image is than the geometry. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image itself travels as #54 and #51 decide; the proposal carries none.
+**Screenshot of a `repairProposed` step (#54).** The agent takes it immediately before the snapshot walk starts, not "at the same moment": a walk can take minutes, and the application may change meanwhile. The result records both times (`screenshotAt`, `snapshotAt`), so the approval screen can say how much older the image is than the geometry. **`screenshotAt` is settled by #54**: ISO 8601 with a UTC offset, to the millisecond, because steps are faster than a second. The screenshot's crop rectangle and the candidates' `bounds` are in the same coordinate space: physical pixels in virtual-desktop coordinates, which holds because the agent is per-monitor-v2 DPI aware (see [Starting the agent](#starting-the-agent)). `dpi` never rescales `bounds` for drawing. The image travels as a **path** (`screenshotPath`), settled by #54 above; the proposal itself carries no image.
 
 - `status` is `repairProposed` exactly when no element matched the target after the wait (TBD-5) and at least one candidate is left after playback's minimum score (#73). Then `snapshot` and `healingProposal` are both present, `healingProposal.snapshotId` is the snapshot's id, and the proposal's `runId`, `stepIndex` and `stepId` equal the result's.
 - No element matched and no candidate is left: `failed`, without a proposal.
