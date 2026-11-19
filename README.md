@@ -1,6 +1,6 @@
 # AYNA
 
-**Akıllı, Yerli, Nesne Tabanlı Arayüz Testi** — a codeless, closed-network UI test automation platform for Windows desktop applications. Senior capstone project, Ankara University Computer Engineering (COM 4061-4062), advisor Prof. Dr. Gazi Erkan Bostancı.
+**Akıllı, Yerli, Nesne Tabanlı Arayüz Testi** — a codeless, closed-network UI test automation platform for Windows desktop applications. Senior capstone project, Ankara University Computer Engineering (COM 4061-4062).
 
 Team: Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya
 

@@ -1,7 +1,7 @@
 # A step's screenshot travels as a path, and agent JSON-RPC goes to 1.2
 
 - Date: 2026-11-15
-- Status: Proposed (#54, PR #248). Hasan proposed; Ömerfaruk approved the schema change in his #248 review (2026-11-15); Galip's approval is still needed (`schemas/AGENTS.md`).
+- Status: Accepted 2026-11-19 (#54, PR #248). Hasan proposed; Ömerfaruk approved the schema change in his #248 review (2026-11-15); Galip approved on 2026-11-19 and raised `RPC_VERSION` to 1.2 in the same change (branch `galip/inbox-2026-11-19`).
 - Deciders: Hasan (playback, agent screenshot), Ömerfaruk (client, server upload, report), Galip (agent RPC)
 - Issue: #54 (FR-19, NFR-03). Depends on #40 (closed) and #52 (closed).
 - Extends: ADR *Contracts v1* (`2026-11-08`), ADR *Run screenshots, idle timeout and retention* (`2026-11-08`, #51). Does not change the server side of #51.

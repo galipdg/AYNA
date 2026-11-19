@@ -45,7 +45,7 @@ from ayna_agent.errors import (
 HOST = "127.0.0.1"
 # `$defs/version` of schemas/agent-rpc.schema.json that this agent implements (ADR
 # contracts-v1-freeze). Bump it with the schema: an addition is a minor version.
-RPC_VERSION = "1.0"
+RPC_VERSION = "1.2"
 TOKEN_ENV = "AYNA_AGENT_TOKEN"
 MIN_TOKEN_LENGTH = 16
 MAX_TIMEOUT_MS = 600_000
@@ -93,8 +93,12 @@ class Desktop(Protocol):
         steps: dict[str, Any],
         targets: dict[str, Any],
         default_timeout_ms: int | None = None,
+        run_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """Play a step document against one window; one result per step, in order (#26).
+
+        `run_id` groups the screenshots of one run in one directory (#54), also when a client
+        sends one step per call (#44).
 
         Reading the window is how a target is resolved, so this raises the same errors as
         `snapshot`. A step that merely fails is a `failed` result, not an error: a run that
@@ -124,6 +128,7 @@ class UnavailableDesktop:
         steps: dict[str, Any],
         targets: dict[str, Any],
         default_timeout_ms: int | None = None,
+        run_id: str | None = None,
     ) -> list[dict[str, Any]]:
         raise UiaUnavailable(self.reason)
 
@@ -281,12 +286,18 @@ class Dispatcher:
                 INVALID_PARAMS,
                 f"Invalid params: defaultTimeoutMs must be an int from 1 to {MAX_TIMEOUT_MS}",
             )
+        run_id = params.get("runId")
+        if run_id is not None and not isinstance(run_id, str):
+            raise RpcError(INVALID_PARAMS, "Invalid params: runId must be a string")
+        # The backend names the run's screenshot directory after `run_id` and checks that it
+        # can be one (#54); a client sending one step per call (#44) needs the same folder.
         results = await self._run(
             self._desktop.run_steps,
             handle,
             params["steps"],
             targets,
             default_timeout_ms,
+            run_id,
         )
         return {"results": results}
 

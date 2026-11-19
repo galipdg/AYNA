@@ -68,9 +68,9 @@ class PlayingDesktop:
     def snapshot(self, handle, timeout_ms):
         raise AssertionError("runSteps must not take the snapshot path")
 
-    def run_steps(self, handle, steps, targets, default_timeout_ms=None):
+    def run_steps(self, handle, steps, targets, default_timeout_ms=None, run_id=None):
         self.threads.append(threading.current_thread().name)
-        self.calls.append((handle, steps, targets, default_timeout_ms))
+        self.calls.append((handle, steps, targets, default_timeout_ms, run_id))
         if self.error is not None:
             raise self.error
         return RESULTS
@@ -102,7 +102,7 @@ def test_the_results_come_back_under_results():
     desktop = PlayingDesktop()
     reply = call(desktop, params())
     assert reply["result"] == {"results": RESULTS}
-    assert desktop.calls == [(HANDLE, STEPS, TARGETS, None)]
+    assert desktop.calls == [(HANDLE, STEPS, TARGETS, None, None)]
 
 
 def test_the_steps_run_on_the_single_uia_thread():
@@ -114,8 +114,9 @@ def test_the_steps_run_on_the_single_uia_thread():
     )
 
 
-def test_the_healing_transport_params_are_accepted_and_ignored():
-    """`runId` and `appVersionId` are #149's; carrying them early keeps one request shape."""
+def test_the_run_id_reaches_the_backend():
+    """#54 names the run's screenshot directory after it; #44 sends one step per call, and
+    without the id each call would open a folder of its own."""
     desktop = PlayingDesktop()
     reply = call(
         desktop,
@@ -126,6 +127,22 @@ def test_the_healing_transport_params_are_accepted_and_ignored():
     )
     assert "result" in reply
     assert desktop.calls[0][0] == HANDLE
+    assert desktop.calls[0][4] == "3f6c2a9e-8b1d-4e7a-9c55-0d2f4b7a1e90"
+
+
+def test_without_a_run_id_the_backend_gets_none():
+    desktop = PlayingDesktop()
+    call(desktop, params())
+    assert desktop.calls[0][4] is None
+
+
+@pytest.mark.parametrize("run_id", [42, ["a"], {"id": "a"}, True])
+def test_a_run_id_that_is_not_a_string_is_refused(run_id):
+    desktop = PlayingDesktop()
+    reply = call(desktop, params(runId=run_id))
+    assert reply["error"]["code"] == INVALID_PARAMS
+    assert "runId" in reply["error"]["message"]
+    assert desktop.calls == []
 
 
 def test_a_default_timeout_is_passed_through():
@@ -134,12 +151,11 @@ def test_a_default_timeout_is_passed_through():
     assert desktop.calls[0][3] == 2_000
 
 
-def test_ping_answers_the_frozen_contract_version():
-    """1.0 is v0.1 as built plus `runSteps` and `elementFromPoint` (ADR contracts-v1-freeze).
-
-    Playback does not fill a failed step's `category` yet, so it must not claim 1.1 (#63)."""
+def test_ping_answers_the_contract_version_it_fills():
+    """1.0 is v0.1 plus `runSteps` and `elementFromPoint` (ADR contracts-v1-freeze); 1.1 a
+    failed step's `category`, filled by #63; 1.2 the step screenshot, filled by #54."""
     reply = call(PlayingDesktop(), None, method="ping")
-    assert reply["result"]["rpcVersion"] == RPC_VERSION == "1.0"
+    assert reply["result"]["rpcVersion"] == RPC_VERSION == "1.2"
 
 
 # --- params the server refuses -------------------------------------------------------------

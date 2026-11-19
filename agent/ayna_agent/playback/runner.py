@@ -742,12 +742,12 @@ def _select_row_waiting(
             performed = rows.select(row, tree, patterns)
             if performed is None:
                 raise RowFailed(rows.refused(name, want), rows.ROW_REFUSED)
-            note = (
-                rows.selected_a_cell(name, want)
-                if rows.whole_row_selected(row, tree, patterns) is False
-                else None
-            )
-            return performed, note
+            notes = []
+            if rows.whole_row_selected(row, tree, patterns) is False:
+                notes.append(rows.selected_a_cell(name, want))
+            if not rows.make_current(row, found.index, tree, patterns):
+                notes.append(rows.not_current(name, want))
+            return performed, "; ".join(notes) or None
         remaining = deadline - now()
         if timeout_ms == 0 or remaining <= 0:
             raise RowFailed(
