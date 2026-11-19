@@ -2,9 +2,9 @@
 
 How the Electron client talks to the automation agent on the same machine. Part of the agent JSON-RPC contract (see `memory-bank/project/architecture.md`), frozen at G1 (week 7). Code: `agent/ayna_agent/rpc.py` (#16).
 
-Everything up to [Trying it by hand](#trying-it-by-hand) is **1.0**, as built: v0.1 plus `runSteps` (#26) and `elementFromPoint` (#22), frozen at G1 (#52, ADR `2026-11-08-contracts-v1-freeze`). `schemas/agent-rpc.schema.json` fixes the message shapes and is checked by both sides (`client/src/main/__tests__/agentContract.test.ts`, `agent/tests/test_rpc_contract.py`). The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-draft), is a draft for a later 1.x that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
+Everything up to [Trying it by hand](#trying-it-by-hand) is **1.2**, as built: 1.0 is v0.1 plus `runSteps` (#26) and `elementFromPoint` (#22), frozen at G1 (#52, ADR `2026-11-08-contracts-v1-freeze`); 1.1 adds a failed step's `category` (#63) and 1.2 a step's screenshot (#54). `schemas/agent-rpc.schema.json` fixes the message shapes and is checked by both sides (`client/src/main/__tests__/agentContract.test.ts`, `agent/tests/test_rpc_contract.py`). The last section, [Proposed (#149)](#proposed-149-step-results-and-healing-proposals-draft), is a draft for a later 1.x that is not implemented. Its transport ADR is accepted; the parts that come from the proposal schema 0.2 ADR may still change until that one is accepted.
 
-> **Version numbers, settled 2026-11-15 (galip).** The freeze made everything built before it **1.0**, `runSteps` and `elementFromPoint` included, so they do not need a 1.1 of their own; `ping` answers `"1.0"`. **1.1** is a failed step's `category` (FR-35, #63; proposed in PR #240 with ADR `2026-11-15-failure-category`): the agent answers `"1.1"` in the change that fills it. The healing draft below takes the next minor number when it is built. A line further down that still says `"0.1"` predates this note.
+> **Version numbers, settled 2026-11-15 (galip).** The freeze made everything built before it **1.0**, `runSteps` and `elementFromPoint` included, so they do not need a 1.1 of their own; **1.1** is a failed step's `category` (FR-35, #63, ADR `2026-11-15-failure-category`) and **1.2** a step's `screenshotPath` and `screenshotAt` (#54, ADR `2026-11-15-step-screenshot-transport`). Both are filled, so `ping` answers `"1.2"` (2026-11-19). The healing draft below takes the next minor number when it is built.
 
 - [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over one WebSocket on `127.0.0.1`.
 - Only the client's main process connects. The renderer goes through the preload API, as for everything else.
@@ -61,7 +61,7 @@ Checks that the agent answers and which contract it speaks. It does not wait for
 
 ```json
 → {"jsonrpc": "2.0", "id": 1, "method": "ping"}
-← {"jsonrpc": "2.0", "id": 1, "result": {"agentVersion": "0.0.0", "rpcVersion": "1.0"}}
+← {"jsonrpc": "2.0", "id": 1, "result": {"agentVersion": "0.0.0", "rpcVersion": "1.2"}}
 ```
 
 ### `listWindows`
@@ -236,10 +236,11 @@ naming itself, so a test is never reported as passed because a keyword was skipp
 
 | Param | Type | Meaning |
 |---|---|---|
-| `handle` | integer | The window to play against, from `listWindows`. #40 makes this optional and finds the window from a target's `windowTitle`; until then an explicit handle keeps window discovery (FR-35's "unexpected window") a separate problem. |
+| `handle` | integer | The window to play against, from `listWindows`. Required: #40 kept it, so a run plays against one window, and finding the step's own window (and FR-35's "unexpected window") is still to come. |
 | `steps` | object | A step document, `{version, steps}` (`schemas/step.schema.json`). Versions **0.1 and 0.2** are both read: v0.2 only adds SelectRow, `row` and the three row checkpoints, so every 0.1 document means the same thing in both. |
 | `targets` | object | Per logical name, the repository object's property sets: `properties` (its primary, "Find by") and optional `fallback` (its "Backup", #25). `serverElementId` and `featureVersion` from the healing request below are accepted and ignored. |
-| `runId`, `appVersionId` | UUID string, optional | Accepted and ignored, so the client can send one request shape before and after #40. |
+| `runId` | string, optional | The run this call belongs to (#44, #51). Names the run's screenshot directory, so a client that sends one step per call gets one folder per run (below). A value that cannot be a directory name falls back to a timestamp, and the agent logs it. Not a string: `-32602`. |
+| `appVersionId` | UUID string, optional | Accepted and ignored, so the client can send one request shape before and after the healing transport (#149). |
 | `defaultTimeoutMs` | integer 1–600000, optional | What a step without `timeoutMs` waits. Default **10 000 ms** (RS NFR-05). A step's own `timeoutMs: 0` means check once and never means "use this". |
 
 **How a target is resolved.** The window is read and every element is matched against
@@ -273,7 +274,7 @@ still refuse (a disabled button has `Invoke`), so a refusal falls through to the
 | `Click` | `Invoke`, `Toggle`, `SelectionItem.Select`, then `LegacyIAccessible.DoDefaultAction`. |
 | `Type` | `Value.SetValue`, then focus-and-keys. A read-only ValuePattern fails the step rather than being worked around. |
 | `Wait` | Nothing: the pre-step wait above *is* the keyword, so nothing performed it. |
-| `Select` | The item of the target whose text is `value` (ValuePattern value when non-empty, else Name — the schema's rule for a cell), then `SelectionItem.Select`, then `Invoke`. **A closed combo box has no items at all**, so when the target offers `ExpandCollapse` it is expanded and the window **read again** before looking; a box it opened is closed again on success. Last, only after the whole wait, an **editable** box takes `value` as text through `Value.SetValue`, read back to confirm, and reports `performedWith: "SetValue"`. |
+| `Select` | The item of the target whose text is `value` (ValuePattern value when non-empty, else Name — the schema's rule for a cell), then `SelectionItem.Select`, then `Invoke`, then `LegacyIAccessible.DoDefaultAction` (the only rung a Qt combo box item answers, #237). **A closed combo box has no items at all**, so when the target offers `ExpandCollapse` it is expanded and the window **read again** before looking; a box it opened is closed again on success. Last, only after the whole wait, an **editable** box takes `value` as text through `Value.SetValue`, read back to confirm, and reports `performedWith: "SetValue"`. |
 | `SelectRow` | The row `row` addresses — `{index}` from the top, counted from 1, or the first row whose cell equals `{value}` (in `{column}` when given) — through `SelectionItem.Select`, then MSAA's `LegacyIAccessible.Select` (KeePass 2's list has nothing else). Never `Invoke`: invoking a row *activates* it. |
 | `Verify` | The checkpoint, re-read until it holds or the time runs out. |
 
@@ -291,6 +292,15 @@ is not among the ones it does report is a mistake, and the message lists the one
 is the ADR's rule, and the step **passes with a message saying so** instead of claiming the row:
 a pilot app's selection behaviour is not ours to change, and silence would be the one outcome a
 tester cannot debug.
+
+**On a table with no row element (Qt), SelectRow also makes the row the current one** (#265).
+`SelectionItem.Select` changes Qt's selection but not its current row, so an application that
+acts on "the current row" would act on another one. After selecting, the agent focuses the
+table through UI Automation and presses `Ctrl+Home`, then `Down` once per row above it: the keys
+a person would press, never a coordinate. It then checks the row is still the selected one. When
+that cannot be done (the table will not take the focus, the row is more than 500 rows down, or
+the keys landed elsewhere), the step still **passes with a message** that the row is selected
+but not current, and the selection is put back on the row the step named.
 
 A result carries `stepIndex`, `status` (`passed`, `failed` or `notRun`), `durationMs`, and when
 known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback match is what #73
@@ -320,13 +330,10 @@ must treat a missing screenshot as normal.
 Nothing deletes these files. The agent cannot know when the client has finished uploading them,
 so whoever owns the run owns the cleanup.
 
-**One directory per run — once `runId` reaches the backend.** `UiaDesktop.run_steps` names the
-directory after the run when it is given the run id, and falls back to a timestamp otherwise.
-`_run_steps` still only accepts `runId` and drops it (the table above), so **today every call
-opens its own directory**. That is invisible to a caller that plays a whole run in one call, and
-wrong for one that sends a step at a time as #44's client does: a seven-step run leaves seven
-folders, each with a single `step-0000.png`, and there is no one folder for the client to delete.
-Passing `params["runId"]` through is one line in `rpc.py` (#54, asked of galip).
+**One directory per run.** `UiaDesktop.run_steps` names the directory after `runId` when the
+call carries one, and falls back to a timestamp per call otherwise. So a client that sends a step
+at a time, as #44's does, must send the same `runId` with every call: without it a seven-step run
+leaves seven folders, each with a single `step-0000.png`, and there is no one folder to delete.
 
 **Why a step failed (#63, FR-35).** A `failed` step may carry a `category`, one of
 `elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete` (ADR
@@ -374,9 +381,8 @@ window is how a target is resolved.
 
 **Not yet:** healing (#73), the `run.stepResult` notifications below, and finding the window
 without a handle. `repairProposed` is not emitted until #74 is on `main`, as agreed on #223.
-Screenshots came off this list with #54 and are documented above. `ping` still answers
-`rpcVersion` `"0.1"`; see the note at the top about which number `runSteps` and
-`elementFromPoint` belong to.
+Screenshots came off this list with #54 and are documented above. `ping` answers `"1.2"`: the
+category (1.1, #63) and the screenshot fields (1.2, #54) are both filled.
 
 ## Errors
 

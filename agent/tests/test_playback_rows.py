@@ -359,3 +359,92 @@ def test_selecting_a_cell_instead_of_a_row_is_reported_as_what_it_did():
         "main.grid: the target selects cells rather than rows, so the first cell of row 2 "
         "is selected"
     )
+
+
+# --- making the selected row the current one (#265) ----------------------------------------
+
+
+class Keys:
+    """A keyboard that may refuse the focus, or 'land' the keys on another row."""
+
+    def __init__(self, *, focus: bool = True, then=None) -> None:
+        self.allow = focus
+        self.then = then
+        self.focused: list[str] = []
+        self.sent: list[str] = []
+
+    def focus(self, element) -> bool:
+        self.focused.append(element)
+        return self.allow
+
+    def send(self, keys: str) -> None:
+        self.sent.append(keys)
+        if self.then is not None:
+            self.then()
+
+
+def selected_qt_row(index: int):
+    patterns = grids.Patterns()
+    grid, read = grid_of(grids.customer_grid(), patterns)
+    row = grid.rows[index - 1]
+    assert rows.select(row, read, patterns) == "SelectionItem"
+    return row, read, patterns
+
+
+def test_a_qt_row_is_made_current_with_the_keys_a_person_would_press():
+    """Ctrl+Home to the first row, then Down to the row: moves Qt's current index, which
+    SelectionItem.Select does not (measured on the sample app, 2026-11-19)."""
+    row, read, patterns = selected_qt_row(2)
+    keys = Keys()
+    assert rows.make_current(row, TARGET, read, patterns, keys) is True
+    assert keys.focused == [read.infos[TARGET]], "the grid takes the focus, not a cell"
+    assert keys.sent == ["^{HOME}{DOWN}"]
+
+
+def test_the_first_row_needs_only_ctrl_home():
+    row, read, patterns = selected_qt_row(1)
+    keys = Keys()
+    assert rows.make_current(row, TARGET, read, patterns, keys) is True
+    assert keys.sent == ["^{HOME}"]
+
+
+def test_a_row_the_provider_has_as_an_element_needs_no_keys():
+    """KeePass 2's ListItems and a WinForms row are rows: their Select is the selection."""
+    patterns = grids.Patterns(legacy=True, selection_item=False)
+    grid, read = grid_of(grids.entry_list(), patterns)
+    keys = Keys()
+    assert rows.make_current(grid.rows[0], TARGET, read, patterns, keys) is True
+    assert keys.focused == [] and keys.sent == []
+
+
+def test_a_grid_that_will_not_take_the_focus_gets_no_keys():
+    row, read, patterns = selected_qt_row(2)
+    keys = Keys(focus=False)
+    assert rows.make_current(row, TARGET, read, patterns, keys) is False
+    assert keys.sent == []
+
+
+def test_a_row_too_far_down_is_not_walked_to(monkeypatch):
+    monkeypatch.setattr(rows, "MAX_KEYED_ROWS", 1)
+    row, read, patterns = selected_qt_row(2)
+    keys = Keys()
+    assert rows.make_current(row, TARGET, read, patterns, keys) is False
+    assert keys.focused == [] and keys.sent == []
+
+
+def test_keys_that_land_on_another_row_are_reported_and_the_selection_put_back():
+    row, read, patterns = selected_qt_row(2)
+    other = read.infos[grid_of(grids.customer_grid(), patterns)[0].rows[0].element]
+    keys = Keys(
+        then=lambda: (patterns.selection.clear(), patterns.selection.add(other))
+    )
+    assert rows.make_current(row, TARGET, read, patterns, keys) is False
+    assert patterns.selected[-1] == read.infos[row.element], (
+        "the step's row selected again"
+    )
+
+
+def test_the_not_current_message_says_what_was_done_and_what_was_not():
+    message = rows.not_current("main.customerGrid", Address(index=2))
+    assert message.startswith("main.customerGrid: row 2 is selected")
+    assert "could not make it the current row" in message
