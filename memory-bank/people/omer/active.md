@@ -2,8 +2,8 @@
 
 Only omer's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-19 evening (PR reviews and sweep; #53 §8, references, PDF build)
-- **Current issue: #53** (SDD final, due 7 Dec). PR #271 (`omer/53-sdd-traceability`, Part of #53, reviewers galip and hasan): v0.6 with §8 Traceability (86/86 against merged RS 1.0), one reference numbering (RS §2.1's, TBD-11; SDD-only [44]–[52], one list in §1.5), `docs/sdd/build_pdf.py` with vendored Mermaid 11.4.1 (offline; 33 pages, 10 diagrams). Next: final pass on status rows (merges since v0.5: #259, #262, #263, #267, #269), version 1.0, build and commit `SDD-1.0.pdf`, submit by 7 Dec.
+- Last update: 2026-11-19 late (#53 SDD 1.0 and its PDF)
+- **Current issue: #53** (SDD final, due 7 Dec). PR #271 (`omer/53-sdd-traceability`, Part of #53, reviewers galip and hasan): now **v1.0** with `docs/sdd/SDD-1.0.pdf` (33 pages, 10 diagrams; build `python docs/sdd/build_pdf.py` with markdown 3.11.3). Next: push, reviews, merge; rebuild the PDF if a later merge changes a status row; submit by 7 Dec; galip fixes §5.1's #63 row (inbox).
 - **PR #272** (`omer/44-passed-message`, Part of #44): a passed step's message under its row; reviewer hasan, check at the Windows session with #268's SelectRow case.
 - **Merged 2026-11-19 (omer's PR sweep):** #259 (with #260, #270 stacked into it; #36 stays open), #262 (closed #67), #263 (#261 stays open, `needs-windows-test`), #267 (RS 1.0; §8 here matches it). #126 marked ready (closes #10, #20), reviews asked. #266 (hasan) has code conflicts in `agent/tests/conftest.py` and `test_playback_runner.py` after #268; hasan said he resolves them.
 - **Waiting on Windows / hasan:** #261 (screenshot upload), #44 check B (task note `44-run-from-editor.md`), #24, #68, #183, #184, #204, #206. CI works again (2026-11-19 afternoon).

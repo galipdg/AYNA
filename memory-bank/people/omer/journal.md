@@ -331,3 +331,7 @@ Append-only. One entry per session, newest at the bottom:
 - 2026-11-19 · #67 · Merged hasan's #255 and #254 after local checks (Actions down again: repo private, billing). ci_suite.py now reads `--junit` XML via summary_of(): per-test table on the job summary, `error` is not a caught bug, a stale XML is deleted first; 18 harness tests on macOS. PR opened; Windows run pending CI.
 - 2026-11-19 · #261 · Client uploads step screenshots (copy out of the agent's folder per step, outbox `screenshot` entry, `released` cleanup); 328 client tests. PR #263, Windows check pending. Next: hasan's reviews of #262/#263; Windows session for #24, #44, #67, #261.
 - 2026-11-19 evening · sweep, #53 · Merged #270→#260→#259 (stack), #262 (closed #67), #263, #267 after green CI; #126 ready (main's inbox side, old #20 note dropped). #271: references renumbered to RS §2.1, SDD PDF build with vendored Mermaid (two diagram fixes). #272 opened (passed-step message). Next: SDD 1.0 and its PDF.
+
+## 2026-11-19 (late) · #53
+- SDD 1.0 on `omer/53-sdd-traceability`: status rows after PRs #246, #259, #262, #263, #268, #269; §7 rows for the two 2026-11-15 ADRs; `SDD-1.0.pdf` built and committed. §5.1 #63 row left to galip (inbox).
+- Next: push on omer's OK, PR #271 reviews and merge, submit by 7 Dec.
