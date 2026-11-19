@@ -44,6 +44,52 @@ class ActionFailed(Exception):
         super().__init__(f"{keyword} failed: {reason}")
 
 
+#: The least time between two `Invoke`s on the same target (#264). Qt performs UIA `Invoke` on a
+#: button through `QAbstractButton::animateClick()`: the button is pressed at once and released
+#: 100 ms later, and a second call before the release only restarts that timer. The second
+#: click is lost, and `Invoke` still returns without error, so the step would report `passed`
+#: and the run would fail one step later on the wrong control. Measured on the sample app's
+#: wizard Next button (2026-11-19): two `Invoke`s 0, 50 and 90 ms apart turned one page, 120
+#: and 200 ms apart turned two. 200 ms leaves room for a busy event loop.
+INVOKE_GAP_S = 0.2
+
+
+class InvokeSpacing:
+    """When each target was last clicked through `Invoke`, so the next one waits out the gap.
+
+    Only a second `Invoke` on the **same** target within :data:`INVOKE_GAP_S` waits, and only
+    for what is left of it: a Qt button keeps its own release timer, so two different buttons
+    never collide, and a fixed sleep after every step would cost every run to fix two clicks.
+    Keyed by logical name, which within one run names one element. Kept between runs on
+    purpose: the client sends each step as its own one-step run (#44), and the two clicks
+    #264 found were 77 ms apart across exactly such a boundary.
+    """
+
+    def __init__(self) -> None:
+        self._last: dict[str, float] = {}
+
+    def wait(
+        self, name: str, now: Callable[[], float], sleep: Callable[[float], None]
+    ) -> float:
+        """Sleep out the rest of the gap if `name` was invoked too recently; return the wait."""
+        last = self._last.get(name)
+        if last is None:
+            return 0.0
+        remaining = INVOKE_GAP_S - (now() - last)
+        # A negative elapsed time means another clock wrote the mark (tests inject one per
+        # run); never wait longer than the gap itself because of it.
+        if 0 < remaining <= INVOKE_GAP_S:
+            sleep(remaining)
+            return remaining
+        return 0.0
+
+    def invoked(self, name: str, at: float) -> None:
+        self._last[name] = at
+
+    def clear(self) -> None:
+        self._last.clear()
+
+
 def uia_patterns(element: Any, name: str) -> Any:
     """The real pattern lookup. Windows only; imported lazily so this module loads anywhere.
 

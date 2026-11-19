@@ -22,6 +22,7 @@ import grids
 import pytest
 
 from ayna_agent.playback import runner
+from ayna_agent.playback.actions import INVOKE_GAP_S, InvokeSpacing
 from ayna_agent.playback.runner import (
     DEFAULT_TIMEOUT_MS,
     POLL_INTERVAL_S,
@@ -1843,3 +1844,88 @@ def test_a_checkpoint_the_schema_would_refuse_fails_before_reading_the_window(
     assert results[0].status == "failed"
     assert expected in results[0].message
     assert window.reads == 0
+
+
+# --- two Invokes on one target (#264) ------------------------------------------------------
+
+TWO_CLICKS = {
+    "version": "0.1",
+    "steps": [
+        {"keyword": "Click", "target": "login.loginButton"},
+        {"keyword": "Click", "target": "login.loginButton"},
+    ],
+}
+
+
+def test_a_second_invoke_on_the_same_target_waits_out_the_gap():
+    results, _window, clock, patterns = run(TWO_CLICKS)
+    assert [r.status for r in results] == ["passed", "passed"]
+    assert [d[0] for d in patterns.done] == ["Click", "Click"]
+    assert clock.slept == [pytest.approx(INVOKE_GAP_S)]
+
+
+def test_invokes_on_different_targets_do_not_wait():
+    document = {
+        "version": "0.1",
+        "steps": [
+            {"keyword": "Click", "target": "login.loginButton"},
+            {"keyword": "Click", "target": "login.passwordInput"},
+        ],
+    }
+    _results, _window, clock, _patterns = run(document)
+    assert clock.slept == []
+
+
+def test_only_what_is_left_of_the_gap_is_waited():
+    clock = Clock()
+    spacing = InvokeSpacing()
+    one = {"version": "0.1", "steps": TWO_CLICKS["steps"][:1]}
+    run(one, clock=clock, spacing=spacing)
+    clock.at += 0.15
+    run(one, clock=clock, spacing=spacing)
+    assert clock.slept == [pytest.approx(INVOKE_GAP_S - 0.15)]
+
+
+def test_a_click_long_after_the_last_one_does_not_wait():
+    clock = Clock()
+    spacing = InvokeSpacing()
+    one = {"version": "0.1", "steps": TWO_CLICKS["steps"][:1]}
+    run(one, clock=clock, spacing=spacing)
+    clock.at += INVOKE_GAP_S
+    run(one, clock=clock, spacing=spacing)
+    assert clock.slept == []
+
+
+def test_the_gap_holds_across_two_runs_as_the_client_sends_them():
+    """The client plays each step as its own run (#44); #264's two clicks were in two."""
+    clock = Clock()
+    one = {"version": "0.1", "steps": TWO_CLICKS["steps"][:1]}
+    run(one, clock=clock)
+    run(one, clock=clock)
+    assert clock.slept == [pytest.approx(INVOKE_GAP_S)]
+
+
+def test_a_click_that_did_not_invoke_leaves_no_mark():
+    class ToggleOnly(Patterns):
+        def __call__(self, element, name):
+            if name != "Toggle":
+                return None
+            recorder = self
+
+            class Fake:
+                def Toggle(self) -> None:
+                    recorder.done.append(("Toggle", element, None))
+
+            return Fake()
+
+    results, _window, clock, _patterns = run(TWO_CLICKS, patterns=ToggleOnly())
+    assert [r.performed_with for r in results] == ["Toggle", "Toggle"]
+    assert clock.slept == []
+
+
+def test_a_mark_from_another_clock_never_makes_a_step_wait_longer_than_the_gap():
+    spacing = InvokeSpacing()
+    spacing.invoked("login.loginButton", 50.0)
+    slept: list[float] = []
+    assert spacing.wait("login.loginButton", lambda: 0.0, slept.append) == 0.0
+    assert slept == []
