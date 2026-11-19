@@ -42,6 +42,8 @@ these can be pre-flighted the same way; nothing here is built in the editor yet.
 - [x] Set of 14 drafted; pre-flight 2026-11-19 (same method as `eval/runs/week7.md`):
       **12/14 pass**. R14 fails at its Verify (opens "Ayşe Yılmaz") → #265. R24 fails at step 5
       (`elementNotFound` on `wizard.confirmCheck`: the second Next was swallowed) → #264.
+- [x] 2026-11-19 both bugs fixed on their own branches: #264 → PR #266 (R24 then 9/9),
+      #265 → PR #268 (R14 then 5/5). Full R01–R24 with #266: 23/24 (R14 only).
 - [ ] Built in the editor and run (with #55's ten, one sitting)
 - Next step: after #55's editor runs, build R11–R24 the same way; re-run R14/R24 once #264/#265 land.
 
