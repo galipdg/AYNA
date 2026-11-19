@@ -2,10 +2,11 @@
 # played with the CLI, `ayna run --from-file` (#61), as a user's pipeline would (SC-33, SC-34).
 #
 # `.github/suite/ci_suite.py` is that pipeline's part: it starts the screens the suite needs,
-# runs the CLI, and for a bug build checks that exactly the right test failed.
+# runs the CLI with `--junit` (#66), and for a bug build checks, from the XML, that exactly the
+# right test failed.
 #
-# Results are shown on the run's page (job summary) and kept as the `ayna-run-*` artifact.
-# JUnit XML comes with #66 (`--junit`); no third-party reporter action.
+# Results: one row per test on the run's page (job summary, read from the JUnit XML), and the
+# XML with the CLI's log as the `ayna-run-*` artifact. No third-party reporter action (PR #254).
 name: AYNA suite
 
 on:
@@ -68,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ayna-run-${{ env.BUG }}
-          path: out/ayna-run.txt
+          path: out/
           if-no-files-found: ignore
 
   # Nightly and on pull requests: each bug build must fail the test that is there to catch it.
@@ -112,5 +113,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ayna-run-${{ matrix.bug }}
-          path: out/ayna-run.txt
+          path: out/
           if-no-files-found: ignore
