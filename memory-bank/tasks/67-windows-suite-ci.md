@@ -49,3 +49,11 @@ JUnit XML + job summary. Suite: `.github/suite/smoke.json` (SC-14 login, SC-34 r
 - Decision (criterion 3, answered on PR #254): no third-party reporter action. `ci_suite.py` reads `--junit out/junit.xml` with `ayna_cli.junit.summary_of()`, writes a per-test table to the job summary and uploads the XML as an artifact; the `LINE` regex and `_say` import go.
 - Done on this branch: the module header says the script needs one environment with both the agent and PySide6 (hasan's review on #252).
 - Next step: once #254 merges (it waits for CI, which is blocked by billing), switch `ci_suite.py` to the XML, update its tests and the workflow, open a PR "Closes #67".
+
+## 2026-11-19 — JUnit switch (branch `omer/67-suite-junit`)
+- #254 merged. `ci_suite.py` runs `ayna run --junit out/junit.xml`, reads it with `ayna_cli.junit.summary_of()`; the `LINE` regex and the `_say` coupling are gone. The workflow uploads `out/` (XML + log) as `ayna-run-*`.
+- Decision: on a bug build only a `failure` counts as caught; an `error` (test not playable) fails the job. No XML with `--expect-failed` → exit 2.
+- Decision: `out/junit.xml` is deleted before the run, so an old file never stands in for a run that wrote none.
+- Job summary: a `Test | Result` table from the XML, the CLI log folded under `<details>`. That table is criterion 3's "visible in the Actions UI".
+- Checked on macOS: 18 harness tests; a real `ayna run` subprocess exits 2 (no UIA), no XML, summary says so.
+- Next step: a green run of the PR's suite jobs on Windows (none passes, bug1/bug4 caught, table shows) once Actions works again; then tick the three criteria and merge.
