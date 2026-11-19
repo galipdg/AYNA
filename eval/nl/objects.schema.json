@@ -44,6 +44,11 @@
               "RadioButton", "Spinner", "Tab", "TabItem", "Table", "Text", "Window"
             ]
           },
+          "name": {
+            "description": "The control's UIA Name, only where it tells apart objects that share one AutomationId: Qt gives every tab item of a tab bar the bar's id (#36, #259). Two objects may share an automationId only when both give a name and the names differ.",
+            "type": "string",
+            "minLength": 1
+          },
           "description": {
             "description": "Short Turkish description, as a tester would name the control; the visible English text in parentheses when the UI is English.",
             "type": "string",
