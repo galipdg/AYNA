@@ -2,6 +2,27 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
+- Last update: 2026-11-19. `origin/main` (`c1d325d`) merged into `hasan/66-junit-xml` for
+  PR #254; the current state lives on `hasan/55-reference-runs`'s copy of this file.
+
+## #66 -- JUnit XML, and what the schema actually says (2026-11-15)
+
+PR #254. `memory-bank/tasks/66-cli-junit-xml.md` has it; four things not to re-derive:
+
+- **The format this project wrote from #249 until now does not validate**, in four ways:
+  `<testsuites name=…>` takes no `name` and a nested suite needs `package`/`id`; `<properties>`
+  is required and first; `<system-out>`/`<system-err>` belong to the **suite** and are both
+  required; `timestamp` and `hostname` are required. Checked against a file the stand-in really
+  produced, not asserted.
+- **`timestamp` may not carry a timezone** -- the schema says so outright. This is the one place
+  the project departs from "always an offset"; the offset stamp is kept as a `<property>`.
+- **A delivery failure goes in `<system-err>` and the testcases stay green.** FR-23's exit 2
+  with all tests passing would otherwise read as a reporting bug.
+- **`xmlschema` is a `[dev]`-only dependency and the XSD is vendored** (Apache-2.0, noted in
+  `agent/tests/data/README.md`). No product module imports either.
+
+## From `hasan/36-sample-pairs` (2026-11-17, kept in omer's merge of `main`)
+
 - Last update: 2026-11-17 (2nd session). Written on `hasan/36-sample-pairs`. The #66 section (JUnit XML,
   what the schema really requires) lives in PR #254's copy of this file and arrives when it merges.
 - **CI is still down for the whole repo (billing, galip's account).** Every run fails in 1-2 s

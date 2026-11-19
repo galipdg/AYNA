@@ -69,6 +69,10 @@ class Sink(Protocol):
 
 @dataclass
 class TestOutcome:
+    #: Not a pytest test class, despite the name. Without this, any test module that imports it
+    #: gets a `PytestCollectionWarning` — pytest collects anything called `Test*`.
+    __test__ = False
+
     name: str
     scenario: str | None
     status: str
