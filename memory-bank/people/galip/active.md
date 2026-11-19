@@ -5,10 +5,10 @@ Only galip's agent edits this file. Overwrite it at every session end.
 - Last update: 2026-11-19 (main-checkout session: reviews, RS final, inbox round, #36 pairs).
 - **Open PRs of mine, each waiting on reviews. galip merges them, in this order:**
   1. **#267 RS 1.0 + PDF (#41, due 23 Nov).** After merge, **galip submits `docs/rs/RS-1.0.pdf` to the course** and comments the date and channel on #41, then closes it. Reviewers: omer and hasan. Rebuild with `python docs/rs/build_pdf.py` (needs `markdown` and Chrome) if the text changes.
-  2. **#269 inbox round:** `runId` pass-through, `rpcVersion` 1.2, `agent-rpc.md` rows, screenshot ADR Accepted, inbox cleared.
+  2. **#269 inbox round:** `runId` pass-through, `rpcVersion` 1.2, `agent-rpc.md` rows, screenshot ADR Accepted, inbox cleared. Its Windows check (one `run-<runId>` folder per run) is posted on #44, label `needs-windows-test`; #36's is on #36.
   3. **#259 → #260 (hasan) → #270 (mine, #36):** after #260 merges, retarget #270 to `main` and add `Closes #36`. hasan's §7.6 playback of my 8 scenarios is pending (Windows).
 - **Inbox:** every entry is handled. The five kept on `main` are merge anchors for #259 and #260 (`learnings.md` 2026-11-15; checked with `git merge-tree`). After those two merge, delete all but the two that are still galip's to act on:
-  - **CI billing:** Actions refuses every job because the repository is private again (omer, #262). Only the owner can fix it: make the repo public, or Settings → Billing → raise the Actions spending limit or fix the failed payment.
+  - **CI billing:** Actions refused every job this morning while the repository was private (omer, #262). By 10:19Z it was public again and CI ran green on my branches. If it goes private again, Settings → Billing → the Actions spending limit or the failed payment is the only fix.
   - **Copilot review (#256):** remove the Copilot rule from Settings → Rules → Rulesets → `protect-main`, and turn off Settings → Copilot → Code review if it is on. Keep the one-approval rule.
 - **Asked of others, not mine to do:**
   - **hasan:**
