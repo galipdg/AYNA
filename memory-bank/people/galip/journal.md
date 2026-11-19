@@ -103,3 +103,17 @@ Append-only. One entry per session, newest at the bottom:
 - Reviews, all APPROVE: #240 (failure category; ADR approved; Ambiguous is `elementNotFound` but never heals), #234 (pick hotkey, after hasan's fixes), #237 (playback v1; three `agent-rpc.md` mismatches I'll fix after merge), #239 (bug versions; bug3 stays on SC-20; SC-31's step should be Click `main.searchButton`), #235 (Windows latency; `reasons` opt-in and the 60 s default accepted; `warm_up` bug confirmed in my code). RQ1: container controls get a second, separately reported set (#29).
 - `galip/inbox-2026-11-15` (local): `rpcVersion` 1.0 with an agent-side schema test, `errors.py`, `agent-rpc.md` versions, three ADRs Accepted, RS 0.9 (TBD-2, NFR-07/08), SDD §5 refresh. The inbox is handled but not cleared, because `merge=union` would bring the entries back while four open PRs touch it. Agent tests: 436 passed from a scratchpad venv. The iCloud-evicted venv still hangs.
 - Next: push and open a PR on galip's OK; then the `ai/` follow-ups from #235 and the RS final (#41, due 23 Nov).
+
+## 2026-11-19 · reviews, RS 1.0, inbox round, #36 pairs (main-checkout session)
+- `main` pulled: 17 merges since 11-15, including #40, #54, #61, #63, #64, #66 and #67's first CI. CI is down again: billing, and the repository is private again.
+- Reviews, all APPROVE:
+  - #258 (README) and #246 (report async auth);
+  - #259 (sample objects; tab-item decision: option a, `name`) and #260 (hasan's 20 pairs; one correction posted);
+  - #268 (SelectRow makes the row current), #266 (Invoke gap), #263 (screenshot upload), #262 (suite reads JUnit).
+- #267, RS 1.0 + `docs/rs/RS-1.0.pdf` (38 pages, `build_pdf.py`):
+  - FR-11, FR-15 and FR-18 follow schema 0.2; FR-29 and FR-35 follow `triage.py`; pilots named;
+  - SC-31 moves to a missing-control bug (asked hasan); SC-20 ticks the confirm box;
+  - TBDs closed or deferred; consistency check 0 errors.
+- #269: `runId` reaches the backend, `rpcVersion` 1.2, `agent-rpc.md` rows, screenshot ADR Accepted, inbox cleared with anchors (checked with `merge-tree`). Notes to hasan and omer, and a #20 task note: #20 is done inside omer's #126.
+- #270 (stacked on #260): my 20 sample pairs, tab items with `name` (checker, schema, and a commit in hasan's generator), and guideline §6.7 row rules. 40 pairs, no problems.
+- Next: galip merges and submits the RS by 23 Nov; then #37's 40-pair run, then #43 and #42.
