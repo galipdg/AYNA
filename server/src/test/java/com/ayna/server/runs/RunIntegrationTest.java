@@ -257,7 +257,7 @@ class RunIntegrationTest {
 				new Bad(3, Map.of("stepIndex", 3), "$.stepIndex"), new Bad(-1, Map.of("stepIndex", -1), "$.stepIndex"),
 				new Bad(0, Map.of("stepId", stepIds.get(1)), "$.stepId"), new Bad(0, Map.of("stepId", 7), "$.stepId"),
 				new Bad(0, Map.of("status", "skipped"), "$.status"),
-				new Bad(0, Map.of("status", "repairProposed"), "$.status"),
+				new Bad(0, Map.of("status", "repairProposed"), "$.healingProposal"),
 				new Bad(0, Map.of("durationMs", -1), "$.durationMs"), new Bad(0, Map.of("durationMs", 1.5), "$.durationMs"),
 				new Bad(0, Map.of("message", 5), "$.message"), new Bad(0, Map.of("runId", Map.of()), "$.runId"),
 				new Bad(0, Map.of("stepIndex", List.of()), "$.stepIndex"), new Bad(0, Map.of("status", List.of()), "$.status"),

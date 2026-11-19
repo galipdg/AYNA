@@ -41,7 +41,8 @@ final class RunDtos {
 			Instant receivedAt, String screenshotUrl, String category) {
 	}
 
-	record StepResultWritten(String stepResultId) {
+	/** `healingProposalId` is the proposal a repairProposed result created (#74); null for any other result. */
+	record StepResultWritten(String stepResultId, String healingProposalId) {
 	}
 
 	/** Messages from the server on `/ws/runs`; `type` tells them apart. */

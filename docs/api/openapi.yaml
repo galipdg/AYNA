@@ -382,6 +382,116 @@ paths:
           $ref: "#/components/responses/Unauthorized"
       tags:
       - auth-controller
+  /api/healing/proposals:
+    get:
+      operationId: listProposals
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - pending
+          - approved
+          - rejected
+      - in: query
+        name: appVersionId
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProposalSummary"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      tags:
+      - healing-controller
+  /api/healing/proposals/{id}:
+    get:
+      operationId: getProposal
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalDetail"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      tags:
+      - healing-controller
+  /api/healing/proposals/{id}/approve:
+    post:
+      operationId: approveProposal
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalDetail"
+          description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - healing-controller
+  /api/healing/proposals/{id}/reject:
+    post:
+      operationId: rejectProposal
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalDetail"
+          description: OK
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+      tags:
+      - healing-controller
   /api/health:
     get:
       operationId: health
@@ -1089,6 +1199,22 @@ components:
           type: string
         technology:
           type: string
+    ApproveRequest:
+      type: object
+      properties:
+        rank:
+          type: integer
+          format: int32
+    CandidateElement:
+      type: object
+      properties:
+        elementId:
+          type: string
+        rank:
+          type: integer
+          format: int32
+        snapshotElementId:
+          type: string
     CreateAppRequest:
       type: object
       properties:
@@ -1223,6 +1349,80 @@ components:
       required:
       - status
       - title
+    ProposalDetail:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        approvedRank:
+          type: integer
+          format: int32
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateElement"
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: "#/components/schemas/UserRef"
+        decidedAt:
+          type: string
+          format: date-time
+        decidedBy:
+          $ref: "#/components/schemas/UserRef"
+        document:
+          type: object
+          description: "JSON document, validated against its schema in schemas/ (steps:\
+            \ step.schema.json, snapshots: snapshot.schema.json)"
+        id:
+          type: string
+        logicalName:
+          type: string
+        objectId:
+          type: string
+        ruleId:
+          type: string
+        runId:
+          type: string
+        status:
+          type: string
+        stepIndex:
+          type: integer
+          format: int32
+        stepResultId:
+          type: string
+    ProposalSummary:
+      type: object
+      properties:
+        appVersionId:
+          type: string
+        bestScore:
+          type: string
+        candidateCount:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        decidedAt:
+          type: string
+          format: date-time
+        decidedBy:
+          $ref: "#/components/schemas/UserRef"
+        id:
+          type: string
+        logicalName:
+          type: string
+        objectId:
+          type: string
+        runId:
+          type: string
+        status:
+          type: string
+        stepIndex:
+          type: integer
+          format: int32
     RenameTestRequest:
       type: object
       properties:
@@ -1413,6 +1613,8 @@ components:
     StepResultWritten:
       type: object
       properties:
+        healingProposalId:
+          type: string
         stepResultId:
           type: string
     TestExport:

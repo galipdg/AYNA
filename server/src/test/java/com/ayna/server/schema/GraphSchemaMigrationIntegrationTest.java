@@ -53,7 +53,9 @@ class GraphSchemaMigrationIntegrationTest {
 				Map.of("label", "RepoObject", "property", "name"),
 				Map.of("label", "Element", "property", "snapshotId"),
 				Map.of("label", "Element", "property", "automationId"),
-				Map.of("label", "Run", "property", "startedAt"), Map.of("label", "TestCase", "property", "name"));
+				Map.of("label", "Run", "property", "startedAt"), Map.of("label", "TestCase", "property", "name"),
+				Map.of("label", "HealingProposal", "property", "status"),
+				Map.of("label", "HealingProposal", "property", "createdAt"));
 	}
 
 	@Test
@@ -64,7 +66,8 @@ class GraphSchemaMigrationIntegrationTest {
 
 		assertThat(applied).extracting(r -> r.get("version").asString() + " " + r.get("description").asString())
 			.containsExactly("0001 graph schema v0", "0002 tests and objects belong to an application",
-					"0003 accounts and tokens", "0004 runs and step results", "0005 one window per snapshot");
+					"0003 accounts and tokens", "0004 runs and step results", "0005 one window per snapshot",
+					"0006 healing proposals");
 	}
 
 	@Test

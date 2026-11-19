@@ -86,7 +86,7 @@
 	</dependencies>
 
 	<build>
-		<!-- The step and snapshot schemas are shared contracts in ../schemas; the server validates against those files, not copies (#39, #15). -->
+		<!-- The step, snapshot and healing proposal schemas are shared contracts in ../schemas; the server validates against those files, not copies (#39, #15, #74). -->
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
@@ -97,6 +97,7 @@
 				<includes>
 					<include>step.schema.json</include>
 					<include>snapshot.schema.json</include>
+					<include>healing-proposal.schema.json</include>
 				</includes>
 			</resource>
 		</resources>
