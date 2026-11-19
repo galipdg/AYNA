@@ -2,22 +2,24 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, sixth stretch. On **`hasan/64-rq1-report`**, with `origin/main`
-  merged as of `0c9896c`. **Nearly everything merged today**: #46, #47, #40, #162, #23, #52,
-  and then #63 (#251), **#61 (#250)**, #44 (#247), #24 (#234), #68 (#241), #17 (#243),
-  #67 (#249). The only copies of this file still behind `main` are
-  `hasan/54-screenshot-per-step` (#54's section) and this one.
-- Current issue: **#64 (RQ1 report), PR #253**, opened as *Part of #64* — it does **not** close
-  it. All six checks green. My other open PR is **#248 (#54)**, whose two change-request items
-  are both done and which waits on omer's re-review and galip.
-- **#64's remaining work is labelling, not code**: five captured screens are unlabelled
-  (HandBrake `main-summary`, `preferences`; KeePass 2 `main`, `entry-editor`, `open-database`),
-  #29 still owes a second labeller, and KeePassXC has no captures at all.
-- **My review queue was empty today** after approving #241, #243, #234, #249 and #247 and
-  requesting changes on #242 (SDD v0.5 — three stale status rows). Check it again at session
-  start.
-- **Environment: after #250 merged, `agent/.venv` needed `pip install -e ".[dev]"` again** or
-  three `ayna_cli` test files would not collect. Already done here; a fresh clone is fine.
+- Last update: 2026-11-19. `origin/main` (`c1d325d`) merged into `hasan/66-junit-xml` for
+  PR #254; the current state lives on `hasan/55-reference-runs`'s copy of this file.
+
+## #66 -- JUnit XML, and what the schema actually says (2026-11-15)
+
+PR #254. `memory-bank/tasks/66-cli-junit-xml.md` has it; four things not to re-derive:
+
+- **The format this project wrote from #249 until now does not validate**, in four ways:
+  `<testsuites name=…>` takes no `name` and a nested suite needs `package`/`id`; `<properties>`
+  is required and first; `<system-out>`/`<system-err>` belong to the **suite** and are both
+  required; `timestamp` and `hostname` are required. Checked against a file the stand-in really
+  produced, not asserted.
+- **`timestamp` may not carry a timezone** -- the schema says so outright. This is the one place
+  the project departs from "always an offset"; the offset stamp is kept as a `<property>`.
+- **A delivery failure goes in `<system-err>` and the testcases stay green.** FR-23's exit 2
+  with all tests passing would otherwise read as a reporting bug.
+- **`xmlschema` is a `[dev]`-only dependency and the XSD is vendored** (Apache-2.0, noted in
+  `agent/tests/data/README.md`). No product module imports either.
 
 ## #64 -- RQ1's report, and the two rules it is built on (2026-11-15)
 
