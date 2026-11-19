@@ -84,7 +84,7 @@ The types follow the sample app's screens (#33) and the reference scenarios in `
 
 **Quotas.** #36 (40 sample-app pairs): 5 pairs per type, from at least 2 scenarios, in at least 3 styles (the acceptance criterion "≥ 3 phrasing variants per scenario type" is read as ≥ 3 distinct `style` values per type, which the checker counts). Across the 40, use every style at least 4 times and tag about a quarter `implicitTarget`. #57 (100): 12–13 per type; outsider pairs fill whichever types they fall into.
 
-**Grids.** Schema v0 cannot select or check a grid row (`Verify main.customerGrid name contains "Yılmaz"` checks the grid's UIA Name, not its rows; #37). A `listSearch` pair may Select only in a list or combo box; a grid row is out of scope (§6.7) until the labelling rules for schema v0.2's `SelectRow` and row checks (#147) are written with the sample-app pairs (#36).
+**Grids.** Step schema 0.2 (#147) selects and checks grid and list rows: `SelectRow`, and Verify `cell`, `rowExists` and `rowCount`. Label them by §6.7. A grid's own `name` is never its rows: `Verify main.customerGrid name contains "Yılmaz"` checks the grid's UIA Name, which is empty on a Qt table (#37). The 40 sample-app pairs of #36 have no row step, because the list screen starts with an empty grid, so a row needs a search first, and the `listSearch` quota was written before these rules. Row pairs start in #57.
 
 ## 4. Turkish vocabulary
 
@@ -130,7 +130,7 @@ The NL assistant must understand many surface forms; the gold is the same for al
 - **Booleans take only `equals`.** Negation goes into `expected`: *işaretli olmamalı* → `checked` equals `false`; *aktif değil* → `enabled` equals `false`.
 - **A literal wins over visibility.** *'Kayıt başarılı' mesajı görünmeli* → `name` equals "Kayıt başarılı" on the message label, not `visible`. With no literal (*hata mesajı görünmeli*) → `visible` equals `true` on the error label.
 - **Two conditions are two steps.** *Kaydet aktif ve görünür olmalı* → Verify `enabled`, then Verify `visible`, in text order.
-- Not expressible in v0 (§6.7): starts/ends with, does not contain, numeric comparison, counts, grid rows.
+- Rows, cells and the row count follow §6.7. Not expressible (§6.7): starts/ends with, does not contain, numeric comparisons other than an exact row count, counts of anything but rows.
 
 ### 4.3 Waits and time limits
 
@@ -209,12 +209,16 @@ A negated action (*Login'e tıklama*) is not a step; such texts are out of scope
 |---|---|
 | Type | Edit, ComboBox, Document |
 | Select | ComboBox, List (the value is one of the object's `items`) |
+| SelectRow | Table, DataGrid, List |
 | Verify `value` | Edit, ComboBox, Document |
 | Verify `checked` | CheckBox |
 | Verify `selected` | RadioButton, ListItem, TabItem, DataItem |
+| Verify `cell` | Table, DataGrid |
+| Verify `rowExists`, `rowCount` | Table, DataGrid, List |
 | Click, Wait, Verify `name` / `enabled` / `visible` | any |
 
 - A label's text is always `name`, never `value` (labels have no ValuePattern; #37 found models confuse the two). Do not check `value` on a password box: UI Automation hides it.
+- **Tabs.** *X sekmesine geç / tıkla / X sekmesini aç* is a Click on the TabItem (`settings.notificationsTab`). Qt gives every tab item the tab bar's AutomationId, so the object list tells them apart by their UIA Name (`name` in `objects.schema.json`). A precondition such as *Genel sekmesinde …* on the tab a window opens on gives no step (§6.1).
 
 ### 6.4 Values
 
@@ -231,9 +235,26 @@ Apply §4.2: property from what is checked and the control type, operator from t
 
 Apply §4.3: Wait only for an explicit *bekle* on a target; a time limit goes on the step the phrase modifies, converted to milliseconds; no limit, no `timeoutMs`.
 
-### 6.7 Out of scope for step schema v0
+### 6.7 Rows and cells (step schema 0.2), and what stays out of scope
 
-Schema v0.2 (#147) adds `SelectRow` and the `cell`, `rowExists` and `rowCount` checks. Until their labelling rules are written with the sample-app pairs (#36), grid rows, cells and item counts stay out of scope here.
+Schema 0.2 (#147, ADR `2026-10-28-step-schema-v0-2-rows`) addresses a row of a grid or list target in one of two ways, and checks a row, a cell or the row count. Label them as follows.
+
+- **Which *seç*.** The verb alone does not decide; the target does: an item of a combo box or list → Select, with the item text as `value`; a row of a grid (or an item of a list, named by its content) → SelectRow; a tab, button or link → Click.
+- **Address a row as the text does.**
+  - By content: *Soyad'ı Yılmaz olan satır*, *Yılmaz satırı* → `row: {value: "Yılmaz", column: "Soyad"}`. Give `column` only when the text names the column. The key value must be in the text (checked, like Type values).
+  - By position: *ilk satır*, *üçüncü satır* → `row: {index: 1}` or `{index: 3}`, counted from 1 from the top, header rows not counted.
+  - Never turn one into the other from what you know of the app's data: *Yılmaz'ı seç* is never `{index: 1}`.
+- **Column names** are the header texts exactly as the grid shows them (case-sensitive): the sample app's are `Ad`, `Soyad`, `Şehir`, `Durum`.
+- **Checks.**
+  - *X listelenmeli, tabloda X var / görünmeli* → Verify `rowExists` `equals` `true`, with `row: {value: X}`.
+  - *X listelenmemeli, tabloda X olmamalı* → `rowExists` `equals` `false`.
+  - *Yılmaz satırının Şehir'i Ankara olmalı* → Verify `cell` with `row: {value: "Yılmaz"}`, `column: "Şehir"`, `expected: "Ankara"`; the operator follows §4.2 (*içermeli* → `contains`). A `cell` needs columns, so it is for grids only; check a list item with `rowExists`.
+  - *Tabloda 3 kayıt / satır olmalı* → Verify `rowCount` `equals` `3` (an integer; only `equals`).
+- **The count label is not the row count.** *Kayıt sayısı etiketinde '3 kayıt bulundu' yazmalı* names the label, so it is `name` on `main.resultCountLabel`. Use `rowCount` only when the text counts the table's rows.
+- **Never pair `rowCount` with `rowExists` on one virtualised target.** `rowCount` comes from the grid's own count (GridPattern) and covers every row. `rowExists` and `cell` read the rows UI Automation exposes, and a virtualised grid exposes only the rows on screen. On a long list the two can disagree about the same data, so a pair that needs both is rewritten (team) or dropped (outsider, §8).
+- Row checks are re-read until they hold, within the step's `timeoutMs` (the step schema says so). A *bekle* on a row is therefore a `timeoutMs` on the check, never a Wait (§4.3).
+
+What stays out of scope:
 
 Do not write texts that need any of these; drop outsider texts that contain them (and count them for #57, as a finding of what users ask for):
 
@@ -242,7 +263,7 @@ Do not write texts that need any of these; drop outsider texts that contain them
 - appending to a field (*sonuna ekle*): Type replaces the text;
 - setting a check box to the state it already has (*işaretini kaldır* on an unchecked box): Click toggles (§6.8);
 - fixed sleeps and waiting until something disappears;
-- grid or table rows and cells, item counts or order, numeric comparisons, starts/ends with, does not contain, patterns;
+- the order of rows or items, sorting, numeric comparisons other than an exact row count, starts/ends with, does not contain, patterns;
 - conditions, loops, data-driven repetition (*eğer … ise*, *her şehir için*);
 - starting or closing the app, other apps, file dialogs, screenshots or visual checks;
 - negated actions as assertions (*Login'e tıklama*).
@@ -262,7 +283,7 @@ A keyword that sets a state (`Check` / `Uncheck`, or Click with an expected end 
 
 The 40 pairs of #36 need the sample app's real controls and logical names. They are a fill-in job once sample app v1.0 (#33, which waits on D1 #21) exists:
 
-1. **Object list.** Hasan runs the app's UIA dump (`uia_dump.py --json`, as for the trial app) and writes `objects/sample.json`: one entry per interactive control and per label a test may check, with the full AutomationId, control type, a Turkish description and `items` for every combo box and list; `appVersion` is the title-bar version. Galip reviews the logical names against the repository naming (`conventions.md`).
+1. **Object list.** `objects/sample.json` is generated from the app's widgets by `eval/apps/sample/nl_objects.py --write` (hasan, #259) and checked against UI Automation by `tests/test_nl_objects_uia.py`. It has one entry per interactive control and per label a test may check, with the full AutomationId, control type, a Turkish description, `items` for every combo box and list, and `name` for the tab items that share one id; `appVersion` is the title-bar version. Galip reviews the logical names against the repository naming (`conventions.md`).
 2. **Scenarios.** Two per type (§3), taken from the SC-xx scenarios in `docs/rs/scenarios.md` where they fit, with a short `scenario` id each (`sample-login-ok`, `sample-wizard-kalite`).
 3. **Texts.** Five pairs per type in at least three styles (§5). Galip and Hasan each write about half, so the set is not one person's Turkish.
 4. **Gold.** Label by §6; the other person reviews with the checklist (§9).

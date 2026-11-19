@@ -7,9 +7,12 @@ written for (`objects/<app>.json`, `objects.schema.json`). On top of the
 schemas it checks what a schema cannot:
 
 - ids and texts are unique, and an id starts with its app code;
-- each keyword and checkpoint property fits the target's control type;
+- each keyword and checkpoint property fits the target's control type, rows
+  included (SelectRow, cell, rowExists, rowCount: step schema 0.2);
+- two objects share an AutomationId only when their `name`s tell them apart;
 - a Select value is one of the target's items, when the object lists them;
-- every Type/Select value and text checkpoint appears in the text, and in a
+- every Type/Select value, row key value and text checkpoint appears in the
+  text, and in a
   team pair at least once with no letter or digit glued to it (no suffix
   dropped from a bare value; quote it or use an apostrophe);
 - a pair that clicks a check box states the assumed start state in `notes`
@@ -50,14 +53,21 @@ MIN_STYLES = 3
 
 # Control types a keyword or checkpoint property can act on (guideline 6.3).
 # Keywords and properties not listed here fit every control type.
+GRIDS = {"Table", "DataGrid"}
 KEYWORD_CONTROLS = {
     "Type": {"Edit", "ComboBox", "Document"},
     "Select": {"ComboBox", "List"},
+    "SelectRow": GRIDS | {"List"},
 }
 PROPERTY_CONTROLS = {
     "value": {"Edit", "ComboBox", "Document"},
     "checked": {"CheckBox"},
     "selected": {"RadioButton", "ListItem", "TabItem", "DataItem"},
+    # Step schema 0.2: a cell has a column, so only a grid has cells; a row and
+    # the row count exist for a list too (its items are its rows).
+    "cell": GRIDS,
+    "rowExists": GRIDS | {"List"},
+    "rowCount": GRIDS | {"List"},
 }
 ITEM_CONTROLS = {"ComboBox", "List"}
 # A Click toggles a check box, so the pair must say what it toggled from
@@ -188,16 +198,20 @@ def _load_objects(path: Path, validator: Draft202012Validator, report: Report) -
         return
     if data["app"] != path.stem:
         report.add(where, "app-mismatch", f"app {data['app']!r} != file name")
-    seen: dict[str, str] = {}
+    seen: dict[str, list[str]] = defaultdict(list)
     for name, obj in data["objects"].items():
         if "items" in obj and obj["controlType"] not in ITEM_CONTROLS:
             report.add(where, "items", f"{name}: only ComboBox and List have items")
-        first = seen.setdefault(obj["automationId"], name)
-        if first != name:
+        seen[obj["automationId"]].append(name)
+    for names in seen.values():
+        # A shared id is fine only when every object gives a distinct UIA Name,
+        # as Qt's tab items do (guideline 6.3); otherwise the id names two controls.
+        given = [data["objects"][n].get("name") for n in names]
+        if len(names) > 1 and (None in given or len(set(given)) < len(given)):
             report.add(
                 where,
                 "duplicate-object",
-                f"{name} and {first} have the same automationId",
+                f"{', '.join(names)} have the same automationId and no distinct name",
             )
     report.objects[path.stem] = data
 
@@ -229,6 +243,9 @@ def _literals(step: dict) -> Iterable[str]:
     """Texts of a step that the description must contain."""
     if step["keyword"] in ("Type", "Select") and step["value"]:
         yield step["value"]
+    row = step.get("row") or step.get("checkpoint", {}).get("row") or {}
+    if row.get("value"):
+        yield row["value"]
     if step["keyword"] == "Verify":
         expected = step["checkpoint"]["expected"]
         if isinstance(expected, str) and expected:

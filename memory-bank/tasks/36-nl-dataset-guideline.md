@@ -1,8 +1,8 @@
 # #36 Turkish NL dataset guideline + first 40 pairs (with Hasan)
 
 - Issue: https://github.com/galipdg/AYNA/issues/36
-- Owner: galip (with hasan) · Branch: `galip/36-nl-dataset-guideline` (stacked on `galip/13-step-schema`, PR #134)
-- Started: 2026-10-27 · Last update: 2026-11-02
+- Owner: galip (with hasan) · Branches: `galip/36-nl-dataset-guideline` (merged), `galip/36-sample-pairs` (the 40 sample pairs, stacked on #260 → #259)
+- Started: 2026-10-27 · Last update: 2026-11-19
 
 ## Approach
 Everything that does not need the sample app is done now; the 40 sample-app pairs are a fill-in job once #33 (which waits on D1 #21) lands. `eval/nl/guideline.md` holds the rules (use and held-out policy, record format, scenario types, Turkish vocabulary, styles, gold labelling, sample-app procedure, outsider procedure and brief for #57, reviewer checklist). The format is formal: `eval/nl/pair.schema.json` (gold refs `urn:ayna:schema:step`) and `eval/nl/objects.schema.json`. `eval/nl/check_pairs.py` validates both schemas plus the rules a schema cannot express (see its docstring). `eval/nl/pairs.jsonl` holds 12 worked pairs on the trial app (#9) with real AutomationIds in `eval/nl/objects/trial.json`; they do not count toward the 40.
@@ -29,8 +29,16 @@ Everything that does not need the sample app is done now; the 40 sample-app pair
 - [x] PR https://github.com/galipdg/AYNA/pull/145 opened 2026-10-27 (`Refs #36`, stacked on #134, merge after it), reviewers hasan + omer; request in hasan's inbox
 - [x] Review follow-ups from #145 (2026-10-31, branch `galip/36-dataset-review-followups`): §4.4 quoting + `bare-suffix`, §6.8 check boxes + `start-state`, closed-list sync test, §3 caveat, §9 outsider double-labelling; `test_nl_dataset.py` 64 tests; ai suite 385 passed; `check_pairs.py` ruff-clean (by hand)
 - [x] PR #176 approved by hasan + omer (2026-11-01). 2026-11-02: merged `origin/main` (only conflict: union-merged `people/hasan/inbox.md`, our line kept last), all five review items done; `test_nl_dataset.py` 74 tests; ai suite 439 passed; ruff clean in `ai/` and `eval/` (eval's CI job now lints `eval/nl/`)
-- [ ] Criterion 2 (40 pairs) and 3 (≥ 3 variants per type on them) — wait on #33 ← #21
-- Next step: when #33 lands, get `eval/nl/objects/sample.json` from hasan, then write the 40 sample pairs by guideline §7 (5 per type, half each), run `check_pairs.py`, and tick criteria 2–3; merge after #134.
+- [x] 2026-11-19: the 40 sample-app pairs, on branch `galip/36-sample-pairs`, stacked on hasan's #260 → #259.
+  - hasan's `sample-001`..`020`: login, form, listSearch, wait.
+  - galip's `sample-021`..`040`: settings, dialog, wizard, checkpoint.
+  - 8 types × 5 pairs, 2 scenarios and all 5 styles each; 10 of 40 `implicitTarget`, 3 `informal`.
+  - `check_pairs.py`: no problems. `test_nl_dataset.py`: 82 passed (8 new).
+- [x] Tab items (#259, option a): `objects.schema.json` gains `name`, and the checker allows a shared AutomationId only with distinct names. hasan's generator emits the three tabs (separate commit for his review); `sample.json` has 88 objects.
+- [x] #147 adoption in the guideline: §6.7 has the row rules (SelectRow, cell, rowExists, rowCount, the three-way *seç*, rowCount vs rowExists on virtualised grids), §6.3 has the control types, and the checker checks both and grounds row keys.
+- [ ] Criteria 2 and 3 tick when the PR merges (after #259 and #260).
+- [ ] §7.6 playback of galip's 8 scenarios on Windows (hasan's harness, `ayna run --from-file`). The dialog scenarios cross from `detail` to `discardDialog`, which one-window playback cannot do yet (see #41's note on unexpected window).
+- Next step: after #259 → #260 → this PR merge, run #37's criterion-1 generation on the 40 pairs with both models (needs Ollama on an idle machine).
 
 ## Live smoke run (2026-10-27, not an experiment)
 #37's generator from PR #142 (`git show` into a scratch dir, not merged), on the 12 trial pairs, objects as `{name: description}`, MacBook M2 16 GB shared with other agents (load ~6), Ollama 0.40.11, default settings (schema format, temperature 0, seed 42). Exact match = all generated steps equal the gold steps.
@@ -46,9 +54,11 @@ Everything that does not need the sample app is done now; the 40 sample-app pair
 - 12 sentences on one screen say little about RQ3; the numbers only show the format works end to end.
 
 ## Manual checks
+- 2026-11-19 · pending Windows session · §7.6 playback of galip's 8 scenarios and `test_nl_objects_uia.py` with the tab items · steps on #36 (label `needs-windows-test`)
 - none: no UI. The trial objects' AutomationIds come from hasan's Windows-verified `test_uia.py` (#9), not re-checked here.
 
 ## Open issues
+- 2026-11-19: no sample pair has a row step. The list screen starts with an empty grid, so a row needs a search first (a `listSearch` pair), and hasan's 5 were written before §6.7. The first row pairs go into #57's `listSearch` share. In the #260 review I wrongly said my `checkpoint` pairs would carry them; that is corrected on #260.
 - Schema v0 cannot select or check grid rows (#37 finding). `listSearch` pairs can only Select in a List/ComboBox; asked hasan whether the sample app's list screen can offer one (inbox). A v0.2 row/cell check is a separate issue to raise after #134.
 - `ai/ayna_ai/generate.py` (#37) reads `--objects` as `{name: description}`; to run it on `eval/nl/` it needs the one-line conversion or an option to read `objects/<app>.json` — do it in #37's criterion-1 run, not here.
 - #122 (PR #167) gave `eval/` a pyproject (with `jsonschema` for this checker) and a Windows CI job that lints `eval/nl/`, but its pytest `testpaths` is only `apps/trial/tests`. Moving `test_nl_dataset.py` to `eval/nl/tests/` needs that `testpaths` changed in hasan's `eval/pyproject.toml`; ask him, then move it in a small PR. Until then it runs in the ai job (Ubuntu), and the newline fix keeps it green on Windows too.
