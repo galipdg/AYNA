@@ -70,6 +70,12 @@ Draft set (gold steps of the 8 #36 scenarios were already played with `ayna run`
 - 2026-11-17: the full `eval` suite had 11 UIA failures (main screen) while two hand-started
   `sample_app.py --screen main` processes were open; not caused by this branch, rerun when closed.
 
+- 2026-11-19: #62's pre-flight (R11–R24) found two playback bugs that also bear on this set
+  and on RQ2: **#264** (a second Click on the same Qt button within ~100 ms is swallowed by
+  `animateClick` but reported passed: timing-dependent, so flaky) and **#265** (SelectRow
+  selects a Qt row but does not make it current). R01–R10 do not hit either in the pre-flight
+  (no back-to-back Click on one button, no SelectRow), but `ayna run` plays faster than the client.
+
 ## Handoff
 
 ## Outcome (fill when the issue closes)
