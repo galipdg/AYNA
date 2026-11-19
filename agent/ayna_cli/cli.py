@@ -12,11 +12,14 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from collections.abc import Sequence
 from dataclasses import replace
+from datetime import datetime
 from typing import Any, TextIO
 
 from ayna_cli.exits import OPERATIONAL_FAILURE
+from ayna_cli.junit import write_junit
 from ayna_cli.playback import AgentPlayer, PlaybackUnavailable
 from ayna_cli.run import NoSink, ServerSink, SuiteOutcome, TestOutcome, play_suite
 from ayna_cli.server import TOKEN_VARIABLE, AynaServer, ServerError
@@ -53,6 +56,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="the application version a run is recorded against; default its newest",
     )
     parser.add_argument(
+        "--junit",
+        metavar="OUT.XML",
+        help=(
+            "write the run as JUnit XML, so a CI server shows it as tests (#66, FR-24). "
+            "Validated against the Apache Ant JUnit schema"
+        ),
+    )
+    parser.add_argument(
         "--window",
         metavar="TITLE",
         help=(
@@ -83,10 +94,28 @@ def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int
         print(f"error: {exc}", file=out)
         return OPERATIONAL_FAILURE
 
+    started_at = datetime.now().astimezone()
+    started = time.monotonic()
     try:
         outcome = play_suite(suite, player, sink, on_test=lambda t: _say(t, out))
     finally:
         player.close()
+    elapsed = time.monotonic() - started
+
+    if args.junit:
+        # After the run and before the exit code, and never allowed to change it: a report
+        # that cannot be written is the job's problem to see, not a reason to relabel a run
+        # that already happened.
+        try:
+            write_junit(
+                args.junit,
+                suite.name,
+                outcome,
+                started_at=started_at,
+                duration_s=elapsed,
+            )
+        except OSError as exc:
+            print(f"warning: could not write {args.junit}: {exc}", file=out)
 
     _summarise(suite, outcome, out)
     return outcome.code

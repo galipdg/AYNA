@@ -15,7 +15,14 @@ dependencies = [
 ayna = "ayna_cli.cli:console_entry"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff~=0.17.2", "jsonschema~=4.26"]
+dev = [
+    "pytest>=8",
+    "ruff~=0.17.2",
+    "jsonschema~=4.26",
+    # #66 validates the CLI's JUnit XML against the Apache Ant schema. Tests only: no module
+    # under `ayna_agent/` or `ayna_cli/` imports it, so nothing ships to a closed network.
+    "xmlschema~=4.3",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
