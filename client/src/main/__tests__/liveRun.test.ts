@@ -4,6 +4,7 @@ import type { RunSummary } from '../../shared/api.ts'
 import {
   fromSummary,
   locksEditor,
+  rowNote,
   rowState,
   runBarState,
   stepOutcomeFrom,
@@ -61,7 +62,13 @@ describe('live run', () => {
   })
 
   it('stepOutcomeFrom reads all three shapes', () => {
-    const agent = { stepIndex: 0, status: 'failed', durationMs: 12, message: 'no', category: 'timeout' }
+    const agent = {
+      stepIndex: 0,
+      status: 'failed',
+      durationMs: 12,
+      message: 'no',
+      category: 'timeout',
+    }
     assert.deepEqual(stepOutcomeFrom(agent), {
       stepIndex: 0,
       stepId: null,
@@ -88,7 +95,13 @@ describe('live run', () => {
       message: null,
       category: null,
     })
-    const event = { type: 'run.stepResult', testId: 't1', runId: 'r1', stepIndex: 1, status: 'notRun' }
+    const event = {
+      type: 'run.stepResult',
+      testId: 't1',
+      runId: 'r1',
+      stepIndex: 1,
+      status: 'notRun',
+    }
     assert.equal(stepOutcomeFrom(event)?.status, 'notRun')
     assert.equal(stepOutcomeFrom(event)?.durationMs, null)
     assert.equal(stepOutcomeFrom({ stepIndex: 0, status: 'skipped' }), null)
@@ -111,7 +124,10 @@ describe('live run', () => {
     )
     assert.deepEqual([running.kind, running.stepNumber, running.elapsedMs], ['running', 2, 7000])
     const stopped = runBarState(
-      withOutcome(withOutcome(fromSummary({ ...summary, status: 'aborted' }, true), outcome(0, 'passed')), outcome(1, 'notRun')),
+      withOutcome(
+        withOutcome(fromSummary({ ...summary, status: 'aborted' }, true), outcome(0, 'passed')),
+        outcome(1, 'notRun'),
+      ),
       0,
     )
     assert.deepEqual([stopped.kind, stopped.stepNumber], ['aborted', 2])
@@ -130,8 +146,32 @@ describe('live run', () => {
     assert.equal(rowState(run, 0, 0).kind, 'failed')
     assert.equal(rowState(run, 1, 0).kind, 'skipped')
     assert.equal(rowState(run, 2, 0).kind, 'pending')
-    const playing = rowState({ ...fromSummary(summary, true), current: { stepIndex: 0, startedAt: 1000, timeoutMs: 20_000 } }, 0, 3100)
+    const playing = rowState(
+      {
+        ...fromSummary(summary, true),
+        current: { stepIndex: 0, startedAt: 1000, timeoutMs: 20_000 },
+      },
+      0,
+      3100,
+    )
     assert.deepEqual([playing.kind, playing.waitedMs, playing.timeoutMs], ['playing', 2100, 20_000])
+  })
+
+  it('rowNote shows the message of a failed step and of a passed one (#268)', () => {
+    const withMessage = (status: 'passed' | 'failed' | 'notRun', message: string | null) =>
+      rowState(withOutcome(fromSummary(summary, true), { ...outcome(0, status), message }), 0, 0)
+    assert.deepEqual(rowNote(withMessage('failed', 'mock failure')), {
+      text: 'mock failure',
+      failed: true,
+    })
+    assert.deepEqual(rowNote(withMessage('passed', 'the row is selected but not current')), {
+      text: 'the row is selected but not current',
+      failed: false,
+    })
+    assert.equal(rowNote(withMessage('passed', null)), null)
+    assert.equal(rowNote(withMessage('passed', '')), null)
+    assert.equal(rowNote(withMessage('notRun', 'not run')), null, 'a skipped step says Skipped')
+    assert.equal(rowNote({ kind: 'pending' }), null)
   })
 
   it("locksEditor only for this client's playing run", () => {

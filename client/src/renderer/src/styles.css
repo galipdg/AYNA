@@ -1476,6 +1476,10 @@ ul.message {
   color: var(--success);
 }
 
+.step-note td {
+  color: var(--text-muted);
+}
+
 .result-failed,
 .step-failure td {
   color: var(--danger);
@@ -1490,7 +1494,7 @@ ul.message {
   color: var(--text-muted);
 }
 
-.step-failure td {
+.step-note td {
   padding-top: 0 !important;
   font-size: 12.5px;
 }

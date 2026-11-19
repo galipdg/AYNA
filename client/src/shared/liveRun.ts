@@ -124,7 +124,11 @@ export function runBarState(run: LiveRun, now: number): RunBarState {
   }
   if (run.status === 'aborted') {
     const notRun = run.outcomes.find((outcome) => outcome.status === 'notRun')
-    return { kind: 'aborted', stepNumber: (notRun?.stepIndex ?? run.outcomes.length) + 1, elapsedMs }
+    return {
+      kind: 'aborted',
+      stepNumber: (notRun?.stepIndex ?? run.outcomes.length) + 1,
+      elapsedMs,
+    }
   }
   return { kind: 'passed', stepNumber: run.stepCount, elapsedMs }
 }
@@ -152,6 +156,17 @@ export function rowState(run: LiveRun | null, stepIndex: number, now: number): R
     }
   }
   return { kind: 'pending' }
+}
+
+/**
+ * The line under a step's row: the agent's message on a failed step, and on a passed one too
+ * (a SelectRow that selected the row but could not make it current, or selects cells, #268).
+ * A skipped step says so in its Result cell and gets no line.
+ */
+export function rowNote(state: RowState): { text: string; failed: boolean } | null {
+  const text = state.outcome?.message
+  if (!text || (state.kind !== 'failed' && state.kind !== 'passed')) return null
+  return { text, failed: state.kind === 'failed' }
 }
 
 /**
