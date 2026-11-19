@@ -2,7 +2,7 @@
 
 - Issue: https://github.com/galipdg/AYNA/issues/67
 - Owner: omer · Branch: `omer/67-windows-suite-ci`
-- Started: 2026-11-15 · Last update: 2026-11-15
+- Started: 2026-11-15 · Last update: 2026-11-15 (CLI switch)
 
 ## Approach
 `.github/workflows/ayna-suite.yml` (nightly, dispatch with a `bug` choice, and PRs touching
@@ -35,3 +35,11 @@ JUnit XML + job summary. Suite: `.github/suite/smoke.json` (SC-14 login, SC-34 r
 - Exit codes 0/1/2 as the CLI's. `--app-arg` takes values starting with `--` only as `--app-arg=--bug`.
 
 ## Outcome (fill when the issue closes)
+
+## 2026-11-15 — switched to the CLI (branch `omer/67-suite-on-cli`)
+- `run_suite.py` and its tests are gone; `.github/suite/ci_suite.py` is the pipeline's part: start each distinct `launch` of the suite once (login + detail windows side by side), run `python -m ayna_cli run --from-file`, job summary + `out/ayna-run.txt` artifact, `--expect-failed` verdict for bug builds.
+- Decision: the CLI does not start the AUT (SC-33: the pipeline does), so the harness does — not a CLI option.
+- Decision: until #66's `--junit`, the verdict reads the CLI's `pass  NAME` / `FAIL  NAME` lines; `test_ci_suite.py` builds those lines with `ayna_cli.cli._say` itself, so a format change fails the test.
+- Criterion 3 (JUnit in the Actions UI) is back to pending until #66: the summary shows the CLI output, not JUnit.
+- Checked on macOS: 13 harness tests; a real `ayna run` subprocess exits 2 (no UIA) and the apps are stopped. Windows run: this PR's CI.
+- Next step: push and PR on omer's OK; read both jobs; after #66, add `--junit out/junit.xml` and read the XML instead of the lines.

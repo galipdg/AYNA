@@ -2,22 +2,8 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-15, seventh stretch. On **`hasan/66-junit-xml`**, branched from `main`
-  at `0c9896c`. Nearly everything of mine merged today; the copies of this file still behind
-  `main` are `hasan/54-screenshot-per-step` (#54), `hasan/64-rq1-report` (#64) and this one.
-- **CI IS DOWN FOR THE WHOLE REPOSITORY, and it is billing, not code.** From about 18:35Z every
-  job fails to start in 1-2 s: "recent account payments have failed or your spending limit
-  needs to be increased". My 18:13Z run passed all six; nothing in between touched CI. Only
-  **galip's** billing settings can clear it (the repo is `galipdg/AYNA`) -- in his inbox, on
-  PR #254, and in `learnings.md`. **Do not debug a branch over this**: the tell is a 1-2 s job
-  with no log at all.
-- Current issue: **#66 (CLI JUnit XML), PR #254**, opened as *Part of #66* -- criterion 1 is met
-  and proved, criterion 2 ("a GitHub Actions test reporter displays it") is a decision in
-  `.github/` and omer's. Verified locally instead: 782 agent tests under CI's own invocation,
-  ruff clean, and a real run whose file validates against the schema.
-- **My other open PRs: #248 (#54), #253 (#64).** All three wait on reviews, and now also on CI.
-- **Reviewed today**: approved #241, #243, #234, #249, #247 and **#252** (omer's switch of #67
-  to `ayna run` -- I ran all three of its jobs on Windows for him); changes requested on #242.
+- Last update: 2026-11-19. `origin/main` (`c1d325d`) merged into `hasan/66-junit-xml` for
+  PR #254; the current state lives on `hasan/55-reference-runs`'s copy of this file.
 
 ## #66 -- JUnit XML, and what the schema actually says (2026-11-15)
 
@@ -34,6 +20,21 @@ PR #254. `memory-bank/tasks/66-cli-junit-xml.md` has it; four things not to re-d
   with all tests passing would otherwise read as a reporting bug.
 - **`xmlschema` is a `[dev]`-only dependency and the XSD is vendored** (Apache-2.0, noted in
   `agent/tests/data/README.md`). No product module imports either.
+
+## #64 -- RQ1's report, and the two rules it is built on (2026-11-15)
+
+PR #253. `memory-bank/tasks/64-rq1-report.md` has it all; four things not to re-derive:
+
+- **The target is judged on the interval's lower bound, never the point estimate.** 39 of 41 is
+  95.1 % and the Wilson interval reaches 83.9 %, so **NFR-27 is reported as not demonstrated**.
+- **Only labelled screens enter a rate, and a verdict never appears without its coverage** --
+  the table says "met on 1 of 4 screens", because a bare "met" is what gets quoted. Both rules
+  exist because a rate of mine was quoted out of scope once and retracted.
+- **`wilson()` lives in `eval/rq1/report.py`** and is the only implementation in the repo; RQ2
+  (#69) and RQ3 (#77) will want it. It is checked against numeric root-finding on the score
+  equation, not against its own output. Asked galip whether to move it somewhere shared.
+- **A test pins the committed `report.md` to the generator's output**, so it cannot drift from
+  the labels. Regenerate with `.venv/Scripts/python.exe eval/rq1/report.py`.
 
 #63 -- the triage rule, and the one decision it had to make (2026-11-15)
 
