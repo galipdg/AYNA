@@ -128,7 +128,7 @@ class ContractDesktop:
     def element_from_point(self, x, y):
         return HIT if (x, y) == (10, 10) else NO_WINDOW
 
-    def run_steps(self, handle, steps, targets, default_timeout_ms=None):
+    def run_steps(self, handle, steps, targets, default_timeout_ms=None, run_id=None):
         return RESULTS
 
 
