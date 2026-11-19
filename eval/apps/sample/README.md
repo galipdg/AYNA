@@ -120,6 +120,26 @@ SC-34, SC-31). Four of the five are specified by `docs/rs/scenarios.md` down to 
 The bug is installed before the first window exists, because Qt binds a slot when `connect` is
 called; `bugs.md` has the log, the symptom of each bug and what each one patches.
 
+## The NL dataset's object list (#36)
+
+`eval/nl/objects/sample.json` lists the objects a gold step of the Turkish NL dataset may
+target: every window, every interactive control and the labels a step reads, each with its
+AutomationId, ControlType, a Turkish description and, for combo boxes, the items. It is
+generated, never edited by hand:
+
+```powershell
+.venv/Scripts/python.exe eval/apps/sample/nl_objects.py --write    # after any change here
+.venv/Scripts/python.exe eval/apps/sample/nl_objects.py --check
+```
+
+It is built from the widgets, not from `uia_check.py --json`, because the dump sees only what
+is on screen and two settings tabs, two wizard pages and both dialogs are not.
+`tests/test_nl_objects_uia.py` walks all of them on Windows and checks every listed id and
+type against the real tree. Measured on 2026-11-17: a `QDateEdit` is a **Spinner**, and the
+three settings **tab items share the tab bar's AutomationId**
+(`QApplication.settings.tabs.qt_tabwidget_tabbar`) and differ only by Name, which is why the
+list leaves them out for now (`nl_objects.py` says why).
+
 ## The acceptance check
 
 One command answers both of #33's control criteria, for every screen, and exits non-zero
@@ -159,6 +179,8 @@ OK  wizard      8 interactive,  22 elements, 0 without an AutomationId
 | `tests/test_variant_uia.py` | **yes** (`@pytest.mark.windows`) | Every row of `ground_truth.json` against a real provider, 17 app launches |
 | `tests/test_bugs.py` | no | #47's bug versions: the bug set, that every scenario it names exists in the RS, that each version shows **exactly** its own bug, and that `reset()` puts the app back |
 | `tests/test_bug_uia.py` | **yes** (`@pytest.mark.windows`) | Each bug's symptom as a step sees it: a Name, a Save button's `enabled`, a window that is not there |
+| `tests/test_nl_objects.py` | no | #36's object list: that the committed file is what `nl_objects.py` writes, that it fits `eval/nl/objects.schema.json`, and what it includes |
+| `tests/test_nl_objects_uia.py` | **yes** (`@pytest.mark.windows`) | Every listed object's id and type in the real tree, all tabs, pages and both dialogs walked |
 
 136 tests, all green on 2026-11-15 (#46 added 49 of them and #47 another 30); `pytest eval`
 from the repository root is 241 and the CI invocation,

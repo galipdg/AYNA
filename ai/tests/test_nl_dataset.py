@@ -275,6 +275,135 @@ MUTATIONS = {
 }
 
 
+# --- objects that share an AutomationId (Qt tab items, #259) ------------------------
+
+TABS = {
+    "form.generalTab": {
+        "automationId": "demo.form.tabs.qt_tabwidget_tabbar",
+        "controlType": "TabItem",
+        "name": "Genel",
+        "description": "Genel sekmesi",
+    },
+    "form.notificationsTab": {
+        "automationId": "demo.form.tabs.qt_tabwidget_tabbar",
+        "controlType": "TabItem",
+        "name": "Bildirimler",
+        "description": "Bildirimler sekmesi",
+    },
+}
+
+
+def with_tabs(**changes) -> dict:
+    objects = copy.deepcopy(OBJECTS)
+    tabs = copy.deepcopy(TABS)
+    for name, change in changes.items():
+        if change is None:
+            del tabs[name]["name"]
+        else:
+            tabs[name]["name"] = change
+    objects["objects"].update(tabs)
+    return objects
+
+
+def test_tab_items_may_share_an_id_when_their_names_differ(tmp_path):
+    assert codes(write(tmp_path, records(), with_tabs())) == set()
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [{"form.notificationsTab": "Genel"}, {"form.notificationsTab": None}],
+    ids=["same-name", "one-without-name"],
+)
+def test_a_shared_id_needs_a_distinct_name_on_every_object(tmp_path, changes):
+    assert "duplicate-object" in codes(write(tmp_path, records(), with_tabs(**changes)))
+
+
+# --- rows: step schema 0.2 (#147) ------------------------------------------------------
+
+ROW_OBJECTS = {
+    "form.customerGrid": {
+        "automationId": "demo.form.customerGrid",
+        "controlType": "Table",
+        "description": "Müşteri tablosu",
+    },
+    "form.cityList": {
+        "automationId": "demo.form.cityList",
+        "controlType": "List",
+        "description": "Şehir listesi",
+    },
+}
+ROW_TEXT = "Tabloda Soyad'ı 'Yılmaz' olan satırı seç ve satırın Şehir'i Ankara olmalı."
+
+
+def row_pairs(steps: list[dict]) -> tuple[list[dict], dict]:
+    objects = copy.deepcopy(OBJECTS)
+    objects["objects"].update(ROW_OBJECTS)
+    pair = records()[0]
+    pair.update(
+        id="demo-010",
+        scenario="demo-rows",
+        scenarioType="listSearch",
+        text=ROW_TEXT,
+        gold={"version": SCHEMA_VERSION, "steps": steps},
+    )
+    return records() + [pair], objects
+
+
+SELECT_ROW = {
+    "keyword": "SelectRow",
+    "target": "form.customerGrid",
+    "row": {"value": "Yılmaz", "column": "Soyad"},
+}
+CELL = {
+    "keyword": "Verify",
+    "target": "form.customerGrid",
+    "checkpoint": {
+        "property": "cell",
+        "operator": "equals",
+        "expected": "Ankara",
+        "row": {"value": "Yılmaz", "column": "Soyad"},
+        "column": "Şehir",
+    },
+}
+
+
+def test_row_steps_on_a_grid_are_valid(tmp_path):
+    pairs, objects = row_pairs([SELECT_ROW, CELL])
+    assert codes(write(tmp_path, pairs, objects), min_styles=0) == set()
+
+
+@pytest.mark.parametrize(
+    ("step", "code"),
+    [
+        ({**SELECT_ROW, "target": "form.nameInput"}, "control-type"),
+        ({**CELL, "target": "form.cityList"}, "control-type"),
+        (
+            {
+                "keyword": "Verify",
+                "target": "form.nameInput",
+                "checkpoint": {
+                    "property": "rowExists",
+                    "operator": "equals",
+                    "expected": True,
+                    "row": {"value": "Yılmaz"},
+                },
+            },
+            "control-type",
+        ),
+        ({**SELECT_ROW, "row": {"value": "Demir", "column": "Soyad"}}, "ungrounded"),
+    ],
+    ids=[
+        "selectrow-on-edit",
+        "cell-on-list",
+        "rowexists-on-edit",
+        "row-key-not-in-text",
+    ],
+)
+def test_row_steps_follow_the_control_type_and_the_text(tmp_path, step, code):
+    pairs, objects = row_pairs([step, CELL])
+    assert code in codes(write(tmp_path, pairs, objects), min_styles=0)
+
+
 @pytest.mark.parametrize("name", MUTATIONS)
 def test_checker_reports_the_broken_rule(tmp_path, name):
     code, mutate = MUTATIONS[name]
