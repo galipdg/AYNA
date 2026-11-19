@@ -15,11 +15,15 @@ import type { Step } from '../shared/steps.ts'
 import type { Outbox } from './outbox.ts'
 import type { CreatedRun } from './runs.ts'
 import { findWindow, systemClock, windowTitleOf, type Clock } from './runWindows.ts'
+import type { ScreenshotKeeper } from './screenshots.ts'
 import { listWindows, type AgentCaller } from './spy.ts'
 import { DEFAULT_STEP_TIMEOUT_MS, type StepPlayer } from './stepPlayer.ts'
 
 export interface RunnerDeps {
-  createRun(testId: string, appVersionId: string): Promise<{ ok: true; created: CreatedRun } | RunsError>
+  createRun(
+    testId: string,
+    appVersionId: string,
+  ): Promise<{ ok: true; created: CreatedRun } | RunsError>
   /** The application's repository; null if it cannot be read. */
   repoObjects(): Promise<RepoObjectSummary[] | null>
   /** The object's element as last captured, for its window title. */
@@ -28,6 +32,8 @@ export interface RunnerDeps {
   agent: AgentCaller
   player: StepPlayer
   outbox: Pick<Outbox, 'add' | 'opened'>
+  /** Takes each step's PNG from the agent for the outbox to upload (#261); none: not uploaded. */
+  screenshots?: ScreenshotKeeper
   log?: (line: string) => void
   serverUrl: string
   clock?: Clock
@@ -102,7 +108,9 @@ export class Runner {
       await this.playSteps(created, appVersionId)
     } catch (error) {
       const log = this.deps.log ?? console.error
-      log(`[runner] run ${created.run.id} ended: ${error instanceof Error ? error.message : String(error)}`)
+      log(
+        `[runner] run ${created.run.id} ended: ${error instanceof Error ? error.message : String(error)}`,
+      )
       try {
         await this.deps.outbox.add({
           kind: 'finish',
@@ -120,6 +128,9 @@ export class Runner {
         choosing: null,
         problem: 'not-stored',
       })
+    } finally {
+      // Its images are in the client's own folder by now; the agent's are not needed (#261).
+      await this.deps.screenshots?.release(created.run.id)
     }
   }
 
@@ -133,7 +144,10 @@ export class Runner {
     for (; next < steps.length && !this.stopping; next++) {
       const step = steps[next]
       const timeoutMs = step.timeoutMs ?? DEFAULT_STEP_TIMEOUT_MS
-      this.update({ ...this.run!, current: { stepIndex: next, startedAt: this.clock.now(), timeoutMs } })
+      this.update({
+        ...this.run!,
+        current: { stepIndex: next, startedAt: this.clock.now(), timeoutMs },
+      })
       const outcomeOf = (message: string, category: string | null = null): StepOutcome => ({
         stepIndex: next,
         stepId: step.id ?? null,
@@ -145,10 +159,16 @@ export class Runner {
       const object = objects.get(step.target)
       let outcome: StepOutcome
       let agentGone = false
+      let screenshotPath: string | undefined
       if (!object) {
         outcome = outcomeOf(`the element "${step.target}" is not in the repository`)
       } else {
-        const window = await this.windowFor(titles.get(object.name) ?? null, timeoutMs, chosen, outcomeOf)
+        const window = await this.windowFor(
+          titles.get(object.name) ?? null,
+          timeoutMs,
+          chosen,
+          outcomeOf,
+        )
         if ('stop' in window) break
         if ('outcome' in window) {
           ;({ outcome, agentGone } = window)
@@ -163,10 +183,10 @@ export class Runner {
             runId: run.id,
             appVersionId,
           })
-          ;({ outcome, agentGone } = played)
+          ;({ outcome, agentGone, screenshotPath } = played)
         }
       }
-      await this.record(run.id, outcome)
+      await this.record(run.id, outcome, screenshotPath)
       if (agentGone) {
         status = 'aborted'
         next++
@@ -182,7 +202,12 @@ export class Runner {
     for (; next < steps.length; next++) {
       await this.record(run.id, notRun(next, steps[next]))
     }
-    await this.deps.outbox.add({ kind: 'finish', serverUrl: this.deps.serverUrl, runId: run.id, status })
+    await this.deps.outbox.add({
+      kind: 'finish',
+      serverUrl: this.deps.serverUrl,
+      runId: run.id,
+      status,
+    })
     this.update({ ...this.run!, status, current: null, choosing: null })
   }
 
@@ -199,10 +224,7 @@ export class Runner {
       const object = objects.get(target)
       if (!object || titles.has(target)) continue
       const title = windowTitleOf(object)
-      titles.set(
-        target,
-        title ?? windowTitleOf(object, await this.deps.capturedElement(object.id)),
-      )
+      titles.set(target, title ?? windowTitleOf(object, await this.deps.capturedElement(object.id)))
     }
     return titles
   }
@@ -220,16 +242,26 @@ export class Runner {
     let candidates
     if (title === null) {
       const listed = await listWindows(this.deps.agent)
-      if (!listed.ok) return gone(outcomeOf, listed.detail ?? 'the windows could not be listed', listed.reason)
+      if (!listed.ok)
+        return gone(outcomeOf, listed.detail ?? 'the windows could not be listed', listed.reason)
       candidates = listed.windows
     } else {
-      const found = await findWindow(this.deps.agent, title, timeoutMs, this.clock, () => this.stopping)
+      const found = await findWindow(
+        this.deps.agent,
+        title,
+        timeoutMs,
+        this.clock,
+        () => this.stopping,
+      )
       if ('handle' in found) return found
       if ('failed' in found) return { outcome: outcomeOf(found.failed), agentGone: true }
       if ('none' in found) {
         if (this.stopping) return { stop: true }
         return {
-          outcome: outcomeOf(`no window titled "${title}" appeared within ${timeoutMs} ms`, 'unexpectedWindow'),
+          outcome: outcomeOf(
+            `no window titled "${title}" appeared within ${timeoutMs} ms`,
+            'unexpectedWindow',
+          ),
           agentGone: false,
         }
       }
@@ -248,14 +280,28 @@ export class Runner {
     return { handle }
   }
 
-  private async record(runId: string, outcome: StepOutcome): Promise<void> {
+  private async record(
+    runId: string,
+    outcome: StepOutcome,
+    screenshotPath?: string,
+  ): Promise<void> {
+    // Taken from the agent before anything else: its next step writes the same file (#261).
+    const image =
+      screenshotPath && this.deps.screenshots
+        ? await this.deps.screenshots.keep(runId, outcome.stepIndex, screenshotPath)
+        : null
+    const { serverUrl } = this.deps
+    const stepIndex = outcome.stepIndex
     await this.deps.outbox.add({
       kind: 'result',
-      serverUrl: this.deps.serverUrl,
+      serverUrl,
       runId,
-      stepIndex: outcome.stepIndex,
+      stepIndex,
       body: resultBody(runId, outcome),
     })
+    // After its result, as the screenshots ADR asks: the server attaches it to that result.
+    if (image)
+      await this.deps.outbox.add({ kind: 'screenshot', serverUrl, runId, stepIndex, path: image })
     this.update(withOutcome(this.run!, outcome))
   }
 
@@ -274,7 +320,14 @@ function gone(
 }
 
 function notRun(stepIndex: number, step: Step): StepOutcome {
-  return { stepIndex, stepId: step.id ?? null, status: 'notRun', durationMs: null, message: null, category: null }
+  return {
+    stepIndex,
+    stepId: step.id ?? null,
+    status: 'notRun',
+    durationMs: null,
+    message: null,
+    category: null,
+  }
 }
 
 /** The `PUT` body: `run.stepResult`'s params, leaving out what is not known. */

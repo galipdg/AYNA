@@ -16,7 +16,19 @@ const result = (runId: string, stepIndex: number, serverUrl = SERVER): OutboxEnt
   stepIndex,
   body: { runId, stepIndex, status: 'passed' },
 })
-const finish = (runId: string): OutboxEntry => ({ kind: 'finish', serverUrl: SERVER, runId, status: 'passed' })
+const shot = (runId: string, stepIndex: number): OutboxEntry => ({
+  kind: 'screenshot',
+  serverUrl: SERVER,
+  runId,
+  stepIndex,
+  path: `/own/${runId}/step-${stepIndex}.png`,
+})
+const finish = (runId: string): OutboxEntry => ({
+  kind: 'finish',
+  serverUrl: SERVER,
+  runId,
+  status: 'passed',
+})
 
 /** A sender that answers from `answers` in turn (then `stored`), recording what it was sent. */
 function sender(answers: (WriteAnswer | 'hang')[] = [], serverUrl: string | null = SERVER) {
@@ -213,6 +225,96 @@ describe('the run outbox', () => {
     await writeFile(file, JSON.stringify({ entries: [result('A', 0)], setAside: [] }), 'utf8')
     const outbox = await Outbox.open(file, sender(['hang']), fakeClock().clock, quiet)
     assert.deepEqual(outbox.unfinishedRuns(SERVER), [])
+    await outbox.close()
+  })
+})
+
+describe('the run outbox with screenshots (#261)', () => {
+  let dir: string
+  let file: string
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), 'ayna-outbox-'))
+    file = join(dir, 'run-outbox.json')
+  })
+  afterEach(() => rm(dir, { recursive: true, force: true }))
+
+  /** `sender` that also records each entry it is told is done with. */
+  function releasing(answers: (WriteAnswer | 'hang')[] = []) {
+    const done: string[] = []
+    const s: OutboxSender & { sent: OutboxEntry[] } = {
+      ...sender(answers),
+      released: async (entry) => {
+        done.push(
+          entry.kind === 'finish' ? `finish:${entry.runId}` : `${entry.kind}:${entry.stepIndex}`,
+        )
+      },
+    }
+    return { s, done }
+  }
+
+  it('sends a screenshot after its result and releases each entry once delivered', async () => {
+    const { s, done } = releasing()
+    const outbox = await Outbox.open(file, s, fakeClock().clock, quiet)
+    await outbox.add(result('A', 0))
+    await outbox.add(shot('A', 0))
+    await outbox.add(finish('A'))
+    await outbox.idle()
+    assert.deepEqual(
+      s.sent.map((e) => e.kind),
+      ['result', 'screenshot', 'finish'],
+    )
+    assert.deepEqual(done, ['result:0', 'screenshot:0', 'finish:A'])
+    await outbox.close()
+  })
+
+  it('drops only the image the server refuses; the run goes on', async () => {
+    const lines: string[] = []
+    const { s, done } = releasing(['stored', 'conflict'])
+    const outbox = await Outbox.open(file, s, fakeClock().clock, (line) => lines.push(line))
+    await outbox.add(result('A', 0))
+    await outbox.add(shot('A', 0))
+    await outbox.add(result('A', 1))
+    await outbox.add(finish('A'))
+    await outbox.idle()
+    assert.deepEqual(
+      s.sent.map((e) => e.kind),
+      ['result', 'screenshot', 'result', 'finish'],
+    )
+    assert.deepEqual(done, ['result:0', 'screenshot:0', 'result:1', 'finish:A'])
+    await outbox.close()
+    assert.deepEqual(JSON.parse(await readFile(file, 'utf8')).setAside, [])
+    assert.match(lines.join('\n'), /refused the screenshot of step 0 of run A/)
+  })
+
+  it('releases every entry of a run the server set aside, the finish included', async () => {
+    const { s, done } = releasing(['hang'])
+    const outbox = await Outbox.open(file, s, fakeClock().clock, quiet)
+    await outbox.add(result('A', 0)) // hangs, so the rest stays queued
+    await outbox.close()
+    const { s: s2, done: done2 } = releasing(['gone'])
+    const again = await Outbox.open(file, s2, fakeClock().clock, quiet)
+    await again.idle() // the queued result comes back 404: run A is set aside
+    await again.add(shot('A', 0))
+    await again.idle()
+    await again.add(finish('A'))
+    await again.idle()
+    assert.deepEqual(done, [])
+    assert.deepEqual(done2, ['result:0', 'screenshot:0', 'finish:A'])
+    await again.close()
+  })
+
+  it('a failing cleanup never stops the queue', async () => {
+    const s: OutboxSender & { sent: OutboxEntry[] } = {
+      ...sender(),
+      released: async () => {
+        throw new Error('EBUSY')
+      },
+    }
+    const outbox = await Outbox.open(file, s, fakeClock().clock, quiet)
+    await outbox.add(shot('A', 0))
+    await outbox.add(finish('A'))
+    await outbox.idle()
+    assert.equal(s.sent.length, 2)
     await outbox.close()
   })
 })
