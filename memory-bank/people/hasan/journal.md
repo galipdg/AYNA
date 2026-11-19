@@ -951,6 +951,21 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
   (#247's check B, #24, #54's second-display case) waits for the weekly session. After that the
   open Week 8 issue is **#62**, which needs omer's #44 (PR #247) merged first, or **#66** (the
   CLI's JUnit XML), which is mine and unblocked by #250.
+- Seventh stretch, 2026-11-15: reviewed omer's #252 first (it switches #67 to my CLI) and ran
+  all three of its jobs on Windows for him — good build green, bug1 and bug4 each failing only
+  their own test. Then #66, the CLI's JUnit XML, PR #254 as *Part of #66*.
+- The substance was taking the criterion literally. Fetching the real schema and validating
+  against it changed the design four times, and showed that **the format we have been writing
+  since #249 does not validate at all** — checked against a file the stand-in really produced,
+  not argued. Also two judgement calls: the timestamp drops its timezone because the schema
+  forbids one (the offset stamp survives as a property), and a delivery failure goes in
+  `system-err` with the testcases left green, so FR-23's exit 2 has a visible reason.
+- **CI went down repo-wide at ~18:35Z on billing** ("spending limit needs to be increased"),
+  not on anything in my branch — my 18:13Z run was green. In galip's inbox, on #254, and in
+  `learnings.md` with the tell: a 1-2 s job with no log.
+- Next step: nothing is blocked on me. #248, #253 and #254 wait on reviews and on CI coming
+  back. Ask omer which way he wants #66's criterion 2 (reporter action, or the XML parsed into
+  the job summary — `summary_of()` is there for it).
 - Sixth stretch, 2026-11-15: #64's RQ1 report, PR #253, opened as *Part of #64* rather than
   closing it — the generator is done but only 2 of 7 captured screens are labelled, so NFR-27
   is answered honestly as "not demonstrated" (39/41 = 95.1 %, Wilson [83.9, 98.7]) rather than
@@ -974,3 +989,11 @@ galip's answer on where bug3 belongs, and pick a Week 7/8 issue (#54, #55, #61 o
 - Items (1) and (2) of the 11-12 inbox note were already done (pyproject; grid-probes.md + #221 check). Cleaned.
 - PR #259: `eval/nl/objects/sample.json` (85 objects) from `nl_objects.py`, checked against live UIA on all tabs, pages and dialogs. Found: the tab items share one AutomationId (left out, asked galip); a QDateEdit is a Spinner. eval: 255 pass, checker clean.
 - Next: pick the next issue from `gh issue list --assignee @me`; follow up on galip's answer about the tab items.
+
+## 2026-11-19 — conflicts, #55 pre-flight, two playback bugs fixed
+
+- Merged `origin/main` into #254 and #255 (active.md, uia.py imports) for omer; both merged since. Rebased nothing; merges only.
+- #162: ticked criteria 1–4 (PR #235 merged); 5 is galip's files.
+- #55: `eval/runs/week7.md` with R01–R10's exact steps; a pre-flight that plays each step as the client does (one-step `runSteps` per object's window, stored primary/fallback) passes 10/10. Found SC-20 cannot pass as written (no confirm tick) → galip's inbox, R05 carries the step.
+- #62: drafted R11–R24, pre-flight 12/14 → two real playback bugs, filed and fixed: #264 (Qt `animateClick` swallows a second Invoke within 100 ms, reported passed; PR #266, 200 ms gap per target) and #265 (SelectRow selects but does not make a Qt row current; PR #268, keyboard after Select). Each has a Windows test with a control run that fails without the fix.
+- Next: user's editor session for R01–R24; then PR #55. Code: #73.
