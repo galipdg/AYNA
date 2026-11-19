@@ -194,7 +194,7 @@ UC-09, UC-11 · AUT: SA-B, "disabled button" version · negative
 #### SC-20 · Wizard with Select and a confirmation dialog
 UC-06, UC-09 · AUT: SA, wizard and dialog · main
 - **Given** the sample app's wizard (C.2) and an empty test in the editor
-- **When** the author builds and runs: Type `wizard.nameInput` "Ayşe Çelik"; Click `wizard.nextButton`; Select `wizard.departmentCombo` "Kalite Güvence"; Click `wizard.nextButton`; Verify `wizard.summaryLabel` name contains "Kalite Güvence"; Click `wizard.finishButton`; Click `confirmDialog.yesButton`
+- **When** the author builds and runs: Type `wizard.nameInput` "Ayşe Çelik"; Click `wizard.nextButton`; Select `wizard.departmentCombo` "Kalite Güvence"; Click `wizard.nextButton`; Verify `wizard.summaryLabel` name contains "Kalite Güvence"; Click `wizard.confirmCheck`; Click `wizard.finishButton`; Click `confirmDialog.yesButton`
 - **Then** Select chooses the item by its text, the Yes button is found in the newly opened dialog window, and every step passes
 - **And** the Turkish characters in the values appear unchanged in the app, in the step results and in the report
 - **And** on the "wrong saved value" version (SA-B, `bug3`), whose summary shows the role where the department belongs, the Verify on `wizard.summaryLabel` fails with the category "assertion failed"
