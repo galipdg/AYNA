@@ -44,6 +44,7 @@ from typing import Any
 from ayna_agent.playback import items, rows, triage
 from ayna_agent.playback.actions import (
     ActionFailed,
+    InvokeSpacing,
     Patterns,
     click,
     type_text,
@@ -110,6 +111,10 @@ POLL_INTERVAL_S = 0.25
 ReadTree = Callable[[], tuple[Sequence[Mapping[str, Any]], Sequence[Any]]]
 
 log = logging.getLogger(__name__)
+
+#: The agent's one record of recent `Invoke`s (#264). A process-wide default because the client
+#: plays each step as its own `run_steps` call, and the clicks that collide are in two calls.
+INVOKE_SPACING = InvokeSpacing()
 
 PASSED = "passed"
 FAILED = "failed"
@@ -199,6 +204,7 @@ def run_steps(
     capture: StepCapture | None = None,
     decisions: DecisionLog | None = None,
     context: Mapping[str, Any] | None = None,
+    spacing: InvokeSpacing | None = None,
 ) -> list[StepResult]:
     """Play `document`'s steps and return one result per step, in order.
 
@@ -218,11 +224,15 @@ def run_steps(
     run: a log that cannot be written is logged and the steps carry on, because losing a run
     to a full disk in the measurement harness would be the wrong trade.
 
+    `spacing` keeps a second `Invoke` on the same target from following the first within
+    `actions.INVOKE_GAP_S` (#264); it defaults to the process-wide :data:`INVOKE_SPACING`.
+
     Raises `StepDocumentError` only for a document that cannot be read at all; everything a
     single step can get wrong becomes that step's `failed` result, because a run that returns
     results is far more useful than one that raises.
     """
     steps = _steps_of(document)
+    spacing = INVOKE_SPACING if spacing is None else spacing
     results: list[StepResult] = []
     for index, step in enumerate(steps):
         if results and results[-1].status != PASSED:
@@ -247,6 +257,7 @@ def run_steps(
             now=now,
             sleep=sleep,
             triaged=triaged,
+            spacing=spacing,
         )
         # After the step, not before: FR-19's image is the evidence of what the step did, and
         # for a failed step it is the evidence of what the screen looked like when it failed.
@@ -332,6 +343,7 @@ def _run_one(
     now: Callable[[], float],
     sleep: Callable[[float], None],
     triaged: dict[str, str] | None = None,
+    spacing: InvokeSpacing | None = None,
 ) -> StepResult:
     started = now()
     step_id = _step_id(step)
@@ -552,7 +564,13 @@ def _run_one(
 
     try:
         if keyword == "Click":
+            # Just before the action, after the target was found and ready: the gap is about
+            # the two presses, and a wait for readiness may already have covered it.
+            if spacing is not None:
+                spacing.wait(name, now, sleep)
             performed_with = click(found.element, patterns)
+            if spacing is not None and performed_with == "Invoke":
+                spacing.invoked(name, now())
         else:
             performed_with = type_text(found.element, str(value), patterns)
     except ActionFailed as exc:
