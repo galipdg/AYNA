@@ -293,6 +293,15 @@ is the ADR's rule, and the step **passes with a message saying so** instead of c
 a pilot app's selection behaviour is not ours to change, and silence would be the one outcome a
 tester cannot debug.
 
+**On a table with no row element (Qt), SelectRow also makes the row the current one** (#265).
+`SelectionItem.Select` changes Qt's selection but not its current row, so an application that
+acts on "the current row" would act on another one. After selecting, the agent focuses the
+table through UI Automation and presses `Ctrl+Home`, then `Down` once per row above it: the keys
+a person would press, never a coordinate. It then checks the row is still the selected one. When
+that cannot be done (the table will not take the focus, the row is more than 500 rows down, or
+the keys landed elsewhere), the step still **passes with a message** that the row is selected
+but not current, and the selection is put back on the row the step named.
+
 A result carries `stepIndex`, `status` (`passed`, `failed` or `notRun`), `durationMs`, and when
 known `stepId`, `message`, `matched` (`primary` or `fallback` — a fallback match is what #73
 heals) and `performedWith` (the pattern that did it). **A failed step stops the run** and every

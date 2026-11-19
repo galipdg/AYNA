@@ -1843,3 +1843,46 @@ def test_a_checkpoint_the_schema_would_refuse_fails_before_reading_the_window(
     assert results[0].status == "failed"
     assert expected in results[0].message
     assert window.reads == 0
+
+
+# --- SelectRow makes a Qt row current (#265) -----------------------------------------------
+
+
+def test_select_row_on_a_qt_table_also_moves_its_current_row(fake_keyboard):
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        select_row({"value": "Demir", "column": "Soyad"}, "main.customerGrid"),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "passed"
+    assert results[0].message is None
+    assert fake_keyboard.sent == ["^{HOME}{DOWN}"]
+
+
+def test_select_row_that_cannot_make_the_row_current_passes_and_says_so(fake_keyboard):
+    """The row is selected, which is what the step asked; the message keeps the author from
+    trusting an action on 'the current row' afterwards."""
+    fake_keyboard.focus = lambda element: False
+    window = grids.Reader(grids.customer_grid())
+    results, *_ = run(
+        select_row({"index": 2}, "main.customerGrid"),
+        GRID_TARGETS,
+        window=window,
+        patterns=grids.Patterns(),
+    )
+    assert results[0].status == "passed"
+    assert results[0].message == (
+        "main.customerGrid: row 2 is selected, but playback could not make it the current "
+        "row, so an action on 'the current row' may still use another one"
+    )
+    assert fake_keyboard.sent == []
+
+
+def test_select_row_on_a_list_presses_no_keys(fake_keyboard):
+    window = grids.Reader(grids.entry_list())
+    run(
+        select_row({"index": 2}), GRID_TARGETS, window=window, patterns=grids.Patterns()
+    )
+    assert fake_keyboard.sent == []
