@@ -8,9 +8,9 @@
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
 | Document | Software Requirements Specification in the style of ISO/IEC/IEEE 29148:2018 §9.6 [40] |
-| Version | 0.9 — draft |
-| Date | 2026-11-15 |
-| Status | Draft, reviewed by Ömerfaruk and Hasan (#35, PR #143); their comments are folded in. The use cases are the team's proposal until the advisor agrees them (#19, Appendix E.2). Final PDF: #41, due 23 Nov 2026 |
+| Version | 1.0 — submitted version (#41) |
+| Date | 2026-11-19 |
+| Status | Final for the course submission of 23 Nov 2026 (#41; PDF `docs/rs/RS-1.0.pdf`). Reviewed by Ömerfaruk and Hasan (#35, PR #143, and every later version's PR). The use cases remain the team's proposal: the requirements workshop with the advisor (#19) has not been held, so the eight questions of Appendix E.2 are still open and the items that depend on them are deferred, not closed |
 
 ## Document history
 
@@ -22,7 +22,7 @@
 | 0.7 | 2026-10-31 | Galip | NFR-45: a result the server refuses as invalid is set aside and shown, not retried (Ömerfaruk's review of PR #164; ADR healing proposal transport) |
 | 0.8 | 2026-11-02 | Galip | §2.2 project documents brought up to date: REST API v0 generated (#160, Ömerfaruk's #31 note), element, snapshot and healing-proposal schemas merged, SDD sections merged. NFR-32 names its public endpoints: login, health, the OpenAPI document and Swagger UI (Ömerfaruk, #60) |
 | 0.9 | 2026-11-15 | Galip | TBD-2 closed: the client is in Turkish and English, chosen by the user (NFR-17; ADR client-ui-language, #185). NFR-07 and NFR-08 confirmed by the load test (#152, Ömerfaruk, 2026-11-10: 100.0 % of requests within 500 ms, p95 31.9 ms) |
-| 1.0 | planned, 23 Nov 2026 | Galip | Submitted version (#41) |
+| 1.0 | 2026-11-19 | Galip | Submitted version (#41). Step schema 0.2 in FR-11, FR-15 and FR-18 (`SelectRow` and the row checks, #147). FR-35 says how an ambiguous match, an unexpected window, a refused step and a rejected action are classified, as playback does it (#63, ADR failure-category); FR-29 never heals after an ambiguous match or outside the step's own window. Pilot apps named (TBD-1 closed, D1): P1 HandBrake, P2 KeePass 2. NFR-02 cites the #161 root cause; NFR-12 cites the Windows latency numbers (#162). SC-20 names the wrong-saved-value version; SC-31 runs on a version that removes the target from the right window, so its candidates are real. §2.2 brought up to date. Every remaining TBD is closed or deferred with a reason (Appendix E) |
 
 Approval: each version is approved in a pull request by the three team members; the advisor reviews the draft at the Tuesday meeting. Galip leads the RS (ADR windows-work-to-hasan); the plan still names Hasan (TBD-8).
 
@@ -112,7 +112,7 @@ AYNA is a new, self-contained product. It has five components on one closed netw
 
 **Relation to other tools.** The comparison matrix (`docs/tool-matrix.md`, #18) covers TestComplete, Ranorex and UFT One [2][4][5]. All three have a recorder, a spy, an object repository, keyword tests and reports, but they are licensed per seat or concurrent user. All three heal during the run, so a healed step can pass against the wrong object. TestComplete's OCR-based healing calls a SmartBear web service [6], which rules it out on a closed network. FlaUI and pywinauto [7][8] give programmatic UI Automation access with no repository, codeless editor or healing; AYNA uses pywinauto as its recognition layer. Most record/replay breakages come from how elements are located [9], so AYNA's tests refer to logical names in a repository, never to locators.
 
-**State at the time of writing (week 2).** The server skeleton with the applications-and-versions API (#128), the graph schema v0 (#14), the client skeleton with the server settings (#32) and CI exist on `main`. The step schema (#13) and the agent's JSON-RPC server (#16) are in review. The RS describes the semester-1 target; the walking skeleton (G0, #28) is due in week 3.
+**State at the time of writing (week 5, version 1.0).** The walking skeleton ran end to end on Windows in week 3 (G0, #28): Spy, repository in Neo4j, playback by logical name. Since then the contracts were frozen as v1 (#52); playback has all six keywords with smart waits (#40), a screenshot per step (#54) and failure categories with a decision log (#63); the client runs a test from the editor with live step status (#44); the server writes the HTML run report (#59); and the CLI runner `ayna run` plays a suite headless (#61). The sample app and its controlled-change and bug-injected versions exist (#33, #46, #47). Healing (#42, #43, #73–#75), the NL assistant's end-to-end path (#71, #78) and change impact (#81) are still to come. The RS describes the semester-1 target, not this state.
 
 #### 1.3.2 Product functions
 
@@ -165,9 +165,9 @@ The requirements are achievable only if the following hold. If one fails, the li
 
 - **The AUTs expose usable UI Automation properties.** RQ1 measures this (NFR-27). If more than 10 % of standard controls are unrecognised, D3 (#65) adds a narrow visual fallback.
 - **Team hardware runs a quantised 7–8B model.** #7 measured about 5 GB per 8B Q4 model on a 16 GB laptop (NFR-13). A department GPU is requested (D2, #131) but not required.
-- **The pilot apps** are open-source Windows apps on UI technologies other than the sample app's, chosen in D1 (#21) from the UIA dumps of #6 (TBD-1).
-- **Test machines run the Windows versions in TBD-3.**
-- **The sample app (#33)** behaves as Appendix C.2 describes; its controlled-change (#46) and bug-injected (#47) versions exist by week 6.
+- **The pilot apps** are open-source Windows apps on UI technologies other than the sample app's, chosen in D1 (#21) from the UIA dumps of #6: P1 is HandBrake (WPF) and P2 is KeePass 2 (WinForms). KeePassXC (Qt Widgets) may join as a third pilot once the first two run end to end (TBD-1 closed, ADR pilot apps and sample-app technology).
+- **Test machines run 64-bit Windows**: so far the team's Windows 11 machine and the CI runner's Windows Server image. The versions supported for delivery stay open in TBD-3.
+- **The sample app (#33)** behaves as Appendix C.2 describes; it exists as version 1.0 (PySide6), with its controlled-change (#46) and bug-injected (#47) versions.
 - **Playback has an unlocked, interactive desktop.** It sends real mouse and keyboard input, so the AUT's window must be on such a desktop during a run, also on the CI runner (#67).
 - **The backend host.** The closed network has an internal host that runs Docker for the backend (UC-16).
 - **The HAVELSAN mentor's input** (D5) may change the target UI technology or pilot app. The default stays Windows desktop with open-source pilots.
@@ -267,7 +267,7 @@ Numbers follow the plan's reference list ("AYNA – 14-Week Project Plan", [1]�
 
 ### 2.2 Project documents
 
-| Document | Path | Issue | Status on 2026-11-02 |
+| Document | Path | Issue | Status on 2026-11-19 |
 |---|---|---|---|
 | Project brief | [`memory-bank/project/brief.md`](../../memory-bank/project/brief.md) | — | merged |
 | Architecture | [`memory-bank/project/architecture.md`](../../memory-bank/project/architecture.md) | — | merged |
@@ -276,14 +276,19 @@ Numbers follow the plan's reference list ("AYNA – 14-Week Project Plan", [1]�
 | Requirements workshop notes | [`docs/requirements-workshop.md`](../requirements-workshop.md) | #19 | merged; §7 awaits the advisor |
 | Reference scenarios (Appendix C) | [`docs/rs/scenarios.md`](scenarios.md) | #34 | merged |
 | Tool comparison matrix | [`docs/tool-matrix.md`](../tool-matrix.md) | #18 | merged |
-| Literature review | `docs/literature.md` | #10, #20 | PR #126 (draft; section 2 from #139 is in it) |
+| Literature review | `docs/literature.md` | #10, #20 | PR #126 (draft) |
 | Graph model | [`docs/graph-model.md`](../graph-model.md) | #14 | merged |
-| Step schema | [`schemas/step.schema.json`](../../schemas/step.schema.json) | #13, #147 | 0.1 merged (#134); 0.2 in PR #150 |
+| Step schema | [`schemas/step.schema.json`](../../schemas/step.schema.json) | #13, #147 | 0.2 merged (#150) |
 | Element and snapshot schemas | [`schemas/element.schema.json`](../../schemas/element.schema.json), [`schemas/snapshot.schema.json`](../../schemas/snapshot.schema.json) | #11, #12 | 0.1 merged (#175, #180) |
 | Healing proposal schema | [`schemas/healing-proposal.schema.json`](../../schemas/healing-proposal.schema.json) | #149 | 0.2 merged (#174) |
-| Agent JSON-RPC contract | [`docs/agent-rpc.md`](../agent-rpc.md) | #16 | 0.1 merged (#135); 0.2 draft in the same file |
-| REST API (generated) | [`docs/api/openapi.yaml`](../api/openapi.yaml) | #31, #52 | v0 merged (#160); frozen as v1 at #52 |
-| Software Design Document | [`docs/sdd/SDD.md`](../sdd/SDD.md), [`docs/sdd/SDD-ai.md`](../sdd/SDD-ai.md) | #45, #48, #50, #53 | §1–4 and §6 merged (#155, #157); AI sections (#144) join as §5 at #53 |
+| Agent JSON-RPC contract | [`schemas/agent-rpc.schema.json`](../../schemas/agent-rpc.schema.json), [`docs/agent-rpc.md`](../agent-rpc.md) | #16, #52 | frozen as 1.0 (#52); 1.1 adds a failed step's category (#63), 1.2 its screenshot (#54) |
+| WebSocket run updates | [`schemas/ws-runs.schema.json`](../../schemas/ws-runs.schema.json) | #44, #52 | frozen as 1.0 (#52); 1.1 adds the category (#63) |
+| REST API (generated) | [`docs/api/openapi.yaml`](../api/openapi.yaml) | #31, #52 | frozen as v1 (#52); additive changes since |
+| Software Design Description | [`docs/sdd/SDD.md`](../sdd/SDD.md) | #45, #48, #50, #53 | v0.5 merged (#242); final due 7 Dec (#53) |
+| Sample app and its versions | [`eval/apps/sample/`](../../eval/apps/sample/README.md) | #33, #46, #47 | 1.0 merged, with the controlled-change and bug-injected versions |
+| NL dataset and guideline | [`eval/nl/guideline.md`](../../eval/nl/guideline.md) | #36, #57 | guideline merged; the 40 sample-app pairs in progress (#36) |
+| RQ1 recognition report | [`eval/rq1/report.md`](../../eval/rq1/report.md) | #64 | first report merged (#253) |
+| NL latency on Windows | [`eval/llm-latency/report.md`](../../eval/llm-latency/report.md) | #162 | merged (#235) |
 
 ## 3 Requirements
 
@@ -381,11 +386,11 @@ The agent reads the AUT through UI Automation [30] with pywinauto [8]; the Spy i
 
 | ID | Requirement | Priority | Source | Verification | Scenarios |
 |---|---|---|---|---|---|
-| FR-11 | The system shall store every test as an ordered list of steps that validates against the versioned step schema (`schemas/step.schema.json`), whose keywords are Click, Type, Select, Verify and Wait. | Must | UC-06; Core 3; #13 | T + I | SC-14, SC-20, SC-26 |
+| FR-11 | The system shall store every test as an ordered list of steps that validates against the versioned step schema (`schemas/step.schema.json`), whose keywords are Click, Type, Select, SelectRow, Verify and Wait (schema 0.2; a 0.1 document becomes 0.2 by its version field alone). | Must | UC-06; Core 3; #13, #147 | T + I | SC-14, SC-20, SC-26 |
 | FR-12 | The client's editor shall let the user create a test and add, delete, edit and drag to reorder its steps, choosing each keyword from a list and each target from the repository, without typing JSON. | Must | UC-06; #38 | D | SC-14, SC-20 |
 | FR-13 | The client shall highlight a step that does not validate against the step schema, with the reason, and the server shall reject such a step with HTTP 400 and the path of the failing field. | Must | UC-06; #38, #39 | T | SC-15 |
 | FR-14 | The system shall export a test as a JSON file and import such a file; an export followed by an import shall give an identical test. | Must | UC-06, UC-14; #39 | T | SC-14, SC-34 |
-| FR-15 | The system shall let the user add a Verify step with a property (name, value, enabled, visible, checked, selected), an operator (equals, notEquals, contains) and an expected value; the agent shall pass or fail the step on that comparison and, on failure, report the expected and the actual value. | Must | UC-07; Core 4; #13, #40 | T | SC-14, SC-16, SC-21 |
+| FR-15 | The system shall let the user add a Verify step with a property of the target (name, value, enabled, visible, checked, selected) or of a grid or list target (the text of a cell addressed by row and column, whether a row exists, the number of rows), an operator (equals, notEquals, contains; only equals for booleans and the row count) and an expected value; the agent shall pass or fail the step on that comparison and, on failure, report the expected and the actual value. A row is addressed by its 1-based position or by the exact text of one of its cells. Row and cell checks are re-read until they hold, within the step's timeout. | Must | UC-07; Core 4; #13, #40, #147 | T | SC-14, SC-16, SC-21 |
 
 #### 3.2.4 Playback, smart waits and checkpoints
 
@@ -395,7 +400,7 @@ Readiness-based waits replace fixed sleeps because timing is a leading cause of 
 |---|---|---|---|---|---|
 | FR-16 | Before acting on a step, the agent shall wait until the target element exists, is visible and is enabled, for at most the step's `timeoutMs` or else the run's default timeout, by polling and never by a fixed sleep. | Must | UC-09; Core 4; #40 | T — includes a control that appears after 3 s (#40) | SC-18, SC-19, SC-20 |
 | FR-17 | When the wait ends without a ready element, the agent shall fail the step with a message that names the logical name, the time waited in milliseconds and the readiness condition that was not met. | Must | UC-09; #40 | T | SC-19, SC-29 |
-| FR-18 | The agent shall perform Click, Type (replacing the control's text), Select (choosing an item by its text) and Wait as defined in the step schema. | Must | UC-09; #40; step schema (#13) | T — one test per keyword (#40) | SC-17, SC-20, SC-23 |
+| FR-18 | The agent shall perform Click, Type (replacing the control's text), Select (choosing an item by its text), SelectRow (selecting a grid or list row addressed as in FR-15, after waiting for the row within the step's timeout) and Wait as defined in the step schema. | Must | UC-09; #40; step schema (#13, #147) | T — one test per keyword (#40) | SC-17, SC-20, SC-23 |
 | FR-19 | After each step the agent shall capture a PNG of the AUT's window, cropped to that window, and return it with the step result. | Must | UC-09, UC-10; #54 | T | SC-17, SC-24 |
 
 #### 3.2.5 Runs, reports and CLI runner
@@ -425,7 +430,7 @@ The score follows Similo's weighted multi-property similarity [14]: Levenshtein 
 
 | ID | Requirement | Priority | Source | Verification | Scenarios |
 |---|---|---|---|---|---|
-| FR-29 | When no element matches a step's target after the wait and the search covered the whole window, the agent shall score the candidate elements in the same window with a compatible control type using the weighted similarity S(c, t) = Σ wᵢ · simᵢ(c, t) / Σ wᵢ, and shall end the step as "repair proposed" with the top 3 candidates and each property's contribution to their scores. | Must | UC-12; C2; CON-06; #42, #43, #49, #73 | T — scorer unit tests (#49), A — RQ4 (#76) | SC-29, SC-31 |
+| FR-29 | When no element matches a step's target after the wait and the search covered the whole of the step's own window, the agent shall score the candidate elements in the same window with a compatible control type using the weighted similarity S(c, t) = Σ wᵢ · simᵢ(c, t) / Σ wᵢ, and shall end the step as "repair proposed" with the top 3 candidates and each property's contribution to their scores. It shall never start healing when more than one element matches (an ambiguous match), when the step's window is not the one in front (unexpected window), on a timeout or after an incomplete search (FR-35). | Must | UC-12; C2; CON-06; #42, #43, #49, #73 | T — scorer unit tests (#49), A — RQ4 (#76) | SC-29, SC-31 |
 | FR-30 | The agent shall never perform a step on a healing candidate: after a "repair proposed" step it shall stop the test, mark the remaining steps as not run (TBD-6), and hand the proposal with the step result to the client or the CLI runner, which delivers it to the server (FR-20, FR-23); the agent itself never connects to the server. | Must | UC-12; CON-06; ADR approval-gated healing; ADR healing proposal transport; #73 | T | SC-29, SC-31 |
 | FR-31 | The client shall show a healing proposal — the failing step, the top 3 candidates with per-property contribution bars and an on-screen outline of the selected candidate — open it from the run report, and let the reviewer approve one candidate or reject all. | Must | UC-12; #75 | D | SC-30, SC-31 |
 | FR-32 | When a proposal is approved, the server shall make the repository object resolve to the chosen element for that application version and create a Rule linked to the proposal; when all candidates are rejected, it shall keep the step failed and leave the repository unchanged. | Must | UC-12; CON-06; #74 | T | SC-30, SC-31 |
@@ -445,7 +450,7 @@ The plan cuts rule-based triage third but keeps the decision log, so classificat
 
 | ID | Requirement | Priority | Source | Verification | Scenarios |
 |---|---|---|---|---|---|
-| FR-35 | The agent shall put every failed step in exactly one category — element not found, unexpected window, assertion failed, timeout or search incomplete (TBD-5) — and the client shall show the category with the step. "Search incomplete" means that the search for the target, or the window's snapshot, ran out of its time budget before it covered the whole window; such a step never starts healing. | Should | UC-11; #63 | T | SC-19, SC-21, SC-22, SC-25 |
+| FR-35 | The agent shall put every failed step, except the two kinds named at the end of this requirement, in exactly one category — element not found, unexpected window, assertion failed, timeout or search incomplete (TBD-5) — and the client shall show the category with the step. "Search incomplete" means that the search for the target, or the window's snapshot, ran out of its time budget before it covered the whole window; such a step never starts healing. More than one matching element is "element not found", because playback never picks one of several. "Unexpected window" means that the step's own window is not open or not in front while another window of the application is, such as a modal dialog (SC-22); it takes precedence over "element not found". A step the agent refuses (a keyword or step document it cannot carry out) and an action the application rejects on a found, ready element are not evidence about the application under test, so they carry no category; the decision log records a finer reason for them (FR-36). | Should | UC-11; #63; ADR failure-category | T | SC-19, SC-21, SC-22, SC-25 |
 | FR-36 | The system shall log every failure decision (the failed step, its category, any healing proposal and its outcome) with its context, and shall export the log as JSONL. | Must | UC-11; ADR decision layer in semester 2; #63 | T | SC-25, SC-31 |
 
 #### 3.2.10 Projects, applications, users and settings
@@ -464,7 +469,7 @@ Numbers taken from an issue or the plan cite it. Every other number is marked "(
 | ID | Requirement | Priority | Source | Verification |
 |---|---|---|---|---|
 | NFR-01 | The agent shall return the element under a screen point (Spy pick) within 300 ms. | Must | UC-02; #22 | T — Windows test (#22); SC-04 |
-| NFR-02 | The agent shall export the snapshot of one sample-app window within 2 s (#12 sets 2 s for the trial app; for every sample-app window team-confirmed, #143; advisor Q5 pending). The bound is a property of the sample app, not of every application: the #6 dumps took 1.97 s for a 149-element WPF window and 278.5 s for a 106-element WinForms one (cause open in #161), so a walk that runs out of its budget ends as "search incomplete" (FR-35). | Must | UC-05; #6, #12, #161 | T — SC-09 |
+| NFR-02 | The agent shall export the snapshot of one sample-app window within 2 s (#12 sets 2 s for the trial app; for every sample-app window team-confirmed, #143; advisor Q5 pending). The bound is a property of the sample app, not of every application: the #6 dumps took 1.97 s for a 149-element WPF window and 278.5 s for a 106-element WinForms one. #161 traced that outlier to a modal message box left open in the application, which blocks cross-process UI Automation calls; a longer budget does not help there, and a walk that runs out of its budget ends as "search incomplete" (FR-35). | Must | UC-05; #6, #12, #161 | T — SC-09 |
 | NFR-03 | Capturing a step's screenshot shall add less than 300 ms to the step. | Must | #54 | T |
 | NFR-04 | Timed from the end of the smart wait to the return of the action, and leaving out the screenshot, the agent shall complete a step within 500 ms (proposed, to confirm). Re-reads of a checkpoint that is repeated until it holds, within the step's timeout (grid-row checks, #147), count as waiting, not as the step. | Must | UC-09 | T — timings in the playback tests (#40) |
 | NFR-05 | A step without `timeoutMs` shall wait at most 10 000 ms (team-confirmed, #143; advisor Q5 pending); the default shall be configurable per run, and `timeoutMs` per step from 0 to 600 000 ms, where 0 means check once without waiting, not "use the default". | Must | UC-09; #40; step schema (#13) | T |
@@ -474,7 +479,7 @@ Numbers taken from an issue or the plan cite it. Every other number is marked "(
 | NFR-09 | The server shall generate the HTML report of a 50-step run within 5 s (team-confirmed, #140; advisor Q5 pending). | Must | UC-10; #59 | T |
 | NFR-10 | Healing candidates for one repository object shall be generated within 1 s. | Must | UC-12; #42 | T — SC-29 |
 | NFR-11 | A retrieval query for NL context (vector top-k plus the current screen's subgraph) shall return within 200 ms. | Must | UC-08; #58 | T |
-| NFR-12 | The p95 latency of NL step generation per scenario on team hardware shall be measured and reported; semester 1 commits to no target value. | Must | UC-08; plan success criteria; #71, #77 | A — RQ3 report (#77) |
+| NFR-12 | The p95 latency of NL step generation per scenario on team hardware shall be measured and reported; semester 1 commits to no target value. Measured so far on ten sentences, so indicative only: p95 25.3 s on an Apple M2 laptop under load (#71), and 41–43 s on a CPU-only Windows laptop with per-step reasons on (#162). The AI service's request deadline is therefore 60 s, not a latency target. | Must | UC-08; plan success criteria; #71, #77, #162 | A — RQ3 report (#77); `eval/llm-latency/report.md` (#162) |
 | NFR-13 | The AI service shall run its quantised 7–8B model and its embedding model on a machine with 16 GB RAM and no GPU (proposed, to confirm; #7 measured about 5 GB per 8B Q4 model on a 16 GB laptop). | Must | D2; #7, #131 | A + D |
 | NFR-37 | With repository context, NL step generation shall reach at least 60 % step-level accuracy on the frozen held-out split (30 of the 100 Turkish NL/step pairs) at the end of semester 1, step-level accuracy as defined in the dataset guideline (#36). | Must | UC-08; RQ3, H2; brief success criteria; #57, #77 | A — RQ3 report with Wilson CI (#77) |
 
@@ -543,8 +548,8 @@ Every interface stays inside the closed network (NFR-29). JSON is UTF-8.
 
 | Interface | Direction and binding | What is exchanged | Contract | Requirements |
 |---|---|---|---|---|
-| Client ↔ server | REST over HTTP; WebSocket from server to clients for live run status; session after login | Applications and versions, repository objects, snapshots, tests, runs and step results, reports, healing proposals and decisions, change impact, users | `docs/api/openapi.yaml`, generated (#31), frozen as v1 at G1 (#52) | FR-20, FR-38, NFR-06, NFR-07, NFR-32, NFR-34 |
-| Client ↔ agent | JSON-RPC 2.0 [42] over one WebSocket on 127.0.0.1; the client starts the agent and passes a per-session token in an environment variable; only the client's main process connects | Window list, element under a point, snapshots, highlight, steps to play, step results with screenshots | `docs/agent-rpc.md` (#16; v0.1 has `ping`, `listWindows`, `snapshot`) | FR-05, NFR-31, NFR-34 |
+| Client ↔ server | REST over HTTP; WebSocket from server to clients for live run status; session after login | Applications and versions, repository objects, snapshots, tests, runs and step results, reports, healing proposals and decisions, change impact, users | `docs/api/openapi.yaml`, generated (#31), frozen as v1 (#52); live run status in `schemas/ws-runs.schema.json` | FR-20, FR-38, NFR-06, NFR-07, NFR-32, NFR-34 |
+| Client ↔ agent | JSON-RPC 2.0 [42] over one WebSocket on 127.0.0.1; the client starts the agent and passes a per-session token in an environment variable; only the client's main process connects | Window list, element under a point, snapshots, highlight, steps to play, step results with screenshots | `schemas/agent-rpc.schema.json` and `docs/agent-rpc.md` (#16; frozen as 1.0 at #52, now 1.2: `ping`, `listWindows`, `snapshot`, `elementFromPoint`, `runSteps`) | FR-05, NFR-31, NFR-34 |
 | Agent → server (through the client, or the CLI runner) | Documents in the element, snapshot and healing-proposal schemas; the agent never connects to the server itself | Snapshots of a window per application version; step results, with the healing proposal of a "repair proposed" step (`PUT /api/runs/{runId}/results/{stepIndex}`) | `schemas/element.schema.json`, `schemas/snapshot.schema.json` (#11, #12), `schemas/healing-proposal.schema.json`; ADR healing proposal transport | FR-04, FR-20, FR-30 |
 | CLI runner ↔ server | REST, started by the CLI runner; an API token of a CI service account in `AYNA_SERVER_TOKEN`, sent as a Bearer token (#60) | Suites to run; results to store | REST contract | FR-23, NFR-32 |
 | Server → AI service | HTTP, called only by the server and only while a test is written | Description, application and screen → suggested and dropped steps; texts → embeddings | Defined in the SDD AI sections (#50) | FR-25, FR-26, NFR-22 |
@@ -697,10 +702,10 @@ The four methods of 29148 [40], as AYNA uses them:
 | Environment | What runs there | Verifies |
 |---|---|---|
 | CI, Linux runners (GitHub Actions `ubuntu-latest`) | Server build and tests with Neo4j in Testcontainers; client lint and build; AI-service and schema tests | T for the server, client, AI service and schemas |
-| CI, Windows runner (`windows-latest`) | Agent lint and tests; later the sample suite through the CLI runner (#67) | T for the agent's non-UI logic; FR-23, FR-24 |
+| CI, Windows runner (`windows-latest`) | Agent lint and tests; the sample suite through the CLI runner `ayna run` (#61, #67) | T for the agent's non-UI logic; FR-23, FR-24 |
 | Weekly Windows session (Hasan's machine; label `needs-windows-test`) | `@pytest.mark.windows` tests; Spy, editor, run and healing screens on Windows | T needing real UI Automation; D for client screens |
 | Sample app (#33) with its controlled-change (#46) and bug-injected (#47) versions | Scenarios on SA, SA-C, SA-B; RQ2, RQ4, RQ5 | Most FRs; NFR-25, NFR-26 |
-| Pilot apps P1, P2 (#21, TBD-1) | SC-06, SC-07, SC-23; RQ1 | NFR-27, FR-01, FR-03 |
+| Pilot apps P1 HandBrake and P2 KeePass 2 (#21, D1) | SC-06, SC-07, SC-23; RQ1 (#64) | NFR-27, FR-01, FR-03 |
 | Clean offline Windows VM and an internal Docker host; network cut off; firewall logging outbound attempts (#84, #85) | SC-35, SC-36 | NFR-29, NFR-30, NFR-36 |
 | Team laptop with 16 GB RAM and no GPU (D2); department GPU if granted (#131) | RQ3 runs and latency | NFR-12, NFR-13, NFR-37 |
 
@@ -738,8 +743,8 @@ The gates are the acceptance points of the semester-1 system:
 - Every success criterion in §1.2 is reported with its measured value and interval, also when it is not met.
 
 **Acceptance of this RS:**
-1. Galip and Ömerfaruk review this draft (#35).
-2. All three team members approve the final version in a pull request.
+1. Galip and Ömerfaruk review the draft (#35, done on PR #143).
+2. All three team members approve the final version in a pull request (#41).
 3. The advisor reviews it at the Tuesday meeting.
 4. Version 1.0 is submitted as a PDF by 23 Nov 2026 and stored in `docs/rs/` (#41).
 
@@ -795,7 +800,7 @@ These NFRs come from a constraint, a research question or a project decision rat
 
 ### 5.3 Coverage checks
 
-Checked on 2026-10-27 with a one-off script (not committed) over this file and Appendix C, and again on 2026-10-29 after the review changes of version 0.6. **0 errors.** It checked that:
+Checked on 2026-10-27 with a one-off script (not committed) over this file and Appendix C, again on 2026-10-29 after the review changes of version 0.6, and on 2026-11-19 for version 1.0. **0 errors.** It checked that:
 - every `FR`, `NFR`, `UC`, `SC` and `TBD` ID referenced in either file is defined exactly once: FR and NFR rows in §3.2–§3.8, UC headings in Appendix B, SC headings in Appendix C, TBD rows in Appendix E;
 - the §3.1 summaries match those definitions in ID, title, use cases and priority, and the use-case titles match the workshop notes;
 - the FR and NFR rows moved from `docs/rs/scenarios.md` (#34) are unchanged, except the Verification cell of NFR-07 and NFR-08 (on 2026-10-27; the 0.6 changes are listed in the document history);
@@ -1099,23 +1104,23 @@ Added for the course: 3.1 use cases and scenarios, 5 traceability matrix.
 
 ### Appendix E — Open questions (TBD)
 
-Every `TBD-n` in the document, with its owner and the issue that closes it. By the final version (#41), each item is closed or explicitly deferred with a reason. TBD-1 to TBD-6 come from #34; TBD-7 onwards from #35.
+Every `TBD-n` in the document, with its owner and the issue that closes it. In this final version (#41), each item is closed or explicitly deferred with a reason. TBD-1 to TBD-6 come from #34; TBD-7 onwards from #35.
 
-#### E.1 Open items
+#### E.1 Items, closed or deferred
 
 | ID | Item | Where it is used | Owner | Closes in |
 |---|---|---|---|---|
-| TBD-1 | Pilot apps P1 and P2 (product and UI technology) | C.2; SC-06, SC-07, SC-23; NFR-27; §4.2 | hasan | D1, #21 (after #6) |
+| TBD-1 | **Closed 2026-10-31** (D1, #21; ADR pilot apps and sample-app technology): P1 is HandBrake (WPF), P2 is KeePass 2 (WinForms); KeePassXC (Qt Widgets) may join as a third pilot once the first two run end to end. Notepad++ stays the win32 fallback fixture (#23) | C.2; SC-06, SC-07, SC-23; NFR-27; §4.2 | hasan | #21 |
 | TBD-2 | **Closed 2026-11-03** (team decision, #185): Turkish and English, chosen by the user (ADR client-ui-language) | NFR-17; §1.3.3 | galip (advisor, Q4) | #185 |
-| TBD-3 | Supported Windows versions of the test machines. Note for the decision: Windows 10 22H2 has been out of mainstream support since 14 Oct 2025, and closed-network sites often run LTSC editions (D5) | NFR-19; §1.3.5, §3.5.3 | hasan, omer | Weekly Windows session, before #41 |
-| TBD-4 | Numbers marked "(proposed, to confirm)": NFR-04 (500 ms per step; hasan holds playback to it, verifiable once #40 exists), NFR-13 (16 GB RAM, no GPU), NFR-18 (SUS ≥ 68), NFR-19 (Windows versions). Team-confirmed, advisor Q5 pending: NFR-02 (sample-app windows only), NFR-05 (hasan, #143); NFR-06–NFR-09 (omer, #140). NFR-32 is team-confirmed (#140); its open point is Q8 | §3.3–§3.8 | hasan: NFR-04 · galip: NFR-13, NFR-18 | Q5 at the advisor meeting; before #41 |
+| TBD-3 | **Deferred** to the Windows installer and the air-gapped test (#84, #85, Week 12), which fix the image of the clean VM: supported Windows versions of the test machines. So far the system runs on Hasan's Windows 11 machine and the CI runner's Windows Server image. Note for the decision: Windows 10 22H2 has been out of mainstream support since 14 Oct 2025, and closed-network sites often run LTSC editions (D5) | NFR-19; §1.3.5, §3.5.3 | hasan, omer | #85 |
+| TBD-4 | **Deferred** to the advisor's answer to Q5 (E.2), because the meeting (#19) has not been held. Numbers marked "(proposed, to confirm)": NFR-04 (500 ms per step; playback exists since #40, so the playback tests can time it), NFR-13 (16 GB RAM, no GPU), NFR-18 (SUS ≥ 68), NFR-19 (Windows versions, with TBD-3). Team-confirmed, advisor Q5 pending: NFR-02 (sample-app windows only), NFR-05 (hasan, #143); NFR-06–NFR-09 (omer, #140; NFR-07 and NFR-08 also met by the load test #152). NFR-32 is team-confirmed (#140); its open point is Q8 | §3.3–§3.8 | hasan: NFR-04 · galip: NFR-13, NFR-18 | Q5 at the advisor meeting (#19) |
 | TBD-5 | **Closed 2026-10-29** (hasan, #143 review). Boundary between "element not found" and "timeout": "element not found" when no element matches the primary or fallback properties by the end of the wait (healing starts); "timeout" when an element matches but does not become visible and enabled in time (no healing). Added: a fifth category, "search incomplete", when the search or the snapshot runs out of its budget before covering the window; it never starts healing, because candidates from an incomplete tree would give a confident but unfounded proposal | FR-29, FR-35; SC-19, SC-25, SC-29; UC-09, UC-11 | hasan | Built in #40, #63; the budget in #12 |
 | TBD-6 | **Closed 2026-10-29** (hasan, #143 and #151 reviews). After a "repair proposed" step the agent performs no further step of that test, its remaining steps are marked "not run", the run is failed, and in a suite the next test runs. One run gives at most one proposal | FR-30; SC-29, SC-31; UC-12 | hasan | Built in #73 |
-| TBD-7 | The project's own licence, for the code and for the open evaluation set (C4) | §1.3.5 | team (galip raises it) | Team decision before #41; needed by #90 at the latest |
-| TBD-8 | RS lead: the plan's "Team and roles" and WP1 rows still name Hasan as RS lead, while ADR windows-work-to-hasan moved the RS chain (#27, #34, #35, #41) to Galip. The plan (Claude Docs) needs updating | Document history; §4.4 | galip | Next plan revision, before #41 |
+| TBD-7 | **Deferred** to a team decision before the evaluation set is published (#90, Week 13): the project's own licence, for the code and for the open evaluation set (C4). The repository has been public since 2026-11-17 with no licence file, which by default reserves all rights; nothing in semester 1 needs more than that, but publishing the evaluation set does | §1.3.5 | team (galip raises it) | #90 |
+| TBD-8 | **Deferred** to the next plan revision: the plan's "Team and roles" and WP1 rows still name Hasan as RS lead, while ADR windows-work-to-hasan moved the RS chain (#27, #34, #35, #41) to Galip. This document follows the ADR; only the plan document (Claude Docs) is behind | Document history; §4.4 | galip | Next plan revision |
 | TBD-9 | **Closed 2026-10-29** (omer, #143 review): the load test for NFR-07 and NFR-08 is #152. Run on 2026-11-10: both met, numbers kept (`server/loadtest/results/2026-11-10-apple-m3.md`) | NFR-07, NFR-08 | omer | #152 |
 | TBD-10 | **Closed 2026-10-29** (omer, #143 review; option 5a of ADR healing proposal transport). The CLI runner authenticates with a revocable API token of a CI service account, passed in `AYNA_SERVER_TOKEN` as a Bearer token; no human password lives on the CI machine | FR-23, FR-39; NFR-32; UC-14; ROLE-5; §3.5.4 | omer, hasan | #60, #61 |
-| TBD-11 | One reference numbering for RS, SDD and report. The RS keeps the plan's [1]–[39] and adds [40]–[43]. `docs/literature.md` numbers differ from the plan, and #20 gives other sources the provisional numbers [40]–[47] | §2.1 | galip, omer | Before #41 |
+| TBD-11 | **Deferred** to the semester report (#93), the first document that cites all sources together: one reference numbering for RS, SDD and report. Until then the rule is that the RS's §2.1 list ([1]–[43]) is the project numbering, the SDD cites it, and a source that only `docs/literature.md` or #20 uses gets the next free number when a document first cites it | §2.1 | galip, omer | #93 |
 
 #### E.2 Questions waiting for the advisor
 

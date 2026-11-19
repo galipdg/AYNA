@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Issue | #34 — reference scenarios and functional requirements |
-| Status | Draft for team review, 2026-10-27 |
+| Status | Final, part of RS 1.0 (#41), 2026-11-19; first drafted 2026-10-27 |
 | Part of | Appendix C of the Requirements Specification, [`docs/rs/RS.md`](RS.md) (#35); included in full in the submitted PDF (#41) |
 | Builds on | Use cases `UC-01`–`UC-16` (RS Appendix B, condensed from `docs/requirements-workshop.md`, #19, a draft awaiting the advisor) · ID conventions from RS §1.5 |
 
@@ -11,19 +11,19 @@
 
 - **IDs** follow RS §1.5: `SC-xx`, flat and two-digit, never reused or renumbered. A dropped scenario stays here, marked _Deleted_ with the reason. `UC-xx` are the use cases of RS Appendix B; C1–C4, RQ1–RQ5 and D1–D7 are the plan's. `#nn` is an issue.
 - **Scenarios** are written as Given / When / Then (And continues the line above). Each one names its use cases, the application under test (C.2) and its kind: _main_ (the use case's main flow), _negative_ (an error or a rejected input) or _edge_ (a boundary condition).
-- **Logical names** such as `login.userNameInput` follow the `screen.element` convention. They are examples until the sample app (#33) exists; #33 may rename them, and only the names change, not the scenarios.
+- **Logical names** such as `login.userNameInput` follow the `screen.element` convention. They are the sample app's names (#33; `eval/nl/objects/sample.json` lists them); `main.customerSearchInput` in SC-12 is the new name the scenario gives an object. The settings tab items (`settings.notificationsTab`) share one AutomationId and are told apart by their Name.
 - **One place per item.** This appendix holds the scenario texts only. Their summary table is RS §3.1; the requirements they exercise are in RS §3.2–§3.8, where every FR lists its scenarios; the traceability matrix is RS §5 and the open items are RS Appendix E.
 
 ## C.2 Applications under test
 
 | Code | Application | What it is | Status |
 |---|---|---|---|
-| SA | Sample app v1.0 | PySide6 app with six screens: login, list with a grid, detail form, settings with tabs, dialog, wizard. Every control has an AutomationId; the version is shown in the title bar | Planned: #33, week 4 |
-| SA-C | Controlled-change versions of the sample app | One UI change each: rename, move, retype, re-parent, AutomationId removed, plus one combined. Each comes with a ground-truth mapping from old to new element | Planned: #46, week 6 |
-| SA-B | Bug-injected versions of the sample app | One functional bug each: wrong label, disabled button, wrong saved value, missing validation, wrong navigation | Planned: #47, week 6 |
-| P1, P2 | Pilot apps | Open-source Windows apps on UI technologies other than the sample app's (default: WinForms, WPF; D1) | **TBD-1**: chosen in D1 (#21) from the UIA dumps of #6 |
+| SA | Sample app v1.0 | PySide6 app with six screens: login, list with a grid, detail form, settings with tabs, dialog, wizard. Every control has an AutomationId; the version is shown in the title bar | Built: #33, version 1.0 |
+| SA-C | Controlled-change versions of the sample app | One UI change each: rename, move, retype, re-parent, AutomationId removed, plus one combined. Each comes with a ground-truth mapping from old to new element | Built: #46 |
+| SA-B | Bug-injected versions of the sample app | One functional bug each: wrong label (SC-21), disabled button (SC-19), wrong saved value (SC-20), missing validation (SC-34), and a list screen that has lost its search button (SC-31) | Built: #47 (`eval/apps/sample/bugs.md`); the SC-31 version replaces the first build's wrong navigation, see SC-31 |
+| P1, P2 | Pilot apps | P1 HandBrake (WPF), P2 KeePass 2 (WinForms); KeePassXC (Qt Widgets) may join as a third | Chosen in D1 (#21) from the UIA dumps of #6 (TBD-1 closed) |
 
-**Sample-app behaviour these scenarios assume** (input for #33; anything #33 builds differently changes only the scenario text):
+**Sample-app behaviour these scenarios assume** (the input #33 was built from; the app does all of it):
 
 - Login screen: user-name field, password field, remember-me check box, login button and status label. `admin` / `admin` shows a welcome text that contains the user name; a wrong password shows an error text (as in the trial app, #9).
 - List screen: search field, search button, results grid, Open button. After a search, the grid fills about 3 s later and the Open button is enabled only then; the delay is configurable (SC-18).
@@ -85,7 +85,7 @@ UC-02 · AUT: P1 · main
 - **And** a control with none of these identifying properties is shown with those fields empty, so RQ1 (#64) can count it as unrecognised
 
 #### SC-07 · win32 fallback for a control UI Automation cannot identify
-UC-02 · AUT: P2 (or another WinForms or legacy app if neither pilot has such a control, #23) · edge
+UC-02 · AUT: P2 KeePass 2, or Notepad++ (the #23 fixture) if neither pilot has such a control · edge
 - **Given** a control in pilot app P2 for which UI Automation gives neither an AutomationId nor a Name
 - **When** the author picks it with the hotkey
 - **Then** the agent reads the same control through the win32 backend, and the descriptor shows the win32 properties (for example class name, control id and text), each marked as coming from win32
@@ -197,6 +197,7 @@ UC-06, UC-09 · AUT: SA, wizard and dialog · main
 - **When** the author builds and runs: Type `wizard.nameInput` "Ayşe Çelik"; Click `wizard.nextButton`; Select `wizard.departmentCombo` "Kalite Güvence"; Click `wizard.nextButton`; Verify `wizard.summaryLabel` name contains "Kalite Güvence"; Click `wizard.finishButton`; Click `confirmDialog.yesButton`
 - **Then** Select chooses the item by its text, the Yes button is found in the newly opened dialog window, and every step passes
 - **And** the Turkish characters in the values appear unchanged in the app, in the step results and in the report
+- **And** on the "wrong saved value" version (SA-B, `bug3`), whose summary shows the role where the department belongs, the Verify on `wizard.summaryLabel` fails with the category "assertion failed"
 
 #### SC-21 · A checkpoint catches a wrong label
 UC-07, UC-09, UC-11 · AUT: SA-B, "wrong label" version · negative
@@ -281,13 +282,14 @@ UC-12 · AUT: SA-C · main
 - **And** when the login test is run again on the same version, it passes, and no step of the test was edited
 
 #### SC-31 · Rejecting all candidates keeps a real bug visible
-UC-12 · AUT: SA-B, "wrong navigation" version · negative
-- **Given** a test that logs in and then clicks `main.searchButton`, and the bug-injected version in which logging in opens the wrong screen
+UC-12 · AUT: SA-B, "missing control" version · negative
+- **Given** a test that logs in and then clicks `main.searchButton`, and the bug-injected version in which the list screen has lost its search button
 - **When** the test is run
-- **Then** `main.searchButton` is not found, and the step ends as "repair proposed" with candidates from the wrong screen
+- **Then** `main.searchButton` is not found in the list screen, and the step ends as "repair proposed" with candidates from that screen, none of which is a search button
 - **When** the reviewer rejects all candidates
 - **Then** the step stays failed with the category "element not found", the repository and the rule book are unchanged, and the run counts as failed
 - **And** the decision is logged. An automatically applied repair could have clicked a candidate and passed: this is the false pass that RQ5 measures (#86)
+- **Note** A version in which logging in opens the wrong screen does not fit this scenario: the step's own window is then not in front, so the step fails as "unexpected window" and never heals (FR-29, FR-35), as in SC-22
 
 ### C.3.9 Change impact
 
