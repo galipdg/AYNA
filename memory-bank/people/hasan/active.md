@@ -2,7 +2,7 @@
 
 Only hasan's agent edits this file. Overwrite it at every session end.
 
-- Last update: 2026-11-17. Written on `hasan/36-sample-objects`. The #66 section (JUnit XML,
+- Last update: 2026-11-17 (2nd session). Written on `hasan/36-sample-pairs`. The #66 section (JUnit XML,
   what the schema really requires) lives in PR #254's copy of this file and arrives when it merges.
 - **CI is still down for the whole repo (billing, galip's account).** Every run fails in 1-2 s
   with no log. Do not debug a branch over it.
@@ -14,11 +14,15 @@ Only hasan's agent edits this file. Overwrite it at every session end.
     `eval/apps/sample/nl_objects.py`. The UIA test walks every tab, page and dialog. Review: galip.
     **Open question to galip:** the settings tab items share one AutomationId, so they are left out
     (see `nl_objects.py` and his inbox).
+  - **`hasan/36-sample-pairs`** (stacked on #259, base `hasan/36-sample-objects`): my 20 of the 40
+    sample pairs (`sample-001`..`020`: login, form, listSearch, wait), gold played on Windows 8/8.
+    galip writes `settings`, `dialog`, `wizard`, `checkpoint` from `sample-021`. Review: galip
+    (§9 review + whether grid-row `SelectRow` rules belong to #36 or #57).
 - **Merged since last time:** #248 (#54 screenshots), #253 (#64 RQ1 report). Re-reviewed and
   approved #242 (SDD v0.5, merged).
 - **Next step:** no issue of my own is in progress. Run `gh issue list --assignee @me --state open`
   and pick the earliest-due milestone (§3). When galip answers on #259 and picks (a), add
-  `TAB_ITEMS` to the list. Then write my half of the 40 sample pairs (#36, guideline §7).
+  `TAB_ITEMS` to the list. My half of the #36 pairs is done; act on galip's review.
 - Still in the inbox: TBD-3 (Windows versions, LTSC) with omer; my #36 §8 points.
 
 ## #64 -- RQ1's report, and the two rules it is built on (2026-11-15)
