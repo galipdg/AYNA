@@ -7,3 +7,4 @@
 !server/src/
 !schemas/step.schema.json
 !schemas/snapshot.schema.json
+!schemas/healing-proposal.schema.json

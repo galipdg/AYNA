@@ -29,6 +29,8 @@ import com.ayna.server.error.ApiExceptions.InvalidRequestException;
 import com.ayna.server.error.ApiExceptions.NotFoundException;
 import com.ayna.server.error.ApiExceptions.TooLargeException;
 import com.ayna.server.error.FieldError;
+import com.ayna.server.healing.HealingService;
+import com.ayna.server.healing.HealingService.RunContext;
 import com.ayna.server.runs.RunDtos.Events;
 import com.ayna.server.runs.RunDtos.RunDetail;
 import com.ayna.server.runs.RunDtos.RunSummary;
@@ -65,14 +67,17 @@ public class RunService {
 
 	private static final String NOT_RUN = "notRun";
 
-	/** Added by #74, which stores the proposal that comes with it (ADR run-screenshots-and-retention). */
+	/** Carries a healing proposal and the snapshot its candidates come from (#74, ADR healing-proposal-transport). */
 	private static final String REPAIR_PROPOSED = "repairProposed";
+
+	/** The members only a `repairProposed` result has; stored in the graph, not in the result's `body`. */
+	private static final List<String> PROPOSAL_MEMBERS = List.of("healingProposal", "snapshot");
 
 	private static final Set<String> RUN_STATUSES = Set.of(RUNNING, PASSED, FAILED, ABORTED);
 
 	private static final Set<String> FINISH_STATUSES = Set.of(PASSED, FAILED, ABORTED);
 
-	private static final Set<String> RESULT_STATUSES = Set.of(PASSED, FAILED, NOT_RUN);
+	private static final Set<String> RESULT_STATUSES = Set.of(PASSED, FAILED, NOT_RUN, REPAIR_PROPOSED);
 
 	/** Why a failed step failed (FR-35, TBD-5; `$defs/failureCategory` in the agent and WebSocket schemas). */
 	static final Set<String> FAILURE_CATEGORIES = Set.of("elementNotFound", "unexpectedWindow", "assertionFailed",
@@ -101,13 +106,16 @@ public class RunService {
 
 	private final ScreenshotStore screenshots;
 
+	private final HealingService healing;
+
 	public RunService(Driver driver, TestService tests, RunEvents events, ObjectMapper mapper,
-			ScreenshotStore screenshots) {
+			ScreenshotStore screenshots, HealingService healing) {
 		this.driver = driver;
 		this.tests = tests;
 		this.events = events;
 		this.mapper = mapper;
 		this.screenshots = screenshots;
+		this.healing = healing;
 	}
 
 	/** Starts a run of the test on an app version. `userId` is who started it (FR-40). */
@@ -205,22 +213,24 @@ public class RunService {
 	 * Stores one step's result: the `params` of the agent's `run.stepResult`, unchanged. An
 	 * identical repeat changes nothing; another body for the same step is a 409. Members this
 	 * version does not read stay in the stored body (#40 and #54 add their own). `category` (#63)
-	 * is read and kept on the node as well.
+	 * is read and kept on the node as well. A `repairProposed` result also carries its healing
+	 * proposal and snapshot, stored in the same transaction (#74); `userId` is who sent it, recorded
+	 * on the imported window and the proposal (FR-40).
 	 */
-	public StoredResult writeResult(String runId, int stepIndex, JsonNode body) {
+	public StoredResult writeResult(String runId, int stepIndex, JsonNode body, String userId) {
 		checkBody(runId, stepIndex, body);
 		String canonical = mapper.writeValueAsString(sorted(body));
 		String hash = sha256(canonical);
 		Stored stored;
 		try {
-			stored = store(runId, stepIndex, body, canonical, hash);
+			stored = store(runId, stepIndex, body, canonical, hash, userId);
 		}
 		catch (ClientException ex) {
 			if (!CONSTRAINT_FAILED.equals(ex.code())) {
 				throw ex;
 			}
-			// An overlapping retry committed first, so this write is now a repeat of it.
-			stored = store(runId, stepIndex, body, canonical, hash);
+			// An overlapping retry (or import of the same snapshot) committed first, so this write is now a repeat.
+			stored = store(runId, stepIndex, body, canonical, hash, userId);
 		}
 		if (stored.created()) {
 			events.publish(stored.testId(),
@@ -228,7 +238,12 @@ public class RunService {
 							body.path("status").asString(), number(body, "durationMs"), text(body, "message"),
 							text(body, "category")));
 		}
-		return new StoredResult(stored.id(), stored.created());
+		return new StoredResult(stored.id(), stored.created(), stored.proposalId());
+	}
+
+	/** {@link #writeResult(String, int, JsonNode, String)} with no acting user to record. */
+	public StoredResult writeResult(String runId, int stepIndex, JsonNode body) {
+		return writeResult(runId, stepIndex, body, null);
 	}
 
 	/**
@@ -432,7 +447,7 @@ public class RunService {
 		}
 	}
 
-	private Stored store(String runId, int stepIndex, JsonNode body, String canonical, String hash) {
+	private Stored store(String runId, int stepIndex, JsonNode body, String canonical, String hash, String userId) {
 		try (Session session = driver.session()) {
 			return session.executeWrite(tx -> {
 				Record run = runRecord(tx, runId);
@@ -446,7 +461,8 @@ public class RunService {
 						throw new ConflictException(
 								"Step " + stepIndex + " of run " + runId + " already has a different result");
 					}
-					return new Stored(stored.get("id").asString(), testId, false);
+					String id = stored.get("id").asString();
+					return new Stored(id, testId, false, healing.proposalOf(tx, id));
 				}
 				String stepId = text(body, "stepId");
 				checkAgainstRun(run.get("r"), stepIndex, stepId);
@@ -464,7 +480,7 @@ public class RunService {
 				params.put("message", text(body, "message"));
 				params.put("category", text(body, "category"));
 				params.put("hash", hash);
-				params.put("body", canonical);
+				params.put("body", PROPOSAL_MEMBERS.stream().anyMatch(body::has) ? withoutProposal(body) : canonical);
 				tx.run("""
 						MATCH (r:Run {id: $runId})
 						SET r.lastActivityAt = datetime()
@@ -477,9 +493,27 @@ public class RunService {
 							MATCH (sr:StepResult {id: $id}), (s:Step {id: $stepId})
 							CREATE (sr)-[:FOR]->(s)""", Map.of("id", id, "stepId", stepId)).consume();
 				}
-				return new Stored(id, testId, true);
+				String proposalId = null;
+				if (body.path("status").asString().equals(REPAIR_PROPOSED)) {
+					proposalId = healing.createFromResult(tx, id, new RunContext(runId, stepIndex, stepId,
+							run.get("appVersionId").asString(), stepTarget(run.get("r"), stepIndex)), body, userId);
+				}
+				return new Stored(id, testId, true, proposalId);
 			});
 		}
+	}
+
+	/** The stored `body` of a result: the proposal and snapshot live in the graph, so they are left out. */
+	private String withoutProposal(JsonNode body) {
+		ObjectNode copy = ((ObjectNode) body).deepCopy();
+		PROPOSAL_MEMBERS.forEach(copy::remove);
+		return mapper.writeValueAsString(sorted(copy));
+	}
+
+	/** The logical name that step `stepIndex` of the run's copy targets, or null. */
+	private String stepTarget(Value run, int stepIndex) {
+		JsonNode target = mapper.readTree(run.get("document").asString()).path("steps").path(stepIndex).path("target");
+		return target.isString() ? target.asString() : null;
 	}
 
 	/** What can be checked without reading the run. Lists every failing field. */
@@ -496,11 +530,18 @@ public class RunService {
 			errors.add(new FieldError("$.stepIndex", "stepIndex must be the step in the path: " + stepIndex));
 		}
 		String status = body.path("status").asString("");
-		if (status.equals(REPAIR_PROPOSED)) {
-			errors.add(new FieldError("$.status", "repairProposed results are not accepted yet (#51, #74)"));
+		if (!RESULT_STATUSES.contains(status)) {
+			errors.add(new FieldError("$.status",
+					"A step result is passed, failed, notRun or repairProposed, not '" + status + "'"));
 		}
-		else if (!RESULT_STATUSES.contains(status)) {
-			errors.add(new FieldError("$.status", "A step result is passed, failed or notRun, not '" + status + "'"));
+		for (String member : PROPOSAL_MEMBERS) {
+			boolean present = !body.path(member).isMissingNode() && !body.path(member).isNull();
+			if (status.equals(REPAIR_PROPOSED) && !body.path(member).isObject()) {
+				errors.add(new FieldError("$." + member, "A repairProposed result carries its " + member + " object"));
+			}
+			else if (!status.equals(REPAIR_PROPOSED) && present) {
+				errors.add(new FieldError("$." + member, "Only a repairProposed result carries a " + member));
+			}
 		}
 		JsonNode stepId = body.path("stepId");
 		if (!stepId.isMissingNode() && !stepId.isNull() && !stepId.isString()) {
@@ -521,7 +562,10 @@ public class RunService {
 				errors.add(new FieldError("$.category", "category is one of " + String.join(", ",
 						FAILURE_CATEGORIES.stream().sorted().toList()) + ", or null"));
 			}
-			else if (!status.equals(FAILED)) {
+			else if (status.equals(REPAIR_PROPOSED) && !category.asString().equals("elementNotFound")) {
+				errors.add(new FieldError("$.category", "A repairProposed step's category is elementNotFound"));
+			}
+			else if (!status.equals(FAILED) && !status.equals(REPAIR_PROPOSED)) {
 				errors.add(new FieldError("$.category", "Only a failed step has a category, not a " + status + " one"));
 			}
 		}
@@ -566,7 +610,11 @@ public class RunService {
 
 	private static void requireFits(RunDetail run, String status) {
 		long passed = run.results().stream().filter(r -> r.status().equals(PASSED)).count();
-		long failed = run.results().stream().filter(r -> r.status().equals(FAILED)).count();
+		// A repair proposed is a failure: the step was not performed (SC-29, SC-31).
+		long failed = run.results()
+			.stream()
+			.filter(r -> r.status().equals(FAILED) || r.status().equals(REPAIR_PROPOSED))
+			.count();
 		if (status.equals(PASSED) && passed != run.stepCount()) {
 			throw new ConflictException(
 					"Run " + run.id() + " cannot pass: " + passed + " of " + run.stepCount() + " steps passed");
@@ -681,15 +729,15 @@ public class RunService {
 		}
 	}
 
-	/** `created` is false for an identical repeat, which wrote nothing. */
-	public record StoredResult(String id, boolean created) {
+	/** `created` is false for an identical repeat, which wrote nothing. `proposalId` is set for a repairProposed result. */
+	public record StoredResult(String id, boolean created, String proposalId) {
 	}
 
 	/** `created` is false for the same image again. */
 	public record ScreenshotWritten(String stepResultId, boolean created) {
 	}
 
-	private record Stored(String id, String testId, boolean created) {
+	private record Stored(String id, String testId, boolean created, String proposalId) {
 	}
 
 	private record Finished(RunSummary run, boolean changed) {

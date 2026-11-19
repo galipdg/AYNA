@@ -100,7 +100,9 @@ public class RunController {
 
 	/**
 	 * Body: the `params` of the agent's `run.stepResult`, unchanged (`docs/agent-rpc.md`). 201 on
-	 * the first write; 200 for an identical repeat, which writes nothing.
+	 * the first write; 200 for an identical repeat, which writes nothing. A `repairProposed` result
+	 * carries `healingProposal` and `snapshot`; its proposal is created with it (#74) and its id
+	 * is in the answer.
 	 */
 	@ErrorResponses({ HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND, HttpStatus.CONFLICT })
 	@ApiResponse(responseCode = "201", description = "Stored")
@@ -109,10 +111,10 @@ public class RunController {
 	@PutMapping("/api/runs/{runId}/results/{stepIndex}")
 	@ResponseStatus(HttpStatus.CREATED)
 	public ResponseEntity<StepResultWritten> writeResult(@PathVariable String runId, @PathVariable int stepIndex,
-			@RequestBody JsonNode body) {
-		StoredResult result = service.writeResult(runId, stepIndex, body);
+			@RequestBody JsonNode body, @AuthenticationPrincipal AynaPrincipal me) {
+		StoredResult result = service.writeResult(runId, stepIndex, body, me.userId());
 		return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
-			.body(new StepResultWritten(result.id()));
+			.body(new StepResultWritten(result.id(), result.proposalId()));
 	}
 
 	/**
@@ -141,7 +143,7 @@ public class RunController {
 		}
 		ScreenshotWritten written = service.writeScreenshot(runId, stepIndex, png, maxScreenshotBytes);
 		return ResponseEntity.status(written.created() ? HttpStatus.CREATED : HttpStatus.OK)
-			.body(new StepResultWritten(written.stepResultId()));
+			.body(new StepResultWritten(written.stepResultId(), null));
 	}
 
 	/** The step's screenshot; a stored image never changes, so clients may keep it. */

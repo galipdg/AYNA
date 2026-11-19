@@ -1,4 +1,4 @@
-# Graph model (v0.5)
+# Graph model (v0.7)
 
 The server's Neo4j schema. Part of the graph-schema contract (with `server/src/main/resources/neo4j/migrations/`), frozen at G1 (week 7). Change it only with a new migration and an ADR.
 
@@ -10,6 +10,7 @@ The server's Neo4j schema. Part of the graph-schema contract (with `server/src/m
 - v0.4 (#15, ADR `2026-11-07-window-snapshot-unique`, proposed, migration `V0005`) makes `Window.snapshotId` unique, so one snapshot import creates one Window.
 - v0.5 (#51, ADR `2026-11-08-run-screenshots-and-retention`, accepted, no migration) adds `lastActivityAt` and `endedBy` to Run and `screenshotHash`, `screenshotReceivedAt` to StepResult; `screenshotPath` is relative to the screenshot folder.
 - v0.6 (#63, ADR `2026-11-15-failure-category`, proposed, no migration) adds `category` to StepResult: why a failed step failed (FR-35), absent on every other result.
+- v0.7 (#74, ADRs `2026-10-28-healing-proposal-transport`, accepted, and `2026-10-31-healing-proposal-schema-0-2`, proposed; migration `V0006`) fills in HealingProposal and Rule: per-candidate data on `CANDIDATE`, `(StepResult)-[:PROPOSED]->(HealingProposal)` so a run links to its proposal, `(Rule)-[:FOR]->(RepoObject)`, and indexes on `HealingProposal.status` and `createdAt` for the proposal list. A `repairProposed` StepResult has `category` `elementNotFound` or none.
 - Migrations run automatically when the server starts ([neo4j-migrations](https://michael-simons.github.io/neo4j-migrations/); applied versions are stored as `__Neo4jMigration` nodes).
 
 ## Diagram
@@ -30,9 +31,11 @@ graph LR
   Run -- ON_VERSION --> AppVersion
   Run -- HAS_RESULT --> StepResult
   StepResult -- FOR --> Step
+  StepResult -- PROPOSED --> HealingProposal
   HealingProposal -- FOR --> RepoObject
-  HealingProposal -- "CANDIDATE {score}" --> Element
+  HealingProposal -- "CANDIDATE {rank, score}" --> Element
   Rule -- LEARNED_FROM --> HealingProposal
+  Rule -- FOR --> RepoObject
   User -- HAS_TOKEN --> AuthToken
 ```
 
@@ -48,9 +51,9 @@ graph LR
 | TestCase | `name` (unique per application); `createdBy`, `createdAt`, `updatedBy`, `updatedAt` | unique `id` · index `name` (`V0002`) |
 | Step | `keyword`, `value`, `timeoutMs`; `checkpoint` and `row` as JSON strings (shape: `schemas/step.schema.json`). The logical name is not stored: it comes from `TARGETS` | unique `id` |
 | Run | `status` (`running`, `passed`, `failed`, `aborted`), `stepCount`, `document` (JSON string: the step document copied at the start; a result's `stepIndex` is a position in it), `startedBy`, `startedAt`, `finishedAt`, `durationMs`, `lastActivityAt` (creation, new result or new screenshot; the idle timeout reads it), `endedBy` (`idleTimeout` when the server aborted it) | unique `id` · index `startedAt` |
-| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`), `durationMs`, `message`, `category` (only on a failed result: `elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete`), `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` (relative to the screenshot folder, `<runId>/<stepIndex>.png`), `screenshotHash` (SHA-256 of the PNG, to recognise a repeat), `screenshotReceivedAt` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
-| HealingProposal | `score`, per-property contributions, `decision` | unique `id` |
-| Rule | learned matching rule | unique `id` |
+| StepResult | `runId`, `stepIndex`, `stepId`, `status` (`passed`, `failed`, `notRun`, `repairProposed`), `durationMs`, `message`, `category` (only on a failed result: `elementNotFound`, `unexpectedWindow`, `assertionFailed`, `timeout` or `searchIncomplete`), `body` (JSON string with sorted keys: the result as received), `bodyHash` (SHA-256 of `body`, to recognise a repeat), `receivedAt`, `screenshotPath` (relative to the screenshot folder, `<runId>/<stepIndex>.png`), `screenshotHash` (SHA-256 of the PNG, to recognise a repeat), `screenshotReceivedAt` | unique `id` · unique `(runId, stepIndex)` (`V0004`) |
+| HealingProposal | `status` (`pending`, `approved`, `rejected`), `logicalName`, `appVersionId`, `runId`, `stepIndex`, `snapshotId`, `scorerId`, `scorerFeatureVersion`, `targetFeatureVersion`, `targetElementId` (the target's server Element, or none), `weights` (JSON string), `candidatesScored`, `document` (JSON string: the proposal as received, `schemas/healing-proposal.schema.json`), `createdBy`, `createdAt`; once decided `decidedBy`, `decidedAt`, and for an approval `approvedRank`, `ruleId`. Created by the step-result write of a `repairProposed` result (#74) | unique `id` · index `status`, `createdAt` (`V0006`) |
+| Rule | what one approval changed: `objectId`, `appVersionId`, `elementId` (the approved candidate), `previousElementId` (what the object resolved to before for that version, or none), `previousPrimary`, `previousFallback`, `primary`, `fallback` (JSON strings, as on RepoObject), `createdBy`, `createdAt` | unique `id` |
 | User | `username` (lower-case), `passwordHash` (BCrypt), `role` (`admin` / `tester`), `createdAt`; `removedAt` once removed (the node stays) | unique `id` · unique `username` (`V0003`) |
 | AuthToken | `kind` (`session` / `api`), `tokenHash` (SHA-256 of the secret), `name` (api), `createdAt`, `expiresAt` (session) | unique `id` · unique `tokenHash` (`V0003`) |
 
@@ -144,23 +147,34 @@ MATCH (:Run {id: $runId})-[:HAS_RESULT]->(sr:StepResult {status: 'failed'})-[:FO
 RETURN s, sr.screenshotPath
 ```
 
+**`(StepResult)-[:PROPOSED]->(HealingProposal)`**: the proposal a `repairProposed` result carried, created in the same write. The link goes when retention deletes the run; the proposal stays, as the decision's record.
+```cypher
+MATCH (:Run {id: $runId})-[:HAS_RESULT]->(:StepResult {status: 'repairProposed'})-[:PROPOSED]->(p:HealingProposal)
+RETURN p.id, p.status
+```
+
 **`(HealingProposal)-[:FOR]->(RepoObject)`**: proposals waiting for a decision on an object.
 ```cypher
-MATCH (p:HealingProposal)-[:FOR]->(:RepoObject {id: $objectId})
-WHERE p.decision IS NULL
+MATCH (p:HealingProposal {status: 'pending'})-[:FOR]->(:RepoObject {id: $objectId})
 RETURN p
 ```
 
-**`(HealingProposal)-[:CANDIDATE {score}]->(Element)`**: the candidate elements of a proposal, best first.
+**`(HealingProposal)-[:CANDIDATE {rank, score}]->(Element)`**: the candidate elements of a proposal, best first. The Elements belong to the snapshot the result carried (`(snapshotId, snapshotElementId)`). Each edge keeps `rank`, `score` (a double, for sorting only), `scoreExact` (the exact fraction, e.g. `"151/192"`), and `properties`, `contributions`, `similarities` as parallel lists in the scorer's order (Neo4j cannot store a map).
 ```cypher
 MATCH (:HealingProposal {id: $proposalId})-[c:CANDIDATE]->(e:Element)
-RETURN e, c.score ORDER BY c.score DESC
+RETURN e, c.rank, c.scoreExact ORDER BY c.rank
 ```
 
-**`(Rule)-[:LEARNED_FROM]->(HealingProposal)`**: the approved proposals a rule was learned from.
+**`(Rule)-[:LEARNED_FROM]->(HealingProposal)`**: the approved proposal a rule was learned from. Approving also moves the object's `RESOLVES_TO {version}` to the candidate and gives its `primary`/`fallback` keys the candidate's values.
 ```cypher
 MATCH (:Rule {id: $ruleId})-[:LEARNED_FROM]->(p:HealingProposal)
 RETURN p
+```
+
+**`(Rule)-[:FOR]->(RepoObject)`**: the repairs approved for an object, newest first.
+```cypher
+MATCH (r:Rule)-[:FOR]->(:RepoObject {id: $objectId})
+RETURN r ORDER BY r.createdAt DESC
 ```
 
 **`(User)-[:HAS_TOKEN]->(AuthToken)`**: the account a request's Bearer token belongs to (every request).

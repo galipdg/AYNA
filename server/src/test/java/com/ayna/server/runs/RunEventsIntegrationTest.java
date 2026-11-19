@@ -153,6 +153,15 @@ class RunEventsIntegrationTest {
 		assertThat(finished.path("run").path("durationMs").isNumber()).isTrue();
 	}
 
+	/** What the server sends for a `repairProposed` result (#74) fits contract 1.2; the full write is in `HealingIntegrationTest`. */
+	@Test
+	void aRepairProposedResultFitsTheContract() {
+		var message = new RunDtos.Events.StepResult(RunDtos.Events.STEP_RESULT, testId, versionId, 2, null,
+				"repairProposed", 3400L, "login.loginButton was not found; 3 candidates proposed", "elementNotFound");
+
+		assertThat(contract.validate(mapper.valueToTree(message))).isEmpty();
+	}
+
 	@Test
 	void repeatsAreNotSentAgain() throws Exception {
 		Listener watcher = connect(token);
