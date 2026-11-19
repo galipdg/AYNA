@@ -20,7 +20,7 @@
 |---|---|---|---|
 | SA | Sample app v1.0 | PySide6 app with six screens: login, list with a grid, detail form, settings with tabs, dialog, wizard. Every control has an AutomationId; the version is shown in the title bar | Built: #33, version 1.0 |
 | SA-C | Controlled-change versions of the sample app | One UI change each: rename, move, retype, re-parent, AutomationId removed, plus one combined. Each comes with a ground-truth mapping from old to new element | Built: #46 |
-| SA-B | Bug-injected versions of the sample app | One functional bug each: wrong label (SC-21), disabled button (SC-19), wrong saved value (SC-20), missing validation (SC-34), and a list screen that has lost its search button (SC-31) | Built: #47 (`eval/apps/sample/bugs.md`); the SC-31 version replaces the first build's wrong navigation, see SC-31 |
+| SA-B | Bug-injected versions of the sample app | One functional bug each: wrong label (SC-21), disabled button (SC-19), wrong saved value (SC-20), missing validation (SC-34), wrong navigation | Built: #47 (`eval/apps/sample/bugs.md`). SC-31 needs a version whose list screen has lost its search button instead of the wrong-navigation one (see SC-31); requested of #47's owner on 2026-11-19 |
 | P1, P2 | Pilot apps | P1 HandBrake (WPF), P2 KeePass 2 (WinForms); KeePassXC (Qt Widgets) may join as a third | Chosen in D1 (#21) from the UIA dumps of #6 (TBD-1 closed) |
 
 **Sample-app behaviour these scenarios assume** (the input #33 was built from; the app does all of it):

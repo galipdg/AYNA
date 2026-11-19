@@ -1,6 +1,6 @@
 """Build the submitted RS PDF (#41): `RS.md`, with `scenarios.md` in full as Appendix C.
 
-    python -m pip install markdown==3.11.3       # once; any Python 3.11+
+    python -m pip install markdown==3.11.3       # once; Python 3.12+
     python docs/rs/build_pdf.py                  # writes docs/rs/RS-<version>.pdf
 
 It turns the Markdown into one HTML page and prints it with Google Chrome in headless mode, so

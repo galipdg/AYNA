@@ -17,7 +17,7 @@ RS 0.9 → 1.0 in `docs/rs/RS.md` and `docs/rs/scenarios.md`: fold in what merge
   - SC-31 now says "the list screen has lost its search button", which is a real bug with same-screen candidates. The title is kept, because `test_bugs.py` looks it up.
   - Asked hasan (inbox) to rebuild bug5 that way. The wrong-navigation case is SC-22's kind.
 - 2026-11-19 — The PDF build needs `markdown` (pip) and Chrome, not pandoc or LaTeX: nothing on this Mac had them. The script lives in `docs/rs/`, mine, and is not product code.
-- 2026-11-19 — Relative links in the PDF point to GitHub `main` (the repository is public since 2026-11-17). The links to `scenarios.md` point into Appendix C.
+- 2026-11-19 — Relative links in the PDF point to GitHub `main`; the repository was public when checked on 2026-11-19 (`gh repo view`). If it goes private, those links 404 for a reader outside the team. The links to `scenarios.md` point into Appendix C.
 
 ## Status
 - [x] RS 1.0 text: header and history; FR-11, FR-15 and FR-18 (schema 0.2); FR-29 and FR-35; NFR-02 (#161 root cause); NFR-12 (#162); pilots named (TBD-1); §1.3 state; §2.2; §3.5 contracts; E.1 rows closed or deferred
