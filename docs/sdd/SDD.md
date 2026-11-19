@@ -7,7 +7,7 @@
 | Advisor | Prof. Dr. Gazi Erkan Bostancı |
 | Team | Galip Enes Doğan · Ömerfaruk Sarıbal · Hasan Berk Yanıkkaya |
 | Programme | HAVELSAN SUIT application |
-| Document | Software Design Description in the style of IEEE 1016-2009 [1] |
+| Document | Software Design Description in the style of IEEE 1016-2009 [44] |
 | Version | 0.6 — draft of sections 1–9 |
 | Date | 2026-11-15 |
 | Status | Sections 1–4 (#45), 5 (#50), 6 (#48) and 7 (#53) drafted. Section 8 waits for the final RS (#41). Final PDF: #53, due 7 Dec 2026 |
@@ -22,7 +22,7 @@
 | 0.3 | 2026-11-07 | Ömerfaruk Sarıbal | AI components moved in as §5 (#50, #53); design rationale, §7 (#53); status after #11, #12, #21 and #60 merged, and PR #173, PR #174, PR #193 |
 | 0.4 | 2026-11-08 | Ömerfaruk Sarıbal | Status after the client stack (#17, #24, #25, #30, #38, #183–#185), #15 and step schema v0.2 merged; §7 rows for *Step schema v0.2*, *Client UI language* and *Graph schema v0.4*; RQ1's dump script renamed (#199) (#53) |
 | 0.5 | 2026-11-15 | Ömerfaruk Sarıbal | Status after #22, #23, #26, #29, #33, #40, #46, #47, #51, #52, #59, #61, #68, #152 and #221 merged, and #44's editor run and #67's nightly job; hasan's #242 review; contracts frozen as 1.0 (§4.1, §4.3, §6.2); graph model v0.5 and its diagram with accounts; the AI service's token (§2.4.2); measured load (§2.3); §7 rows for *Run screenshots* and *Contracts v1*; PR #240's failure category noted as planned (#53) |
-| 0.6 | 2026-11-19 | Ömerfaruk Sarıbal | §8 Traceability from RS 1.0 (#41, PR #267): every FR and NFR to the sections that design it; §9 row 13 settled; Agent and CLI rows after #54 and #66 merged (#53) |
+| 0.6 | 2026-11-19 | Ömerfaruk Sarıbal | §8 Traceability from RS 1.0 (#41, PR #267): every FR and NFR to the sections that design it; §9 row 13 settled; Agent and CLI rows after #54 and #66 merged; one reference numbering, the RS's (TBD-11), in one list in §1.5 (#53) |
 
 ---
 
@@ -56,22 +56,32 @@ Product terms (repository object, logical name, snapshot, checkpoint, healing pr
 |---|---|
 | AUT | Application under test |
 | UIA | Microsoft UI Automation |
-| RPC | Remote procedure call; here JSON-RPC 2.0 [3] |
+| RPC | Remote procedure call; here JSON-RPC 2.0 [42] |
 | ADR | Architecture decision record (`memory-bank/decisions/`) |
 | G0–G3 | Project gates: walking skeleton (week 3), design baseline (week 7), MVP core (week 9), feature freeze (week 12) |
 
 ### 1.5 References
 
-| # | Reference |
-|---|---|
-| [1] | IEEE Std 1016-2009, *IEEE Standard for Information Technology — Systems Design — Software Design Descriptions* |
-| [2] | ISO/IEC/IEEE 29148:2018, *Systems and software engineering — Life cycle processes — Requirements engineering* (the RS follows it) |
-| [3] | JSON-RPC 2.0 Specification, https://www.jsonrpc.org/specification |
-| [4] | JSON Schema Draft 2020-12, https://json-schema.org/draft/2020-12 |
-| [5] | Neo4j 5 Cypher Manual and Operations Manual (Community Edition) |
-| [6] | Electron security checklist, https://www.electronjs.org/docs/latest/tutorial/security |
+One numbering for the project's documents: numbers follow the RS's list (RS §2.1), which follows the plan's reference list, as RS 1.0's TBD-11 sets until the semester report (#93) merges the lists. Sources the RS does not cite take the next free numbers from [44]. `docs/literature.md` (#10, #20) still has its own provisional numbers; the entries below give the RS number. Only the sources this document cites are listed.
 
-Project documents: the RS and its requirement list (`docs/rs/scenarios.md`), the ADRs (`memory-bank/decisions/README.md`), the contracts in §4.1, and the literature review (`docs/literature.md`, #10). §5 cites its own list (§5.10). Reference numbers will be aligned with the RS and the literature review in the final document (#53).
+- [14] M. Nass, E. Alégroth, R. Feldt, M. Leotta, F. Ricca, "Similarity-based web element localization for robust test automation," *ACM TOSEM*, 32(3), Art. 75, 2023 (Similo). Code: github.com/michelnass/Similo2.
+- [24] C. Zhang et al., "UFO: A UI-focused agent for Windows OS interaction," in *Proc. NAACL 2025*, pp. 597–622, 2025. arXiv:2402.07939.
+- [31] P. Lewis et al., "Retrieval-augmented generation for knowledge-intensive NLP tasks," *NeurIPS*, 2020.
+- [33] llama.cpp, GBNF grammar-constrained decoding, `grammars/README.md` ("GBNF guide", accessed 2026-10-27). https://github.com/ggml-org/llama.cpp
+- [40] ISO/IEC/IEEE 29148:2018, *Systems and software engineering — Life cycle processes — Requirements engineering*.
+- [41] JSON Schema, Draft 2020-12. https://json-schema.org/draft/2020-12
+- [42] JSON-RPC Working Group, JSON-RPC 2.0 Specification. https://www.jsonrpc.org/specification
+- [44] IEEE Std 1016-2009, *IEEE Standard for Information Technology — Systems Design — Software Design Descriptions*.
+- [45] Neo4j, *Cypher Manual* and *Operations Manual*, version 5 (Community Edition). https://neo4j.com/docs/
+- [46] Electron, Security checklist. https://www.electronjs.org/docs/latest/tutorial/security
+- [47] Z. Liu et al., "Make LLM a testing expert: bringing human-like interaction to mobile GUI testing via functionality-aware decisions," *ICSE*, 2024 (GPTDroid).
+- [48] B. T. Willard, R. Louf, "Efficient guided generation for large language models," arXiv:2307.09702, 2023.
+- [49] C. Guo, G. Pleiss, Y. Sun, K. Q. Weinberger, "On calibration of modern neural networks," *ICML*, 2017.
+- [50] D. Almeida, "Introducing System One models and Jev," TypeSafe blog, 2026.
+- [51] Strands Labs, *Strands Decider*, GitHub repository (Apache-2.0), 2026.
+- [52] H2O.ai, *H2O-Lightning-4B* model card, 2026.
+
+Project documents: the RS (written to ISO/IEC/IEEE 29148 [40]) and its requirement list (`docs/rs/scenarios.md`), the ADRs (`memory-bank/decisions/README.md`), the contracts in §4.1, and the literature review (`docs/literature.md`, #10, #20).
 
 ### 1.6 Conventions
 
@@ -146,7 +156,7 @@ flowchart TB
 
 #### 2.2.1 Inside the client
 
-The client follows Electron's process split [6]:
+The client follows Electron's process split [46]:
 
 - The **renderer** draws the screens and has no network or file access: its Content-Security-Policy allows only the app's own files (`connect-src 'self'`, `client/src/main/security.ts`), it runs sandboxed with context isolation, and it may navigate only to its own entry page.
 - The **preload** script exposes one typed API object (`client/src/shared/api.ts`) through `contextBridge`. Every call is an IPC request.
@@ -297,7 +307,7 @@ No component connects outside the closed network at run time: no CDN, telemetry,
 
 ### 3.1 Store and ownership
 
-Neo4j Community Edition is the only database (ADR *Neo4j as the single database*; NFR-24). The server is its only client (§2.2.2). Choosing a graph keeps three things in one query language: the UI element tree of each snapshot, the links from tests through repository objects to elements (which change-impact analysis, FR-33, walks), and the healing data with its context. Vector search for NL retrieval uses Neo4j's built-in vector index (#58), so no second store is needed.
+Neo4j Community Edition [45] is the only database (ADR *Neo4j as the single database*; NFR-24). The server is its only client (§2.2.2). Choosing a graph keeps three things in one query language: the UI element tree of each snapshot, the links from tests through repository objects to elements (which change-impact analysis, FR-33, walks), and the healing data with its context. Vector search for NL retrieval uses Neo4j's built-in vector index (#58), so no second store is needed.
 
 - **Identity.** Every node has an `id`: a UUID string the server creates, unique per label. Neo4j's internal `elementId()` is never stored or exposed (ADR *Graph schema v0*).
 - **Schema changes** are versioned Cypher migrations in `server/src/main/resources/neo4j/migrations/`, applied by neo4j-migrations when the server starts. A change needs a new migration, an update to `docs/graph-model.md` and, after G1, an ADR.
@@ -358,7 +368,7 @@ Schema v0 was written before the APIs that use it. The issues below change it; e
 
 ### 3.4 Exchange documents
 
-Data that crosses a process boundary is a JSON document with its own JSON Schema (Draft 2020-12 [4]) in `schemas/`. The server validates against the same files it publishes, so the client, the agent, the AI service and the server cannot disagree on shape.
+Data that crosses a process boundary is a JSON document with its own JSON Schema (Draft 2020-12 [41]) in `schemas/`. The server validates against the same files it publishes, so the client, the agent, the AI service and the server cannot disagree on shape.
 
 | Document | Schema | Produced by → consumed by | Status |
 |---|---|---|---|
@@ -379,7 +389,7 @@ Data that crosses a process boundary is a JSON document with its own JSON Schema
 |---|---|---|---|---|---|
 | REST API | client, CLI runner → server | HTTP/1.1, JSON | `docs/api/openapi.yaml`, generated from the server (#31) | 1.0, frozen (#52) | **Built** in part (§4.2) |
 | Live updates | server → clients | WebSocket `/ws/runs`, JSON messages | `schemas/ws-runs.schema.json` (#52); ADR *Runs API and live run updates* | 1.0, frozen (#52) | **Built** on the server (#44) and in the editor's live run view (#44, PR #247) |
-| Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [3] over WebSocket on 127.0.0.1 | `schemas/agent-rpc.schema.json` (shapes) and `docs/agent-rpc.md` (behaviour) | 1.0, frozen (#52): 0.1 + `runSteps` (#26) + `elementFromPoint` (#22) | **Built**: 1.0 (PRs #135, #200, #227). Planned: 1.1 failure category (PR #240); step results with healing proposals (#73) |
+| Agent JSON-RPC | client main process → agent | JSON-RPC 2.0 [42] over WebSocket on 127.0.0.1 | `schemas/agent-rpc.schema.json` (shapes) and `docs/agent-rpc.md` (behaviour) | 1.0, frozen (#52): 0.1 + `runSteps` (#26) + `elementFromPoint` (#22) | **Built**: 1.0 (PRs #135, #200, #227). Planned: 1.1 failure category (PR #240); step results with healing proposals (#73) |
 | AI service API | server → AI service | HTTP/1.1, JSON | `ai/API.md` | v0 | **Built** (PR #146); design in §5 |
 | Database | server → Neo4j | Bolt | `docs/graph-model.md` + migrations | v0.5 | **Built** (#14 and §3.3) |
 | Exchange documents | all | JSON in the above | `schemas/` | per schema | §3.4 |
@@ -445,7 +455,7 @@ Change-impact analysis (C3, #81) is a graph query in the server and belongs with
 Every AI part follows these rules.
 
 1. **Closed network** (NFR-29, NFR-30). The model server runs on the same host as the AI service. `OllamaClient` (`ai/ayna_ai/ollama.py`) accepts only a loopback URL (127.0.0.0/8, `::1`, or a name such as `localhost` only if every address it resolves to is loopback; it then connects to the checked address, never to the name), ignores proxy environment variables and refuses redirects, so a request cannot leave the machine. The service's own listen address follows the same rule. The model weights and the embedding model are bundled into the AI service image, and nothing is downloaded at start (#82).
-2. **Language models only at authoring time** (ADR; FR-28, NFR-22). Only the server calls the AI service, and only while a test is being written. The agent and the CLI runner never call a model. Systems that let a model choose actions at run time are not repeatable, so they report the best of three runs ([15], [40]); a regression test has to replay the same way every time. With the AI service stopped, everything except step generation works (SC-28).
+2. **Language models only at authoring time** (ADR; FR-28, NFR-22). Only the server calls the AI service, and only while a test is being written. The agent and the CLI runner never call a model. Systems that let a model choose actions at run time are not repeatable, so they report the best of three runs ([47], [24]); a regression test has to replay the same way every time. With the AI service stopped, everything except step generation works (SC-28).
 3. **A person approves everything AI produces.** Generated steps are suggestions until the author accepts them, and nothing is saved before that (FR-27). Healing candidates are proposals until a reviewer approves one (ADR; FR-30–FR-32). No AI output changes a test or the repository on its own.
 4. **Grounded in the repository.** A step targets a repository object by logical name only (step schema `target`, FR-10). Generation can only choose among the objects it was given, and a validator drops anything else (FR-26).
 5. **Deterministic where it can be.** Decoding uses temperature 0 and a fixed seed. The healing scorer uses exact rational arithmetic. The same input gives the same output on the same runtime.
@@ -591,7 +601,7 @@ The user's text is untrusted input to the model. The model has no tools, and its
 
 ### 5.3 Constrained decoding (built, #37)
 
-**Why.** A JSON schema given to the decoder guarantees syntax only, not meaning ([42], [43]). In the #7 spike, a free string let one answer run for 3,712 tokens without closing. Grammar converters skip unsupported JSON Schema features silently, among them `if`/`then`, which the step schema uses for its per-keyword rules ([43]). So the AI service derives its own generation schema from the frozen contract on every request and gives it to Ollama as `format`.
+**Why.** A JSON schema given to the decoder guarantees syntax only, not meaning ([48], [33]). In the #7 spike, a free string let one answer run for 3,712 tokens without closing. Grammar converters skip unsupported JSON Schema features silently, among them `if`/`then`, which the step schema uses for its per-keyword rules ([33]). So the AI service derives its own generation schema from the frozen contract on every request and gives it to Ollama as `format`.
 
 **Derivation** (`generation_schema()` in `ai/ayna_ai/generate.py`):
 
@@ -601,7 +611,7 @@ The user's text is untrusted input to the model. The model has no tools, and its
 4. **`target` becomes an `enum`** of the object names passed in, after each name is checked against the logical-name pattern, plus the reserved `none.noMatch` (limit 3, #71).
 5. **Leave out server fields**: `id` is assigned by the server on save.
 6. **Cap free strings** at `maxLength` ≤ 200 and the list at 1–12 steps. `version` stays a `const`, so the raw output is a complete step document.
-7. **Check the result is grammar-friendly**: no `$ref`, `$defs`, `allOf`, `oneOf`, `not`, `if`/`then`/`else`, `dependentRequired` or boolean subschema is left. `anyOf` appears only as a union of whole object schemas, never mixed with `properties` at the same level, which llama.cpp does not support ([43]).
+7. **Check the result is grammar-friendly**: no `$ref`, `$defs`, `allOf`, `oneOf`, `not`, `if`/`then`/`else`, `dependentRequired` or boolean subschema is left. `anyOf` appears only as a union of whole object schemas, never mixed with `properties` at the same level, which llama.cpp does not support ([33]).
 8. **Fail loudly.** Any construct the derivation does not know raises `SchemaDerivationError`. A change to `step.schema.json` therefore breaks a test, and generation never silently becomes looser. A sampling test checks that the derived schema never accepts what the step schema rejects.
 
 The Type branch for a three-object request, for example:
@@ -623,13 +633,13 @@ The Type branch for a three-object request, for example:
 
 1. **Structure, not meaning.** A schema-valid answer can still be wrong. qwen3 dropped the first Click of a three-action sentence (#7 finding 2). Prompt v1 used `value` for every label check, which playback would fail because UIA labels have no ValuePattern; prompt v2 fixed this with the `name`/`value` guide. The author's review (FR-27) and RQ3 (#77) catch and measure this kind of error.
 2. **Table rows: the schema can check them, the NL path cannot yet.** *"Tabloda Yılmaz'ın listelendiğini kontrol et"* used to become `Verify main.customerGrid {name contains "Yılmaz"}`: valid, but it checks the grid's UIA Name, not its rows. Step schema v0.2 (ADR *Step schema v0.2: rows*, PR #150) adds `SelectRow`, `row` and the `rowCount`, `rowExists` and `cell` checks; playback performs them in PR #237 (#40). What is left is #147's follow-up on this side: the prompt lines and the derived schema for rows, with the object's `columns` (#221) listed in its description rather than forced into an enum, since a capture's column list can be incomplete. Until then reviewers reject such steps, and the NL dataset (#36) marks such sentences.
-3. **Forced choice.** Because `keyword` and `target` are enums, the model cannot answer "no such action" or "no such object". *"Şifremi unuttum bağlantısına çift tıkla"*, with no such link in the repository, becomes a Click on some existing object: valid and wrong ([42] notes the same weakness; SC-27). **Built (#71, PR #146):** the enum always holds the reserved target `none.noMatch`, which fits the logical-name pattern, and prompt v3 offers it in the target line ("or none.noMatch if none of them fits"; as a separate line it made qwen3 add spurious Clicks). The validator drops any step that uses it (code `no_match`, reason "no repository object matches"). The derivation fails loudly if the step schema stops accepting the name, and the service answers 400 to a request object with that name, and the repository refuses it as a logical name (`RepoObjectService.NO_MATCH`, #25). Live, qwen3:8b sent the sentence above to `none.noMatch` in some runs and to `Click login.passwordInput` in others with the identical prompt, so how often, and how correctly, the model uses the escape is measured in #77. Keywords keep no escape value in v0: an action outside the five keywords is mapped to the closest one, the reviewer catches it, and RQ3 counts how often this happens.
+3. **Forced choice.** Because `keyword` and `target` are enums, the model cannot answer "no such action" or "no such object". *"Şifremi unuttum bağlantısına çift tıkla"*, with no such link in the repository, becomes a Click on some existing object: valid and wrong ([48] notes the same weakness; SC-27). **Built (#71, PR #146):** the enum always holds the reserved target `none.noMatch`, which fits the logical-name pattern, and prompt v3 offers it in the target line ("or none.noMatch if none of them fits"; as a separate line it made qwen3 add spurious Clicks). The validator drops any step that uses it (code `no_match`, reason "no repository object matches"). The derivation fails loudly if the step schema stops accepting the name, and the service answers 400 to a request object with that name, and the repository refuses it as a logical name (`RepoObjectService.NO_MATCH`, #25). Live, qwen3:8b sent the sentence above to `none.noMatch` in some runs and to `Click login.passwordInput` in others with the identical prompt, so how often, and how correctly, the model uses the escape is measured in #77. Keywords keep no escape value in v0: an action outside the five keywords is mapped to the closest one, the reviewer catches it, and RQ3 counts how often this happens.
 4. **Runtime coverage.** The derivation was run on Ollama 0.40.11 only. It avoids every construct that llama.cpp's converter lists as unsupported, but llama.cpp itself has not been tried. If D4 picks llama.cpp, test it there (#72, #80).
 5. **Determinism.** Temperature 0 with a fixed seed gave identical steps across runs on the same machine and runtime (#7: online and offline runs matched). This is not promised across runtime versions or hardware, so every results file records the Ollama version and the platform.
 
 ### 5.4 Retrieval of repository objects (planned, #58)
 
-**Purpose.** Give the model the few objects that matter: the right set for H2, a short prompt (prompt-processing speed differs about 5× between the two models, #7 finding 6) and a small `target` enum. The repository acts as RAG's non-parametric memory ([41]). When the UI changes, the repository is updated or healed and the assistant follows without retraining.
+**Purpose.** Give the model the few objects that matter: the right set for H2, a short prompt (prompt-processing speed differs about 5× between the two models, #7 finding 6) and a small `target` enum. The repository acts as RAG's non-parametric memory ([31]). When the UI changes, the repository is updated or healed and the assistant follows without retraining.
 
 **Design.**
 
@@ -691,7 +701,7 @@ S(c, t) = Σ wᵢ · simᵢ(c, t) / Σ wᵢ
 
 S lies in [0, 1], so scores are comparable across targets (Similo's own score is an unnormalised sum). Each property's **contribution** is wᵢ · simᵢ / Σ wᵢ, and the contributions add up exactly to S. The approval screen draws them as bars (#75, FR-31).
 
-**Weights and similarities.** The starting weights are Similo's hand-set ones ([7]: 1.5 for the parameters an earlier study found stable, 0.5 for the rest). Each UIA property takes the weight of its closest web counterpart.
+**Weights and similarities.** The starting weights are Similo's hand-set ones ([14]: 1.5 for the parameters an earlier study found stable, 0.5 for the rest). Each UIA property takes the weight of its closest web counterpart.
 
 | Property | Similo counterpart | Weight | Similarity |
 |---|---|---|---|
@@ -715,7 +725,7 @@ Similo's HTML Name, HRef, Alt and IsButton have no UIA counterpart, or are cover
 - **`automationId` leaf.** Qt builds AutomationId as a dotted path over the whole object chain, so renaming an ancestor changes every descendant's id, and siblings share a long prefix (learnings 2026-10-25). Comparing only the leaf gives an ancestor rename full credit and unrelated siblings a low score. `parentPath` already scores the ancestor chain. Using Levenshtein instead of Similo's exact match gives partial credit for a renamed leaf (`usernameInput` → `userNameField`).
 - **Text normalisation.** NFC, `casefold`, Turkish `İ`/`I`/`ı` folded to `i`, whitespace collapsed. Other diacritics stay significant (`ş` ≠ `s`).
 - **Determinism.** Every similarity is rational, so the arithmetic uses `fractions.Fraction`. Results are exact and identical on every platform, contributions sum exactly to the score, and ties are true ties. Values become `float` only at the JSON boundary. `rank()` orders by score descending, then by candidate id.
-- **No threshold.** Like Similo, `rank()` always returns the best k it has. A minimum score for raising a proposal belongs to #73. Before a score is read as a confidence, its reliability is checked on the RQ4 data and calibrated if needed ([44]; #103).
+- **No threshold.** Like Similo, `rank()` always returns the best k it has. A minimum score for raising a proposal belongs to #73. Before a score is read as a confidence, its reliability is checked on the RQ4 data and calibrated if needed ([49]; #103).
 
 **API.** `score(target, candidate, weights=None) → ScoreResult(score, contributions, similarities)` and `rank(target, candidates, k=3, weights=None) → [RankedCandidate(id, result)]`. `weights=` replaces the whole table, so the RQ4 single-property baseline is `weights={"automationId": 1}`. Speed: about 0.4 ms per candidate (1,000 candidates in about 0.4 s on an M2, Python 3.12).
 
@@ -741,9 +751,9 @@ For the semester-2 panel the log also needs (request to hasan): stable ids (run,
 
 #### 5.6.3 Calibrated decision layer (semester 2, #103)
 
-- **Decision points** as typed questions, in the Jev-compatible interface (typed options in, a probability per option out, [45]): *element not found* → which candidate (choice); *unexpected window* → expected or not (yes/no); *failed-test triage* → category or severity (score).
-- **Order:** the rule book first; a local open-weight decision model only when no rule applies (D7 candidates: H2O-Lightning-4B as default, Strands Decider 2B, [46], [47]); below the confidence threshold, a person decides; an approved decision becomes a rule.
-- **Calibration** is measured on our own panel (the semester-1 decision log), never taken from a vendor: reliability diagram, ECE over 15 equal-width bins with the bin counts, temperature scaling ([44]). D7's criterion is the share of decisions taken at 5 % error. H3 is tested on the bug-injected versions (#47, #86).
+- **Decision points** as typed questions, in the Jev-compatible interface (typed options in, a probability per option out, [50]): *element not found* → which candidate (choice); *unexpected window* → expected or not (yes/no); *failed-test triage* → category or severity (score).
+- **Order:** the rule book first; a local open-weight decision model only when no rule applies (D7 candidates: H2O-Lightning-4B as default, Strands Decider 2B, [51], [52]); below the confidence threshold, a person decides; an approved decision becomes a rule.
+- **Calibration** is measured on our own panel (the semester-1 decision log), never taken from a vendor: reliability diagram, ECE over 15 equal-width bins with the bin counts, temperature scaling ([49]). D7's criterion is the share of decisions taken at 5 % error. H3 is tested on the bug-injected versions (#47, #86).
 - **Placement constraint.** A model call inside a run conflicts with the authoring-only ADR and NFR-22. *Proposed default:* the decision layer runs after the run, on the server or the AI service, and decides on stored proposals and failures. It never changes a run's verdict while the run is in progress. Any other placement needs a new ADR.
 
 ### 5.7 Evaluation hooks
@@ -793,18 +803,7 @@ How the design supports each measurement. #48 (test design) describes how the ex
 
 ### 5.10 References
 
-Numbers follow `docs/literature.md` (#10, #20; PRs #126, #139). That file's numbering is provisional and is aligned with the plan's numbering when the SDD is assembled (#53).
-
-- [7] M. Nass, E. Alégroth, R. Feldt, M. Leotta, F. Ricca, "Similarity-based web element localization for robust test automation," *ACM TOSEM*, 32(3), 2023 (Similo). Code: github.com/michelnass/Similo2.
-- [15] Z. Liu et al., "Make LLM a testing expert: bringing human-like interaction to mobile GUI testing via functionality-aware decisions," *ICSE*, 2024 (GPTDroid).
-- [40] C. Zhang et al., "UFO: a UI-focused agent for Windows OS interaction," *NAACL*, 2025.
-- [41] P. Lewis et al., "Retrieval-augmented generation for knowledge-intensive NLP tasks," *NeurIPS*, 2020.
-- [42] B. T. Willard, R. Louf, "Efficient guided generation for large language models," arXiv:2307.09702, 2023.
-- [43] ggml-org, "GBNF guide," llama.cpp `grammars/README.md` (accessed 2026-10-27).
-- [44] C. Guo, G. Pleiss, Y. Sun, K. Q. Weinberger, "On calibration of modern neural networks," *ICML*, 2017.
-- [45] D. Almeida, "Introducing System One models and Jev," TypeSafe blog, 2026.
-- [46] Strands Labs, *Strands Decider*, GitHub repository (Apache-2.0), 2026.
-- [47] H2O.ai, *H2O-Lightning-4B* model card, 2026.
+The sources §5 cites are in the one list of §1.5 ([14], [24], [31], [33], [47]–[52]).
 
 Project sources: `ai/spikes/llm-smoke.md` (#7), `memory-bank/tasks/37-constrained-generation.md`, `memory-bank/tasks/49-healing-scorer.md`, `docs/agent-rpc.md` (#16, PR #135), `docs/graph-model.md` (#14).
 
